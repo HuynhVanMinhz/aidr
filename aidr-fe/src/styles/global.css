@@ -41,17 +41,81 @@ a:hover {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 1rem;
   padding: 1rem 1.5rem;
   background: var(--navbar);
   border-bottom: 1px solid var(--border);
   color: var(--ink);
   transition: background-color 0.25s ease, border-color 0.25s ease;
+  flex-wrap: wrap;
 }
 
-.app-header nav {
+.app-header__left {
   display: flex;
   align-items: center;
   gap: 1rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.app-header__search {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  max-width: 420px;
+}
+
+.app-header__search .form-group {
+  position: relative;
+  width: 100%;
+  margin: 0;
+}
+
+.app-header__search .form-control {
+  width: 100%;
+  border-radius: 50px;
+  border: 1px solid var(--input-border);
+  background: var(--secondary-color, #f3f3f3);
+  padding: 10px 48px 10px 18px;
+  box-shadow: none;
+}
+
+.app-header__search .header-search-btn {
+  position: absolute;
+  top: 50%;
+  right: 8px;
+  transform: translateY(-50%);
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: 50%;
+  background: var(--btn-primary-bg);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.app-header__search .header-search-btn img {
+  filter: brightness(0) invert(1);
+}
+
+.app-header__logo img {
+  display: block;
+  filter: var(--logo-filter, none);
+}
+
+.app-header__nav {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.app-main--catalog {
+  max-width: none;
+  width: 100%;
+  padding: 0;
 }
 
 .brand {
