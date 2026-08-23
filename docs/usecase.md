@@ -15,11 +15,11 @@
 
 | id | name | description (chi tiết + business) | status | priority |
 |----|------|-------------------------------------|--------|----------|
-| UC-01 | Register Account | **Actor:** Guest. Khách nhập Full Name, Email, Password; hệ thống validate (email unique, password đủ phức tạp — BR-01/02), tạo tài khoản Buyer, gửi xác nhận email (nếu bật). **Business:** Mở rộng user base; mọi giao dịch mua bắt đầu từ account. | Todo | P0 |
-| UC-02 | Login With Email / Password | **Actor:** Guest. Xác thực credentials; kiểm tra Active/Locked; sau 5 lần sai khóa tạm 15 phút (BR-03); trả JWT + roles. **Business:** Cổng vào hệ thống cho mọi role. | Todo | P0 |
-| UC-03 | Login With Google | **Actor:** Guest. OAuth/OIDC qua Keycloak + Google IdP; lần đầu upsert user app. **Business:** Giảm ma sát đăng ký, tăng conversion. | Todo | P0 |
-| UC-04 | Logout | **Actor:** Buyer/Seller/Admin. Invalidate session/refresh; xóa token phía client. **Business:** Bảo mật phiên đăng nhập. | Todo | P0 |
-| UC-05 | Forget Password | **Actor:** Guest. Nhập email đã đăng ký → token one-time có hạn → reset password (BR-09..11). **Business:** Giảm mất user do quên mật khẩu. | Todo | P0 |
+| UC-01 | Register Account | **Actor:** Guest. Khách nhập Full Name, Email, Password; hệ thống validate (email unique, password đủ phức tạp — BR-01/02), tạo tài khoản Buyer, gửi xác nhận email (nếu bật). **Business:** Mở rộng user base; mọi giao dịch mua bắt đầu từ account. | Done | P0 |
+| UC-02 | Login With Email / Password | **Actor:** Guest. Xác thực credentials; kiểm tra Active/Locked; sau 5 lần sai khóa tạm 15 phút (BR-03); trả JWT + roles. **Business:** Cổng vào hệ thống cho mọi role. | Done | P0 |
+| UC-03 | Login With Google | **Actor:** Guest. OAuth/OIDC qua Keycloak + Google IdP; lần đầu upsert user app. **Business:** Giảm ma sát đăng ký, tăng conversion. | Done | P0 |
+| UC-04 | Logout | **Actor:** Buyer/Seller/Admin. Invalidate session/refresh; xóa token phía client. **Business:** Bảo mật phiên đăng nhập. | Done | P0 |
+| UC-05 | Forget Password | **Actor:** Guest. Nhập email đã đăng ký → token one-time có hạn → reset password (BR-09..11). **Business:** Giảm mất user do quên mật khẩu. | Done | P0 |
 | UC-06 | Change Password | **Actor:** Buyer/Seller. Yêu cầu mật khẩu cũ đúng; New = Confirm; hash lưu lại (BR-07/08). **Business:** Bảo mật tài khoản chủ động. | Todo | P1 |
 | UC-07 | View Profile | **Actor:** Buyer/Seller. Xem thông tin cá nhân, avatar, SĐT, địa chỉ mặc định. **Business:** Minh bạch dữ liệu tài khoản. | Todo | P0 |
 | UC-08 | Update Profile | **Actor:** Buyer/Seller. Cập nhật tên, SĐT, avatar (≤2MB), địa chỉ (≤10 — BR-05/06). **Business:** Dữ liệu giao hàng / liên hệ chính xác. | Todo | P0 |

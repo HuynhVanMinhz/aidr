@@ -17,3 +17,4 @@ E:\WorkSpace\aidr\aidr-be\AIDR.Infrastructure\obj\Release\net9.0\refint\AIDR.Inf
 E:\WorkSpace\aidr\aidr-be\AIDR.Infrastructure\obj\Release\net9.0\AIDR.Infrastructure.pdb
 E:\WorkSpace\aidr\aidr-be\AIDR.Infrastructure\obj\Release\net9.0\AIDR.Infrastructure.genruntimeconfig.cache
 E:\WorkSpace\aidr\aidr-be\AIDR.Infrastructure\obj\Release\net9.0\ref\AIDR.Infrastructure.dll
+e:\WorkSpace\aidr\aidr-be\AIDR.Infrastructure\obj\Release\net9.0\AIDR.Infrastructure.sourcelink.json

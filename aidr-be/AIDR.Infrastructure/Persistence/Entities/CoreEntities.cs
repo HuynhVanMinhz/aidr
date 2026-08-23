@@ -29,6 +29,19 @@ public class User
     public DateTime UpdatedAt { get; set; }
 
     public ICollection<UserRole> UserRoles { get; set; } = new List<UserRole>();
+    public ICollection<PasswordResetToken> PasswordResetTokens { get; set; } = new List<PasswordResetToken>();
+}
+
+public class PasswordResetToken
+{
+    public Guid TokenId { get; set; }
+    public Guid UserId { get; set; }
+    public string TokenHash { get; set; } = null!;
+    public DateTime ExpiresAt { get; set; }
+    public DateTime? UsedAt { get; set; }
+    public DateTime CreatedAt { get; set; }
+
+    public User User { get; set; } = null!;
 }
 
 public class UserRole
