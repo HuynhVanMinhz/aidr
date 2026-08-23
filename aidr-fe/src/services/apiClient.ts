@@ -1,6 +1,18 @@
 import axios from 'axios';
-import { store } from '../store';
 import { clearSession } from '../store/authSlice';
+
+type StoreLike = {
+  getState: () => { auth: { accessToken: string | null } };
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  dispatch: (action: any) => unknown;
+};
+
+/** Attached from main.tsx after store creation — avoids circular import with slices. */
+let appStore: StoreLike | null = null;
+
+export function attachStore(store: StoreLike) {
+  appStore = store;
+}
 
 export const apiClient = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL || '/api',
@@ -10,7 +22,7 @@ export const apiClient = axios.create({
 });
 
 apiClient.interceptors.request.use((config) => {
-  const token = store.getState().auth.accessToken;
+  const token = appStore?.getState().auth.accessToken;
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
@@ -30,7 +42,7 @@ apiClient.interceptors.response.use(
       const isOAuthCallback = path.startsWith('/auth/callback');
 
       if (!isAuthEndpoint && !isOAuthCallback) {
-        store.dispatch(clearSession());
+        appStore?.dispatch(clearSession());
         const returnUrl = encodeURIComponent(path + window.location.search);
         if (!path.startsWith('/login')) {
           window.location.assign(`/login?returnUrl=${returnUrl}`);

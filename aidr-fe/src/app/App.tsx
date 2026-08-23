@@ -12,6 +12,9 @@ import { GoogleCallbackPage } from '../views/auth/GoogleCallbackPage';
 import { ProfilePage } from '../views/account/ProfilePage';
 import { AddressesPage } from '../views/account/AddressesPage';
 import { ChangePasswordPage } from '../views/account/ChangePasswordPage';
+import { ProductListPage } from '../views/catalog/ProductListPage';
+import { ProductDetailPage } from '../views/catalog/ProductDetailPage';
+import { CategoriesPage } from '../views/catalog/CategoriesPage';
 
 export function App() {
   return (
@@ -27,6 +30,9 @@ export function App() {
 
       <Route element={<AppShell />}>
         <Route index element={<HomePage />} />
+        <Route path="products" element={<ProductListPage />} />
+        <Route path="products/:id" element={<ProductDetailPage />} />
+        <Route path="categories" element={<CategoriesPage />} />
         <Route path="health" element={<HealthPage />} />
 
         <Route element={<ProtectedRoute />}>
