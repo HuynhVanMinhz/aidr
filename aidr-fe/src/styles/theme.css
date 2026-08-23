@@ -1,0 +1,209 @@
+/**
+ * AIDR — Light / Dark theme tokens
+ * Light: Nevixra theme defaults (warm retail, #16181D)
+ * Dark:  Charcoal + electric teal accent (electronics / AI retail)
+ */
+
+/* ── Light (default — UI hiện tại) ── */
+:root,
+html[data-theme='light'] {
+  color-scheme: light;
+
+  /* App shell */
+  --aidr-bg: #ffffff;
+  --aidr-surface: #ffffff;
+  --aidr-navbar: #ffffff;
+  --aidr-text: #16181d;
+  --aidr-text-muted: #707070;
+  --aidr-border: rgba(22, 24, 29, 0.1);
+  --aidr-accent: #16181d;
+  --aidr-accent-hover: #2a2e36;
+  --aidr-accent-soft: rgba(22, 24, 29, 0.06);
+
+  /* Semantic aliases */
+  --bg: var(--aidr-bg);
+  --ink: var(--aidr-text);
+  --card: var(--aidr-surface);
+  --navbar: var(--aidr-navbar);
+  --muted: var(--aidr-text-muted);
+  --border: var(--aidr-border);
+  --accent: var(--aidr-accent);
+
+  /* Nevixra theme overrides */
+  --primary-color: #16181d;
+  --secondary-color: #f3f3f3;
+  --bg-color: #ffffff;
+  --text-color: #707070;
+  --accent-color: #16181d;
+  --white-color: #ffffff;
+  --divider-color: #16181d1a;
+  --dark-divider-color: #ffffff1a;
+  --error-color: rgb(230, 87, 87);
+
+  /* Auth alerts */
+  --alert-error-bg: #fef3f2;
+  --alert-error-text: #b42318;
+  --alert-error-border: #fecdca;
+  --alert-success-bg: #ecfdf3;
+  --alert-success-text: #027a48;
+  --alert-success-border: #abefc6;
+
+  /* Controls */
+  --input-bg: #ffffff;
+  --input-border: rgba(22, 24, 29, 0.15);
+  --input-text: #16181d;
+  --btn-primary-bg: #16181d;
+  --btn-primary-text: #ffffff;
+  --btn-secondary-bg: transparent;
+  --btn-secondary-border: rgba(22, 24, 29, 0.2);
+  --btn-secondary-text: #16181d;
+
+  --logo-filter: none;
+  --shadow-sm: 0 1px 2px rgba(22, 24, 29, 0.06);
+}
+
+/* ── Dark — designer palette ── */
+html[data-theme='dark'] {
+  color-scheme: dark;
+
+  /* Deep charcoal base + teal accent (tech retail) */
+  --aidr-bg: #0c0e14;
+  --aidr-surface: #151922;
+  --aidr-navbar: #080a10;
+  --aidr-text: #e8eaed;
+  --aidr-text-muted: #8b95a8;
+  --aidr-border: rgba(232, 234, 237, 0.1);
+  --aidr-accent: #2dd4bf;
+  --aidr-accent-hover: #5eead4;
+  --aidr-accent-soft: rgba(45, 212, 191, 0.12);
+
+  --bg: var(--aidr-bg);
+  --ink: var(--aidr-text);
+  --card: var(--aidr-surface);
+  --navbar: var(--aidr-navbar);
+  --muted: var(--aidr-text-muted);
+  --border: var(--aidr-border);
+  --accent: var(--aidr-accent);
+
+  /* Nevixra theme — remap for auth pages */
+  --primary-color: #e8eaed;
+  --secondary-color: #1a1f2e;
+  --bg-color: #0c0e14;
+  --text-color: #8b95a8;
+  --accent-color: #2dd4bf;
+  --white-color: #e8eaed;
+  --divider-color: rgba(232, 234, 237, 0.12);
+  --dark-divider-color: rgba(232, 234, 237, 0.08);
+  --error-color: #f87171;
+
+  --alert-error-bg: rgba(248, 113, 113, 0.12);
+  --alert-error-text: #fca5a5;
+  --alert-error-border: rgba(248, 113, 113, 0.35);
+  --alert-success-bg: rgba(45, 212, 191, 0.12);
+  --alert-success-text: #5eead4;
+  --alert-success-border: rgba(45, 212, 191, 0.35);
+
+  --input-bg: #1a1f2e;
+  --input-border: rgba(232, 234, 237, 0.14);
+  --input-text: #e8eaed;
+  --btn-primary-bg: #2dd4bf;
+  --btn-primary-text: #0c0e14;
+  --btn-secondary-bg: transparent;
+  --btn-secondary-border: rgba(232, 234, 237, 0.2);
+  --btn-secondary-text: #e8eaed;
+
+  --logo-filter: brightness(0) invert(1);
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.35);
+}
+
+/* Theme toggle button */
+.theme-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.35rem 0.75rem;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--aidr-accent-soft);
+  color: var(--ink);
+  font: inherit;
+  font-size: 0.8125rem;
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+
+.theme-toggle:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+html[data-theme='dark'] .theme-toggle:hover {
+  background: var(--aidr-accent-soft);
+}
+
+.theme-toggle__icon {
+  font-size: 1rem;
+  line-height: 1;
+}
+
+.theme-toggle__label {
+  font-weight: 500;
+}
+
+/* Dark mode — auth / theme form overrides */
+html[data-theme='dark'] .form-control {
+  background-color: var(--input-bg);
+  border-color: var(--input-border);
+  color: var(--input-text);
+}
+
+html[data-theme='dark'] .form-control::placeholder {
+  color: var(--aidr-text-muted);
+}
+
+html[data-theme='dark'] .form-control:focus {
+  border-color: var(--aidr-accent);
+  box-shadow: 0 0 0 3px var(--aidr-accent-soft);
+}
+
+html[data-theme='dark'] .btn-default.btn-accent {
+  background-color: var(--btn-primary-bg);
+  color: var(--btn-primary-text);
+  border-color: var(--btn-primary-bg);
+}
+
+html[data-theme='dark'] .btn-default.btn-accent::before,
+html[data-theme='dark'] .btn-default.btn-accent::after {
+  background: var(--btn-primary-bg);
+}
+
+html[data-theme='dark'] .btn-default.btn-border {
+  color: var(--btn-secondary-text);
+  border-color: var(--btn-secondary-border);
+}
+
+html[data-theme='dark'] .login-content-title-box h2,
+html[data-theme='dark'] h1,
+html[data-theme='dark'] h2,
+html[data-theme='dark'] h3 {
+  color: var(--primary-color);
+}
+
+html[data-theme='dark'] .login-content-form-btn a,
+html[data-theme='dark'] .login-form-info p a {
+  color: var(--accent-color);
+}
+
+html[data-theme='dark'] .login-content-form-btn a::before,
+html[data-theme='dark'] .login-form-info p a::before {
+  background: var(--accent-color);
+}
+
+html[data-theme='dark'] .auth-shell__brand img {
+  filter: var(--logo-filter);
+}
+
+html[data-theme='dark'] ::selection {
+  background-color: var(--aidr-accent);
+  color: #0c0e14;
+}

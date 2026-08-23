@@ -1,0 +1,245 @@
+/**
+ * AIDR dark palette — override theme + app shell.
+ * Nền #0B0D10 · Card #171A20 · Navbar #080A0D · Text #F5F5F5
+ */
+:root {
+  --aidr-bg: #0b0d10;
+  --aidr-card: #171a20;
+  --aidr-navbar: #080a0d;
+  --aidr-text: #f5f5f5;
+  --aidr-text-muted: #a3a3a3;
+  --aidr-border: rgba(245, 245, 245, 0.12);
+
+  /* App shell (global.css) */
+  --bg: var(--aidr-bg);
+  --ink: var(--aidr-text);
+  --card: var(--aidr-card);
+  --navbar: var(--aidr-navbar);
+  --muted: var(--aidr-text-muted);
+  --border: var(--aidr-border);
+  --accent: var(--aidr-text);
+
+  /* Theme custom.css variables */
+  --primary-color: var(--aidr-text);
+  --secondary-color: var(--aidr-card);
+  --bg-color: var(--aidr-bg);
+  --text-color: var(--aidr-text-muted);
+  --accent-color: var(--aidr-text);
+  --white-color: var(--aidr-text);
+  --divider-color: var(--aidr-border);
+  --dark-divider-color: rgba(245, 245, 245, 0.08);
+}
+
+html,
+body {
+  background: var(--aidr-bg);
+  color: var(--aidr-text);
+}
+
+body {
+  background: var(--aidr-bg);
+  color: var(--aidr-text-muted);
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+.h1,
+.h2,
+.h3,
+.h4,
+.h5,
+.h6 {
+  color: var(--aidr-text);
+}
+
+a {
+  color: var(--aidr-text);
+}
+
+a:hover {
+  color: #ffffff;
+}
+
+/* Navbar / header (theme + app shell) */
+header.main-header .header-sticky,
+.topbar {
+  background: var(--aidr-navbar) !important;
+  box-shadow: inset 0 -1px 0 var(--aidr-border) !important;
+}
+
+.app-header {
+  background: var(--aidr-navbar);
+  border-bottom-color: var(--aidr-border);
+  color: var(--aidr-text);
+}
+
+.app-header nav a,
+.brand {
+  color: var(--aidr-text);
+}
+
+.app-header nav a:hover,
+.brand:hover {
+  color: #ffffff;
+  text-decoration: none;
+}
+
+.app-footer {
+  background: var(--aidr-navbar);
+  border-top-color: var(--aidr-border);
+  color: var(--aidr-text-muted);
+}
+
+.app-footer code {
+  color: var(--aidr-text-muted);
+  background: var(--aidr-card);
+  padding: 0.1em 0.35em;
+  border-radius: 4px;
+}
+
+/* Auth layout */
+.auth-shell {
+  background: var(--aidr-bg);
+}
+
+.auth-shell__header {
+  background: var(--aidr-navbar);
+  border-bottom-color: var(--aidr-border);
+}
+
+.auth-shell__footer {
+  background: var(--aidr-navbar);
+  color: var(--aidr-text-muted);
+}
+
+/* Auth / login cards */
+.page-login,
+.page-forgot-password {
+  background: var(--aidr-bg);
+}
+
+.login-content-form-item {
+  background: var(--aidr-card);
+  border: 1px solid var(--aidr-border);
+  border-radius: 12px;
+  padding: 2rem;
+}
+
+.login-content-title-box {
+  border-bottom-color: var(--aidr-border);
+}
+
+.login-content-title-box h2 {
+  color: var(--aidr-text);
+}
+
+.login-content-title-box p,
+.login-form-info p {
+  color: var(--aidr-text-muted);
+}
+
+.login-content-form-btn a {
+  color: var(--aidr-text);
+}
+
+/* Forms */
+.checkout-login-form .form-group label {
+  color: var(--aidr-text);
+}
+
+.checkout-login-form .form-control,
+.checkout-bill-address-form .form-control {
+  background-color: var(--aidr-bg);
+  border-color: var(--aidr-border);
+  color: var(--aidr-text);
+}
+
+.checkout-login-form .form-control::placeholder,
+.checkout-bill-address-form .form-control::placeholder {
+  color: #6b7280;
+}
+
+.checkout-form-checkbox label {
+  color: var(--aidr-text-muted);
+}
+
+/* Buttons */
+.btn-default.btn-accent {
+  background: var(--aidr-text);
+  border-color: var(--aidr-text);
+  color: var(--aidr-bg);
+}
+
+.btn-default.btn-accent:hover {
+  background: #ffffff;
+  border-color: #ffffff;
+  color: var(--aidr-bg);
+}
+
+.btn-default.btn-border {
+  background: transparent;
+  border-color: rgba(245, 245, 245, 0.35);
+  color: var(--aidr-text);
+}
+
+.btn-default.btn-border:hover {
+  background: var(--aidr-card);
+  border-color: var(--aidr-text);
+  color: var(--aidr-text);
+}
+
+.app-header__logout {
+  background: var(--aidr-card);
+  border-color: var(--aidr-border);
+  color: var(--aidr-text);
+}
+
+.app-header__logout:hover {
+  background: #1f232b;
+}
+
+.app-header__user {
+  color: var(--aidr-text-muted);
+}
+
+/* Alerts (dark-friendly) */
+.auth-alert--error {
+  background: rgba(180, 35, 24, 0.15);
+  color: #fca5a5;
+  border-color: rgba(180, 35, 24, 0.35);
+}
+
+.auth-alert--success {
+  background: rgba(2, 122, 72, 0.15);
+  color: #86efac;
+  border-color: rgba(2, 122, 72, 0.35);
+}
+
+/* App pages */
+.health-json,
+.page {
+  color: var(--aidr-text-muted);
+}
+
+.health-json {
+  background: var(--aidr-card);
+  border-color: var(--aidr-border);
+  color: var(--aidr-text);
+}
+
+.error {
+  color: #fca5a5;
+}
+
+.auth-divider {
+  color: var(--aidr-text-muted);
+}
+
+.auth-divider::before,
+.auth-divider::after {
+  background: var(--aidr-border);
+}

@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "e:\\WorkSpace\\aidr\\aidr-be\\AIDR.Api\\AIDR.Api.csproj": {}
+    "E:\\WorkSpace\\aidr\\aidr-be\\AIDR.Api\\AIDR.Api.csproj": {}
   },
   "projects": {
-    "e:\\WorkSpace\\aidr\\aidr-be\\AIDR.Api\\AIDR.Api.csproj": {
+    "E:\\WorkSpace\\aidr\\aidr-be\\AIDR.Api\\AIDR.Api.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "e:\\WorkSpace\\aidr\\aidr-be\\AIDR.Api\\AIDR.Api.csproj",
+        "projectUniqueName": "E:\\WorkSpace\\aidr\\aidr-be\\AIDR.Api\\AIDR.Api.csproj",
         "projectName": "AIDR.Api",
-        "projectPath": "e:\\WorkSpace\\aidr\\aidr-be\\AIDR.Api\\AIDR.Api.csproj",
+        "projectPath": "E:\\WorkSpace\\aidr\\aidr-be\\AIDR.Api\\AIDR.Api.csproj",
         "packagesPath": "C:\\Users\\Lenovo\\.nuget\\packages\\",
-        "outputPath": "e:\\WorkSpace\\aidr\\aidr-be\\AIDR.Api\\obj\\",
+        "outputPath": "E:\\WorkSpace\\aidr\\aidr-be\\AIDR.Api\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
@@ -31,14 +31,14 @@
           "net9.0": {
             "targetAlias": "net9.0",
             "projectReferences": {
-              "e:\\WorkSpace\\aidr\\aidr-be\\AIDR.Infrastructure\\AIDR.Infrastructure.csproj": {
-                "projectPath": "e:\\WorkSpace\\aidr\\aidr-be\\AIDR.Infrastructure\\AIDR.Infrastructure.csproj"
+              "E:\\WorkSpace\\aidr\\aidr-be\\AIDR.Infrastructure\\AIDR.Infrastructure.csproj": {
+                "projectPath": "E:\\WorkSpace\\aidr\\aidr-be\\AIDR.Infrastructure\\AIDR.Infrastructure.csproj"
               },
-              "e:\\WorkSpace\\aidr\\aidr-be\\AIDR.Modules\\AIDR.Modules.csproj": {
-                "projectPath": "e:\\WorkSpace\\aidr\\aidr-be\\AIDR.Modules\\AIDR.Modules.csproj"
+              "E:\\WorkSpace\\aidr\\aidr-be\\AIDR.Modules\\AIDR.Modules.csproj": {
+                "projectPath": "E:\\WorkSpace\\aidr\\aidr-be\\AIDR.Modules\\AIDR.Modules.csproj"
               },
-              "e:\\WorkSpace\\aidr\\aidr-be\\AIDR.Shared\\AIDR.Shared.csproj": {
-                "projectPath": "e:\\WorkSpace\\aidr\\aidr-be\\AIDR.Shared\\AIDR.Shared.csproj"
+              "E:\\WorkSpace\\aidr\\aidr-be\\AIDR.Shared\\AIDR.Shared.csproj": {
+                "projectPath": "E:\\WorkSpace\\aidr\\aidr-be\\AIDR.Shared\\AIDR.Shared.csproj"
               }
             }
           }
@@ -103,14 +103,14 @@
         }
       }
     },
-    "e:\\WorkSpace\\aidr\\aidr-be\\AIDR.Infrastructure\\AIDR.Infrastructure.csproj": {
+    "E:\\WorkSpace\\aidr\\aidr-be\\AIDR.Infrastructure\\AIDR.Infrastructure.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "e:\\WorkSpace\\aidr\\aidr-be\\AIDR.Infrastructure\\AIDR.Infrastructure.csproj",
+        "projectUniqueName": "E:\\WorkSpace\\aidr\\aidr-be\\AIDR.Infrastructure\\AIDR.Infrastructure.csproj",
         "projectName": "AIDR.Infrastructure",
-        "projectPath": "e:\\WorkSpace\\aidr\\aidr-be\\AIDR.Infrastructure\\AIDR.Infrastructure.csproj",
+        "projectPath": "E:\\WorkSpace\\aidr\\aidr-be\\AIDR.Infrastructure\\AIDR.Infrastructure.csproj",
         "packagesPath": "C:\\Users\\Lenovo\\.nuget\\packages\\",
-        "outputPath": "e:\\WorkSpace\\aidr\\aidr-be\\AIDR.Infrastructure\\obj\\",
+        "outputPath": "E:\\WorkSpace\\aidr\\aidr-be\\AIDR.Infrastructure\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
@@ -130,11 +130,11 @@
           "net9.0": {
             "targetAlias": "net9.0",
             "projectReferences": {
-              "e:\\WorkSpace\\aidr\\aidr-be\\AIDR.Modules\\AIDR.Modules.csproj": {
-                "projectPath": "e:\\WorkSpace\\aidr\\aidr-be\\AIDR.Modules\\AIDR.Modules.csproj"
+              "E:\\WorkSpace\\aidr\\aidr-be\\AIDR.Modules\\AIDR.Modules.csproj": {
+                "projectPath": "E:\\WorkSpace\\aidr\\aidr-be\\AIDR.Modules\\AIDR.Modules.csproj"
               },
-              "e:\\WorkSpace\\aidr\\aidr-be\\AIDR.Shared\\AIDR.Shared.csproj": {
-                "projectPath": "e:\\WorkSpace\\aidr\\aidr-be\\AIDR.Shared\\AIDR.Shared.csproj"
+              "E:\\WorkSpace\\aidr\\aidr-be\\AIDR.Shared\\AIDR.Shared.csproj": {
+                "projectPath": "E:\\WorkSpace\\aidr\\aidr-be\\AIDR.Shared\\AIDR.Shared.csproj"
               }
             }
           }
@@ -218,14 +218,14 @@
         }
       }
     },
-    "e:\\WorkSpace\\aidr\\aidr-be\\AIDR.Modules\\AIDR.Modules.csproj": {
+    "E:\\WorkSpace\\aidr\\aidr-be\\AIDR.Modules\\AIDR.Modules.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "e:\\WorkSpace\\aidr\\aidr-be\\AIDR.Modules\\AIDR.Modules.csproj",
+        "projectUniqueName": "E:\\WorkSpace\\aidr\\aidr-be\\AIDR.Modules\\AIDR.Modules.csproj",
         "projectName": "AIDR.Modules",
-        "projectPath": "e:\\WorkSpace\\aidr\\aidr-be\\AIDR.Modules\\AIDR.Modules.csproj",
+        "projectPath": "E:\\WorkSpace\\aidr\\aidr-be\\AIDR.Modules\\AIDR.Modules.csproj",
         "packagesPath": "C:\\Users\\Lenovo\\.nuget\\packages\\",
-        "outputPath": "e:\\WorkSpace\\aidr\\aidr-be\\AIDR.Modules\\obj\\",
+        "outputPath": "E:\\WorkSpace\\aidr\\aidr-be\\AIDR.Modules\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
@@ -245,8 +245,8 @@
           "net9.0": {
             "targetAlias": "net9.0",
             "projectReferences": {
-              "e:\\WorkSpace\\aidr\\aidr-be\\AIDR.Shared\\AIDR.Shared.csproj": {
-                "projectPath": "e:\\WorkSpace\\aidr\\aidr-be\\AIDR.Shared\\AIDR.Shared.csproj"
+              "E:\\WorkSpace\\aidr\\aidr-be\\AIDR.Shared\\AIDR.Shared.csproj": {
+                "projectPath": "E:\\WorkSpace\\aidr\\aidr-be\\AIDR.Shared\\AIDR.Shared.csproj"
               }
             }
           }
@@ -300,14 +300,14 @@
         }
       }
     },
-    "e:\\WorkSpace\\aidr\\aidr-be\\AIDR.Shared\\AIDR.Shared.csproj": {
+    "E:\\WorkSpace\\aidr\\aidr-be\\AIDR.Shared\\AIDR.Shared.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "e:\\WorkSpace\\aidr\\aidr-be\\AIDR.Shared\\AIDR.Shared.csproj",
+        "projectUniqueName": "E:\\WorkSpace\\aidr\\aidr-be\\AIDR.Shared\\AIDR.Shared.csproj",
         "projectName": "AIDR.Shared",
-        "projectPath": "e:\\WorkSpace\\aidr\\aidr-be\\AIDR.Shared\\AIDR.Shared.csproj",
+        "projectPath": "E:\\WorkSpace\\aidr\\aidr-be\\AIDR.Shared\\AIDR.Shared.csproj",
         "packagesPath": "C:\\Users\\Lenovo\\.nuget\\packages\\",
-        "outputPath": "e:\\WorkSpace\\aidr\\aidr-be\\AIDR.Shared\\obj\\",
+        "outputPath": "E:\\WorkSpace\\aidr\\aidr-be\\AIDR.Shared\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
