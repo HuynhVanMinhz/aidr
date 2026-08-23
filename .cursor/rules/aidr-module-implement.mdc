@@ -1,0 +1,63 @@
+---
+description: AIDR — quy trình implement module/usecase theo tài liệu nghiệp vụ & kiến trúc; bắt buộc cập nhật status tracking.
+alwaysApply: true
+---
+
+# AIDR Module / Use Case Implementation
+
+Khi user yêu cầu implement **module** hoặc **usecase**, tuân thủ quy trình dưới đây. Không tự ý lệch `bussiness-system.md` / architecture nếu chưa hỏi user.
+
+## 1. Nguồn chân lý (đọc trước khi code)
+
+| Thứ tự | File | Dùng để |
+|--------|------|---------|
+| 1 | `bussiness-system.md` | Actor, BR, luồng nghiệp vụ, entity |
+| 2 | `architecture-aidr-be.md` | Package BE, endpoint, tích hợp |
+| 3 | `architecture-aidr-fe.md` | Slice Redux, service FE, route/guard |
+| 4 | `database.sql` | Schema; không đổi schema nếu UC không yêu cầu |
+| 5 | `usecase.md` | Mô tả UC + **status/priority** |
+| 6 | `plan-implement-module.md` | Module nào, UC thuộc module, **status** |
+
+## 2. Trước khi implement
+
+1. Xác định **module** (`plan-implement-module.md`) và/hoặc **UC id** (`usecase.md`).
+2. Kiểm tra dependency: không làm module sau nếu module nền (Auth, Foundation…) chưa sẵn theo plan.
+3. Đặt status:
+   - UC liên quan → `In Progress` trong `usecase.md`
+   - Module → `In Progress` trong `plan-implement-module.md`
+4. Liệt kê ngắn acceptance criteria từ description UC + BR liên quan.
+
+## 3. Khi code
+
+- BE: đúng module trong `AIDR.Modules` (Auth, Profile, Discovery, SellerCenter, Order, Payment, Engagement, AI, Admin).
+- FE: đúng area (auth, catalog, seller, admin…), gọi API qua `services/`, state qua Redux slice tương ứng.
+- Tôn trọng BR (auth, giá bán vs giá nhập lô, order snapshot, role guard…).
+- Không thêm UC/feature ngoài phạm vi được giao trong cùng PR/task.
+- Stack: React + Redux (FE), .NET + SQL Server + Redis/SignalR khi architecture yêu cầu.
+- UI FE: tham khảo / convert từ `theme-for-aidr-fe` (rule `aidr-ui-theme`).
+
+## 4. Sau khi implement xong (bắt buộc)
+
+1. `usecase.md`: UC đã xong → `Done` (chỉ UC thực sự hoàn thành; còn dang dở giữ `In Progress` / `Blocked` + lý do ngắn nếu cần).
+2. `plan-implement-module.md`: module xong hết UC trong cột usecase → `Done`; chưa hết → giữ `In Progress`.
+3. Nếu blocked (thiếu payOS, Keycloak, Ollama…) → `Blocked` ở cả 2 file + ghi chú 1 câu.
+4. Không đánh `Done` khi mới scaffold / stub API.
+
+## 5. Ví dụ cập nhật status
+
+```markdown
+<!-- usecase.md -->
+| UC-02 | Login With Email / Password | ... | Done | P0 |
+
+<!-- plan-implement-module.md -->
+| 02 | Auth | ... | UC-01..05 | In Progress |
+```
+
+Khi UC-01..05 đều `Done` → module Auth `Done`.
+
+## 6. Không làm
+
+- Bỏ qua đọc `bussiness-system.md` / architecture trước khi code.
+- Đổi DB/architecture lớn trong lúc làm 1 UC nhỏ mà không nêu rõ với user.
+- Đánh `Done` hàng loạt UC chưa test/chưa implement.
+- Implement AI (module 27–29) trước khi buy-path (plan M3) xong, trừ khi user yêu cầu rõ.

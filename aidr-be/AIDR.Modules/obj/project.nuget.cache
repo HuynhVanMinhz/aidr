@@ -1,0 +1,10 @@
+{
+  "version": 2,
+  "dgSpecHash": "sPtrseuwVTA=",
+  "success": true,
+  "projectFilePath": "E:\\WorkSpace\\aidr\\aidr-be\\AIDR.Modules\\AIDR.Modules.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\Lenovo\\.nuget\\packages\\microsoft.extensions.dependencyinjection.abstractions\\9.0.8\\microsoft.extensions.dependencyinjection.abstractions.9.0.8.nupkg.sha512"
+  ],
+  "logs": []
+}

@@ -1,0 +1,15 @@
+E:\WorkSpace\aidr\aidr-be\AIDR.Modules\bin\Release\net9.0\AIDR.Modules.deps.json
+E:\WorkSpace\aidr\aidr-be\AIDR.Modules\bin\Release\net9.0\AIDR.Modules.dll
+E:\WorkSpace\aidr\aidr-be\AIDR.Modules\bin\Release\net9.0\AIDR.Modules.pdb
+E:\WorkSpace\aidr\aidr-be\AIDR.Modules\bin\Release\net9.0\AIDR.Shared.dll
+E:\WorkSpace\aidr\aidr-be\AIDR.Modules\bin\Release\net9.0\AIDR.Shared.pdb
+E:\WorkSpace\aidr\aidr-be\AIDR.Modules\obj\Release\net9.0\AIDR.Modules.csproj.AssemblyReference.cache
+E:\WorkSpace\aidr\aidr-be\AIDR.Modules\obj\Release\net9.0\AIDR.Modules.GeneratedMSBuildEditorConfig.editorconfig
+E:\WorkSpace\aidr\aidr-be\AIDR.Modules\obj\Release\net9.0\AIDR.Modules.AssemblyInfoInputs.cache
+E:\WorkSpace\aidr\aidr-be\AIDR.Modules\obj\Release\net9.0\AIDR.Modules.AssemblyInfo.cs
+E:\WorkSpace\aidr\aidr-be\AIDR.Modules\obj\Release\net9.0\AIDR.Modules.csproj.CoreCompileInputs.cache
+E:\WorkSpace\aidr\aidr-be\AIDR.Modules\obj\Release\net9.0\AIDR.Mod.5B3D3EEC.Up2Date
+E:\WorkSpace\aidr\aidr-be\AIDR.Modules\obj\Release\net9.0\AIDR.Modules.dll
+E:\WorkSpace\aidr\aidr-be\AIDR.Modules\obj\Release\net9.0\refint\AIDR.Modules.dll
+E:\WorkSpace\aidr\aidr-be\AIDR.Modules\obj\Release\net9.0\AIDR.Modules.pdb
+E:\WorkSpace\aidr\aidr-be\AIDR.Modules\obj\Release\net9.0\ref\AIDR.Modules.dll
