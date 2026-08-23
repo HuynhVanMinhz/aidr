@@ -2,9 +2,7 @@ using AIDR.Api.Hubs;
 using AIDR.Api.Middleware;
 using AIDR.Infrastructure.DependencyInjection;
 using AIDR.Modules.DependencyInjection;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
-using Microsoft.IdentityModel.Tokens;
 using Serilog;
 using System.Text.Json;
 
@@ -20,44 +18,7 @@ builder.Services.AddOpenApi();
 builder.Services.AddSignalR();
 builder.Services.AddAidrInfrastructure(builder.Configuration);
 builder.Services.AddAidrModules();
-
-var keycloakAuthority = builder.Configuration["Keycloak:Authority"];
-var keycloakAudience = builder.Configuration["Keycloak:Audience"] ?? "aidr-api";
-
-if (!string.IsNullOrWhiteSpace(keycloakAuthority))
-{
-    builder.Services
-        .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-        .AddJwtBearer(options =>
-        {
-            options.Authority = keycloakAuthority;
-            options.Audience = keycloakAudience;
-            options.RequireHttpsMetadata = builder.Configuration.GetValue("Keycloak:RequireHttpsMetadata", false);
-            options.TokenValidationParameters = new TokenValidationParameters
-            {
-                ValidateAudience = false,
-                ValidateIssuer = true,
-                RoleClaimType = "roles"
-            };
-            options.Events = new JwtBearerEvents
-            {
-                OnMessageReceived = context =>
-                {
-                    var accessToken = context.Request.Query["access_token"];
-                    var path = context.HttpContext.Request.Path;
-                    if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/hubs"))
-                    {
-                        context.Token = accessToken;
-                    }
-                    return Task.CompletedTask;
-                }
-            };
-        });
-}
-else
-{
-    builder.Services.AddAuthentication();
-}
+builder.Services.AddAidrJwtAuthentication(builder.Configuration);
 
 builder.Services.AddAuthorization(options =>
 {
@@ -79,11 +40,16 @@ builder.Services.AddCors(options =>
 });
 
 var sqlConnection = builder.Configuration.GetConnectionString("AidrDb")!;
-var redisConnection = builder.Configuration.GetConnectionString("Redis") ?? "localhost:6379";
+var useInMemoryCache = builder.Configuration.GetValue("Caching:UseInMemory", false);
 
-builder.Services.AddHealthChecks()
-    .AddSqlServer(sqlConnection, name: "sqlserver", tags: ["ready"])
-    .AddRedis(redisConnection, name: "redis", tags: ["ready"]);
+var healthChecks = builder.Services.AddHealthChecks()
+    .AddSqlServer(sqlConnection, name: "sqlserver", tags: ["ready"]);
+
+if (!useInMemoryCache)
+{
+    var redisConnection = builder.Configuration.GetConnectionString("Redis") ?? "localhost:6379";
+    healthChecks.AddRedis(redisConnection, name: "redis", tags: ["ready"]);
+}
 
 var app = builder.Build();
 
@@ -130,8 +96,8 @@ app.MapHealthChecks("/api/health/ready", new HealthCheckOptions
 app.MapGet("/api", () => Results.Ok(new
 {
     name = "AIDR API",
-    version = "0.1.0",
-    module = "Foundation"
+    version = "0.2.0",
+    module = "Auth"
 }));
 
 app.Run();
