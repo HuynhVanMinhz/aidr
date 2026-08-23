@@ -16,7 +16,7 @@ public sealed class ProfileController : ControllerBase
 
     public ProfileController(IProfileService profile) => _profile = profile;
 
-    /// <summary>UC-07 View Profile</summary>
+    /// <summary>Get the current user profile.</summary>
     [HttpGet]
     public async Task<ActionResult<ApiResult<ProfileResponse>>> Get(CancellationToken cancellationToken)
     {
@@ -25,7 +25,7 @@ public sealed class ProfileController : ControllerBase
         return Ok(ApiResult<ProfileResponse>.Ok(result));
     }
 
-    /// <summary>UC-08 Update Profile</summary>
+    /// <summary>Update the current user profile.</summary>
     [HttpPut]
     public async Task<ActionResult<ApiResult<ProfileResponse>>> Update(
         [FromBody] UpdateProfileRequest request,
