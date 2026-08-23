@@ -62,5 +62,12 @@ public sealed class LoggingEmailSender : IEmailSender
             client.Credentials = new NetworkCredential(_smtp.Username, _smtp.Password);
 
         await client.SendMailAsync(message, cancellationToken);
+
+        _logger.LogInformation(
+            "Email sent via SMTP To={To} Subject={Subject} Host={Host}:{Port}",
+            toEmail,
+            subject,
+            _smtp.Host,
+            _smtp.Port);
     }
 }

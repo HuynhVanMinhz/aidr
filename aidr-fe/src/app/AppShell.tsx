@@ -1,9 +1,11 @@
-import { Link, Outlet } from 'react-router-dom';
+import { Link, Outlet, useLocation } from 'react-router-dom';
 import { ThemeToggle } from '../components/ThemeToggle';
 import { useAuth } from '../hooks/useAuth';
 
 export function AppShell() {
   const { isAuthenticated, user, logout } = useAuth();
+  const location = useLocation();
+  const isAccount = location.pathname.startsWith('/account');
 
   async function handleLogout() {
     await logout();
@@ -19,6 +21,7 @@ export function AppShell() {
         <nav>
           <Link to="/">Home</Link>
           <Link to="/health">API Health</Link>
+          {isAuthenticated && <Link to="/account/profile">Tài khoản</Link>}
           <ThemeToggle />
           {isAuthenticated ? (
             <>
@@ -35,11 +38,11 @@ export function AppShell() {
           )}
         </nav>
       </header>
-      <main className="app-main">
+      <main className={`app-main${isAccount ? ' app-main--flush' : ''}`}>
         <Outlet />
       </main>
       <footer className="app-footer">
-        AIDR — Auth module (UC-01..05) · UI convert từ <code>theme-for-aidr-fe</code>
+        AIDR — AI-Integrated Digital Retail
       </footer>
     </div>
   );

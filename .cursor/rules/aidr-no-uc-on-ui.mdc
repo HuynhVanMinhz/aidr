@@ -1,0 +1,29 @@
+---
+description: Không comment / không hiển thị mã UC (UC-xx) trên UI hoặc trong code comment FE/BE người dùng thấy được.
+alwaysApply: true
+---
+
+# AIDR — Không lộ mã Use Case
+
+## Quy tắc
+
+1. **UI (FE):** Không hiển thị chuỗi dạng `UC-01`, `UC-08`, `UC-01..08` trên giao diện (footer, label, toast, placeholder, title, breadcrumb…).
+2. **Comment trong code:** Không ghi mã UC trong comment / JSDoc / XML doc của source FE & BE (controller summary, hook, page…).
+3. **Env / docs trong repo app:** Comment `.env` / `.env.example` cũng không gắn `UC-xx`.
+
+## Được phép
+
+- Tài liệu nghiệp vụ trong `docs/` (`usecase.md`, `plan-implement-module.md`, architecture…) **được** dùng mã UC để theo dõi implement.
+- Commit message / PR mô tả nội bộ có thể nhắc UC nếu cần — nhưng **không** đưa vào UI.
+
+## Ví dụ
+
+```tsx
+// ❌ Sai
+<footer>AIDR — Auth (UC-01..05)</footer>
+/** UC-03 — Google callback */
+
+// ✅ Đúng
+<footer>AIDR — AI-Integrated Digital Retail</footer>
+/** Exchange OAuth code from Google callback. */
+```
