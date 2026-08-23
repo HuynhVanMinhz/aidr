@@ -1,0 +1,97 @@
+.auth-shell {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-color);
+  transition: background-color 0.25s ease;
+}
+
+.auth-shell__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid var(--divider-color);
+}
+
+.auth-shell__header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.auth-shell__brand img {
+  display: block;
+  transition: filter 0.25s ease;
+}
+
+.auth-shell__footer {
+  margin-top: auto;
+  padding: 1rem 1.5rem;
+  text-align: center;
+  color: var(--text-color);
+  font-size: 0.875rem;
+}
+
+.auth-alert {
+  padding: 0.75rem 1rem;
+  border-radius: 6px;
+  margin-bottom: 1rem;
+  font-size: 0.9375rem;
+  line-height: 1.45;
+}
+
+.auth-alert--error {
+  background: var(--alert-error-bg);
+  color: var(--alert-error-text);
+  border: 1px solid var(--alert-error-border);
+}
+
+.auth-alert--success {
+  background: var(--alert-success-bg);
+  color: var(--alert-success-text);
+  border: 1px solid var(--alert-success-border);
+}
+
+.auth-divider {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin: 1.5rem 0;
+  color: var(--text-color);
+  font-size: 0.875rem;
+}
+
+.auth-divider::before,
+.auth-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--divider-color);
+}
+
+.auth-google-btn {
+  width: 100%;
+  text-align: center;
+}
+
+.page-forgot-password {
+  padding: 100px 0;
+}
+
+.forgot-password-content-box {
+  display: flex;
+  justify-content: center;
+}
+
+.checkout-form-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.checkout-form-checkbox label {
+  margin: 0;
+  font-size: 0.9375rem;
+  color: var(--text-color);
+}
