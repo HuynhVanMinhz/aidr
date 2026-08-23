@@ -8,6 +8,7 @@ import { applyThemeToDocument, getInitialTheme } from './utils/themeStorage';
 import './styles/theme.css';
 import './styles/global.css';
 import './styles/auth.css';
+import './styles/account.css';
 
 applyThemeToDocument(getInitialTheme());
 

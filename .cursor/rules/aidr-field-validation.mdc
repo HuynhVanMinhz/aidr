@@ -1,0 +1,40 @@
+---
+description: AIDR — mọi field form/API phải validate đầy đủ trừ khi business rule cho phép bỏ qua.
+alwaysApply: true
+---
+
+# AIDR — Field Validation
+
+## Nguyên tắc
+
+1. **Mặc định validate đầy đủ** mọi field người dùng nhập (required, format, length, range) trên **FE và BE**.
+2. Chỉ **không** validate (hoặc cho optional) khi `bussiness-system.md` / BR / UC mô tả rõ field đó không bắt buộc hoặc không ràng buộc.
+3. BE là nguồn chặn cuối — FE validate để UX, không thay thế BE.
+
+## Khi implement form / DTO
+
+| Loại field | Mặc định |
+|------------|----------|
+| Text / name | Required, trim, max length theo schema |
+| Email | Required + format (trừ field chỉ đọc) |
+| Phone | Required + định dạng VN hợp lệ (trừ BR nói optional) |
+| Password | Theo BR-02 |
+| URL ảnh | Optional trừ khi UC bắt buộc; nếu có thì format/length + BR size |
+| Địa chỉ | Mọi phần tử required khi thêm/sửa địa chỉ |
+| Số / tiền / qty | Required + range hợp lệ |
+
+## Không làm
+
+- Để trống field “có vẻ quan trọng” (SĐT, địa chỉ nhận hàng…) chỉ vì cột DB `NULL`.
+- Chỉ có `MaxLength` mà không có required/format khi business cần dữ liệu đó.
+- Validate một phía (chỉ FE hoặc chỉ BE).
+
+## Ví dụ
+
+```ts
+// ❌ Sai — phone để trống được
+phone: phone.trim() || null
+
+// ✅ Đúng — phone bắt buộc + format
+const phone = validateVnPhone(phoneInput); // throw / set error nếu sai
+```

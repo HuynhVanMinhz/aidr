@@ -9,6 +9,7 @@ public sealed class ProfileResponse
     public string FullName { get; set; } = null!;
     public string? Phone { get; set; }
     public string? AvatarUrl { get; set; }
+    public bool HasPassword { get; set; }
     public IReadOnlyList<string> Roles { get; set; } = Array.Empty<string>();
     public AddressDto? DefaultAddress { get; set; }
     public IReadOnlyList<AddressDto> Addresses { get; set; } = Array.Empty<AddressDto>();
@@ -31,8 +32,8 @@ public sealed class UpdateProfileRequest
     [Required, MaxLength(128)]
     public string FullName { get; set; } = null!;
 
-    [MaxLength(20)]
-    public string? Phone { get; set; }
+    [Required, MaxLength(20)]
+    public string Phone { get; set; } = null!;
 
     [MaxLength(512)]
     public string? AvatarUrl { get; set; }

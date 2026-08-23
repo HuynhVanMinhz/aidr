@@ -7,7 +7,7 @@ type GuestRouteProps = {
   redirectTo?: string;
 };
 
-/** UC-01..05 — guest-only routes (login, register, forgot password). */
+/** Guest-only routes (login, register, forgot password). */
 export function GuestRoute({ redirectTo = '/' }: GuestRouteProps) {
   const isAuthenticated = useAppSelector(selectIsAuthenticated);
   const location = useLocation();

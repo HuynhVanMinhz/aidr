@@ -50,3 +50,12 @@ export async function completeGoogleLogin(code: string, redirectUri: string) {
   });
   return data;
 }
+
+export async function changePassword(payload: {
+  currentPassword: string;
+  newPassword: string;
+  confirmPassword: string;
+}) {
+  const { data } = await apiClient.post<ApiResult<null>>('/auth/change-password', payload);
+  return data;
+}
