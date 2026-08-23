@@ -79,10 +79,14 @@ public class Category
     public string Name { get; set; } = null!;
     public string Slug { get; set; } = null!;
     public string? Description { get; set; }
+    public string? ImageUrl { get; set; }
     public bool IsActive { get; set; }
     public int SortOrder { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
+
+    public Category? Parent { get; set; }
+    public ICollection<Category> Children { get; set; } = new List<Category>();
 }
 
 public class Shop
@@ -93,8 +97,12 @@ public class Shop
     public string Slug { get; set; } = null!;
     public string? Tagline { get; set; }
     public string? ShortDescription { get; set; }
+    public string? LogoUrl { get; set; }
     public string CostingMethod { get; set; } = "FIFO";
+    public bool IsVerified { get; set; }
     public string Status { get; set; } = "Active";
+    public decimal AvgRating { get; set; }
+    public int RatingCount { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
 }
@@ -107,16 +115,75 @@ public class Product
     public string Name { get; set; } = null!;
     public string Slug { get; set; } = null!;
     public string? ShortDescription { get; set; }
+    public string? Description { get; set; }
+    public string? Brand { get; set; }
+    public string? ModelNumber { get; set; }
+    public string ConditionType { get; set; } = "New";
     public decimal BasePrice { get; set; }
     public decimal? SalePrice { get; set; }
+    public string Currency { get; set; } = "VND";
     public decimal? LastCostPrice { get; set; }
     public decimal? AvgCostPrice { get; set; }
     public int StockQuantity { get; set; }
     public int ReservedQuantity { get; set; }
+    public int? WarrantyMonths { get; set; }
+    public string? OriginCountry { get; set; }
+    public string? TagsJson { get; set; }
+    public string? SpecsJson { get; set; }
+    public bool IsFeatured { get; set; }
+    public DateTime? PublishedAt { get; set; }
     public string Status { get; set; } = "Pending";
+    public decimal AvgRating { get; set; }
+    public int ReviewCount { get; set; }
+    public int SoldCount { get; set; }
+    public int ViewCount { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
 
     public Shop Shop { get; set; } = null!;
     public Category Category { get; set; } = null!;
+    public ICollection<ProductImage> Images { get; set; } = new List<ProductImage>();
+    public ICollection<ProductReview> Reviews { get; set; } = new List<ProductReview>();
+}
+
+public class ProductImage
+{
+    public Guid ProductImageId { get; set; }
+    public Guid ProductId { get; set; }
+    public string ImageUrl { get; set; } = null!;
+    public string? PublicId { get; set; }
+    public int SortOrder { get; set; }
+    public bool IsPrimary { get; set; }
+    public DateTime CreatedAt { get; set; }
+
+    public Product Product { get; set; } = null!;
+}
+
+public class ProductReview
+{
+    public Guid ReviewId { get; set; }
+    public Guid ProductId { get; set; }
+    public Guid BuyerUserId { get; set; }
+    public Guid? OrderId { get; set; }
+    public byte Rating { get; set; }
+    public string? Title { get; set; }
+    public string? Content { get; set; }
+    public bool IsVisible { get; set; } = true;
+    public DateTime CreatedAt { get; set; }
+    public DateTime UpdatedAt { get; set; }
+
+    public Product Product { get; set; } = null!;
+    public User Buyer { get; set; } = null!;
+}
+
+public class ViewedProductHistory
+{
+    public long ViewId { get; set; }
+    public Guid? UserId { get; set; }
+    public string? SessionId { get; set; }
+    public Guid ProductId { get; set; }
+    public DateTime ViewedAt { get; set; }
+
+    public Product Product { get; set; } = null!;
+    public User? User { get; set; }
 }
