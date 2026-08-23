@@ -83,3 +83,15 @@ public sealed class GoogleAuthUrlResponse
 {
     public string AuthorizationUrl { get; set; } = null!;
 }
+
+public sealed class ChangePasswordRequest
+{
+    [Required, MaxLength(128)]
+    public string CurrentPassword { get; set; } = null!;
+
+    [Required, MinLength(8), MaxLength(128)]
+    public string NewPassword { get; set; } = null!;
+
+    [Required, MinLength(8), MaxLength(128)]
+    public string ConfirmPassword { get; set; } = null!;
+}

@@ -11,6 +11,7 @@ public class AidrDbContext : DbContext
     public DbSet<User> Users => Set<User>();
     public DbSet<UserRole> UserRoles => Set<UserRole>();
     public DbSet<PasswordResetToken> PasswordResetTokens => Set<PasswordResetToken>();
+    public DbSet<Address> Addresses => Set<Address>();
     public DbSet<Category> Categories => Set<Category>();
     public DbSet<Shop> Shops => Set<Shop>();
     public DbSet<Product> Products => Set<Product>();
@@ -53,6 +54,20 @@ public class AidrDbContext : DbContext
             e.HasOne(x => x.User).WithMany(x => x.PasswordResetTokens).HasForeignKey(x => x.UserId);
             e.HasIndex(x => x.UserId);
             e.HasIndex(x => x.TokenHash);
+        });
+
+        modelBuilder.Entity<Address>(e =>
+        {
+            e.ToTable("Addresses");
+            e.HasKey(x => x.AddressId);
+            e.Property(x => x.ReceiverName).HasMaxLength(128).IsRequired();
+            e.Property(x => x.Phone).HasMaxLength(20).IsRequired();
+            e.Property(x => x.Province).HasMaxLength(100).IsRequired();
+            e.Property(x => x.District).HasMaxLength(100).IsRequired();
+            e.Property(x => x.Ward).HasMaxLength(100).IsRequired();
+            e.Property(x => x.StreetAddress).HasMaxLength(256).IsRequired();
+            e.HasOne(x => x.User).WithMany(x => x.Addresses).HasForeignKey(x => x.UserId);
+            e.HasIndex(x => x.UserId);
         });
 
         modelBuilder.Entity<Category>(e =>

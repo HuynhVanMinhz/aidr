@@ -20,9 +20,9 @@
 | UC-03 | Login With Google | **Actor:** Guest. OAuth/OIDC qua Keycloak + Google IdP; lần đầu upsert user app. **Business:** Giảm ma sát đăng ký, tăng conversion. | Done | P0 |
 | UC-04 | Logout | **Actor:** Buyer/Seller/Admin. Invalidate session/refresh; xóa token phía client. **Business:** Bảo mật phiên đăng nhập. | Done | P0 |
 | UC-05 | Forget Password | **Actor:** Guest. Nhập email đã đăng ký → token one-time có hạn → reset password (BR-09..11). **Business:** Giảm mất user do quên mật khẩu. | Done | P0 |
-| UC-06 | Change Password | **Actor:** Buyer/Seller. Yêu cầu mật khẩu cũ đúng; New = Confirm; hash lưu lại (BR-07/08). **Business:** Bảo mật tài khoản chủ động. | Todo | P1 |
-| UC-07 | View Profile | **Actor:** Buyer/Seller. Xem thông tin cá nhân, avatar, SĐT, địa chỉ mặc định. **Business:** Minh bạch dữ liệu tài khoản. | Todo | P0 |
-| UC-08 | Update Profile | **Actor:** Buyer/Seller. Cập nhật tên, SĐT, avatar (≤2MB), địa chỉ (≤10 — BR-05/06). **Business:** Dữ liệu giao hàng / liên hệ chính xác. | Todo | P0 |
+| UC-06 | Change Password | **Actor:** Buyer/Seller. Yêu cầu mật khẩu cũ đúng; New = Confirm; hash lưu lại (BR-07/08). **Business:** Bảo mật tài khoản chủ động. | Done | P1 |
+| UC-07 | View Profile | **Actor:** Buyer/Seller. Xem thông tin cá nhân, avatar, SĐT, địa chỉ mặc định. **Business:** Minh bạch dữ liệu tài khoản. | Done | P0 |
+| UC-08 | Update Profile | **Actor:** Buyer/Seller. Cập nhật tên, SĐT, avatar (≤2MB), địa chỉ (≤10 — BR-05/06). **Business:** Dữ liệu giao hàng / liên hệ chính xác. | Done | P0 |
 | UC-09 | View Product List | **Actor:** Guest/Buyer. Danh sách SP `Approved` + category Active; phân trang; cache Redis. **Business:** Catalog là bề mặt bán hàng chính. | Todo | P0 |
 | UC-10 | View Product Details | **Actor:** Guest/Buyer. Chi tiết SP, ảnh, specs, giá bán, tồn, shop, reviews tóm tắt; ghi viewed history. **Business:** Hỗ trợ quyết định mua. | Todo | P0 |
 | UC-11 | View Product Categories | **Actor:** Guest/Buyer. Cây danh mục đang Active để điều hướng. **Business:** Tổ chức catalog theo ngành hàng điện tử. | Todo | P0 |
