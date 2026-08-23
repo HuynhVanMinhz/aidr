@@ -40,6 +40,8 @@ TestResults/
 **/build/
 .npm
 .pnpm-store/
+*.tsbuildinfo
+**/tsconfig.tsbuildinfo
 
 # =========================
 # IDE / OS

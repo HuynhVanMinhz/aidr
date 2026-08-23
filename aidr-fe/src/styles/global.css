@@ -1,11 +1,5 @@
 :root {
-  --bg: #f6f4f1;
-  --ink: #1c1b1a;
-  --accent: #0f6b4c;
-  --muted: #5c5a57;
-  --card: #ffffff;
-  --border: #e2ddd6;
-  font-family: "Segoe UI", "Helvetica Neue", sans-serif;
+  font-family: "IBM Plex Sans", "Segoe UI", sans-serif;
   color: var(--ink);
   background: var(--bg);
 }
@@ -17,6 +11,9 @@
 body {
   margin: 0;
   min-height: 100vh;
+  background: var(--bg);
+  color: var(--ink);
+  transition: background-color 0.25s ease, color 0.25s ease;
 }
 
 a {
@@ -32,6 +29,7 @@ a:hover {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  background: var(--bg);
 }
 
 .app-header {
@@ -39,12 +37,15 @@ a:hover {
   align-items: center;
   justify-content: space-between;
   padding: 1rem 1.5rem;
-  background: var(--card);
+  background: var(--navbar);
   border-bottom: 1px solid var(--border);
+  color: var(--ink);
+  transition: background-color 0.25s ease, border-color 0.25s ease;
 }
 
 .app-header nav {
   display: flex;
+  align-items: center;
   gap: 1rem;
 }
 
@@ -65,16 +66,19 @@ a:hover {
 .app-footer {
   padding: 1rem 1.5rem;
   border-top: 1px solid var(--border);
+  background: var(--navbar);
   color: var(--muted);
   font-size: 0.875rem;
+  transition: background-color 0.25s ease, border-color 0.25s ease;
 }
 
 .page h1 {
   margin-top: 0;
+  color: var(--ink);
 }
 
 .error {
-  color: #b42318;
+  color: var(--alert-error-text, #b42318);
 }
 
 .health-json {
@@ -82,4 +86,28 @@ a:hover {
   border: 1px solid var(--border);
   padding: 1rem;
   overflow: auto;
+  color: var(--ink);
+  border-radius: 8px;
+  box-shadow: var(--shadow-sm);
+}
+
+.app-header__user {
+  color: var(--muted);
+  font-size: 0.9375rem;
+}
+
+.app-header__logout {
+  border: 1px solid var(--border);
+  background: var(--aidr-accent-soft, transparent);
+  padding: 0.35rem 0.75rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font: inherit;
+  color: var(--ink);
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.app-header__logout:hover {
+  border-color: var(--accent);
+  color: var(--accent);
 }
