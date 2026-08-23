@@ -66,10 +66,22 @@ export const authSlice = createSlice({
       state.isAuthenticated = false;
       clearPersistedAuth();
     },
+    patchAuthUser(state, action: PayloadAction<Partial<Pick<AuthUser, 'fullName' | 'email'>>>) {
+      if (!state.user) return;
+      Object.assign(state.user, action.payload);
+      if (state.accessToken && state.refreshToken) {
+        savePersistedAuth({
+          accessToken: state.accessToken,
+          refreshToken: state.refreshToken,
+          roles: state.roles,
+          user: state.user,
+        });
+      }
+    },
   },
 });
 
-export const { setSession, clearSession } = authSlice.actions;
+export const { setSession, clearSession, patchAuthUser } = authSlice.actions;
 
 export const selectAuth = (state: { auth: AuthState }) => state.auth;
 export const selectIsAuthenticated = (state: { auth: AuthState }) => state.auth.isAuthenticated;

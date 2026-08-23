@@ -1,14 +1,20 @@
-import { useState, type FormEvent } from 'react';
-import { Link } from 'react-router-dom';
+import { useEffect, useState, type FormEvent } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
 import { AuthLayout } from '../../components/auth/AuthLayout';
 import * as authApi from '../../services/authApi';
 import { getApiErrorMessage } from '../../utils/apiError';
 
 export function ForgotPasswordPage() {
+  const [searchParams] = useSearchParams();
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fromQuery = searchParams.get('email');
+    if (fromQuery) setEmail(fromQuery);
+  }, [searchParams]);
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -69,6 +75,8 @@ export function ForgotPasswordPage() {
 
                         <div className="login-content-form-btn login-now-btn">
                           <Link to="/login">Quay lại đăng nhập</Link>
+                          {' · '}
+                          <Link to="/account/change-password">Về trang mật khẩu</Link>
                         </div>
                       </div>
                     </div>

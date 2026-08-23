@@ -256,6 +256,7 @@ Hệ thống giải quyết các pain point chính:
 | BR-04 | Token chứa `userId` + roles cho Role Guard |
 | BR-05 | Avatar ≤ 2MB |
 | BR-06 | Tối đa 10 địa chỉ / user |
+| BR-12 | Profile Phone bắt buộc; định dạng SĐT VN hợp lệ (0[35789]xxxxxxxx hoặc +84…) |
 | BR-07/08 | Đổi MK cần MK cũ đúng; Confirm khớp New Password |
 | BR-09–11 | Reset link chỉ gửi email đã đăng ký; one-time; hết hạn |
 | BR-P01 | Chỉ Seller sở hữu SP mới CRUD / inventory |

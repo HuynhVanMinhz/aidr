@@ -1,0 +1,185 @@
+.my-account-sidebar-item ul li a.active,
+.my-account-sidebar-item ul li a.active:hover {
+  color: var(--accent-color, var(--accent));
+  font-weight: 600;
+}
+
+/* Bootstrap theme gốc dùng URL awaikenthemes làm divider — override */
+.page-header-box .breadcrumb {
+  --bs-breadcrumb-divider: '/';
+}
+
+.page-header-box .breadcrumb-item + .breadcrumb-item::before {
+  content: var(--bs-breadcrumb-divider, '/');
+}
+
+.account-section-hint {
+  margin: 0 0 1.25rem;
+}
+
+.btn-default.btn-accent:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.account-sidebar-logout {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0;
+  border: none;
+  background: none;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  text-align: left;
+}
+
+.account-sidebar-logout:hover {
+  color: var(--accent-color, var(--accent));
+}
+
+.account-muted {
+  color: var(--muted);
+}
+
+.account-avatar-row {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  margin-bottom: 1.5rem;
+}
+
+.account-avatar-preview {
+  width: 88px;
+  height: 88px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: var(--secondary-color, #f3f3f3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+  font-weight: 600;
+  color: var(--accent);
+  border: 1px solid var(--divider-color, var(--border));
+}
+
+.account-avatar-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.account-avatar-actions p {
+  margin: 0 0 0.5rem;
+  color: var(--text-color, var(--muted));
+  font-size: 0.875rem;
+}
+
+.account-file-input {
+  display: none;
+}
+
+.account-address-content-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.5rem;
+}
+
+.account-address-content-header p {
+  margin: 0;
+  flex: 1;
+  min-width: 220px;
+}
+
+.account-address-item {
+  margin-bottom: 1.25rem;
+  padding-bottom: 1.25rem;
+  border-bottom: 1px solid var(--divider-color, var(--border));
+}
+
+.account-address-item:last-child {
+  border-bottom: none;
+}
+
+.account-badge {
+  display: inline-block;
+  margin-left: 0.5rem;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  background: var(--aidr-accent-soft, rgba(22, 24, 29, 0.06));
+  color: var(--accent);
+  vertical-align: middle;
+}
+
+.account-link-btn {
+  border: none;
+  background: none;
+  padding: 0;
+  font: inherit;
+  color: var(--accent-color, var(--accent));
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.account-link-btn img {
+  width: 14px;
+  height: 14px;
+}
+
+.account-address-actions {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin-top: 0.75rem;
+}
+
+.account-form-panel {
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--divider-color, var(--border));
+}
+
+.account-form-actions {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.account-form-actions a.btn-default {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+}
+
+.account-btn-danger:hover {
+  border-color: var(--error-color, #b42318);
+  color: var(--error-color, #b42318);
+}
+
+.app-main--wide {
+  max-width: 1200px;
+}
+
+.app-main--flush {
+  max-width: none;
+  padding-left: 0;
+  padding-right: 0;
+}
+
+.app-main--flush .page-header,
+.app-main--flush .page-account-details {
+  padding-left: 1.5rem;
+  padding-right: 1.5rem;
+}
