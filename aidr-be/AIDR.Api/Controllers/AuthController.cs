@@ -15,7 +15,7 @@ public sealed class AuthController : ControllerBase
 
     public AuthController(IAuthService auth) => _auth = auth;
 
-    /// <summary>UC-01 Register Account</summary>
+    /// <summary>Register a new buyer account.</summary>
     [HttpPost("register")]
     [AllowAnonymous]
     public async Task<ActionResult<ApiResult<AuthTokenResponse>>> Register(
@@ -26,7 +26,7 @@ public sealed class AuthController : ControllerBase
         return Ok(ApiResult<AuthTokenResponse>.Ok(result, "Registered successfully."));
     }
 
-    /// <summary>UC-02 Login With Email / Password</summary>
+    /// <summary>Login with email and password.</summary>
     [HttpPost("login")]
     [AllowAnonymous]
     public async Task<ActionResult<ApiResult<AuthTokenResponse>>> Login(
@@ -37,7 +37,7 @@ public sealed class AuthController : ControllerBase
         return Ok(ApiResult<AuthTokenResponse>.Ok(result, "Login successful."));
     }
 
-    /// <summary>UC-03 Login With Google — start OIDC via Keycloak</summary>
+    /// <summary>Start Google login via Keycloak OIDC.</summary>
     [HttpGet("google")]
     [AllowAnonymous]
     public async Task<ActionResult<ApiResult<GoogleAuthUrlResponse>>> GoogleStart(
@@ -48,7 +48,7 @@ public sealed class AuthController : ControllerBase
         return Ok(ApiResult<GoogleAuthUrlResponse>.Ok(result));
     }
 
-    /// <summary>UC-03 Login With Google — exchange code and upsert app user</summary>
+    /// <summary>Complete Google login — exchange code and upsert app user.</summary>
     [HttpPost("google/callback")]
     [AllowAnonymous]
     public async Task<ActionResult<ApiResult<AuthTokenResponse>>> GoogleCallback(
@@ -59,7 +59,7 @@ public sealed class AuthController : ControllerBase
         return Ok(ApiResult<AuthTokenResponse>.Ok(result, "Google login successful."));
     }
 
-    /// <summary>UC-04 Logout</summary>
+    /// <summary>Logout and revoke refresh token when provided.</summary>
     [HttpPost("logout")]
     [AllowAnonymous]
     public async Task<ActionResult<ApiResult<object?>>> Logout(
@@ -70,7 +70,7 @@ public sealed class AuthController : ControllerBase
         return Ok(ApiResult<object?>.Ok(null, "Logged out."));
     }
 
-    /// <summary>UC-05 Forget Password — request reset link</summary>
+    /// <summary>Request a password reset link by email.</summary>
     [HttpPost("forgot-password")]
     [AllowAnonymous]
     public async Task<ActionResult<ApiResult<object?>>> ForgotPassword(
@@ -81,7 +81,7 @@ public sealed class AuthController : ControllerBase
         return Ok(ApiResult<object?>.Ok(null, "If the email is registered, a reset link has been sent."));
     }
 
-    /// <summary>UC-05 Forget Password — reset with one-time token</summary>
+    /// <summary>Reset password with a one-time token.</summary>
     [HttpPost("reset-password")]
     [AllowAnonymous]
     public async Task<ActionResult<ApiResult<object?>>> ResetPassword(
@@ -92,7 +92,7 @@ public sealed class AuthController : ControllerBase
         return Ok(ApiResult<object?>.Ok(null, "Password has been reset."));
     }
 
-    /// <summary>UC-06 Change Password</summary>
+    /// <summary>Change password for the authenticated user.</summary>
     [HttpPost("change-password")]
     [Authorize]
     public async Task<ActionResult<ApiResult<object?>>> ChangePassword(

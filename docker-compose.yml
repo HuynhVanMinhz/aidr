@@ -35,6 +35,13 @@ services:
     volumes:
       - ./infra/keycloak/aidr-realm.json:/opt/keycloak/data/import/aidr-realm.json:ro
 
+  mailhog:
+    image: mailhog/mailhog:v1.0.1
+    container_name: aidr-mailhog
+    ports:
+      - "1025:1025"
+      - "8025:8025"
+
   api:
     build:
       context: ./aidr-be
@@ -56,12 +63,18 @@ services:
       Jwt__SigningKey: "AIDR-Dev-Signing-Key-Change-Me-32chars!"
       Auth__FrontendResetPasswordUrl: "http://localhost:5173/reset-password"
       Cors__Origins__0: "http://localhost:5173"
+      Smtp__Enabled: "true"
+      Smtp__Host: "mailhog"
+      Smtp__Port: "1025"
+      Smtp__From: "noreply@aidr.local"
+      Smtp__FromDisplayName: "AIDR"
     ports:
       - "5080:8080"
     depends_on:
       - sqlserver
       - redis
       - keycloak
+      - mailhog
 
   nginx:
     image: nginx:1.27-alpine

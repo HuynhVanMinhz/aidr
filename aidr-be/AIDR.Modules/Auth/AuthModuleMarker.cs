@@ -1,4 +1,4 @@
 namespace AIDR.Modules.Auth;
 
-/// <summary>UC-01..UC-05 — Auth module (register, login, Google OIDC, logout, forgot password).</summary>
+/// <summary>Auth module — register, login, Google OIDC, logout, forgot/change password.</summary>
 public static class AuthModuleMarker;

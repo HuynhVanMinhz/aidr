@@ -9,6 +9,7 @@ public sealed class ProfileRecord
     public string FullName { get; init; } = null!;
     public string? Phone { get; init; }
     public string? AvatarUrl { get; init; }
+    public bool HasPassword { get; init; }
     public IReadOnlyList<string> Roles { get; init; } = Array.Empty<string>();
     public IReadOnlyList<AddressRecord> Addresses { get; init; } = Array.Empty<AddressRecord>();
 }
