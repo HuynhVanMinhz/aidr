@@ -153,6 +153,7 @@ public sealed class ProfileRepository : IProfileRepository
         FullName = user.FullName,
         Phone = user.Phone,
         AvatarUrl = user.AvatarUrl,
+        HasPassword = !string.IsNullOrEmpty(user.PasswordHash),
         Roles = user.UserRoles.Select(ur => ur.Role.RoleCode).ToList(),
         Addresses = user.Addresses
             .OrderByDescending(a => a.IsDefault)

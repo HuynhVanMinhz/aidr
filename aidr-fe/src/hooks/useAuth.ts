@@ -2,6 +2,7 @@ import { useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import * as authApi from '../services/authApi';
 import { clearSession, selectAuth, setSession } from '../store/authSlice';
+import { clearProfile } from '../store/userSlice';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 import type { AuthTokenPayload } from '../types/auth';
 import { getApiErrorMessage } from '../utils/apiError';
@@ -25,9 +26,10 @@ export function useAuth() {
     try {
       await authApi.logout(auth.refreshToken);
     } catch {
-      // Always clear client session even if API fails (UC-04)
+      // Always clear client session even if API fails
     } finally {
       dispatch(clearSession());
+      dispatch(clearProfile());
     }
   }, [auth.refreshToken, dispatch]);
 

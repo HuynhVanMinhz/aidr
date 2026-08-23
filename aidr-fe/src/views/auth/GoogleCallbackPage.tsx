@@ -5,7 +5,7 @@ import { useAuth } from '../../hooks/useAuth';
 
 const CODE_STORAGE_PREFIX = 'aidr_oauth_code:';
 
-/** UC-03 — exchange OAuth code from Keycloak/Google callback. */
+/** Exchange OAuth code from Keycloak/Google callback. */
 export function GoogleCallbackPage() {
   const { completeGoogleLogin, getErrorMessage } = useAuth();
   const [searchParams] = useSearchParams();

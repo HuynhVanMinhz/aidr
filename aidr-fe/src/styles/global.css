@@ -16,6 +16,11 @@ body {
   transition: background-color 0.25s ease, color 0.25s ease;
 }
 
+/* Bootstrap theme gốc đặt divider = URL demo awaikenthemes */
+.breadcrumb {
+  --bs-breadcrumb-divider: '/';
+}
+
 a {
   color: var(--accent);
   text-decoration: none;
