@@ -1,5 +1,7 @@
 using AIDR.Modules.Auth.Abstractions;
 using AIDR.Modules.Auth.Services;
+using AIDR.Modules.Discovery.Abstractions;
+using AIDR.Modules.Discovery.Services;
 using AIDR.Modules.Profile.Abstractions;
 using AIDR.Modules.Profile.Services;
 using Microsoft.Extensions.DependencyInjection;
@@ -12,6 +14,7 @@ public static class ModulesServiceCollectionExtensions
     {
         services.AddScoped<IAuthService, AuthService>();
         services.AddScoped<IProfileService, ProfileService>();
+        services.AddScoped<IDiscoveryService, DiscoveryService>();
         return services;
     }
 }

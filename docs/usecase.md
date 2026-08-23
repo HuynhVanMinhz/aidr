@@ -23,9 +23,9 @@
 | UC-06 | Change Password | **Actor:** Buyer/Seller. Yêu cầu mật khẩu cũ đúng; New = Confirm; hash lưu lại (BR-07/08). **Business:** Bảo mật tài khoản chủ động. | Done | P1 |
 | UC-07 | View Profile | **Actor:** Buyer/Seller. Xem thông tin cá nhân, avatar, SĐT, địa chỉ mặc định. **Business:** Minh bạch dữ liệu tài khoản. | Done | P0 |
 | UC-08 | Update Profile | **Actor:** Buyer/Seller. Cập nhật tên, SĐT, avatar (≤2MB), địa chỉ (≤10 — BR-05/06). **Business:** Dữ liệu giao hàng / liên hệ chính xác. | Done | P0 |
-| UC-09 | View Product List | **Actor:** Guest/Buyer. Danh sách SP `Approved` + category Active; phân trang; cache Redis. **Business:** Catalog là bề mặt bán hàng chính. | Todo | P0 |
-| UC-10 | View Product Details | **Actor:** Guest/Buyer. Chi tiết SP, ảnh, specs, giá bán, tồn, shop, reviews tóm tắt; ghi viewed history. **Business:** Hỗ trợ quyết định mua. | Todo | P0 |
-| UC-11 | View Product Categories | **Actor:** Guest/Buyer. Cây danh mục đang Active để điều hướng. **Business:** Tổ chức catalog theo ngành hàng điện tử. | Todo | P0 |
+| UC-09 | View Product List | **Actor:** Guest/Buyer. Danh sách SP `Approved` + category Active; phân trang; cache Redis. **Business:** Catalog là bề mặt bán hàng chính. | Done | P0 |
+| UC-10 | View Product Details | **Actor:** Guest/Buyer. Chi tiết SP, ảnh, specs, giá bán, tồn, shop, reviews tóm tắt; ghi viewed history. **Business:** Hỗ trợ quyết định mua. | Done | P0 |
+| UC-11 | View Product Categories | **Actor:** Guest/Buyer. Cây danh mục đang Active để điều hướng. **Business:** Tổ chức catalog theo ngành hàng điện tử. | Done | P0 |
 | UC-12 | Create Product | **Actor:** Seller. Tạo SP thuộc shop; status mặc định `Pending`; nhập mô tả, brand, model, giá bán… **Business:** Seller mở rộng catalog; cần Admin duyệt trước khi lên kệ. | Todo | P0 |
 | UC-13 | Upload Image Product | **Actor:** Seller. Upload Cloudinary → lưu URL/publicId vào ProductImages. **Business:** Media chất lượng tăng trust & conversion. | Todo | P0 |
 | UC-14 | Update Product | **Actor:** Seller (owner). Sửa thông tin SP thuộc shop; có thể đưa lại Pending nếu rule yêu cầu. **Business:** Giữ thông tin SP cập nhật. | Todo | P0 |
@@ -40,8 +40,8 @@
 | UC-23 | Update Category | **Actor:** Admin. Sửa tên, mô tả, ảnh, sort. **Business:** Duy trì taxonomy. | Todo | P1 |
 | UC-24 | Delete Category | **Actor:** Admin. Xóa khi không còn SP phụ thuộc (hoặc soft). **Business:** Tránh orphan catalog. | Todo | P2 |
 | UC-25 | Activate / Disable Category | **Actor:** Admin. Bật/tắt hiển thị category. **Business:** Ẩn nhóm hàng tạm thời. | Todo | P1 |
-| UC-26 | Search Products | **Actor:** Guest/Buyer. Full-text / keyword trên name, brand, specs. **Business:** Giảm thời gian tìm SP. | Todo | P0 |
-| UC-27 | Filter & Sort Products | **Actor:** Guest/Buyer. Lọc category, brand, giá, rating; sort price/newest/popular. **Business:** Thu hẹp lựa chọn khi catalog lớn. | Todo | P0 |
+| UC-26 | Search Products | **Actor:** Guest/Buyer. Full-text / keyword trên name, brand, specs. **Business:** Giảm thời gian tìm SP. | Done | P0 |
+| UC-27 | Filter & Sort Products | **Actor:** Guest/Buyer. Lọc category, brand, giá, rating; sort price/newest/popular. **Business:** Thu hẹp lựa chọn khi catalog lớn. | Done | P0 |
 | UC-28 | AI Compare Products | **Actor:** Buyer. Chọn 2–N SP → Ollama tóm tắt so sánh theo specs. **Business:** Hỗ trợ quyết định mua điện tử phức tạp. | Todo | P2 |
 | UC-29 | View Cart | **Actor:** Buyer. Xem items, qty, giá snapshot, tổng. **Business:** Chuẩn bị checkout. | Todo | P0 |
 | UC-30 | Add Product to Cart | **Actor:** Buyer. Thêm SP Approved còn tồn; gộp qty nếu trùng. **Business:** Capture intent mua. | Todo | P0 |

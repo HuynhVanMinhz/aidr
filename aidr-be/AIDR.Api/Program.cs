@@ -96,8 +96,8 @@ app.MapHealthChecks("/api/health/ready", new HealthCheckOptions
 app.MapGet("/api", () => Results.Ok(new
 {
     name = "AIDR API",
-    version = "0.2.0",
-    module = "Auth, Profile"
+    version = "0.3.0",
+    module = "Auth, Profile, Discovery"
 }));
 
 app.Run();
