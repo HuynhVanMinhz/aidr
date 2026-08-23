@@ -1,6 +1,7 @@
 using AIDR.Modules.Auth.Abstractions;
 using AIDR.Shared.Dtos.Auth;
 using AIDR.Shared.Results;
+using AIDR.Api.Extensions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -89,5 +90,17 @@ public sealed class AuthController : ControllerBase
     {
         await _auth.ResetPasswordAsync(request, cancellationToken);
         return Ok(ApiResult<object?>.Ok(null, "Password has been reset."));
+    }
+
+    /// <summary>UC-06 Change Password</summary>
+    [HttpPost("change-password")]
+    [Authorize]
+    public async Task<ActionResult<ApiResult<object?>>> ChangePassword(
+        [FromBody] ChangePasswordRequest request,
+        CancellationToken cancellationToken)
+    {
+        var userId = User.GetUserId();
+        await _auth.ChangePasswordAsync(userId, request, cancellationToken);
+        return Ok(ApiResult<object?>.Ok(null, "Password changed successfully."));
     }
 }
