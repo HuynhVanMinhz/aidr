@@ -1,0 +1,123 @@
+import type { ApiResult } from './auth';
+
+export type ProductSort = 'newest' | 'price_asc' | 'price_desc' | 'popular' | 'rating';
+
+export type ProductQuery = {
+  q?: string;
+  categoryId?: number;
+  brand?: string;
+  minPrice?: number;
+  maxPrice?: number;
+  minRating?: number;
+  sort?: ProductSort;
+  page?: number;
+  pageSize?: number;
+};
+
+export type PagedResult<T> = {
+  items: T[];
+  page: number;
+  pageSize: number;
+  totalCount: number;
+  totalPages: number;
+};
+
+export type ProductListItem = {
+  productId: string;
+  name: string;
+  slug: string;
+  shortDescription?: string | null;
+  brand?: string | null;
+  basePrice: number;
+  salePrice?: number | null;
+  effectivePrice: number;
+  currency: string;
+  stockQuantity: number;
+  availableQuantity: number;
+  avgRating: number;
+  reviewCount: number;
+  soldCount: number;
+  isFeatured: boolean;
+  primaryImageUrl?: string | null;
+  categoryId: number;
+  categoryName: string;
+  shopId: string;
+  shopName: string;
+  publishedAt?: string | null;
+};
+
+export type ProductImage = {
+  productImageId: string;
+  imageUrl: string;
+  sortOrder: number;
+  isPrimary: boolean;
+};
+
+export type ProductShopSummary = {
+  shopId: string;
+  shopName: string;
+  slug: string;
+  logoUrl?: string | null;
+  isVerified: boolean;
+  avgRating: number;
+  ratingCount: number;
+};
+
+export type ProductCategorySummary = {
+  categoryId: number;
+  name: string;
+  slug: string;
+};
+
+export type ProductReviewSummary = {
+  reviewId: string;
+  rating: number;
+  title?: string | null;
+  content?: string | null;
+  buyerName: string;
+  createdAt: string;
+};
+
+export type ProductDetail = {
+  productId: string;
+  name: string;
+  slug: string;
+  shortDescription?: string | null;
+  description?: string | null;
+  brand?: string | null;
+  modelNumber?: string | null;
+  conditionType: string;
+  basePrice: number;
+  salePrice?: number | null;
+  effectivePrice: number;
+  currency: string;
+  stockQuantity: number;
+  availableQuantity: number;
+  warrantyMonths?: number | null;
+  originCountry?: string | null;
+  specsJson?: string | null;
+  tagsJson?: string | null;
+  avgRating: number;
+  reviewCount: number;
+  soldCount: number;
+  viewCount: number;
+  isFeatured: boolean;
+  publishedAt?: string | null;
+  category: ProductCategorySummary;
+  shop: ProductShopSummary;
+  images: ProductImage[];
+  recentReviews: ProductReviewSummary[];
+};
+
+export type CategoryTreeNode = {
+  categoryId: number;
+  parentId?: number | null;
+  name: string;
+  slug: string;
+  description?: string | null;
+  imageUrl?: string | null;
+  sortOrder: number;
+  children: CategoryTreeNode[];
+};
+
+export type { ApiResult };

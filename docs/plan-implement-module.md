@@ -14,7 +14,7 @@ Cập nhật cột **status**: `Todo` · `In Progress` · `Done` · `Blocked`.
 | 01 | Foundation / Infrastructure | Solution .NET + React scaffold; Docker; EF Core map `database.sql`; Redis client; NGINX; Keycloak realm; config env; health checks; Shared DTOs. **Chưa có UI nghiệp vụ** nhưng unblock mọi module sau. | — (tech enabler) | Done |
 | 02 | Auth | Đăng ký, login email, Google OIDC, logout, quên MK, JWT/role guard FE+BE. | UC-01, UC-02, UC-03, UC-04, UC-05 | Done |
 | 03 | Profile | Xem/sửa profile, avatar Cloudinary, địa chỉ, đổi MK. | UC-06, UC-07, UC-08 | Done |
-| 04 | Discovery (Catalog Read) | API + FE public: list/detail SP, category tree, search, filter/sort; Redis cache list. Chỉ hiện SP `Approved`. | UC-09, UC-10, UC-11, UC-26, UC-27 | In Progress |
+| 04 | Discovery (Catalog Read) | API + FE public: list/detail SP, category tree, search, filter/sort; Redis cache list. Chỉ hiện SP `Approved`. | UC-09, UC-10, UC-11, UC-26, UC-27 | Done |
 | 05 | Admin — Category | CRUD/activate category — **làm trước** để Seller gắn CategoryId khi tạo SP. | UC-22, UC-23, UC-24, UC-25 | Todo |
 | 06 | Admin — Seller Onboarding | Duyệt đăng ký seller → tạo Shop + Wallet + role. Cần trước khi Seller Center thật. | UC-75, UC-76 | Todo |
 | 07 | SellerCenter — Product | CRUD SP seller, upload ảnh, my products; SP vào `Pending`. | UC-12, UC-13, UC-14, UC-15, UC-16 | Todo |

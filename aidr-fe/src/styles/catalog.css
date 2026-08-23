@@ -1,0 +1,338 @@
+/**
+ * Catalog layout helpers — visuals from theme custom.css.
+ */
+
+/* Theme custom.css dùng path tương đối — đảm bảo icon mũi tên luôn resolve đúng */
+.btn-default::before {
+  background-image: url('/theme/images/arrow-white.svg');
+}
+
+.btn-default:hover::before {
+  background-image: url('/theme/images/arrow-primary.svg');
+}
+
+.btn-default.btn-border::before {
+  background-image: url('/theme/images/arrow-primary.svg');
+}
+
+.btn-default.btn-border:hover::before {
+  background-image: url('/theme/images/arrow-white.svg');
+}
+
+a.btn-default,
+a.btn-default:hover {
+  text-decoration: none;
+}
+
+.store-shell {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-color, #fff);
+}
+
+.store-main {
+  flex: 1;
+  width: 100%;
+}
+
+.popular-categories-box .popular-categories-list {
+  display: none;
+}
+
+.popular-categories-box.open .popular-categories-list,
+.popular-categories-box:hover .popular-categories-list {
+  display: block;
+}
+
+.store-header-logout {
+  border: none;
+  background: none;
+  cursor: pointer;
+  font: inherit;
+}
+
+.store-header-theme {
+  display: flex;
+  align-items: center;
+}
+
+.header-action-details .store-header-theme-item {
+  list-style: none;
+}
+
+.header-action-details .theme-toggle {
+  padding: 6px 12px;
+  font-size: 13px;
+}
+
+.header-action-details .theme-toggle--icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  color: var(--primary-color);
+  cursor: pointer;
+  font-size: 18px;
+  line-height: 1;
+}
+
+.header-action-details .theme-toggle--icon:hover {
+  color: var(--accent-color);
+  background: transparent;
+}
+
+.category-slider-track {
+  display: flex;
+  gap: 24px;
+  overflow-x: auto;
+  padding-bottom: 8px;
+  scroll-snap-type: x mandatory;
+}
+
+.category-slider-slide {
+  flex: 0 0 auto;
+  width: min(220px, 40vw);
+  scroll-snap-align: start;
+}
+
+.catalog-pager {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+}
+
+.catalog-pager__label {
+  color: var(--text-color);
+  font-weight: 500;
+}
+
+.catalog-thumbs {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 145px;
+  flex-shrink: 0;
+}
+
+.catalog-thumb-slide {
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: 2px solid transparent;
+  border-radius: 10px;
+  background: var(--secondary-color);
+  cursor: pointer;
+  overflow: hidden;
+}
+
+.catalog-thumb-slide.is-active {
+  border-color: var(--primary-color);
+}
+
+.catalog-thumb-slide figure {
+  display: block;
+  margin: 0;
+}
+
+.catalog-thumb-slide img {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+  border-radius: 8px;
+}
+
+.catalog-main-image {
+  flex: 1;
+  min-width: 0;
+}
+
+.catalog-main-image figure {
+  margin: 0;
+  display: block;
+  height: 100%;
+}
+
+.catalog-main-image img {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+  border-radius: 10px;
+}
+
+.product-single-image-box:has(.catalog-thumbs) .catalog-main-image {
+  width: calc(100% - 155px);
+}
+
+.product-single-image-box:not(:has(.catalog-thumbs)) .catalog-main-image {
+  width: 100%;
+}
+
+.catalog-detail-rating {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 12px 0;
+}
+
+.catalog-detail-rating__value {
+  font-size: 14px;
+  color: var(--text-color);
+  font-weight: 500;
+}
+
+.catalog-detail-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.catalog-detail-shop {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid var(--divider-color);
+}
+
+.catalog-detail-shop__logo {
+  width: 56px;
+  height: 56px;
+  object-fit: contain;
+  border-radius: 8px;
+  background: var(--secondary-color);
+}
+
+.catalog-detail-shop h3 {
+  margin: 0 0 6px;
+  font-size: 18px;
+}
+
+.catalog-detail-shop p {
+  margin: 0 0 8px;
+  color: var(--text-color);
+  font-size: 14px;
+}
+
+.catalog-detail-review-summary {
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--divider-color);
+}
+
+.catalog-testimonial-track {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 24px;
+}
+
+.catalog-testimonial-slide {
+  height: 100%;
+}
+
+.catalog-star {
+  color: var(--divider-color);
+  font-size: 14px;
+  margin-right: 2px;
+}
+
+.catalog-star.is-on {
+  color: #f5a623;
+}
+
+.catalog-review-avatar {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: var(--secondary-color);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.catalog-categories-section {
+  padding: 80px 0 100px;
+}
+
+.catalog-category-card {
+  margin-bottom: 30px;
+}
+
+.catalog-category-desc {
+  margin: 8px 0 0;
+  color: var(--text-color);
+  font-size: 14px;
+}
+
+.catalog-category-children {
+  list-style: none;
+  margin: 12px 0 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+}
+
+.catalog-category-children a {
+  color: var(--text-color);
+  font-size: 14px;
+}
+
+.catalog-category-children a:hover {
+  color: var(--accent-color);
+}
+
+.catalog-home-categories {
+  margin-top: 20px;
+}
+
+.product-category-result-pagination ul li a.active {
+  color: var(--accent-color);
+  font-weight: 600;
+}
+
+.page-single-sidebar .form-control {
+  border-radius: 10px;
+  background: var(--secondary-color);
+  border: none;
+  padding: 10px 14px;
+}
+
+.page-single-sidebar input[type='radio'] {
+  width: 20px;
+  height: 20px;
+  accent-color: var(--primary-color);
+  flex-shrink: 0;
+}
+
+@media (max-width: 991px) {
+  .catalog-thumbs {
+    flex-direction: row;
+    width: 100%;
+    overflow-x: auto;
+  }
+
+  .catalog-thumb-slide {
+    width: 72px;
+    flex-shrink: 0;
+  }
+
+  .product-single-image-box:has(.catalog-thumbs) .catalog-main-image {
+    width: 100%;
+  }
+
+  .product-single-image-box {
+    flex-direction: column;
+  }
+}
