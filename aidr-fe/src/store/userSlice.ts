@@ -2,7 +2,6 @@ import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
 import * as profileApi from '../services/profileApi';
 import type { Profile, UpdateProfileRequest } from '../types/profile';
 import { patchAuthUser } from './authSlice';
-import type { RootState } from './index';
 
 export type UserState = {
   profile: Profile | null;
@@ -10,6 +9,8 @@ export type UserState = {
   saving: boolean;
   error: string | null;
 };
+
+type UserRoot = { user: UserState };
 
 const initialState: UserState = {
   profile: null,
@@ -88,7 +89,7 @@ export const userSlice = createSlice({
 
 export const { clearProfile } = userSlice.actions;
 
-export const selectProfile = (state: RootState) => state.user.profile;
-export const selectProfileLoading = (state: RootState) => state.user.loading;
-export const selectProfileSaving = (state: RootState) => state.user.saving;
-export const selectProfileError = (state: RootState) => state.user.error;
+export const selectProfile = (state: UserRoot) => state.user.profile;
+export const selectProfileLoading = (state: UserRoot) => state.user.loading;
+export const selectProfileSaving = (state: UserRoot) => state.user.saving;
+export const selectProfileError = (state: UserRoot) => state.user.error;

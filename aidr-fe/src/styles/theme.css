@@ -1,6 +1,6 @@
 /**
  * AIDR — Light / Dark theme tokens
- * Light: Nevixra theme defaults (warm retail, #16181D)
+ * Light: AIDR theme defaults (warm retail, #16181D)
  * Dark:  Charcoal + electric teal accent (electronics / AI retail)
  */
 
@@ -29,7 +29,7 @@ html[data-theme='light'] {
   --border: var(--aidr-border);
   --accent: var(--aidr-accent);
 
-  /* Nevixra theme overrides */
+  /* AIDR theme overrides */
   --primary-color: #16181d;
   --secondary-color: #f3f3f3;
   --bg-color: #ffffff;
@@ -85,7 +85,7 @@ html[data-theme='dark'] {
   --border: var(--aidr-border);
   --accent: var(--aidr-accent);
 
-  /* Nevixra theme — remap for auth pages */
+  /* AIDR theme — remap for auth pages */
   --primary-color: #e8eaed;
   --secondary-color: #1a1f2e;
   --bg-color: #0c0e14;
