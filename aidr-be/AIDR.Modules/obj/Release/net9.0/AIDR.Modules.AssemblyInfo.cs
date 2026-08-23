@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("AIDR.Modules")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Release")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+1ed3435e04bfc3723a37a6be41c11b2e64bb621e")]
 [assembly: System.Reflection.AssemblyProductAttribute("AIDR.Modules")]
 [assembly: System.Reflection.AssemblyTitleAttribute("AIDR.Modules")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

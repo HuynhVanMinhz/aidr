@@ -9,3 +9,4 @@ E:\WorkSpace\aidr\aidr-be\AIDR.Shared\obj\Release\net9.0\AIDR.Shared.dll
 E:\WorkSpace\aidr\aidr-be\AIDR.Shared\obj\Release\net9.0\refint\AIDR.Shared.dll
 E:\WorkSpace\aidr\aidr-be\AIDR.Shared\obj\Release\net9.0\AIDR.Shared.pdb
 E:\WorkSpace\aidr\aidr-be\AIDR.Shared\obj\Release\net9.0\ref\AIDR.Shared.dll
+e:\WorkSpace\aidr\aidr-be\AIDR.Shared\obj\Release\net9.0\AIDR.Shared.sourcelink.json

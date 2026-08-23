@@ -18,7 +18,10 @@
       "clientId": "aidr-fe",
       "enabled": true,
       "publicClient": true,
-      "redirectUris": ["http://localhost:5173/*", "http://localhost:3000/*"],
+      "redirectUris": [
+        "http://localhost:5173/*",
+        "http://localhost:3000/*"
+      ],
       "webOrigins": ["http://localhost:5173", "http://localhost:3000"],
       "standardFlowEnabled": true,
       "directAccessGrantsEnabled": true
@@ -28,6 +31,26 @@
       "enabled": true,
       "bearerOnly": true,
       "publicClient": false
+    }
+  ],
+  "identityProviders": [
+    {
+      "alias": "google",
+      "providerId": "google",
+      "enabled": false,
+      "updateProfileFirstLoginMode": "on",
+      "trustEmail": true,
+      "storeToken": false,
+      "addReadTokenRoleOnCreate": false,
+      "authenticateByDefault": false,
+      "linkOnly": false,
+      "firstBrokerLoginFlowAlias": "first broker login",
+      "config": {
+        "clientId": "REPLACE_GOOGLE_CLIENT_ID",
+        "clientSecret": "REPLACE_GOOGLE_CLIENT_SECRET",
+        "defaultScope": "openid email profile",
+        "syncMode": "IMPORT"
+      }
     }
   ]
 }
