@@ -1,11 +1,14 @@
 using System.Text;
 using AIDR.Infrastructure.Auth;
 using AIDR.Infrastructure.Caching;
+using AIDR.Infrastructure.Discovery;
 using AIDR.Infrastructure.Persistence;
 using AIDR.Infrastructure.Profile;
 using AIDR.Modules.Auth.Abstractions;
 using AIDR.Modules.Auth.Services;
+using AIDR.Modules.Discovery.Abstractions;
 using AIDR.Modules.Profile.Abstractions;
+using AIDR.Shared.Caching;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -48,6 +51,7 @@ public static class InfrastructureServiceCollectionExtensions
 
         services.AddScoped<IAuthUserRepository, AuthUserRepository>();
         services.AddScoped<IProfileRepository, ProfileRepository>();
+        services.AddScoped<IDiscoveryRepository, DiscoveryRepository>();
         services.AddScoped<IPasswordResetTokenStore, PasswordResetTokenStore>();
         services.AddScoped<ITokenService, JwtTokenService>();
         services.AddSingleton<IPasswordHasher, AspNetPasswordHasher>();

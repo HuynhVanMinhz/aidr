@@ -1,4 +1,4 @@
-namespace AIDR.Infrastructure.Caching;
+namespace AIDR.Shared.Caching;
 
 public interface ICacheService
 {

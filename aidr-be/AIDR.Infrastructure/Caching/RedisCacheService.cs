@@ -1,4 +1,5 @@
 using System.Text.Json;
+using AIDR.Shared.Caching;
 using Microsoft.Extensions.Caching.Distributed;
 
 namespace AIDR.Infrastructure.Caching;
