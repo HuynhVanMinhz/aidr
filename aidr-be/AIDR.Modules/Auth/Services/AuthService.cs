@@ -183,6 +183,29 @@ public sealed class AuthService : IAuthService
         await _resetTokens.MarkUsedAsync(match.TokenId, DateTime.UtcNow, cancellationToken);
     }
 
+    public async Task ChangePasswordAsync(Guid userId, ChangePasswordRequest request, CancellationToken cancellationToken = default)
+    {
+        if (!string.Equals(request.NewPassword, request.ConfirmPassword, StringComparison.Ordinal))
+            throw new AppException("Confirm password does not match.");
+
+        ValidatePassword(request.NewPassword);
+
+        var user = await _users.FindByIdAsync(userId, cancellationToken)
+            ?? throw new NotFoundException("User not found.");
+
+        if (string.IsNullOrEmpty(user.PasswordHash))
+            throw new AppException("This account has no password set. Use forgot password to create one.");
+
+        if (!_passwordHasher.Verify(request.CurrentPassword, user.PasswordHash))
+            throw new UnauthorizedAppException("Current password is incorrect.");
+
+        if (_passwordHasher.Verify(request.NewPassword, user.PasswordHash))
+            throw new AppException("New password must be different from the current password.");
+
+        var passwordHash = _passwordHasher.Hash(request.NewPassword);
+        await _users.UpdatePasswordHashAsync(userId, passwordHash, cancellationToken);
+    }
+
     private async Task RegisterFailedLoginAsync(AuthUserRecord user, CancellationToken cancellationToken)
     {
         var failed = user.FailedLoginCount + 1;
