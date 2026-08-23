@@ -1,0 +1,53 @@
+using AIDR.Api.Extensions;
+using AIDR.Modules.Discovery.Abstractions;
+using AIDR.Shared.Dtos.Discovery;
+using AIDR.Shared.Results;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+
+namespace AIDR.Api.Controllers;
+
+[ApiController]
+[Route("api/products")]
+[AllowAnonymous]
+public sealed class ProductsController : ControllerBase
+{
+    private readonly IDiscoveryService _discovery;
+
+    public ProductsController(IDiscoveryService discovery) => _discovery = discovery;
+
+    /// <summary>List approved catalog products with optional filters and sort.</summary>
+    [HttpGet]
+    public async Task<ActionResult<ApiResult<PagedResult<ProductListItemDto>>>> List(
+        [FromQuery] ProductQueryRequest request,
+        CancellationToken cancellationToken)
+    {
+        var result = await _discovery.ListProductsAsync(request, cancellationToken);
+        return Ok(ApiResult<PagedResult<ProductListItemDto>>.Ok(result));
+    }
+
+    /// <summary>Search approved products by keyword, with filters and sort.</summary>
+    [HttpGet("search")]
+    public async Task<ActionResult<ApiResult<PagedResult<ProductListItemDto>>>> Search(
+        [FromQuery] ProductQueryRequest request,
+        CancellationToken cancellationToken)
+    {
+        var result = await _discovery.SearchProductsAsync(request, cancellationToken);
+        return Ok(ApiResult<PagedResult<ProductListItemDto>>.Ok(result));
+    }
+
+    /// <summary>Get approved product detail and record a view.</summary>
+    [HttpGet("{id:guid}")]
+    public async Task<ActionResult<ApiResult<ProductDetailDto>>> GetById(
+        Guid id,
+        [FromHeader(Name = "X-Session-Id")] string? sessionId,
+        CancellationToken cancellationToken)
+    {
+        Guid? viewerUserId = null;
+        if (User.Identity?.IsAuthenticated == true && User.TryGetUserId(out var userId))
+            viewerUserId = userId;
+
+        var result = await _discovery.GetProductAsync(id, viewerUserId, sessionId, cancellationToken);
+        return Ok(ApiResult<ProductDetailDto>.Ok(result));
+    }
+}
