@@ -97,7 +97,7 @@ app.MapGet("/api", () => Results.Ok(new
 {
     name = "AIDR API",
     version = "0.2.0",
-    module = "Auth"
+    module = "Auth, Profile"
 }));
 
 app.Run();

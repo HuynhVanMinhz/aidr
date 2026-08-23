@@ -2,8 +2,10 @@ using System.Text;
 using AIDR.Infrastructure.Auth;
 using AIDR.Infrastructure.Caching;
 using AIDR.Infrastructure.Persistence;
+using AIDR.Infrastructure.Profile;
 using AIDR.Modules.Auth.Abstractions;
 using AIDR.Modules.Auth.Services;
+using AIDR.Modules.Profile.Abstractions;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -45,6 +47,7 @@ public static class InfrastructureServiceCollectionExtensions
         services.Configure<SmtpOptions>(configuration.GetSection(SmtpOptions.SectionName));
 
         services.AddScoped<IAuthUserRepository, AuthUserRepository>();
+        services.AddScoped<IProfileRepository, ProfileRepository>();
         services.AddScoped<IPasswordResetTokenStore, PasswordResetTokenStore>();
         services.AddScoped<ITokenService, JwtTokenService>();
         services.AddSingleton<IPasswordHasher, AspNetPasswordHasher>();
