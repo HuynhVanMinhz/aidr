@@ -10,6 +10,7 @@ public class AidrDbContext : DbContext
     public DbSet<Role> Roles => Set<Role>();
     public DbSet<User> Users => Set<User>();
     public DbSet<UserRole> UserRoles => Set<UserRole>();
+    public DbSet<PasswordResetToken> PasswordResetTokens => Set<PasswordResetToken>();
     public DbSet<Category> Categories => Set<Category>();
     public DbSet<Shop> Shops => Set<Shop>();
     public DbSet<Product> Products => Set<Product>();
@@ -29,6 +30,9 @@ public class AidrDbContext : DbContext
             e.ToTable("Users");
             e.HasKey(x => x.UserId);
             e.Property(x => x.Email).HasMaxLength(256).IsRequired();
+            e.Property(x => x.PasswordHash).HasMaxLength(512);
+            e.Property(x => x.FullName).HasMaxLength(128).IsRequired();
+            e.Property(x => x.Status).HasMaxLength(20).IsRequired();
             e.HasIndex(x => x.Email).IsUnique();
             e.HasIndex(x => x.KeycloakSub).IsUnique();
         });
@@ -39,6 +43,16 @@ public class AidrDbContext : DbContext
             e.HasKey(x => new { x.UserId, x.RoleId });
             e.HasOne(x => x.User).WithMany(x => x.UserRoles).HasForeignKey(x => x.UserId);
             e.HasOne(x => x.Role).WithMany(x => x.UserRoles).HasForeignKey(x => x.RoleId);
+        });
+
+        modelBuilder.Entity<PasswordResetToken>(e =>
+        {
+            e.ToTable("PasswordResetTokens");
+            e.HasKey(x => x.TokenId);
+            e.Property(x => x.TokenHash).HasMaxLength(128).IsRequired();
+            e.HasOne(x => x.User).WithMany(x => x.PasswordResetTokens).HasForeignKey(x => x.UserId);
+            e.HasIndex(x => x.UserId);
+            e.HasIndex(x => x.TokenHash);
         });
 
         modelBuilder.Entity<Category>(e =>

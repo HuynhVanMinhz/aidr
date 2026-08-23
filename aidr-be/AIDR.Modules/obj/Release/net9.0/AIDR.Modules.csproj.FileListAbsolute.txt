@@ -13,3 +13,4 @@ E:\WorkSpace\aidr\aidr-be\AIDR.Modules\obj\Release\net9.0\AIDR.Modules.dll
 E:\WorkSpace\aidr\aidr-be\AIDR.Modules\obj\Release\net9.0\refint\AIDR.Modules.dll
 E:\WorkSpace\aidr\aidr-be\AIDR.Modules\obj\Release\net9.0\AIDR.Modules.pdb
 E:\WorkSpace\aidr\aidr-be\AIDR.Modules\obj\Release\net9.0\ref\AIDR.Modules.dll
+e:\WorkSpace\aidr\aidr-be\AIDR.Modules\obj\Release\net9.0\AIDR.Modules.sourcelink.json

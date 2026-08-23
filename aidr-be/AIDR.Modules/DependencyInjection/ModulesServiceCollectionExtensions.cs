@@ -1,15 +1,14 @@
-namespace AIDR.Modules.DependencyInjection;
-
+using AIDR.Modules.Auth.Abstractions;
+using AIDR.Modules.Auth.Services;
 using Microsoft.Extensions.DependencyInjection;
+
+namespace AIDR.Modules.DependencyInjection;
 
 public static class ModulesServiceCollectionExtensions
 {
-    /// <summary>
-    /// Register application modules (Auth, Discovery, …). Foundation leaves placeholders.
-    /// </summary>
     public static IServiceCollection AddAidrModules(this IServiceCollection services)
     {
-        // Module services will be registered here in later plan items.
+        services.AddScoped<IAuthService, AuthService>();
         return services;
     }
 }
