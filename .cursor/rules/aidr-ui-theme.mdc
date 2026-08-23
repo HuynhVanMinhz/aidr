@@ -1,0 +1,40 @@
+---
+description: AIDR FE — tham khảo UI từ theme-for-aidr-fe và convert sang React; giữ visual language của theme.
+alwaysApply: true
+---
+
+# AIDR UI — Theme Reference
+
+Khi implement **bất kỳ màn hình / component FE** nào:
+
+## Nguồn UI
+
+1. Thư mục tham khảo: `theme-for-aidr-fe/` (HTML + CSS + JS static).
+2. **Không** tự invent layout/style lệch theme khi đã có trang tương đương trong theme.
+3. Convert HTML theme → **React components** (JSX), tái sử dụng class/CSS của theme khi hợp lý; copy asset cần thiết vào `aidr-fe/src/assets` hoặc `public`.
+
+## Mapping gợi ý (theme → React)
+
+| Cần UI | Tham khảo trong `theme-for-aidr-fe/` |
+|--------|--------------------------------------|
+| Home / catalog | `index.html`, `products.html` |
+| Product detail | `product-single.html` |
+| Cart / checkout | `cart.html`, `checkout.html` |
+| Login / register / forgot | `login.html`, `forgot-password.html` |
+| Account / orders / wishlist | `account-*.html`, `account-wishlist.html` |
+| 404 | `404.html` |
+| Styles / icons | `css/`, `images/`, `js/` (chỉ lấy phần cần) |
+
+## Quy tắc convert
+
+- Giữ **cấu trúc section, typography, spacing, màu** của theme.
+- Tách thành components tái sử dụng (`Header`, `Footer`, `ProductCard`, …).
+- Logic & data: React + Redux + API — **không** nhúng jQuery business logic của theme.
+- Responsive: giữ behavior mobile/desktop của theme.
+- Nếu theme thiếu màn (Seller/Admin/AI): bám visual language (font, màu, button, form) của theme, không đổi brand sang style khác.
+
+## Không làm
+
+- Bỏ qua `theme-for-aidr-fe` rồi tự làm UI “AI generic”.
+- Copy nguyên file HTML vào production mà không convert React.
+- Đổi design system (màu chủ đạo, font) khi chưa có yêu cầu từ user.
