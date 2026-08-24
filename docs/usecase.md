@@ -26,11 +26,11 @@
 | UC-09 | View Product List | **Actor:** Guest/Buyer. Danh sách SP `Approved` + category Active; phân trang; cache Redis. **Business:** Catalog là bề mặt bán hàng chính. | Done | P0 |
 | UC-10 | View Product Details | **Actor:** Guest/Buyer. Chi tiết SP, ảnh, specs, giá bán, tồn, shop, reviews tóm tắt; ghi viewed history. **Business:** Hỗ trợ quyết định mua. | Done | P0 |
 | UC-11 | View Product Categories | **Actor:** Guest/Buyer. Cây danh mục đang Active để điều hướng. **Business:** Tổ chức catalog theo ngành hàng điện tử. | Done | P0 |
-| UC-12 | Create Product | **Actor:** Seller. Tạo SP thuộc shop; status mặc định `Pending`; nhập mô tả, brand, model, giá bán… **Business:** Seller mở rộng catalog; cần Admin duyệt trước khi lên kệ. | Todo | P0 |
-| UC-13 | Upload Image Product | **Actor:** Seller. Upload Cloudinary → lưu URL/publicId vào ProductImages. **Business:** Media chất lượng tăng trust & conversion. | Todo | P0 |
-| UC-14 | Update Product | **Actor:** Seller (owner). Sửa thông tin SP thuộc shop; có thể đưa lại Pending nếu rule yêu cầu. **Business:** Giữ thông tin SP cập nhật. | Todo | P0 |
-| UC-15 | Delete Product | **Actor:** Seller. Soft-delete / Inactive; không xóa cứng nếu đã có order. **Business:** Dọn catalog; bảo toàn lịch sử đơn. | Todo | P1 |
-| UC-16 | View My Products | **Actor:** Seller. List SP của shop theo status (Draft/Pending/Approved…). **Business:** Quản lý danh mục bán. | Todo | P0 |
+| UC-12 | Create Product | **Actor:** Seller. Tạo SP thuộc shop; status mặc định `Pending`; nhập mô tả, brand, model, giá bán… **Business:** Seller mở rộng catalog; cần Admin duyệt trước khi lên kệ. | Done | P0 |
+| UC-13 | Upload Image Product | **Actor:** Seller. Upload Cloudinary → lưu URL/publicId vào ProductImages. **Business:** Media chất lượng tăng trust & conversion. | Done | P0 |
+| UC-14 | Update Product | **Actor:** Seller (owner). Sửa thông tin SP thuộc shop; có thể đưa lại Pending nếu rule yêu cầu. **Business:** Giữ thông tin SP cập nhật. | Done | P0 |
+| UC-15 | Delete Product | **Actor:** Seller. Soft-delete / Inactive; không xóa cứng nếu đã có order. **Business:** Dọn catalog; bảo toàn lịch sử đơn. | Done | P1 |
+| UC-16 | View My Products | **Actor:** Seller. List SP của shop theo status (Draft/Pending/Approved…). **Business:** Quản lý danh mục bán. | Done | P0 |
 | UC-17 | Manage Product Inventory | **Actor:** Seller. Xem tồn, reserved, low-stock; điều chỉnh thủ công có ghi InventoryTransactions. **Business:** Tránh oversell. | Todo | P0 |
 | UC-18 | View Product List (Admin) | **Actor:** Admin. Queue toàn bộ SP (ưu tiên Pending). **Business:** Kiểm soát chất lượng catalog. | Todo | P0 |
 | UC-19 | Approve Product | **Actor:** Admin. Pending → Approved; ghi moderation history. **Business:** SP đủ chuẩn mới hiện buyer. | Todo | P0 |
