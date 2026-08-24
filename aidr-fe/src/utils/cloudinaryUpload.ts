@@ -16,16 +16,15 @@ export type CloudinaryUploadResult = {
 
 export function validateAvatarFile(file: File): void {
   if (!file.type.startsWith('image/')) {
-    throw new Error('Vui lòng chọn file ảnh hợp lệ.');
+    throw new Error('Please choose a valid image file.');
   }
   if (file.size > MAX_AVATAR_BYTES) {
-    throw new Error('Ảnh đại diện tối đa 2MB.');
+    throw new Error('Avatar image must be 2MB or smaller.');
   }
 }
 
 /**
- * Validate file upload cho category (giống avatar hiện tại: chỉ image/*, giới hạn theo MAX_AVATAR_BYTES).
- * Nếu bạn muốn giới hạn khác cho category, chỉ cần đổi constant hoặc override tại đây.
+ * Validate category image (same rules as avatar: image/* and MAX_AVATAR_BYTES).
  */
 export function validateCategoryImageFile(file: File): void {
   validateAvatarFile(file);
@@ -45,7 +44,7 @@ async function uploadImageToCloudinary(
   const uploadPreset = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
 
   if (!cloudName || !uploadPreset) {
-    throw new Error('Cloudinary chưa được cấu hình. Thêm VITE_CLOUDINARY_* vào .env.');
+    throw new Error('Cloudinary is not configured. Add VITE_CLOUDINARY_* to .env.');
   }
 
   const form = new FormData();
@@ -59,12 +58,12 @@ async function uploadImageToCloudinary(
   });
 
   if (!response.ok) {
-    throw new Error('Upload ảnh lên Cloudinary thất bại.');
+    throw new Error('Failed to upload image to Cloudinary.');
   }
 
   const payload = (await response.json()) as { secure_url?: string; public_id?: string };
   if (!payload.secure_url || !payload.public_id) {
-    throw new Error('Cloudinary không trả về URL ảnh.');
+    throw new Error('Cloudinary did not return an image URL.');
   }
 
   return {
@@ -81,14 +80,13 @@ export async function uploadAvatarToCloudinary(file: File): Promise<CloudinaryUp
 /** Reserved for product images — folder `product`. */
 export async function uploadProductImageToCloudinary(file: File): Promise<CloudinaryUploadResult> {
   if (!file.type.startsWith('image/')) {
-    throw new Error('Vui lòng chọn file ảnh hợp lệ.');
+    throw new Error('Please choose a valid image file.');
   }
   return uploadImageToCloudinary(file, CloudinaryFolders.product);
 }
 
-/** Upload image cho category — dùng folder `category`. */
+/** Upload category image to folder `category`. */
 export async function uploadCategoryImageToCloudinary(file: File): Promise<CloudinaryUploadResult> {
-  // Dùng validator chung để đảm bảo consistent rules trên FE.
   validateCategoryImageFile(file);
   return uploadImageToCloudinary(file, CloudinaryFolders.category);
 }

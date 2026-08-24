@@ -70,14 +70,14 @@ export function CategoriesPage() {
 
       <div className="our-category catalog-categories-section">
         <div className="container">
-          {loading && <p>Đang tải danh mục…</p>}
+          {loading && <p>Loading categories…</p>}
           {error && (
             <div className="alert alert-danger" role="alert">
               {error}
             </div>
           )}
           {!loading && !error && categories.length === 0 && (
-            <p className="text-muted">Chưa có danh mục đang hoạt động.</p>
+            <p className="text-muted">No active categories yet.</p>
           )}
 
           <div className="row">

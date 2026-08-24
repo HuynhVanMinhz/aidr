@@ -42,7 +42,7 @@ export function useAdminCategories(options?: { autoLoad?: boolean }) {
     async (payload: CreateCategoryPayload) => {
       const result = await dispatch(createAdminCategory(payload));
       if (createAdminCategory.rejected.match(result)) {
-        throw new Error((result.payload as string) || 'Không tạo được danh mục.');
+        throw new Error((result.payload as string) || 'Unable to create category.');
       }
       invalidatePublicTree();
       return result.payload;
@@ -54,7 +54,7 @@ export function useAdminCategories(options?: { autoLoad?: boolean }) {
     async (id: number, payload: UpdateCategoryPayload) => {
       const result = await dispatch(updateAdminCategory({ id, payload }));
       if (updateAdminCategory.rejected.match(result)) {
-        throw new Error((result.payload as string) || 'Không cập nhật được danh mục.');
+        throw new Error((result.payload as string) || 'Unable to update category.');
       }
       invalidatePublicTree();
       return result.payload;
@@ -66,7 +66,7 @@ export function useAdminCategories(options?: { autoLoad?: boolean }) {
     async (id: number, isActive: boolean) => {
       const result = await dispatch(updateAdminCategoryStatus({ id, isActive }));
       if (updateAdminCategoryStatus.rejected.match(result)) {
-        throw new Error((result.payload as string) || 'Không đổi trạng thái danh mục.');
+        throw new Error((result.payload as string) || 'Unable to update category status.');
       }
       invalidatePublicTree();
       return result.payload;
@@ -78,7 +78,7 @@ export function useAdminCategories(options?: { autoLoad?: boolean }) {
     async (id: number) => {
       const result = await dispatch(deleteAdminCategory(id));
       if (deleteAdminCategory.rejected.match(result)) {
-        throw new Error((result.payload as string) || 'Không xóa được danh mục.');
+        throw new Error((result.payload as string) || 'Unable to delete category.');
       }
       invalidatePublicTree();
     },
@@ -89,7 +89,7 @@ export function useAdminCategories(options?: { autoLoad?: boolean }) {
     async (id: number) => {
       const result = await dispatch(fetchAdminCategory(id));
       if (fetchAdminCategory.rejected.match(result)) {
-        throw new Error((result.payload as string) || 'Không tìm thấy danh mục.');
+        throw new Error((result.payload as string) || 'Category not found.');
       }
       return result.payload;
     },

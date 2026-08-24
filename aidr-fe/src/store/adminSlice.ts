@@ -33,9 +33,9 @@ export const fetchAdminCategories = createAsyncThunk(
   async (_, { rejectWithValue }) => {
     try {
       const result = await categoryApi.listAdminCategories();
-      return unwrap(result, 'Không tải được danh mục.');
+      return unwrap(result, 'Unable to load categories.');
     } catch (error) {
-      return rejectWithValue(getApiErrorMessage(error, 'Không tải được danh mục.'));
+      return rejectWithValue(getApiErrorMessage(error, 'Unable to load categories.'));
     }
   },
 );
@@ -45,9 +45,9 @@ export const fetchAdminCategory = createAsyncThunk(
   async (id: number, { rejectWithValue }) => {
     try {
       const result = await categoryApi.getAdminCategory(id);
-      return unwrap(result, 'Không tìm thấy danh mục.');
+      return unwrap(result, 'Category not found.');
     } catch (error) {
-      return rejectWithValue(getApiErrorMessage(error, 'Không tìm thấy danh mục.'));
+      return rejectWithValue(getApiErrorMessage(error, 'Category not found.'));
     }
   },
 );
@@ -57,9 +57,9 @@ export const createAdminCategory = createAsyncThunk(
   async (payload: CreateCategoryPayload, { rejectWithValue }) => {
     try {
       const result = await categoryApi.createAdminCategory(payload);
-      return unwrap(result, 'Không tạo được danh mục.');
+      return unwrap(result, 'Unable to create category.');
     } catch (error) {
-      return rejectWithValue(getApiErrorMessage(error, 'Không tạo được danh mục.'));
+      return rejectWithValue(getApiErrorMessage(error, 'Unable to create category.'));
     }
   },
 );
@@ -69,9 +69,9 @@ export const updateAdminCategory = createAsyncThunk(
   async ({ id, payload }: { id: number; payload: UpdateCategoryPayload }, { rejectWithValue }) => {
     try {
       const result = await categoryApi.updateAdminCategory(id, payload);
-      return unwrap(result, 'Không cập nhật được danh mục.');
+      return unwrap(result, 'Unable to update category.');
     } catch (error) {
-      return rejectWithValue(getApiErrorMessage(error, 'Không cập nhật được danh mục.'));
+      return rejectWithValue(getApiErrorMessage(error, 'Unable to update category.'));
     }
   },
 );
@@ -81,9 +81,9 @@ export const updateAdminCategoryStatus = createAsyncThunk(
   async ({ id, isActive }: { id: number; isActive: boolean }, { rejectWithValue }) => {
     try {
       const result = await categoryApi.updateAdminCategoryStatus(id, isActive);
-      return unwrap(result, 'Không đổi trạng thái danh mục.');
+      return unwrap(result, 'Unable to update category status.');
     } catch (error) {
-      return rejectWithValue(getApiErrorMessage(error, 'Không đổi trạng thái danh mục.'));
+      return rejectWithValue(getApiErrorMessage(error, 'Unable to update category status.'));
     }
   },
 );
@@ -93,10 +93,10 @@ export const deleteAdminCategory = createAsyncThunk(
   async (id: number, { rejectWithValue }) => {
     try {
       const result = await categoryApi.deleteAdminCategory(id);
-      if (!result.success) throw new Error(result.message || 'Không xóa được danh mục.');
+      if (!result.success) throw new Error(result.message || 'Unable to delete category.');
       return id;
     } catch (error) {
-      return rejectWithValue(getApiErrorMessage(error, 'Không xóa được danh mục.'));
+      return rejectWithValue(getApiErrorMessage(error, 'Unable to delete category.'));
     }
   },
 );
@@ -130,7 +130,7 @@ export const adminSlice = createSlice({
       })
       .addCase(fetchAdminCategories.rejected, (state, action) => {
         state.loading = false;
-        state.error = (action.payload as string) || 'Không tải được danh mục.';
+        state.error = (action.payload as string) || 'Unable to load categories.';
       })
       .addCase(fetchAdminCategory.fulfilled, (state, action) => {
         state.categories = upsert(state.categories, action.payload);
@@ -145,7 +145,7 @@ export const adminSlice = createSlice({
       })
       .addCase(createAdminCategory.rejected, (state, action) => {
         state.mutating = false;
-        state.error = (action.payload as string) || 'Không tạo được danh mục.';
+        state.error = (action.payload as string) || 'Unable to create category.';
       })
       .addCase(updateAdminCategory.pending, (state) => {
         state.mutating = true;
@@ -157,19 +157,19 @@ export const adminSlice = createSlice({
       })
       .addCase(updateAdminCategory.rejected, (state, action) => {
         state.mutating = false;
-        state.error = (action.payload as string) || 'Không cập nhật được danh mục.';
+        state.error = (action.payload as string) || 'Unable to update category.';
       })
       .addCase(updateAdminCategoryStatus.fulfilled, (state, action) => {
         state.categories = upsert(state.categories, action.payload);
       })
       .addCase(updateAdminCategoryStatus.rejected, (state, action) => {
-        state.error = (action.payload as string) || 'Không đổi trạng thái danh mục.';
+        state.error = (action.payload as string) || 'Unable to update category status.';
       })
       .addCase(deleteAdminCategory.fulfilled, (state, action) => {
         state.categories = state.categories.filter((c) => c.categoryId !== action.payload);
       })
       .addCase(deleteAdminCategory.rejected, (state, action) => {
-        state.error = (action.payload as string) || 'Không xóa được danh mục.';
+        state.error = (action.payload as string) || 'Unable to delete category.';
       });
   },
 });

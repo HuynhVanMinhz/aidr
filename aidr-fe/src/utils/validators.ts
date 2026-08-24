@@ -5,14 +5,14 @@ export function normalizePhone(phone: string): string {
 }
 
 /** Vietnamese mobile — required + format. Returns normalized 0xxxxxxxxx. */
-export function validateVnPhone(phone: string | null | undefined, fieldLabel = 'Số điện thoại'): string {
+export function validateVnPhone(phone: string | null | undefined, fieldLabel = 'Phone number'): string {
   if (!phone || !phone.trim()) {
-    throw new Error(`${fieldLabel} là bắt buộc.`);
+    throw new Error(`${fieldLabel} is required.`);
   }
 
   const normalized = normalizePhone(phone);
   if (!VN_MOBILE_REGEX.test(normalized)) {
-    throw new Error(`${fieldLabel} không hợp lệ. Ví dụ: 0912345678`);
+    throw new Error(`${fieldLabel} is invalid. Example: 0912345678`);
   }
 
   return normalized.startsWith('+84') ? `0${normalized.slice(3)}` : normalized;
@@ -21,14 +21,14 @@ export function validateVnPhone(phone: string | null | undefined, fieldLabel = '
 export function validateRequired(value: string | null | undefined, fieldLabel: string): string {
   const trimmed = value?.trim() ?? '';
   if (!trimmed) {
-    throw new Error(`${fieldLabel} là bắt buộc.`);
+    throw new Error(`${fieldLabel} is required.`);
   }
   return trimmed;
 }
 
 export function validateMaxLength(value: string, maxLength: number, fieldLabel: string): string {
   if (value.length > maxLength) {
-    throw new Error(`${fieldLabel} không được vượt quá ${maxLength} ký tự.`);
+    throw new Error(`${fieldLabel} must not exceed ${maxLength} characters.`);
   }
   return value;
 }
@@ -39,7 +39,7 @@ export function validateSlug(value: string | null | undefined, maxLength: number
   const trimmed = validateRequired(value, 'Slug').toLowerCase();
   validateMaxLength(trimmed, maxLength, 'Slug');
   if (!SLUG_REGEX.test(trimmed)) {
-    throw new Error('Slug chỉ gồm chữ thường, số và gạch ngang.');
+    throw new Error('Slug may contain only lowercase letters, numbers, and hyphens.');
   }
   return trimmed;
 }
@@ -49,21 +49,21 @@ const HTTP_URL_REGEX = /^https?:\/\/.+\..+/i;
 export function validateOptionalImageUrl(value: string | null | undefined, maxLength: number): string | null {
   const trimmed = value?.trim() ?? '';
   if (!trimmed) return null;
-  validateMaxLength(trimmed, maxLength, 'URL ảnh');
+  validateMaxLength(trimmed, maxLength, 'Image URL');
   const isRelative = trimmed.startsWith('/');
   if (!isRelative && !HTTP_URL_REGEX.test(trimmed)) {
-    throw new Error('URL ảnh không hợp lệ.');
+    throw new Error('Image URL is invalid.');
   }
   return trimmed;
 }
 
-/** Required image URL — bắt buộc phải có và hợp lệ (http/https hoặc đường dẫn tương đối). */
+/** Required image URL — http/https or a relative path. */
 export function validateImageUrl(value: string | null | undefined, maxLength: number): string {
-  const trimmed = validateRequired(value, 'URL ảnh');
-  validateMaxLength(trimmed, maxLength, 'URL ảnh');
+  const trimmed = validateRequired(value, 'Image URL');
+  validateMaxLength(trimmed, maxLength, 'Image URL');
   const isRelative = trimmed.startsWith('/');
   if (!isRelative && !HTTP_URL_REGEX.test(trimmed)) {
-    throw new Error('URL ảnh không hợp lệ.');
+    throw new Error('Image URL is invalid.');
   }
   return trimmed;
 }

@@ -10,17 +10,17 @@ export function AccountSidebar() {
   const navItems = [
     {
       to: '/account/profile',
-      label: 'Thông tin tài khoản',
+      label: 'Account information',
       icon: '/theme/images/icon-user-primary.svg',
     },
     {
       to: '/account/addresses',
-      label: 'Địa chỉ giao hàng',
+      label: 'Shipping addresses',
       icon: '/theme/images/icon-location-primary.svg',
     },
     {
       to: '/account/change-password',
-      label: hasPassword ? 'Đổi mật khẩu' : 'Đặt mật khẩu',
+      label: hasPassword ? 'Change password' : 'Set password',
       icon: '/theme/images/icon-security-primary.svg',
     },
   ] as const;
@@ -48,7 +48,7 @@ export function AccountSidebar() {
           <li>
             <button type="button" className="account-sidebar-logout" onClick={handleLogout}>
               <img src="/theme/images/icon-logout-primary.svg" alt="" />
-              Đăng xuất
+              Sign out
             </button>
           </li>
         </ul>

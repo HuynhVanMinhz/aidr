@@ -16,8 +16,8 @@ export function ThemeToggle({ className = '', iconOnly = false }: ThemeTogglePro
         type="button"
         className={`theme-toggle theme-toggle--icon ${className}`.trim()}
         onClick={toggleTheme}
-        aria-label={isDark ? 'Bật giao diện sáng' : 'Bật giao diện tối'}
-        title={isDark ? 'Giao diện sáng' : 'Giao diện tối'}
+        aria-label={isDark ? 'Switch to light theme' : 'Switch to dark theme'}
+        title={isDark ? 'Light theme' : 'Dark theme'}
       >
         <i className={`fa-solid ${isDark ? 'fa-sun' : 'fa-moon'}`} aria-hidden="true" />
       </button>
@@ -29,13 +29,13 @@ export function ThemeToggle({ className = '', iconOnly = false }: ThemeTogglePro
       type="button"
       className={`theme-toggle ${className}`.trim()}
       onClick={toggleTheme}
-      aria-label={isDark ? 'Bật giao diện sáng' : 'Bật giao diện tối'}
-      title={isDark ? 'Giao diện sáng' : 'Giao diện tối'}
+      aria-label={isDark ? 'Switch to light theme' : 'Switch to dark theme'}
+      title={isDark ? 'Light theme' : 'Dark theme'}
     >
       <span className="theme-toggle__icon" aria-hidden="true">
         {isDark ? '☀' : '☾'}
       </span>
-      <span className="theme-toggle__label">{isDark ? 'Sáng' : 'Tối'}</span>
+      <span className="theme-toggle__label">{isDark ? 'Light' : 'Dark'}</span>
     </button>
   );
 }

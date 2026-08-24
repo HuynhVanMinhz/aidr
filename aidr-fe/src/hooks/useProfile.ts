@@ -36,7 +36,7 @@ export function useProfile(options?: { autoFetch?: boolean }) {
   const changePassword = useCallback(async (payload: ChangePasswordRequest) => {
     const result = await authApi.changePassword(payload);
     if (!result.success) {
-      throw new Error(result.message || 'Đổi mật khẩu thất bại.');
+      throw new Error(result.message || 'Unable to change password.');
     }
     return result;
   }, []);

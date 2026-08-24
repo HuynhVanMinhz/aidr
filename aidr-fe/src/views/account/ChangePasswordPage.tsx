@@ -32,7 +32,7 @@ export function ChangePasswordPage() {
         newPassword,
         confirmPassword,
       });
-      setPasswordSuccess('Đã đổi mật khẩu thành công.');
+      setPasswordSuccess('Password changed successfully.');
       setCurrentPassword('');
       setNewPassword('');
       setConfirmPassword('');
@@ -53,7 +53,7 @@ export function ChangePasswordPage() {
     try {
       await authApi.forgotPassword({ email: profile.email });
       setSetLinkSuccess(
-        'Nếu email hợp lệ, chúng tôi đã gửi link đặt mật khẩu. Kiểm tra hộp thư.',
+        'If the email is valid, we have sent a set-password link. Please check your inbox.',
       );
     } catch (err) {
       setSetLinkError(getErrorMessage(err));
@@ -65,7 +65,7 @@ export function ChangePasswordPage() {
   if (loading && !profile) {
     return (
       <div className="account-details-content-box">
-        <p className="account-muted">Đang tải…</p>
+        <p className="account-muted">Loading…</p>
       </div>
     );
   }
@@ -75,12 +75,12 @@ export function ChangePasswordPage() {
       <div className="account-details-content-box">
         <div className="account-details-content-item">
           <div className="checkout-bill-address-title">
-            <h2>Đặt mật khẩu</h2>
+            <h2>Set password</h2>
           </div>
 
           <p className="account-muted account-section-hint">
-            Tài khoản này đăng nhập bằng Google và chưa có mật khẩu trên AIDR.
-            Bạn không thể đổi mật khẩu cho đến khi đặt mật khẩu qua email.
+            This account signs in with Google and does not have an AIDR password yet.
+            You cannot change your password until you set one via email.
           </p>
 
           {setLinkError && <div className="auth-alert auth-alert--error">{setLinkError}</div>}
@@ -93,13 +93,13 @@ export function ChangePasswordPage() {
               onClick={handleSendSetPasswordLink}
               disabled={sendingSetLink}
             >
-              {sendingSetLink ? 'Đang gửi…' : 'Đặt mật khẩu qua email'}
+              {sendingSetLink ? 'Sending…' : 'Set password via email'}
             </button>
             <Link
               className="btn-default btn-border"
               to={`/forgot-password?email=${encodeURIComponent(profile.email)}`}
             >
-              Mở trang quên mật khẩu
+              Open forgot password page
             </Link>
           </div>
         </div>
@@ -112,11 +112,12 @@ export function ChangePasswordPage() {
       <form className="checkout-bill-address-form" onSubmit={handlePasswordSubmit} noValidate>
         <div className="account-details-content-item">
           <div className="checkout-bill-address-title">
-            <h2>Đổi mật khẩu</h2>
+            <h2>Change password</h2>
           </div>
 
           <p className="account-muted account-section-hint">
-            Nhập mật khẩu hiện tại và mật khẩu mới (tối thiểu 8 ký tự, có chữ hoa và ký tự đặc biệt).
+            Enter your current password and a new password (at least 8 characters, with an uppercase
+            letter and a special character).
           </p>
 
           {passwordError && <div className="auth-alert auth-alert--error">{passwordError}</div>}
@@ -125,12 +126,12 @@ export function ChangePasswordPage() {
           <div className="checkout-bill-address-form">
             <div className="row">
               <div className="form-group col-lg-12">
-                <label htmlFor="currentPassword">Mật khẩu hiện tại *</label>
+                <label htmlFor="currentPassword">Current password *</label>
                 <input
                   id="currentPassword"
                   type="password"
                   className="form-control"
-                  placeholder="Nhập mật khẩu hiện tại"
+                  placeholder="Enter current password"
                   value={currentPassword}
                   onChange={(e) => setCurrentPassword(e.target.value)}
                   autoComplete="current-password"
@@ -139,12 +140,12 @@ export function ChangePasswordPage() {
               </div>
 
               <div className="form-group col-lg-12">
-                <label htmlFor="newPassword">Mật khẩu mới *</label>
+                <label htmlFor="newPassword">New password *</label>
                 <input
                   id="newPassword"
                   type="password"
                   className="form-control"
-                  placeholder="Nhập mật khẩu mới"
+                  placeholder="Enter new password"
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
                   autoComplete="new-password"
@@ -153,12 +154,12 @@ export function ChangePasswordPage() {
               </div>
 
               <div className="form-group col-lg-12">
-                <label htmlFor="confirmPassword">Xác nhận mật khẩu mới *</label>
+                <label htmlFor="confirmPassword">Confirm new password *</label>
                 <input
                   id="confirmPassword"
                   type="password"
                   className="form-control"
-                  placeholder="Nhập lại mật khẩu mới"
+                  placeholder="Re-enter new password"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   autoComplete="new-password"
@@ -173,7 +174,7 @@ export function ChangePasswordPage() {
                     className="btn-default btn-accent"
                     disabled={changingPassword || !canSubmit}
                   >
-                    {changingPassword ? 'Đang đổi…' : 'Đổi mật khẩu'}
+                    {changingPassword ? 'Changing…' : 'Change password'}
                   </button>
                 </div>
               </div>

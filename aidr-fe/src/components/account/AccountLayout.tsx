@@ -2,14 +2,14 @@ import { Link, Outlet, useLocation } from 'react-router-dom';
 import { AccountSidebar } from './AccountSidebar';
 
 const PAGE_META: Record<string, { title: string; breadcrumb: string }> = {
-  '/account/profile': { title: 'Thông tin tài khoản', breadcrumb: 'Thông tin tài khoản' },
-  '/account/addresses': { title: 'Địa chỉ giao hàng', breadcrumb: 'Địa chỉ' },
-  '/account/change-password': { title: 'Mật khẩu', breadcrumb: 'Mật khẩu' },
+  '/account/profile': { title: 'Account information', breadcrumb: 'Account information' },
+  '/account/addresses': { title: 'Shipping addresses', breadcrumb: 'Addresses' },
+  '/account/change-password': { title: 'Password', breadcrumb: 'Password' },
 };
 
 export function AccountLayout() {
   const location = useLocation();
-  const meta = PAGE_META[location.pathname] ?? { title: 'Tài khoản', breadcrumb: 'Tài khoản' };
+  const meta = PAGE_META[location.pathname] ?? { title: 'Account', breadcrumb: 'Account' };
 
   return (
     <>
@@ -22,10 +22,10 @@ export function AccountLayout() {
                 <nav>
                   <ol className="breadcrumb">
                     <li className="breadcrumb-item">
-                      <Link to="/">Trang chủ</Link>
+                      <Link to="/">Home</Link>
                     </li>
                     <li className="breadcrumb-item">
-                      <Link to="/account/profile">Tài khoản</Link>
+                      <Link to="/account/profile">Account</Link>
                     </li>
                     <li className="breadcrumb-item active" aria-current="page">
                       {meta.breadcrumb}

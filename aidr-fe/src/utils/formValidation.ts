@@ -5,7 +5,7 @@ export function tryValidateField(run: () => void): string | undefined {
     run();
     return undefined;
   } catch (error) {
-    return error instanceof Error ? error.message : 'Giá trị không hợp lệ.';
+    return error instanceof Error ? error.message : 'Invalid value.';
   }
 }
 
