@@ -18,6 +18,9 @@ public class AidrDbContext : DbContext
     public DbSet<Wallet> Wallets => Set<Wallet>();
     public DbSet<Product> Products => Set<Product>();
     public DbSet<ProductImage> ProductImages => Set<ProductImage>();
+    public DbSet<InventoryLot> InventoryLots => Set<InventoryLot>();
+    public DbSet<ProductPriceHistory> ProductPriceHistories => Set<ProductPriceHistory>();
+    public DbSet<InventoryTransaction> InventoryTransactions => Set<InventoryTransaction>();
     public DbSet<ProductReview> ProductReviews => Set<ProductReview>();
     public DbSet<ViewedProductHistory> ViewedProductHistories => Set<ViewedProductHistory>();
 
@@ -171,6 +174,50 @@ public class AidrDbContext : DbContext
                 .WithMany(x => x.Images)
                 .HasForeignKey(x => x.ProductId)
                 .OnDelete(DeleteBehavior.Cascade);
+            e.HasIndex(x => x.ProductId);
+        });
+
+        modelBuilder.Entity<InventoryLot>(e =>
+        {
+            e.ToTable("InventoryLots");
+            e.HasKey(x => x.LotId);
+            e.Property(x => x.LotCode).HasMaxLength(40).IsRequired();
+            e.Property(x => x.UnitCost).HasPrecision(18, 2);
+            e.Property(x => x.Currency).HasMaxLength(3).IsRequired();
+            e.Property(x => x.SupplierName).HasMaxLength(150);
+            e.Property(x => x.InvoiceNumber).HasMaxLength(80);
+            e.Property(x => x.Status).HasMaxLength(20).IsRequired();
+            e.Property(x => x.Note).HasMaxLength(500);
+            e.HasOne(x => x.Product).WithMany().HasForeignKey(x => x.ProductId);
+            e.HasIndex(x => new { x.ProductId, x.LotCode }).IsUnique();
+            e.HasIndex(x => new { x.ProductId, x.Status, x.ReceivedAt });
+        });
+
+        modelBuilder.Entity<ProductPriceHistory>(e =>
+        {
+            e.ToTable("ProductPriceHistories");
+            e.HasKey(x => x.PriceHistoryId);
+            e.Property(x => x.PriceHistoryId).ValueGeneratedOnAdd();
+            e.Property(x => x.OldBasePrice).HasPrecision(18, 2);
+            e.Property(x => x.NewBasePrice).HasPrecision(18, 2);
+            e.Property(x => x.OldSalePrice).HasPrecision(18, 2);
+            e.Property(x => x.NewSalePrice).HasPrecision(18, 2);
+            e.Property(x => x.Reason).HasMaxLength(300);
+            e.HasOne(x => x.Product).WithMany().HasForeignKey(x => x.ProductId);
+            e.HasIndex(x => x.ProductId);
+        });
+
+        modelBuilder.Entity<InventoryTransaction>(e =>
+        {
+            e.ToTable("InventoryTransactions");
+            e.HasKey(x => x.InventoryTxId);
+            e.Property(x => x.InventoryTxId).ValueGeneratedOnAdd();
+            e.Property(x => x.UnitCost).HasPrecision(18, 2);
+            e.Property(x => x.Reason).HasMaxLength(40).IsRequired();
+            e.Property(x => x.ReferenceType).HasMaxLength(40);
+            e.Property(x => x.Note).HasMaxLength(300);
+            e.HasOne(x => x.Product).WithMany().HasForeignKey(x => x.ProductId);
+            e.HasOne(x => x.Lot).WithMany().HasForeignKey(x => x.LotId);
             e.HasIndex(x => x.ProductId);
         });
 
