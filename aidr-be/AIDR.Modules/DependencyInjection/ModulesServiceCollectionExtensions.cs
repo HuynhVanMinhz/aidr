@@ -6,6 +6,8 @@ using AIDR.Modules.Discovery.Abstractions;
 using AIDR.Modules.Discovery.Services;
 using AIDR.Modules.Profile.Abstractions;
 using AIDR.Modules.Profile.Services;
+using AIDR.Modules.SellerCenter.Abstractions;
+using AIDR.Modules.SellerCenter.Services;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace AIDR.Modules.DependencyInjection;
@@ -19,6 +21,7 @@ public static class ModulesServiceCollectionExtensions
         services.AddScoped<IDiscoveryService, DiscoveryService>();
         services.AddScoped<IAdminCategoryService, AdminCategoryService>();
         services.AddScoped<IAdminSellerRegistrationService, AdminSellerRegistrationService>();
+        services.AddScoped<ISellerProductService, SellerProductService>();
         return services;
     }
 }
