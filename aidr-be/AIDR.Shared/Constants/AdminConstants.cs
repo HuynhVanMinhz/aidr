@@ -22,6 +22,18 @@ public static class AdminConstants
     public const string SellerRegistrationStatusApproved = "Approved";
     public const string SellerRegistrationStatusRejected = "Rejected";
 
+    public const string ProductStatusDraft = "Draft";
+    public const string ProductStatusPending = "Pending";
+    public const string ProductStatusApproved = "Approved";
+    public const string ProductStatusRejected = "Rejected";
+    public const string ProductStatusInactive = "Inactive";
+    public const string ProductStatusDeleted = "Deleted";
+
+    public const string ModerationActionApprove = "Approve";
+    public const string ModerationActionReject = "Reject";
+
+    public const int MaxProductModerationReasonLength = 500;
+
     public const string ShopStatusActive = "Active";
     public const string ShopCostingMethodFifo = "FIFO";
     public const string WalletCurrencyVnd = "VND";
