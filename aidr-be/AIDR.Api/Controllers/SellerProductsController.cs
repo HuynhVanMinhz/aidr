@@ -14,8 +14,13 @@ namespace AIDR.Api.Controllers;
 public sealed class SellerProductsController : ControllerBase
 {
     private readonly ISellerProductService _products;
+    private readonly ISellerInventoryService _inventory;
 
-    public SellerProductsController(ISellerProductService products) => _products = products;
+    public SellerProductsController(ISellerProductService products, ISellerInventoryService inventory)
+    {
+        _products = products;
+        _inventory = inventory;
+    }
 
     /// <summary>List products belonging to the current seller's shop.</summary>
     [HttpGet]
@@ -80,5 +85,59 @@ public sealed class SellerProductsController : ControllerBase
     {
         var result = await _products.UploadImagesAsync(User.GetUserId(), id, request, cancellationToken);
         return Ok(ApiResult<SellerProductDetailDto>.Ok(result, "Product images saved."));
+    }
+
+    /// <summary>Get stock, reserved quantity, lots, and recent inventory movements.</summary>
+    [HttpGet("{id:guid}/inventory")]
+    public async Task<ActionResult<ApiResult<SellerInventoryDetailDto>>> GetInventory(
+        Guid id,
+        CancellationToken cancellationToken)
+    {
+        var result = await _inventory.GetByProductIdAsync(User.GetUserId(), id, cancellationToken);
+        return Ok(ApiResult<SellerInventoryDetailDto>.Ok(result));
+    }
+
+    /// <summary>Update the low-stock threshold for a product.</summary>
+    [HttpPatch("{id:guid}/inventory")]
+    public async Task<ActionResult<ApiResult<SellerInventoryDetailDto>>> UpdateInventorySettings(
+        Guid id,
+        [FromBody] UpdateSellerInventoryRequest request,
+        CancellationToken cancellationToken)
+    {
+        var result = await _inventory.UpdateLowStockThresholdAsync(User.GetUserId(), id, request, cancellationToken);
+        return Ok(ApiResult<SellerInventoryDetailDto>.Ok(result, "Low-stock threshold updated."));
+    }
+
+    /// <summary>Manually adjust on-hand quantity and write an inventory transaction.</summary>
+    [HttpPost("{id:guid}/inventory/adjust")]
+    public async Task<ActionResult<ApiResult<SellerInventoryDetailDto>>> AdjustInventory(
+        Guid id,
+        [FromBody] AdjustSellerInventoryRequest request,
+        CancellationToken cancellationToken)
+    {
+        var result = await _inventory.AdjustAsync(User.GetUserId(), id, request, cancellationToken);
+        return Ok(ApiResult<SellerInventoryDetailDto>.Ok(result, "Inventory adjusted."));
+    }
+
+    /// <summary>Import a new stock lot with unit cost. Existing lots are not modified.</summary>
+    [HttpPost("{id:guid}/lots")]
+    public async Task<ActionResult<ApiResult<SellerInventoryDetailDto>>> ImportLot(
+        Guid id,
+        [FromBody] ImportStockLotRequest request,
+        CancellationToken cancellationToken)
+    {
+        var result = await _inventory.ImportLotAsync(User.GetUserId(), id, request, cancellationToken);
+        return Ok(ApiResult<SellerInventoryDetailDto>.Ok(result, "Stock lot imported."));
+    }
+
+    /// <summary>Update catalog selling prices and append price history. Lot unit costs are unchanged.</summary>
+    [HttpPatch("{id:guid}/price")]
+    public async Task<ActionResult<ApiResult<SellerPriceUpdateDto>>> UpdatePrice(
+        Guid id,
+        [FromBody] UpdateSellingPriceRequest request,
+        CancellationToken cancellationToken)
+    {
+        var result = await _inventory.UpdateSellingPriceAsync(User.GetUserId(), id, request, cancellationToken);
+        return Ok(ApiResult<SellerPriceUpdateDto>.Ok(result, "Selling price updated."));
     }
 }
