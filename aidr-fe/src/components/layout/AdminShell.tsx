@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { IconifyIcon } from '../admin/IconifyIcon';
 import { useAuth } from '../../hooks/useAuth';
@@ -26,6 +26,8 @@ function pageTitle(pathname: string, variant: AdminShellVariant) {
   if (pathname.includes('/categories/new')) return 'Create Category';
   if (pathname.includes('/categories/') && pathname.endsWith('/edit')) return 'Edit Category';
   if (pathname.includes('/categories')) return 'Categories List';
+  if (pathname.match(/\/seller-registrations\/[^/]+$/)) return 'Seller Registration Review';
+  if (pathname.includes('/seller-registrations')) return 'Seller Registrations';
   return variant === 'seller' ? 'Welcome!' : 'Welcome!';
 }
 
@@ -35,7 +37,13 @@ export function AdminShell({ variant = 'admin', children }: AdminShellProps) {
   const { user, logout } = useAuth();
   const { isDark, toggleTheme } = useTheme();
   const [categoryOpen, setCategoryOpen] = useState(pathname.includes('/categories'));
+  const [sellerRegOpen, setSellerRegOpen] = useState(pathname.includes('/seller-registrations'));
   const [userOpen, setUserOpen] = useState(false);
+
+  useEffect(() => {
+    if (pathname.includes('/categories')) setCategoryOpen(true);
+    if (pathname.includes('/seller-registrations')) setSellerRegOpen(true);
+  }, [pathname]);
 
   const homePath = variant === 'seller' ? '/seller' : '/admin';
   const title = pageTitle(pathname, variant);
@@ -135,6 +143,7 @@ export function AdminShell({ variant = 'admin', children }: AdminShellProps) {
             </li>
 
             {variant === 'admin' ? (
+              <>
               <li className="nav-item">
                 <a
                   className={`nav-link menu-arrow ${categoryOpen ? '' : 'collapsed'}`}
@@ -171,6 +180,35 @@ export function AdminShell({ variant = 'admin', children }: AdminShellProps) {
                   </ul>
                 </div>
               </li>
+              <li className="nav-item">
+                <a
+                  className={`nav-link menu-arrow ${sellerRegOpen ? '' : 'collapsed'}`}
+                  href="#sidebarSellerRegistrations"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setSellerRegOpen((v) => !v);
+                  }}
+                >
+                  <span className="nav-icon">
+                    <IconifyIcon icon="solar:shop-bold-duotone" />
+                  </span>
+                  <span className="nav-text">Seller Onboarding</span>
+                </a>
+                <div className={`collapse ${sellerRegOpen ? 'show' : ''}`} id="sidebarSellerRegistrations">
+                  <ul className="nav sub-navbar-nav">
+                    <li className="sub-nav-item">
+                      <NavLink
+                        className={({ isActive }) => `sub-nav-link${isActive ? ' active' : ''}`}
+                        to="/admin/seller-registrations"
+                        end
+                      >
+                        Requests
+                      </NavLink>
+                    </li>
+                  </ul>
+                </div>
+              </li>
+              </>
             ) : (
               <li className="nav-item">
                 <span className="nav-link">
@@ -186,7 +224,7 @@ export function AdminShell({ variant = 'admin', children }: AdminShellProps) {
       </div>
 
       <div className="page-content">
-        {children ?? <Outlet />}
+        <div className="container-xxl">{children ?? <Outlet />}</div>
         <footer className="footer">
           <div className="container-fluid">
             <div className="row">
