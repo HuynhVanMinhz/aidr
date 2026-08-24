@@ -22,6 +22,7 @@ public static class ModulesServiceCollectionExtensions
         services.AddScoped<IAdminCategoryService, AdminCategoryService>();
         services.AddScoped<IAdminSellerRegistrationService, AdminSellerRegistrationService>();
         services.AddScoped<ISellerProductService, SellerProductService>();
+        services.AddScoped<ISellerInventoryService, SellerInventoryService>();
         return services;
     }
 }
