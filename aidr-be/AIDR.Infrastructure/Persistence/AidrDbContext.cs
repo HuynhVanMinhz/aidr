@@ -23,6 +23,7 @@ public class AidrDbContext : DbContext
     public DbSet<InventoryTransaction> InventoryTransactions => Set<InventoryTransaction>();
     public DbSet<ProductReview> ProductReviews => Set<ProductReview>();
     public DbSet<ViewedProductHistory> ViewedProductHistories => Set<ViewedProductHistory>();
+    public DbSet<ProductModerationHistory> ProductModerationHistories => Set<ProductModerationHistory>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -246,6 +247,26 @@ public class AidrDbContext : DbContext
             e.HasOne(x => x.User).WithMany().HasForeignKey(x => x.UserId);
             e.HasIndex(x => new { x.UserId, x.ViewedAt });
             e.HasIndex(x => new { x.ProductId, x.ViewedAt });
+        });
+
+        modelBuilder.Entity<ProductModerationHistory>(e =>
+        {
+            e.ToTable("ProductModerationHistory");
+            e.HasKey(x => x.ModerationId);
+            e.Property(x => x.ModerationId).ValueGeneratedOnAdd();
+            e.Property(x => x.Action).HasMaxLength(20).IsRequired();
+            e.Property(x => x.FromStatus).HasMaxLength(20).IsRequired();
+            e.Property(x => x.ToStatus).HasMaxLength(20).IsRequired();
+            e.Property(x => x.Reason).HasMaxLength(500);
+            e.HasOne(x => x.Product)
+                .WithMany()
+                .HasForeignKey(x => x.ProductId)
+                .OnDelete(DeleteBehavior.Restrict);
+            e.HasOne(x => x.AdminUser)
+                .WithMany()
+                .HasForeignKey(x => x.AdminUserId)
+                .OnDelete(DeleteBehavior.Restrict);
+            e.HasIndex(x => x.ProductId);
         });
     }
 }
