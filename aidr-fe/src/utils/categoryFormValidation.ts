@@ -34,12 +34,12 @@ export function validateCategoryFormFields(
   if (mode === 'create') {
     const slugError = tryValidateField(() => validateSlug(form.slug, CATEGORY_MAX_SLUG));
     if (slugError) errors.slug = slugError;
+  }
 
-    if (form.parentId.trim()) {
-      const parentId = Number(form.parentId);
-      if (!Number.isInteger(parentId) || parentId <= 0) {
-        errors.parentId = 'Parent category is invalid.';
-      }
+  if (form.parentId.trim()) {
+    const parentId = Number(form.parentId);
+    if (!Number.isInteger(parentId) || parentId <= 0) {
+      errors.parentId = 'Parent category is invalid.';
     }
   }
 
@@ -52,8 +52,13 @@ export function validateCategoryFormFields(
   );
   if (descriptionError) errors.description = descriptionError;
 
-  const imageError = tryValidateField(() => validateImageUrl(form.imageUrl, CATEGORY_MAX_IMAGE_URL));
-  if (imageError) errors.imageUrl = imageError;
+  if (mode === 'create') {
+    const imageError = tryValidateField(() => validateImageUrl(form.imageUrl, CATEGORY_MAX_IMAGE_URL));
+    if (imageError) errors.imageUrl = imageError;
+  } else if (form.imageUrl.trim()) {
+    const imageError = tryValidateField(() => validateImageUrl(form.imageUrl, CATEGORY_MAX_IMAGE_URL));
+    if (imageError) errors.imageUrl = imageError;
+  }
 
   const sortError = tryValidateField(() => {
     const sortRaw = form.sortOrder.trim();
@@ -87,6 +92,7 @@ export function isCategoryFormDirty(
     form.name.trim() !== initialValues.name.trim() ||
     form.description.trim() !== (initialValues.description ?? '').trim() ||
     form.imageUrl.trim() !== (initialValues.imageUrl ?? '').trim() ||
+    form.parentId !== initialValues.parentId ||
     form.sortOrder.trim() !== initialValues.sortOrder.trim()
   );
 }

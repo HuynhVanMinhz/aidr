@@ -1,6 +1,7 @@
 export type AdminCategory = {
   categoryId: number;
   parentId?: number | null;
+  parentName?: string | null;
   name: string;
   slug: string;
   description: string;
@@ -11,6 +12,30 @@ export type AdminCategory = {
   childCount: number;
   createdAt: string;
   updatedAt: string;
+};
+
+export type AdminCategoryOption = {
+  categoryId: number;
+  parentId?: number | null;
+  name: string;
+  sortOrder: number;
+};
+
+export type AdminCategoryListResult = {
+  items: AdminCategory[];
+  page: number;
+  pageSize: number;
+  totalCount: number;
+  totalPages: number;
+  activeCount: number;
+  inactiveCount: number;
+  withProductsCount: number;
+};
+
+export type AdminCategoryListQuery = {
+  q?: string;
+  page?: number;
+  pageSize?: number;
 };
 
 export type CreateCategoryPayload = {
@@ -28,6 +53,7 @@ export type UpdateCategoryPayload = {
   description: string;
   imageUrl: string;
   sortOrder: number;
+  parentId?: number | null;
 };
 
 export type SellerRegistrationStatus = 'Pending' | 'Approved' | 'Rejected';
@@ -47,6 +73,24 @@ export type AdminSellerRegistration = {
   reviewedAt?: string | null;
   createdAt: string;
   shopId?: string | null;
+};
+
+export type AdminSellerRegistrationListResult = {
+  items: AdminSellerRegistration[];
+  page: number;
+  pageSize: number;
+  totalCount: number;
+  totalPages: number;
+  pendingCount: number;
+  approvedCount: number;
+  rejectedCount: number;
+};
+
+export type SellerRegistrationListQuery = {
+  status?: SellerRegistrationStatusFilter;
+  q?: string;
+  page?: number;
+  pageSize?: number;
 };
 
 export type ApproveSellerRegistrationResult = {

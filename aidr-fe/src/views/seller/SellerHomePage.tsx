@@ -1,12 +1,43 @@
+import { Link } from 'react-router-dom';
+import { IconifyIcon } from '../../components/admin/IconifyIcon';
+
 export function SellerHomePage() {
   return (
     <div className="row">
+      <div className="col-md-6 col-xl-4">
+        <div className="card overflow-hidden">
+          <div className="card-body">
+            <div className="d-flex align-items-center">
+              <div className="flex-grow-1">
+                <h5 className="text-muted fw-normal mt-0">My Products</h5>
+                <p className="mb-0 text-muted">Create, edit, and track moderation status.</p>
+              </div>
+              <div className="avatar-sm rounded bg-primary-subtle">
+                <IconifyIcon
+                  icon="solar:box-bold-duotone"
+                  className="avatar-title fs-24 text-primary"
+                />
+              </div>
+            </div>
+            <div className="mt-3">
+              <Link to="/seller/products" className="btn btn-sm btn-primary me-2">
+                View products
+              </Link>
+              <Link to="/seller/products/new" className="btn btn-sm btn-outline-primary">
+                Add product
+              </Link>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div className="col-12">
         <div className="card">
           <div className="card-body">
             <h4 className="card-title">Seller Center</h4>
             <p className="text-muted mb-0">
-              Seller area uses the admin UI. Product management will open when the Seller module is ready.
+              Manage your catalog here. New products are submitted as Pending until an admin approves
+              them for the storefront.
             </p>
           </div>
         </div>

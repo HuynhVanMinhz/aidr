@@ -1,17 +1,24 @@
 import type {
   AdminSellerRegistration,
+  AdminSellerRegistrationListResult,
   ApproveSellerRegistrationResult,
   RejectSellerRegistrationPayload,
-  SellerRegistrationStatusFilter,
+  SellerRegistrationListQuery,
 } from '../types/admin';
 import type { ApiResult } from '../types/catalog';
 import { apiClient } from './apiClient';
 
-export async function listSellerRegistrations(status?: SellerRegistrationStatusFilter) {
-  const params = status ? { status } : undefined;
-  const { data } = await apiClient.get<ApiResult<AdminSellerRegistration[]>>(
+export async function listSellerRegistrations(query: SellerRegistrationListQuery = {}) {
+  const { data } = await apiClient.get<ApiResult<AdminSellerRegistrationListResult>>(
     '/admin/seller-registrations',
-    { params },
+    {
+      params: {
+        status: query.status ?? 'Pending',
+        q: query.q || undefined,
+        page: query.page ?? 1,
+        pageSize: query.pageSize ?? 10,
+      },
+    },
   );
   return data;
 }

@@ -4,8 +4,11 @@ namespace AIDR.Modules.Admin.Abstractions;
 
 public interface IAdminSellerRegistrationService
 {
-    Task<IReadOnlyList<AdminSellerRegistrationDto>> ListAsync(
+    Task<AdminSellerRegistrationListResultDto> ListAsync(
         string? status,
+        string? q,
+        int page,
+        int pageSize,
         CancellationToken cancellationToken = default);
 
     Task<AdminSellerRegistrationDto> GetByIdAsync(

@@ -11,35 +11,60 @@ import {
   selectSellerRegistrationsLoaded,
   selectSellerRegistrationsLoading,
   selectSellerRegistrationsMutating,
+  selectSellerRegistrationsPage,
+  selectSellerRegistrationsPageSize,
+  selectSellerRegistrationsSummary,
+  selectSellerRegistrationsTotalCount,
 } from '../store/adminSlice';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
-import type { RejectSellerRegistrationPayload, SellerRegistrationStatusFilter } from '../types/admin';
+import type {
+  RejectSellerRegistrationPayload,
+  SellerRegistrationListQuery,
+  SellerRegistrationStatusFilter,
+} from '../types/admin';
+
+function normalizeQuery(
+  statusOrQuery: SellerRegistrationStatusFilter | SellerRegistrationListQuery,
+): SellerRegistrationListQuery {
+  if (typeof statusOrQuery === 'string') {
+    return { status: statusOrQuery, page: 1, pageSize: 10, q: '' };
+  }
+  return {
+    status: statusOrQuery.status ?? 'Pending',
+    page: statusOrQuery.page ?? 1,
+    pageSize: statusOrQuery.pageSize ?? 10,
+    q: statusOrQuery.q ?? '',
+  };
+}
 
 export function useAdminSellerRegistrations(
-  status: SellerRegistrationStatusFilter = 'Pending',
+  statusOrQuery: SellerRegistrationStatusFilter | SellerRegistrationListQuery = 'Pending',
   options?: { autoLoad?: boolean },
 ) {
   const dispatch = useAppDispatch();
   const items = useAppSelector(selectSellerRegistrations);
   const loadedFilter = useAppSelector(selectSellerRegistrationsFilter);
+  const page = useAppSelector(selectSellerRegistrationsPage);
+  const pageSize = useAppSelector(selectSellerRegistrationsPageSize);
+  const totalCount = useAppSelector(selectSellerRegistrationsTotalCount);
+  const summary = useAppSelector(selectSellerRegistrationsSummary);
   const loading = useAppSelector(selectSellerRegistrationsLoading);
   const mutating = useAppSelector(selectSellerRegistrationsMutating);
   const error = useAppSelector(selectSellerRegistrationsError);
   const loaded = useAppSelector(selectSellerRegistrationsLoaded);
   const autoLoad = options?.autoLoad ?? true;
+  const listQuery = normalizeQuery(statusOrQuery);
 
   useEffect(() => {
     if (!autoLoad) return;
-    const needsLoad = !loaded || loadedFilter !== status;
-    if (needsLoad && !loading) {
-      void dispatch(fetchSellerRegistrations(status));
-    }
-  }, [autoLoad, dispatch, loaded, loadedFilter, loading, status]);
+    void dispatch(fetchSellerRegistrations(listQuery));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoLoad, dispatch, listQuery.status, listQuery.page, listQuery.pageSize, listQuery.q]);
 
   const reload = useCallback(
-    (nextStatus: SellerRegistrationStatusFilter = status) =>
-      dispatch(fetchSellerRegistrations(nextStatus)),
-    [dispatch, status],
+    (next?: SellerRegistrationListQuery) =>
+      dispatch(fetchSellerRegistrations(next ?? listQuery)),
+    [dispatch, listQuery.page, listQuery.pageSize, listQuery.q, listQuery.status],
   );
 
   const loadOne = useCallback(
@@ -77,6 +102,10 @@ export function useAdminSellerRegistrations(
 
   return {
     items,
+    page,
+    pageSize,
+    totalCount,
+    summary,
     loading,
     mutating,
     error,

@@ -25,11 +25,22 @@ public sealed class ApproveSellerRegistrationResult
     public Guid WalletId { get; init; }
 }
 
+public sealed class AdminSellerRegistrationListSummary
+{
+    public int PendingCount { get; init; }
+    public int ApprovedCount { get; init; }
+    public int RejectedCount { get; init; }
+}
+
 public interface IAdminSellerRegistrationRepository
 {
-    Task<IReadOnlyList<AdminSellerRegistrationRecord>> ListAsync(
-        string? status,
-        CancellationToken cancellationToken = default);
+    Task<(IReadOnlyList<AdminSellerRegistrationRecord> Items, int TotalCount, int Page, AdminSellerRegistrationListSummary Summary)>
+        ListPagedAsync(
+            string? status,
+            string? keyword,
+            int page,
+            int pageSize,
+            CancellationToken cancellationToken = default);
 
     Task<AdminSellerRegistrationRecord?> GetByIdAsync(
         Guid requestId,

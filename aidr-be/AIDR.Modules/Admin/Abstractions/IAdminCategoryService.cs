@@ -4,7 +4,14 @@ namespace AIDR.Modules.Admin.Abstractions;
 
 public interface IAdminCategoryService
 {
-    Task<IReadOnlyList<AdminCategoryDto>> ListAsync(CancellationToken cancellationToken = default);
+    Task<AdminCategoryListResultDto> ListAsync(
+        string? q,
+        int page,
+        int pageSize,
+        CancellationToken cancellationToken = default);
+
+    Task<IReadOnlyList<AdminCategoryOptionDto>> ListOptionsAsync(
+        CancellationToken cancellationToken = default);
 
     Task<AdminCategoryDto> GetByIdAsync(int categoryId, CancellationToken cancellationToken = default);
 
