@@ -33,7 +33,7 @@ export function LoginPage() {
         // Session already persisted in localStorage via authSlice
       }
     } catch (err) {
-      setError(getErrorMessage(err, 'Email hoặc mật khẩu không đúng.'));
+      setError(getErrorMessage(err, 'Invalid email or password.'));
     } finally {
       setLoading(false);
     }
@@ -61,8 +61,8 @@ export function LoginPage() {
                   <form onSubmit={handleSubmit}>
                     <div className="login-form-content">
                       <div className="login-content-title-box">
-                        <h2>Đăng nhập</h2>
-                        <p>Truy cập tài khoản để theo dõi đơn hàng và mua sắm trên AIDR.</p>
+                        <h2>Sign in</h2>
+                        <p>Access your account to track orders and shop on AIDR.</p>
                       </div>
 
                       {error && <div className="auth-alert auth-alert--error">{error}</div>}
@@ -74,7 +74,7 @@ export function LoginPage() {
                             id="email"
                             type="email"
                             className="form-control"
-                            placeholder="Nhập email"
+                            placeholder="Enter your email"
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
                             required
@@ -83,12 +83,12 @@ export function LoginPage() {
                         </div>
 
                         <div className="form-group">
-                          <label htmlFor="password">Mật khẩu *</label>
+                          <label htmlFor="password">Password *</label>
                           <input
                             id="password"
                             type="password"
                             className="form-control"
-                            placeholder="Nhập mật khẩu"
+                            placeholder="Enter your password"
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
                             required
@@ -99,7 +99,7 @@ export function LoginPage() {
                         <div className="checkout-login-form-footer">
                           <div className="checkout-login-btn">
                             <button type="submit" className="btn-default btn-accent" disabled={loading}>
-                              {loading ? 'Đang đăng nhập…' : 'Đăng nhập'}
+                              {loading ? 'Signing in…' : 'Sign in'}
                             </button>
                           </div>
                           <div className="checkout-form-checkbox">
@@ -109,16 +109,16 @@ export function LoginPage() {
                               checked={remember}
                               onChange={(e) => setRemember(e.target.checked)}
                             />
-                            <label htmlFor="remember">Ghi nhớ đăng nhập</label>
+                            <label htmlFor="remember">Remember me</label>
                           </div>
                         </div>
 
                         <div className="login-content-form-btn">
-                          <Link to="/forgot-password">Quên mật khẩu?</Link>
+                          <Link to="/forgot-password">Forgot password?</Link>
                         </div>
 
                         <div className="auth-divider">
-                          <span>hoặc</span>
+                          <span>or</span>
                         </div>
 
                         <div className="checkout-login-btn">
@@ -128,13 +128,13 @@ export function LoginPage() {
                             onClick={handleGoogle}
                             disabled={googleLoading || loading}
                           >
-                            {googleLoading ? 'Đang chuyển tới Google…' : 'Đăng nhập với Google'}
+                            {googleLoading ? 'Redirecting to Google…' : 'Sign in with Google'}
                           </button>
                         </div>
 
                         <div className="login-content-form-btn login-now-btn">
                           <Link to={returnUrl ? `/register?returnUrl=${encodeURIComponent(returnUrl)}` : '/register'}>
-                            Chưa có tài khoản? Đăng ký
+                            Don&apos;t have an account? Sign up
                           </Link>
                         </div>
                       </div>

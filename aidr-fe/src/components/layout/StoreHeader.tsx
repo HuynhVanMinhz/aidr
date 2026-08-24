@@ -138,7 +138,7 @@ export function StoreHeader() {
                     ))}
                     <li>
                       <Link to="/categories" onClick={() => setCategoriesOpen(false)}>
-                        Xem tất cả
+                        View all
                       </Link>
                     </li>
                   </ul>

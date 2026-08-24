@@ -74,7 +74,7 @@ export function AddressesPage() {
 
   async function persistAddresses(nextAddresses: AddressUpsert[]) {
     if (!profile) return;
-    const phone = validateVnPhone(profile.phone, 'Số điện thoại hồ sơ');
+    const phone = validateVnPhone(profile.phone, 'Profile phone number');
     await updateProfile({
       fullName: profile.fullName,
       phone,
@@ -93,12 +93,12 @@ export function AddressesPage() {
     try {
       const normalized: AddressUpsert = {
         ...form,
-        receiverName: validateRequired(form.receiverName, 'Người nhận'),
-        phone: validateVnPhone(form.phone, 'Số điện thoại'),
-        province: validateRequired(form.province, 'Tỉnh / Thành phố'),
-        district: validateRequired(form.district, 'Quận / Huyện'),
-        ward: validateRequired(form.ward, 'Phường / Xã'),
-        streetAddress: validateRequired(form.streetAddress, 'Địa chỉ chi tiết'),
+        receiverName: validateRequired(form.receiverName, 'Recipient'),
+        phone: validateVnPhone(form.phone, 'Phone number'),
+        province: validateRequired(form.province, 'Province / City'),
+        district: validateRequired(form.district, 'District'),
+        ward: validateRequired(form.ward, 'Ward'),
+        streetAddress: validateRequired(form.streetAddress, 'Street address'),
       };
       const base = addresses.map<AddressUpsert>((a) => ({
         addressId: a.addressId,
@@ -119,7 +119,7 @@ export function AddressesPage() {
         );
       } else {
         if (base.length >= MAX_ADDRESSES) {
-          setFormError(`Tối đa ${MAX_ADDRESSES} địa chỉ.`);
+          setFormError(`Maximum of ${MAX_ADDRESSES} addresses.`);
           return;
         }
         next = [...base, { ...normalized, addressId: undefined }];
@@ -134,7 +134,7 @@ export function AddressesPage() {
       }
 
       await persistAddresses(next);
-      setFormSuccess(editingId ? 'Đã cập nhật địa chỉ.' : 'Đã thêm địa chỉ mới.');
+      setFormSuccess(editingId ? 'Address updated.' : 'Address added.');
       resetForm();
     } catch (err) {
       setFormError(getErrorMessage(err));
@@ -142,7 +142,7 @@ export function AddressesPage() {
   }
 
   async function handleDelete(addressId: string) {
-    if (!profile || !window.confirm('Xóa địa chỉ này?')) return;
+    if (!profile || !window.confirm('Delete this address?')) return;
 
     setFormError(null);
     setFormSuccess(null);
@@ -162,7 +162,7 @@ export function AddressesPage() {
         }));
 
       await persistAddresses(next);
-      setFormSuccess('Đã xóa địa chỉ.');
+      setFormSuccess('Address deleted.');
       if (editingId === addressId) resetForm();
     } catch (err) {
       setFormError(getErrorMessage(err));
@@ -188,7 +188,7 @@ export function AddressesPage() {
       }));
 
       await persistAddresses(next);
-      setFormSuccess('Đã đặt địa chỉ mặc định.');
+      setFormSuccess('Default address updated.');
     } catch (err) {
       setFormError(getErrorMessage(err));
     }
@@ -197,7 +197,7 @@ export function AddressesPage() {
   if (loading && !profile) {
     return (
       <div className="account-address-content-box">
-        <p className="account-muted">Đang tải địa chỉ…</p>
+        <p className="account-muted">Loading addresses…</p>
       </div>
     );
   }
@@ -208,11 +208,11 @@ export function AddressesPage() {
 
       <div className="account-address-content-header">
         <p>
-          Địa chỉ dưới đây sẽ được dùng mặc định khi thanh toán. Tối đa {MAX_ADDRESSES} địa chỉ.
+          These addresses will be used by default at checkout. Maximum of {MAX_ADDRESSES} addresses.
         </p>
         {canAddMore && (
           <button type="button" className="btn-default btn-accent" onClick={startAdd} disabled={saving}>
-            Thêm địa chỉ
+            Add address
           </button>
         )}
       </div>
@@ -222,14 +222,14 @@ export function AddressesPage() {
 
       <div className="account-address-item-list">
         {sortedAddresses.length === 0 ? (
-          <p className="account-muted">Chưa có địa chỉ nào.</p>
+          <p className="account-muted">No addresses yet.</p>
         ) : (
           sortedAddresses.map((address) => (
             <div key={address.addressId} className="account-address-item">
               <div className="account-address-item-title">
                 <h2>
-                  {address.isDefault ? 'Địa chỉ mặc định' : 'Địa chỉ giao hàng'}
-                  {address.isDefault && <span className="account-badge">Mặc định</span>}
+                  {address.isDefault ? 'Default address' : 'Shipping address'}
+                  {address.isDefault && <span className="account-badge">Default</span>}
                 </h2>
                 <p>
                   <button
@@ -238,7 +238,7 @@ export function AddressesPage() {
                     onClick={() => setEditingId(address.addressId)}
                     disabled={saving}
                   >
-                    Sửa <img src="/theme/images/icon-pen.svg" alt="" />
+                    Edit <img src="/theme/images/icon-pen.svg" alt="" />
                   </button>
                 </p>
               </div>
@@ -256,7 +256,7 @@ export function AddressesPage() {
                     onClick={() => handleSetDefault(address.addressId)}
                     disabled={saving}
                   >
-                    Đặt mặc định
+                    Set as default
                   </button>
                 )}
                 <button
@@ -265,7 +265,7 @@ export function AddressesPage() {
                   onClick={() => handleDelete(address.addressId)}
                   disabled={saving}
                 >
-                  Xóa
+                  Delete
                 </button>
               </div>
             </div>
@@ -276,13 +276,13 @@ export function AddressesPage() {
       {showForm && (
         <div className="account-addresses-content-box account-form-panel">
           <div className="checkout-bill-address-title">
-            <h2>{editingId ? 'Sửa địa chỉ' : 'Thêm địa chỉ mới'}</h2>
+            <h2>{editingId ? 'Edit address' : 'Add new address'}</h2>
           </div>
 
           <form className="checkout-bill-address-form" onSubmit={handleSubmit}>
             <div className="row">
               <div className="form-group col-md-6">
-                <label htmlFor="receiverName">Người nhận *</label>
+                <label htmlFor="receiverName">Recipient *</label>
                 <input
                   id="receiverName"
                   type="text"
@@ -294,7 +294,7 @@ export function AddressesPage() {
               </div>
 
               <div className="form-group col-md-6">
-                <label htmlFor="addrPhone">Số điện thoại *</label>
+                <label htmlFor="addrPhone">Phone number *</label>
                 <input
                   id="addrPhone"
                   type="text"
@@ -306,7 +306,7 @@ export function AddressesPage() {
               </div>
 
               <div className="form-group col-lg-12">
-                <label htmlFor="province">Tỉnh / Thành phố *</label>
+                <label htmlFor="province">Province / City *</label>
                 <input
                   id="province"
                   type="text"
@@ -318,7 +318,7 @@ export function AddressesPage() {
               </div>
 
               <div className="form-group col-lg-12">
-                <label htmlFor="district">Quận / Huyện *</label>
+                <label htmlFor="district">District *</label>
                 <input
                   id="district"
                   type="text"
@@ -330,7 +330,7 @@ export function AddressesPage() {
               </div>
 
               <div className="form-group col-lg-12">
-                <label htmlFor="ward">Phường / Xã *</label>
+                <label htmlFor="ward">Ward *</label>
                 <input
                   id="ward"
                   type="text"
@@ -342,12 +342,12 @@ export function AddressesPage() {
               </div>
 
               <div className="form-group col-lg-12">
-                <label htmlFor="streetAddress">Địa chỉ chi tiết *</label>
+                <label htmlFor="streetAddress">Street address *</label>
                 <input
                   id="streetAddress"
                   type="text"
                   className="form-control"
-                  placeholder="Số nhà, tên đường"
+                  placeholder="House number, street name"
                   value={form.streetAddress}
                   onChange={(e) => setForm((f) => ({ ...f, streetAddress: e.target.value }))}
                   required
@@ -362,16 +362,16 @@ export function AddressesPage() {
                     checked={form.isDefault}
                     onChange={(e) => setForm((f) => ({ ...f, isDefault: e.target.checked }))}
                   />
-                  <label htmlFor="isDefault">Đặt làm địa chỉ mặc định</label>
+                  <label htmlFor="isDefault">Set as default address</label>
                 </div>
               </div>
 
               <div className="form-group col-lg-12 account-form-actions">
                 <button type="submit" className="btn-default btn-accent" disabled={saving}>
-                  {saving ? 'Đang lưu…' : 'Lưu địa chỉ'}
+                  {saving ? 'Saving…' : 'Save address'}
                 </button>
                 <button type="button" className="btn-default btn-border" onClick={resetForm} disabled={saving}>
-                  Hủy
+                  Cancel
                 </button>
               </div>
             </div>

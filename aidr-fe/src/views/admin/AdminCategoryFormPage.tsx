@@ -73,7 +73,7 @@ export function AdminCategoryFormPage() {
       })
       .catch((err) => {
         if (!cancelled) {
-          const message = err instanceof Error ? err.message : 'Không tải được danh mục.';
+          const message = err instanceof Error ? err.message : 'Unable to load category.';
           setLoadError(message);
           toast.error(message);
         }
@@ -115,7 +115,7 @@ export function AdminCategoryFormPage() {
     try {
       validateCategoryImageFile(file);
       if (!isCloudinaryConfigured()) {
-        throw new Error('Cloudinary chưa cấu hình — không thể upload ảnh.');
+        throw new Error('Cloudinary is not configured — unable to upload image.');
       }
 
       // Local preview only (do not set to form.imageUrl because backend validates URL format).
@@ -129,9 +129,9 @@ export function AdminCategoryFormPage() {
       setImagePreview(null);
       patch('imageUrl', uploaded.secureUrl);
       markTouched('imageUrl');
-      toast.success('Upload ảnh thành công.');
+      toast.success('Image uploaded.');
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Upload ảnh thất bại.';
+      const message = err instanceof Error ? err.message : 'Image upload failed.';
       setImageUploadError(message);
       setImagePreview(null);
       markTouched('imageUrl');
@@ -162,7 +162,7 @@ export function AdminCategoryFormPage() {
           sortOrder: Number(form.sortOrder),
           isActive: form.isActive,
         });
-        toast.success('Tạo danh mục thành công.');
+        toast.success('Category created.');
       } else {
         await update(categoryId, {
           name: form.name.trim(),
@@ -170,24 +170,24 @@ export function AdminCategoryFormPage() {
           imageUrl: form.imageUrl.trim(),
           sortOrder: Number(form.sortOrder),
         });
-        toast.success('Cập nhật danh mục thành công.');
+        toast.success('Category updated.');
       }
       navigate('/admin/categories');
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Không lưu được danh mục.';
+      const message = err instanceof Error ? err.message : 'Unable to save category.';
       setSubmitError(message);
       toast.error(message);
     }
   }
 
-  if (loadingDetail) return <p className="text-muted">Đang tải danh mục...</p>;
+  if (loadingDetail) return <p className="text-muted">Loading category...</p>;
 
   if (loadError) {
     return (
       <div className="alert alert-danger" role="alert">
         {loadError}{' '}
         <Link to="/admin/categories" className="alert-link">
-          Quay lại danh sách
+          Back to list
         </Link>
       </div>
     );
@@ -278,7 +278,7 @@ export function AdminCategoryFormPage() {
                     {effectiveImageUrl ? (
                       <div className="d-flex flex-column align-items-center justify-content-center py-3">
                         <img src={effectiveImageUrl} alt="Category thumbnail preview" className="avatar-md rounded" />
-                        <div className="mt-2 text-primary fw-semibold">{uploadingImage ? 'Đang upload…' : 'Click để đổi ảnh'}</div>
+                        <div className="mt-2 text-primary fw-semibold">{uploadingImage ? 'Uploading…' : 'Click to change image'}</div>
                       </div>
                     ) : (
                       <div className="dz-message needsclick">
@@ -286,7 +286,7 @@ export function AdminCategoryFormPage() {
                         <h3 className="mt-4">
                           Drop your image here, or <span className="text-primary">click to browse</span>
                         </h3>
-                        <span className="text-muted fs-13">Chọn file ảnh để upload lên Cloudinary.</span>
+                        <span className="text-muted fs-13">Choose an image file to upload to Cloudinary.</span>
                       </div>
                     )}
                   </div>

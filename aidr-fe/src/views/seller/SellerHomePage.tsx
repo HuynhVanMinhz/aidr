@@ -6,7 +6,7 @@ export function SellerHomePage() {
           <div className="card-body">
             <h4 className="card-title">Seller Center</h4>
             <p className="text-muted mb-0">
-              Khu vực bán hàng dùng giao diện admin. Quản lý sản phẩm sẽ được mở khi module Seller sẵn sàng.
+              Seller area uses the admin UI. Product management will open when the Seller module is ready.
             </p>
           </div>
         </div>
