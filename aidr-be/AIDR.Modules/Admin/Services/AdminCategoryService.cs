@@ -48,8 +48,8 @@ public sealed class AdminCategoryService : IAdminCategoryService
     {
         var name = RequireName(request.Name);
         var slug = RequireSlug(request.Slug);
-        var description = NormalizeOptionalText(request.Description, AdminConstants.MaxCategoryDescriptionLength, "Description");
-        var imageUrl = ValidateOptionalImageUrl(request.ImageUrl);
+        var description = RequireDescription(request.Description);
+        var imageUrl = RequireImageUrl(request.ImageUrl);
 
         if (request.ParentId is <= 0)
             throw new AppException("Parent id must be a positive number when provided.");
@@ -88,8 +88,8 @@ public sealed class AdminCategoryService : IAdminCategoryService
             throw new NotFoundException("Category not found.");
 
         var name = RequireName(request.Name);
-        var description = NormalizeOptionalText(request.Description, AdminConstants.MaxCategoryDescriptionLength, "Description");
-        var imageUrl = ValidateOptionalImageUrl(request.ImageUrl);
+        var description = RequireDescription(request.Description);
+        var imageUrl = RequireImageUrl(request.ImageUrl);
 
         var record = await _repository.UpdateAsync(
             categoryId,
@@ -176,24 +176,24 @@ public sealed class AdminCategoryService : IAdminCategoryService
         return trimmed;
     }
 
-    private static string? NormalizeOptionalText(string? value, int maxLength, string fieldName)
+    private static string RequireDescription(string? value)
     {
-        if (string.IsNullOrWhiteSpace(value))
-            return null;
+        var trimmed = value?.Trim() ?? string.Empty;
+        if (string.IsNullOrWhiteSpace(trimmed))
+            throw new AppException("Category description is required.");
 
-        var trimmed = value.Trim();
-        if (trimmed.Length > maxLength)
-            throw new AppException($"{fieldName} must not exceed {maxLength} characters.");
+        if (trimmed.Length > AdminConstants.MaxCategoryDescriptionLength)
+            throw new AppException($"Description must not exceed {AdminConstants.MaxCategoryDescriptionLength} characters.");
 
         return trimmed;
     }
 
-    private static string? ValidateOptionalImageUrl(string? imageUrl)
+    private static string RequireImageUrl(string? imageUrl)
     {
-        if (string.IsNullOrWhiteSpace(imageUrl))
-            return null;
+        var trimmed = imageUrl?.Trim() ?? string.Empty;
+        if (string.IsNullOrWhiteSpace(trimmed))
+            throw new AppException("Category image URL is required.");
 
-        var trimmed = imageUrl.Trim();
         if (trimmed.Length > AdminConstants.MaxCategoryImageUrlLength)
             throw new AppException($"Image URL must not exceed {AdminConstants.MaxCategoryImageUrlLength} characters.");
 

@@ -1,0 +1,37 @@
+---
+description: AIDR Admin/Seller — UI đầy đủ từ theme-for-aidr-admin-fe; màu brand storefront.
+alwaysApply: true
+---
+
+# AIDR Admin / Seller UI
+
+Khi implement màn hình **Admin** (`/admin/*`) hoặc **Seller** (`/seller/*`):
+
+## Nguyên tắc
+
+| Phần | Nguồn |
+|------|--------|
+| **UI đầy đủ** (layout, sidebar, card, table, form, topbar) | `theme-for-aidr-admin-fe/admin/` |
+| **Màu sắc brand** | Giống storefront: primary `#16181D` (`admin-theme/css/aidr-brand.css`) |
+| Asset FE | `aidr-fe/public/admin-theme/` (copy từ theme admin + brand override) |
+
+1. Convert HTML admin theme → React (`AdminShell`, pages…). **Giữ cấu trúc markup/class** của file theme (KPI `card overflow-hidden`, table `table-hover table-centered`, form 2 cột + dropzone). Không rút gọn thành 1 card generic.
+2. Class admin theme: `wrapper`, `main-nav`, `page-content`, `card`, `btn btn-primary`, `table`, `form-control`.
+3. Load CSS admin (`vendor.min.css`, `icons.min.css`, `app.min.css`, `aidr-brand.css`) **chỉ trên route `/admin` và `/seller`**. Không trộn Header/Footer storefront.
+4. Icon sidebar/topbar: `iconify-icon` (Solar) như theme, không thay bằng UI tự vẽ.
+5. Logic: React + Redux + API — không phụ thuộc jQuery của theme.
+
+## Mapping màn
+
+| Màn | File theme |
+|-----|------------|
+| Shell | `index.html` |
+| Category list / add / edit | `category-list.html`, `category-add.html`, `category-edit.html` |
+| Product moderation | `product-list.html`, … |
+| Seller center | `seller-*.html`, `product-*.html` |
+
+## Không làm
+
+- Convert Admin/Seller sang visual `theme-for-aidr-fe` (`page-account-*`, `btn-default`…).
+- Để primary màu cam Larkon `#ff6c2f`.
+- Invent dashboard lệch theme khi đã có trang tương đương.

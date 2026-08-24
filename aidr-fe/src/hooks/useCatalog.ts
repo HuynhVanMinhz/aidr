@@ -57,7 +57,7 @@ export function useCatalogList(options?: { autoLoad?: boolean }) {
     if (autoLoad) {
       void dispatch(fetchProducts(filters));
     }
-    // chỉ auto-load lần mount theo filters ban đầu từ URL (page tự gọi apply)
+    // auto-load only on mount from initial URL filters (page calls apply itself)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [autoLoad, dispatch]);
 

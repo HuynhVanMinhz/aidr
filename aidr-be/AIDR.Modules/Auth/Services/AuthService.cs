@@ -158,13 +158,13 @@ public sealed class AuthService : IAuthService
 
         var resetUrl = $"{_options.FrontendResetPasswordUrl.TrimEnd('/')}?token={Uri.EscapeDataString(rawToken)}";
         var body = $"""
-            <p>Xin chào {System.Net.WebUtility.HtmlEncode(user.FullName)},</p>
-            <p>Bạn vừa yêu cầu đặt lại mật khẩu AIDR.</p>
-            <p><a href="{resetUrl}">Đặt lại mật khẩu</a></p>
-            <p>Link hết hạn sau {_options.PasswordResetTokenHours} giờ và chỉ dùng một lần.</p>
+            <p>Hello {System.Net.WebUtility.HtmlEncode(user.FullName)},</p>
+            <p>You requested a password reset for your AIDR account.</p>
+            <p><a href="{resetUrl}">Reset password</a></p>
+            <p>This link expires in {_options.PasswordResetTokenHours} hour(s) and can be used only once.</p>
             """;
 
-        await _emailSender.SendAsync(user.Email, "AIDR — Đặt lại mật khẩu", body, cancellationToken);
+        await _emailSender.SendAsync(user.Email, "AIDR — Reset password", body, cancellationToken);
     }
 
     public async Task ResetPasswordAsync(ResetPasswordRequest request, CancellationToken cancellationToken = default)

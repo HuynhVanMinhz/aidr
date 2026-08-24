@@ -2,6 +2,8 @@ import { Navigate, Route, Routes } from 'react-router-dom';
 import { GuestRoute, ProtectedRoute } from './guards/AuthGuards';
 import { AppShell } from './AppShell';
 import { AccountLayout } from '../components/account/AccountLayout';
+import { AdminShell } from '../components/layout/AdminShell';
+import { useAidrShellTheme } from '../hooks/useAidrShellTheme';
 import { HomePage } from '../views/HomePage';
 import { HealthPage } from '../views/HealthPage';
 import { LoginPage } from '../views/auth/LoginPage';
@@ -15,37 +17,66 @@ import { ChangePasswordPage } from '../views/account/ChangePasswordPage';
 import { ProductListPage } from '../views/catalog/ProductListPage';
 import { ProductDetailPage } from '../views/catalog/ProductDetailPage';
 import { CategoriesPage } from '../views/catalog/CategoriesPage';
+import { AdminHomePage } from '../views/admin/AdminHomePage';
+import { AdminCategoryListPage } from '../views/admin/AdminCategoryListPage';
+import { AdminCategoryFormPage } from '../views/admin/AdminCategoryFormPage';
+import { SellerHomePage } from '../views/seller/SellerHomePage';
+import { ToastHost } from '../components/feedback/ToastHost';
+
+function AppThemeBridge() {
+  useAidrShellTheme();
+  return null;
+}
 
 export function App() {
   return (
-    <Routes>
-      <Route element={<GuestRoute />}>
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/register" element={<RegisterPage />} />
-      </Route>
+    <>
+      <AppThemeBridge />
+      <ToastHost />
+      <Routes>
+        <Route element={<GuestRoute />}>
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/register" element={<RegisterPage />} />
+        </Route>
 
-      <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-      <Route path="/reset-password" element={<ResetPasswordPage />} />
-      <Route path="/auth/callback" element={<GoogleCallbackPage />} />
+        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+        <Route path="/reset-password" element={<ResetPasswordPage />} />
+        <Route path="/auth/callback" element={<GoogleCallbackPage />} />
 
-      <Route element={<AppShell />}>
-        <Route index element={<HomePage />} />
-        <Route path="products" element={<ProductListPage />} />
-        <Route path="products/:id" element={<ProductDetailPage />} />
-        <Route path="categories" element={<CategoriesPage />} />
-        <Route path="health" element={<HealthPage />} />
-
-        <Route element={<ProtectedRoute />}>
-          <Route path="account" element={<AccountLayout />}>
-            <Route index element={<Navigate to="profile" replace />} />
-            <Route path="profile" element={<ProfilePage />} />
-            <Route path="addresses" element={<AddressesPage />} />
-            <Route path="change-password" element={<ChangePasswordPage />} />
+        <Route element={<ProtectedRoute roles={['ADMIN']} />}>
+          <Route path="/admin" element={<AdminShell variant="admin" />}>
+            <Route index element={<AdminHomePage />} />
+            <Route path="categories" element={<AdminCategoryListPage />} />
+            <Route path="categories/new" element={<AdminCategoryFormPage />} />
+            <Route path="categories/:id/edit" element={<AdminCategoryFormPage />} />
           </Route>
         </Route>
-      </Route>
 
-      <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
+        <Route element={<ProtectedRoute roles={['SELLER']} />}>
+          <Route path="/seller" element={<AdminShell variant="seller" />}>
+            <Route index element={<SellerHomePage />} />
+          </Route>
+        </Route>
+
+        <Route element={<AppShell />}>
+          <Route index element={<HomePage />} />
+          <Route path="products" element={<ProductListPage />} />
+          <Route path="products/:id" element={<ProductDetailPage />} />
+          <Route path="categories" element={<CategoriesPage />} />
+          <Route path="health" element={<HealthPage />} />
+
+          <Route element={<ProtectedRoute />}>
+            <Route path="account" element={<AccountLayout />}>
+              <Route index element={<Navigate to="profile" replace />} />
+              <Route path="profile" element={<ProfilePage />} />
+              <Route path="addresses" element={<AddressesPage />} />
+              <Route path="change-password" element={<ChangePasswordPage />} />
+            </Route>
+          </Route>
+        </Route>
+
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </>
   );
 }

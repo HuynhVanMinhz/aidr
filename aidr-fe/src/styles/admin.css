@@ -1,0 +1,15 @@
+/* Admin-only extras — Larkon classes come from /admin-theme/css */
+
+.admin-theme-body {
+  background: var(--bs-body-bg, #f5f6fa);
+}
+
+.main-nav .nav-link.w-100 {
+  cursor: pointer;
+  background: transparent;
+  border: 0;
+}
+
+html[data-aidr-shell='admin'] .dropdown-menu.show {
+  display: block;
+}

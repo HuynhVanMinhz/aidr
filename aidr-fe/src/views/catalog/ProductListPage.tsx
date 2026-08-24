@@ -193,7 +193,7 @@ export function ProductListPage() {
                 )}
 
                 {!loading && !error && products.length === 0 && (
-                  <p className="text-muted">Không tìm thấy sản phẩm phù hợp.</p>
+                  <p className="text-muted">No matching products found.</p>
                 )}
 
                 <div className="product-item-list">
