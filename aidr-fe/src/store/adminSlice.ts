@@ -5,8 +5,14 @@ import type {
   AdminCategory,
   AdminCategoryListQuery,
   AdminCategoryOption,
+  AdminProductDetail,
+  AdminProductListItem,
+  AdminProductListQuery,
+  AdminProductStatusFilter,
   AdminSellerRegistration,
   CreateCategoryPayload,
+  ProductModerationHistoryResult,
+  RejectProductPayload,
   RejectSellerRegistrationPayload,
   SellerRegistrationListQuery,
   SellerRegistrationStatusFilter,
@@ -22,6 +28,12 @@ export type AdminCategorySummary = {
 };
 
 export type AdminSellerRegistrationSummary = {
+  pendingCount: number;
+  approvedCount: number;
+  rejectedCount: number;
+};
+
+export type AdminProductSummary = {
   pendingCount: number;
   approvedCount: number;
   rejectedCount: number;
@@ -50,6 +62,19 @@ export type AdminState = {
   sellerRegistrationsMutating: boolean;
   sellerRegistrationsError: string | null;
   sellerRegistrationsLoaded: boolean;
+  products: AdminProductListItem[];
+  productsFilter: AdminProductStatusFilter;
+  productsPage: number;
+  productsPageSize: number;
+  productsTotalCount: number;
+  productsQuery: string;
+  productsSummary: AdminProductSummary;
+  productsLoading: boolean;
+  productsMutating: boolean;
+  productsError: string | null;
+  productsLoaded: boolean;
+  productDetails: AdminProductDetail[];
+  moderationHistoryByProductId: Record<string, ProductModerationHistoryResult>;
 };
 
 type AdminRoot = { admin: AdminState };
@@ -62,6 +87,12 @@ const emptyCategorySummary: AdminCategorySummary = {
 };
 
 const emptySellerSummary: AdminSellerRegistrationSummary = {
+  pendingCount: 0,
+  approvedCount: 0,
+  rejectedCount: 0,
+};
+
+const emptyProductSummary: AdminProductSummary = {
   pendingCount: 0,
   approvedCount: 0,
   rejectedCount: 0,
@@ -90,6 +121,19 @@ const initialState: AdminState = {
   sellerRegistrationsMutating: false,
   sellerRegistrationsError: null,
   sellerRegistrationsLoaded: false,
+  products: [],
+  productsFilter: 'Pending',
+  productsPage: 1,
+  productsPageSize: 10,
+  productsTotalCount: 0,
+  productsQuery: '',
+  productsSummary: emptyProductSummary,
+  productsLoading: false,
+  productsMutating: false,
+  productsError: null,
+  productsLoaded: false,
+  productDetails: [],
+  moderationHistoryByProductId: {},
 };
 
 function unwrap<T>(result: { success: boolean; data?: T; message?: string }, fallback: string): T {
@@ -97,6 +141,31 @@ function unwrap<T>(result: { success: boolean; data?: T; message?: string }, fal
     throw new Error(result.message || fallback);
   }
   return result.data;
+}
+
+function toListItem(detail: AdminProductDetail): AdminProductListItem {
+  return {
+    productId: detail.productId,
+    name: detail.name,
+    slug: detail.slug,
+    shortDescription: detail.shortDescription,
+    brand: detail.brand,
+    conditionType: detail.conditionType,
+    basePrice: detail.basePrice,
+    salePrice: detail.salePrice,
+    effectivePrice: detail.effectivePrice,
+    currency: detail.currency,
+    stockQuantity: detail.stockQuantity,
+    status: detail.status,
+    primaryImageUrl: detail.images.find((i) => i.isPrimary)?.imageUrl ?? detail.images[0]?.imageUrl,
+    categoryId: detail.categoryId,
+    categoryName: detail.categoryName,
+    shopId: detail.shopId,
+    shopName: detail.shopName,
+    publishedAt: detail.publishedAt,
+    createdAt: detail.createdAt,
+    updatedAt: detail.updatedAt,
+  };
 }
 
 export const fetchAdminCategories = createAsyncThunk(
@@ -241,6 +310,72 @@ export const rejectSellerRegistration = createAsyncThunk(
   },
 );
 
+export const fetchAdminProducts = createAsyncThunk(
+  'admin/fetchProducts',
+  async (query: AdminProductListQuery | undefined, { rejectWithValue }) => {
+    try {
+      const params = query ?? {};
+      const result = await adminApi.listAdminProducts(params);
+      const data = unwrap(result, 'Unable to load products.');
+      return {
+        ...data,
+        status: (params.status ?? 'Pending') as AdminProductStatusFilter,
+        q: params.q ?? '',
+      };
+    } catch (error) {
+      return rejectWithValue(getApiErrorMessage(error, 'Unable to load products.'));
+    }
+  },
+);
+
+export const fetchAdminProduct = createAsyncThunk(
+  'admin/fetchProduct',
+  async (id: string, { rejectWithValue }) => {
+    try {
+      const result = await adminApi.getAdminProduct(id);
+      return unwrap(result, 'Product not found.');
+    } catch (error) {
+      return rejectWithValue(getApiErrorMessage(error, 'Product not found.'));
+    }
+  },
+);
+
+export const approveAdminProduct = createAsyncThunk(
+  'admin/approveProduct',
+  async (id: string, { rejectWithValue }) => {
+    try {
+      const result = await adminApi.approveAdminProduct(id);
+      return unwrap(result, 'Unable to approve product.');
+    } catch (error) {
+      return rejectWithValue(getApiErrorMessage(error, 'Unable to approve product.'));
+    }
+  },
+);
+
+export const rejectAdminProduct = createAsyncThunk(
+  'admin/rejectProduct',
+  async ({ id, payload }: { id: string; payload: RejectProductPayload }, { rejectWithValue }) => {
+    try {
+      const result = await adminApi.rejectAdminProduct(id, payload);
+      return unwrap(result, 'Unable to reject product.');
+    } catch (error) {
+      return rejectWithValue(getApiErrorMessage(error, 'Unable to reject product.'));
+    }
+  },
+);
+
+export const fetchProductModerationHistory = createAsyncThunk(
+  'admin/fetchProductModerationHistory',
+  async (id: string, { rejectWithValue }) => {
+    try {
+      const result = await adminApi.getProductModerationHistory(id);
+      return unwrap(result, 'Unable to load moderation history.');
+    } catch (error) {
+      return rejectWithValue(getApiErrorMessage(error, 'Unable to load moderation history.'));
+    }
+  },
+);
+
 function upsertCategory(list: AdminCategory[], item: AdminCategory): AdminCategory[] {
   const index = list.findIndex((c) => c.categoryId === item.categoryId);
   if (index < 0) return [...list, item];
@@ -260,10 +395,7 @@ function upsertSellerRegistration(
   return next;
 }
 
-function applySellerRegistrationUpdate(
-  state: AdminState,
-  item: AdminSellerRegistration,
-): void {
+function applySellerRegistrationUpdate(state: AdminState, item: AdminSellerRegistration): void {
   const filter = state.sellerRegistrationsFilter;
   const matchesFilter = filter === 'all' || item.status === filter;
   if (!matchesFilter) {
@@ -275,6 +407,40 @@ function applySellerRegistrationUpdate(
   state.sellerRegistrations = upsertSellerRegistration(state.sellerRegistrations, item);
 }
 
+function upsertProductDetail(
+  list: AdminProductDetail[],
+  item: AdminProductDetail,
+): AdminProductDetail[] {
+  const index = list.findIndex((p) => p.productId === item.productId);
+  if (index < 0) return [...list, item];
+  const next = [...list];
+  next[index] = item;
+  return next;
+}
+
+function upsertProductListItem(
+  list: AdminProductListItem[],
+  item: AdminProductListItem,
+): AdminProductListItem[] {
+  const index = list.findIndex((p) => p.productId === item.productId);
+  if (index < 0) return [item, ...list];
+  const next = [...list];
+  next[index] = item;
+  return next;
+}
+
+function applyProductUpdate(state: AdminState, detail: AdminProductDetail): void {
+  state.productDetails = upsertProductDetail(state.productDetails, detail);
+  const listItem = toListItem(detail);
+  const filter = state.productsFilter;
+  const matchesFilter = filter === 'all' || detail.status === filter;
+  if (!matchesFilter) {
+    state.products = state.products.filter((p) => p.productId !== detail.productId);
+    return;
+  }
+  state.products = upsertProductListItem(state.products, listItem);
+}
+
 export const adminSlice = createSlice({
   name: 'admin',
   initialState,
@@ -282,6 +448,7 @@ export const adminSlice = createSlice({
     clearAdminError(state) {
       state.error = null;
       state.sellerRegistrationsError = null;
+      state.productsError = null;
     },
   },
   extraReducers: (builder) => {
@@ -404,6 +571,66 @@ export const adminSlice = createSlice({
         state.sellerRegistrationsMutating = false;
         state.sellerRegistrationsError =
           (action.payload as string) || 'Unable to reject seller registration.';
+      })
+      .addCase(fetchAdminProducts.pending, (state) => {
+        state.productsLoading = true;
+        state.productsError = null;
+      })
+      .addCase(fetchAdminProducts.fulfilled, (state, action) => {
+        state.productsLoading = false;
+        state.products = action.payload.items;
+        state.productsFilter = action.payload.status;
+        state.productsPage = action.payload.page;
+        state.productsPageSize = action.payload.pageSize;
+        state.productsTotalCount = action.payload.totalCount;
+        state.productsQuery = action.payload.q;
+        state.productsSummary = {
+          pendingCount: action.payload.pendingCount,
+          approvedCount: action.payload.approvedCount,
+          rejectedCount: action.payload.rejectedCount,
+        };
+        state.productsLoaded = true;
+      })
+      .addCase(fetchAdminProducts.rejected, (state, action) => {
+        state.productsLoading = false;
+        state.productsLoaded = true;
+        state.productsError = (action.payload as string) || 'Unable to load products.';
+      })
+      .addCase(fetchAdminProduct.fulfilled, (state, action) => {
+        applyProductUpdate(state, action.payload);
+      })
+      .addCase(approveAdminProduct.pending, (state) => {
+        state.productsMutating = true;
+        state.productsError = null;
+      })
+      .addCase(approveAdminProduct.fulfilled, (state, action) => {
+        state.productsMutating = false;
+        applyProductUpdate(state, action.payload);
+        if (state.productsSummary.pendingCount > 0) state.productsSummary.pendingCount -= 1;
+        state.productsSummary.approvedCount += 1;
+        delete state.moderationHistoryByProductId[action.payload.productId];
+      })
+      .addCase(approveAdminProduct.rejected, (state, action) => {
+        state.productsMutating = false;
+        state.productsError = (action.payload as string) || 'Unable to approve product.';
+      })
+      .addCase(rejectAdminProduct.pending, (state) => {
+        state.productsMutating = true;
+        state.productsError = null;
+      })
+      .addCase(rejectAdminProduct.fulfilled, (state, action) => {
+        state.productsMutating = false;
+        applyProductUpdate(state, action.payload);
+        if (state.productsSummary.pendingCount > 0) state.productsSummary.pendingCount -= 1;
+        state.productsSummary.rejectedCount += 1;
+        delete state.moderationHistoryByProductId[action.payload.productId];
+      })
+      .addCase(rejectAdminProduct.rejected, (state, action) => {
+        state.productsMutating = false;
+        state.productsError = (action.payload as string) || 'Unable to reject product.';
+      })
+      .addCase(fetchProductModerationHistory.fulfilled, (state, action) => {
+        state.moderationHistoryByProductId[action.payload.productId] = action.payload;
       });
   },
 });
@@ -443,3 +670,18 @@ export const selectSellerRegistrationsLoaded = (state: AdminRoot) =>
   state.admin.sellerRegistrationsLoaded;
 export const selectSellerRegistrationById = (id: string) => (state: AdminRoot) =>
   state.admin.sellerRegistrations.find((r) => r.requestId === id);
+
+export const selectAdminProducts = (state: AdminRoot) => state.admin.products;
+export const selectAdminProductsFilter = (state: AdminRoot) => state.admin.productsFilter;
+export const selectAdminProductsPage = (state: AdminRoot) => state.admin.productsPage;
+export const selectAdminProductsPageSize = (state: AdminRoot) => state.admin.productsPageSize;
+export const selectAdminProductsTotalCount = (state: AdminRoot) => state.admin.productsTotalCount;
+export const selectAdminProductsSummary = (state: AdminRoot) => state.admin.productsSummary;
+export const selectAdminProductsLoading = (state: AdminRoot) => state.admin.productsLoading;
+export const selectAdminProductsMutating = (state: AdminRoot) => state.admin.productsMutating;
+export const selectAdminProductsError = (state: AdminRoot) => state.admin.productsError;
+export const selectAdminProductsLoaded = (state: AdminRoot) => state.admin.productsLoaded;
+export const selectAdminProductDetailById = (id: string) => (state: AdminRoot) =>
+  state.admin.productDetails.find((p) => p.productId === id);
+export const selectProductModerationHistory = (id: string) => (state: AdminRoot) =>
+  state.admin.moderationHistoryByProductId[id];

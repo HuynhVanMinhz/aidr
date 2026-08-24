@@ -22,6 +22,35 @@ export function sellerRegistrationBadgeClass(status: string): string {
   }
 }
 
+export function productModerationBadgeClass(status: string): string {
+  switch (status) {
+    case 'Approved':
+      return adminBadgeClass.solidSuccess;
+    case 'Pending':
+      return adminBadgeClass.outlineWarning;
+    case 'Rejected':
+    case 'Deleted':
+      return adminBadgeClass.outlineDanger;
+    case 'Draft':
+      return adminBadgeClass.outlineSecondary;
+    case 'Inactive':
+      return adminBadgeClass.solidLight;
+    default:
+      return adminBadgeClass.solidLight;
+  }
+}
+
+export function moderationActionBadgeClass(action: string): string {
+  switch (action) {
+    case 'Approve':
+      return adminBadgeClass.outlineSuccess;
+    case 'Reject':
+      return adminBadgeClass.outlineDanger;
+    default:
+      return adminBadgeClass.outlinePrimary;
+  }
+}
+
 export function categoryVisibilityBadgeClass(isActive: boolean): string {
   return isActive ? adminBadgeClass.solidSuccess : adminBadgeClass.outlineSecondary;
 }
