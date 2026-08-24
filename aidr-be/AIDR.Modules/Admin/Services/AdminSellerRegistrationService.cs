@@ -1,0 +1,237 @@
+using System.Text.Json;
+using System.Text.RegularExpressions;
+using AIDR.Modules.Admin.Abstractions;
+using AIDR.Shared.Constants;
+using AIDR.Shared.Dtos.Admin;
+using AIDR.Shared.Exceptions;
+
+namespace AIDR.Modules.Admin.Services;
+
+public sealed class AdminSellerRegistrationService : IAdminSellerRegistrationService
+{
+    private static readonly HashSet<string> AllowedStatuses = new(StringComparer.OrdinalIgnoreCase)
+    {
+        AdminConstants.SellerRegistrationStatusPending,
+        AdminConstants.SellerRegistrationStatusApproved,
+        AdminConstants.SellerRegistrationStatusRejected
+    };
+
+    private static readonly Regex NonSlugChars = new(
+        @"[^a-z0-9]+",
+        RegexOptions.Compiled | RegexOptions.CultureInvariant);
+
+    private readonly IAdminSellerRegistrationRepository _repository;
+
+    public AdminSellerRegistrationService(IAdminSellerRegistrationRepository repository) =>
+        _repository = repository;
+
+    public async Task<IReadOnlyList<AdminSellerRegistrationDto>> ListAsync(
+        string? status,
+        CancellationToken cancellationToken = default)
+    {
+        var normalized = NormalizeStatusFilter(status);
+        var items = await _repository.ListAsync(normalized, cancellationToken);
+        return items.Select(Map).ToList();
+    }
+
+    public async Task<AdminSellerRegistrationDto> GetByIdAsync(
+        Guid requestId,
+        CancellationToken cancellationToken = default)
+    {
+        EnsureRequestId(requestId);
+
+        var record = await _repository.GetByIdAsync(requestId, cancellationToken)
+            ?? throw new NotFoundException("Seller registration request not found.");
+
+        return Map(record);
+    }
+
+    public async Task<ApproveSellerRegistrationResultDto> ApproveAsync(
+        Guid requestId,
+        Guid adminUserId,
+        CancellationToken cancellationToken = default)
+    {
+        EnsureRequestId(requestId);
+        EnsureUserId(adminUserId, "Admin user id");
+
+        var existing = await _repository.GetByIdAsync(requestId, cancellationToken)
+            ?? throw new NotFoundException("Seller registration request not found.");
+
+        if (!string.Equals(
+                existing.Status,
+                AdminConstants.SellerRegistrationStatusPending,
+                StringComparison.OrdinalIgnoreCase))
+        {
+            throw new ConflictException("Only pending seller registration requests can be approved.");
+        }
+
+        var slug = await BuildUniqueSlugAsync(existing.ShopName, cancellationToken);
+        var shortDescription = Truncate(
+            existing.BusinessInfo?.Trim(),
+            AdminConstants.MaxShopShortDescriptionLength);
+
+        var result = await _repository.ApproveAsync(
+            requestId,
+            adminUserId,
+            slug,
+            shortDescription,
+            cancellationToken);
+
+        return new ApproveSellerRegistrationResultDto
+        {
+            Request = Map(result.Request),
+            ShopId = result.ShopId,
+            WalletId = result.WalletId
+        };
+    }
+
+    public async Task<AdminSellerRegistrationDto> RejectAsync(
+        Guid requestId,
+        Guid adminUserId,
+        RejectSellerRegistrationRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        EnsureRequestId(requestId);
+        EnsureUserId(adminUserId, "Admin user id");
+
+        var note = RequireAdminNote(request.AdminNote);
+
+        var existing = await _repository.GetByIdAsync(requestId, cancellationToken)
+            ?? throw new NotFoundException("Seller registration request not found.");
+
+        if (!string.Equals(
+                existing.Status,
+                AdminConstants.SellerRegistrationStatusPending,
+                StringComparison.OrdinalIgnoreCase))
+        {
+            throw new ConflictException("Only pending seller registration requests can be rejected.");
+        }
+
+        var record = await _repository.RejectAsync(requestId, adminUserId, note, cancellationToken);
+        return Map(record);
+    }
+
+    private async Task<string> BuildUniqueSlugAsync(string shopName, CancellationToken cancellationToken)
+    {
+        var baseSlug = Slugify(shopName);
+        if (string.IsNullOrWhiteSpace(baseSlug))
+            baseSlug = "shop";
+
+        if (baseSlug.Length > AdminConstants.MaxShopSlugLength)
+            baseSlug = baseSlug[..AdminConstants.MaxShopSlugLength].Trim('-');
+
+        var candidate = baseSlug;
+        var suffix = 0;
+        while (await _repository.SlugExistsAsync(candidate, cancellationToken))
+        {
+            suffix++;
+            var suffixText = $"-{suffix}";
+            var maxBase = AdminConstants.MaxShopSlugLength - suffixText.Length;
+            var trimmedBase = baseSlug.Length > maxBase
+                ? baseSlug[..maxBase].Trim('-')
+                : baseSlug;
+            candidate = $"{trimmedBase}{suffixText}";
+        }
+
+        return candidate;
+    }
+
+    private static string? NormalizeStatusFilter(string? status)
+    {
+        if (string.IsNullOrWhiteSpace(status) ||
+            string.Equals(status.Trim(), "all", StringComparison.OrdinalIgnoreCase))
+        {
+            return null;
+        }
+
+        var trimmed = status.Trim();
+        var match = AllowedStatuses.FirstOrDefault(s =>
+            string.Equals(s, trimmed, StringComparison.OrdinalIgnoreCase));
+
+        if (match is null)
+            throw new AppException("Status filter must be Pending, Approved, Rejected, or all.");
+
+        return match;
+    }
+
+    private static string RequireAdminNote(string? adminNote)
+    {
+        var trimmed = adminNote?.Trim() ?? string.Empty;
+        if (string.IsNullOrWhiteSpace(trimmed))
+            throw new AppException("Admin note is required when rejecting a seller registration.");
+
+        if (trimmed.Length > AdminConstants.MaxSellerAdminNoteLength)
+        {
+            throw new AppException(
+                $"Admin note must not exceed {AdminConstants.MaxSellerAdminNoteLength} characters.");
+        }
+
+        return trimmed;
+    }
+
+    private static void EnsureRequestId(Guid requestId)
+    {
+        if (requestId == Guid.Empty)
+            throw new AppException("Request id is required.");
+    }
+
+    private static void EnsureUserId(Guid userId, string fieldName)
+    {
+        if (userId == Guid.Empty)
+            throw new AppException($"{fieldName} is required.");
+    }
+
+    private static string Slugify(string value)
+    {
+        var lower = value.Trim().ToLowerInvariant();
+        var slug = NonSlugChars.Replace(lower, "-").Trim('-');
+        return slug;
+    }
+
+    private static string? Truncate(string? value, int maxLength)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            return null;
+
+        var trimmed = value.Trim();
+        return trimmed.Length <= maxLength ? trimmed : trimmed[..maxLength];
+    }
+
+    private static IReadOnlyList<string> ParseDocumentUrls(string? json)
+    {
+        if (string.IsNullOrWhiteSpace(json))
+            return Array.Empty<string>();
+
+        try
+        {
+            var urls = JsonSerializer.Deserialize<List<string>>(json);
+            return urls?
+                .Where(u => !string.IsNullOrWhiteSpace(u))
+                .Select(u => u.Trim())
+                .ToList()
+                ?? (IReadOnlyList<string>)Array.Empty<string>();
+        }
+        catch (JsonException)
+        {
+            return Array.Empty<string>();
+        }
+    }
+
+    private static AdminSellerRegistrationDto Map(AdminSellerRegistrationRecord record) => new()
+    {
+        RequestId = record.RequestId,
+        UserId = record.UserId,
+        UserEmail = record.UserEmail,
+        UserFullName = record.UserFullName,
+        ShopName = record.ShopName,
+        BusinessInfo = record.BusinessInfo,
+        DocumentUrls = ParseDocumentUrls(record.DocumentUrlsJson),
+        Status = record.Status,
+        AdminNote = record.AdminNote,
+        ReviewedBy = record.ReviewedBy,
+        ReviewerFullName = record.ReviewerFullName,
+        ReviewedAt = record.ReviewedAt,
+        CreatedAt = record.CreatedAt,
+        ShopId = record.ShopId
+    };
+}

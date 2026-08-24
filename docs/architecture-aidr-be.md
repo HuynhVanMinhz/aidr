@@ -135,7 +135,9 @@ aidr-be/
 | UC-18..21 | Product moderation + history | Admin |
 | UC-22..25 | Categories | Admin |
 | UC-48..52 | Return requests | Admin |
-| UC-71..76 | Insights, accounts lock/unlock, seller registration | Admin |
+| UC-71..74 | Insights, accounts lock/unlock | Admin |
+| UC-75 | `GET /api/admin/seller-registrations` (default `status=Pending`; `status=all` for every status); `GET /api/admin/seller-registrations/{id}` | Admin |
+| UC-76 | `POST /api/admin/seller-registrations/{id}/approve` → role Seller + Shop + Wallet; `POST .../reject` + `adminNote` | Admin |
 | UC-78..81 | System vouchers | Admin |
 
 ### 6.6 Engagement
