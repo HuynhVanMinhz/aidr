@@ -31,7 +31,7 @@
 | UC-14 | Update Product | **Actor:** Seller (owner). Sửa thông tin SP thuộc shop; có thể đưa lại Pending nếu rule yêu cầu. **Business:** Giữ thông tin SP cập nhật. | Done | P0 |
 | UC-15 | Delete Product | **Actor:** Seller. Soft-delete / Inactive; không xóa cứng nếu đã có order. **Business:** Dọn catalog; bảo toàn lịch sử đơn. | Done | P1 |
 | UC-16 | View My Products | **Actor:** Seller. List SP của shop theo status (Draft/Pending/Approved…). **Business:** Quản lý danh mục bán. | Done | P0 |
-| UC-17 | Manage Product Inventory | **Actor:** Seller. Xem tồn, reserved, low-stock; điều chỉnh thủ công có ghi InventoryTransactions. **Business:** Tránh oversell. | Todo | P0 |
+| UC-17 | Manage Product Inventory | **Actor:** Seller. Xem tồn, reserved, low-stock; điều chỉnh thủ công có ghi InventoryTransactions. **Business:** Tránh oversell. | Done | P0 |
 | UC-18 | View Product List (Admin) | **Actor:** Admin. Queue toàn bộ SP (ưu tiên Pending). **Business:** Kiểm soát chất lượng catalog. | Todo | P0 |
 | UC-19 | Approve Product | **Actor:** Admin. Pending → Approved; ghi moderation history. **Business:** SP đủ chuẩn mới hiện buyer. | Todo | P0 |
 | UC-20 | Reject Product | **Actor:** Admin. Pending → Rejected + lý do. **Business:** Chặn SP sai/thiếu thông tin. | Todo | P0 |
@@ -98,8 +98,8 @@
 | UC-88 | Update Voucher for My Shop | **Actor:** Seller. Sửa voucher của mình. **Business:** Linh hoạt chiến dịch shop. | Todo | P2 |
 | UC-89 | Delete Voucher for My Shop | **Actor:** Seller. Xóa voucher shop. **Business:** Kết thúc KM. | Todo | P2 |
 | UC-90 | AI NL → Filter | **Actor:** Guest/Buyer. Câu tự nhiên → JSON filter hợp lệ → apply search. **Business:** Tìm SP dễ hơn với người không rành filter. | Todo | P2 |
-| UC-91 | Import Stock Lot | **Actor:** Seller. Nhập lô: qty + UnitCost + supplier/invoice; tăng tồn; cập nhật Avg/LastCost; **không** sửa UnitCost lô cũ. **Business:** Theo dõi giá vốn & lãi gộp đúng khi giá nhập thay đổi. | Todo | P0 |
-| UC-92 | Update Selling Price | **Actor:** Seller. Đổi BasePrice/SalePrice; ghi ProductPriceHistories; độc lập giá vốn lô. **Business:** Phản ứng thị trường mà không phá lịch sử cost/đơn. | Todo | P0 |
+| UC-91 | Import Stock Lot | **Actor:** Seller. Nhập lô: qty + UnitCost + supplier/invoice; tăng tồn; cập nhật Avg/LastCost; **không** sửa UnitCost lô cũ. **Business:** Theo dõi giá vốn & lãi gộp đúng khi giá nhập thay đổi. | Done | P0 |
+| UC-92 | Update Selling Price | **Actor:** Seller. Đổi BasePrice/SalePrice; ghi ProductPriceHistories; độc lập giá vốn lô. **Business:** Phản ứng thị trường mà không phá lịch sử cost/đơn. | Done | P0 |
 
 ---
 

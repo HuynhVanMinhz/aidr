@@ -156,6 +156,7 @@ public class Product
     public decimal? AvgCostPrice { get; set; }
     public int StockQuantity { get; set; }
     public int ReservedQuantity { get; set; }
+    public int LowStockThreshold { get; set; } = 5;
     public int? WarrantyMonths { get; set; }
     public string? OriginCountry { get; set; }
     public string? TagsJson { get; set; }
@@ -187,6 +188,60 @@ public class ProductImage
     public DateTime CreatedAt { get; set; }
 
     public Product Product { get; set; } = null!;
+}
+
+public class InventoryLot
+{
+    public Guid LotId { get; set; }
+    public Guid ProductId { get; set; }
+    public string LotCode { get; set; } = null!;
+    public int QuantityReceived { get; set; }
+    public int QuantityRemaining { get; set; }
+    public decimal UnitCost { get; set; }
+    public string Currency { get; set; } = "VND";
+    public string? SupplierName { get; set; }
+    public string? InvoiceNumber { get; set; }
+    public DateTime ReceivedAt { get; set; }
+    public DateTime? ExpiresAt { get; set; }
+    public string Status { get; set; } = "Open";
+    public string? Note { get; set; }
+    public Guid? CreatedBy { get; set; }
+    public DateTime CreatedAt { get; set; }
+
+    public Product Product { get; set; } = null!;
+}
+
+public class ProductPriceHistory
+{
+    public long PriceHistoryId { get; set; }
+    public Guid ProductId { get; set; }
+    public decimal? OldBasePrice { get; set; }
+    public decimal? NewBasePrice { get; set; }
+    public decimal? OldSalePrice { get; set; }
+    public decimal? NewSalePrice { get; set; }
+    public Guid? ChangedBy { get; set; }
+    public string? Reason { get; set; }
+    public DateTime ChangedAt { get; set; }
+
+    public Product Product { get; set; } = null!;
+}
+
+public class InventoryTransaction
+{
+    public long InventoryTxId { get; set; }
+    public Guid ProductId { get; set; }
+    public Guid? LotId { get; set; }
+    public int ChangeQty { get; set; }
+    public decimal? UnitCost { get; set; }
+    public string Reason { get; set; } = null!;
+    public string? ReferenceType { get; set; }
+    public Guid? ReferenceId { get; set; }
+    public string? Note { get; set; }
+    public Guid? CreatedBy { get; set; }
+    public DateTime CreatedAt { get; set; }
+
+    public Product Product { get; set; } = null!;
+    public InventoryLot? Lot { get; set; }
 }
 
 public class ProductReview
