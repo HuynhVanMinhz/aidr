@@ -100,11 +100,41 @@ public class Shop
     public string? LogoUrl { get; set; }
     public string CostingMethod { get; set; } = "FIFO";
     public bool IsVerified { get; set; }
+    public DateTime? VerifiedAt { get; set; }
     public string Status { get; set; } = "Active";
     public decimal AvgRating { get; set; }
     public int RatingCount { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
+}
+
+public class SellerRegistrationRequest
+{
+    public Guid RequestId { get; set; }
+    public Guid UserId { get; set; }
+    public string ShopName { get; set; } = null!;
+    public string? BusinessInfo { get; set; }
+    public string? DocumentUrls { get; set; }
+    public string Status { get; set; } = "Pending";
+    public string? AdminNote { get; set; }
+    public Guid? ReviewedBy { get; set; }
+    public DateTime? ReviewedAt { get; set; }
+    public DateTime CreatedAt { get; set; }
+
+    public User User { get; set; } = null!;
+    public User? Reviewer { get; set; }
+}
+
+public class Wallet
+{
+    public Guid WalletId { get; set; }
+    public Guid ShopId { get; set; }
+    public decimal AvailableBalance { get; set; }
+    public decimal PendingBalance { get; set; }
+    public string Currency { get; set; } = "VND";
+    public DateTime UpdatedAt { get; set; }
+
+    public Shop Shop { get; set; } = null!;
 }
 
 public class Product
