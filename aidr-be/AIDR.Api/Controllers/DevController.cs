@@ -1,5 +1,6 @@
 using AIDR.Infrastructure.Persistence;
 using AIDR.Infrastructure.Seeding;
+using AIDR.Modules.Auth.Abstractions;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -9,6 +10,26 @@ namespace AIDR.Api.Controllers;
 [Route("api/dev")]
 public class DevController : ControllerBase
 {
+    /// <summary>Ensure demo admin/seller/buyer accounts exist with a known password (dev only).</summary>
+    [HttpPost("seed-demo-accounts")]
+    public async Task<IActionResult> SeedDemoAccounts(
+        [FromServices] AidrDbContext db,
+        [FromServices] IPasswordHasher passwordHasher,
+        [FromServices] IWebHostEnvironment env,
+        CancellationToken ct)
+    {
+        if (!env.IsDevelopment())
+            return NotFound();
+
+        var result = await DemoAccountsSeeder.SeedAsync(db, passwordHasher, ct);
+        return Ok(new
+        {
+            message = "Demo accounts seeded.",
+            password = result.Password,
+            accounts = result.Accounts
+        });
+    }
+
     [HttpPost("seed-catalog")]
     public async Task<IActionResult> SeedCatalog(
         [FromServices] AidrDbContext db,
