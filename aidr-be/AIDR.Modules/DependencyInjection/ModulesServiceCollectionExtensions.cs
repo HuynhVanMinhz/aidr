@@ -1,3 +1,5 @@
+using AIDR.Modules.Admin.Abstractions;
+using AIDR.Modules.Admin.Services;
 using AIDR.Modules.Auth.Abstractions;
 using AIDR.Modules.Auth.Services;
 using AIDR.Modules.Discovery.Abstractions;
@@ -15,6 +17,7 @@ public static class ModulesServiceCollectionExtensions
         services.AddScoped<IAuthService, AuthService>();
         services.AddScoped<IProfileService, ProfileService>();
         services.AddScoped<IDiscoveryService, DiscoveryService>();
+        services.AddScoped<IAdminCategoryService, AdminCategoryService>();
         return services;
     }
 }
