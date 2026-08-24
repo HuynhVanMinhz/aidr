@@ -112,7 +112,12 @@ aidr-be/
 ### 6.3 Seller Center
 | UC | Endpoint | Module |
 |----|----------|--------|
-| UC-12..17 | `CRUD /api/seller/products`, inventory adjust | SellerCenter |
+| UC-12 | `POST /api/seller/products` — create (status `Pending`) | SellerCenter |
+| UC-13 | `POST /api/seller/products/{id}/images` — lưu Cloudinary URL/publicId | SellerCenter |
+| UC-14 | `PUT /api/seller/products/{id}` — update → reset `Pending` | SellerCenter |
+| UC-15 | `DELETE /api/seller/products/{id}` — soft-delete (`Deleted`) | SellerCenter |
+| UC-16 | `GET /api/seller/products`, `GET /api/seller/products/{id}` | SellerCenter |
+| UC-17 | inventory adjust (module Inventory & Pricing) | SellerCenter |
 | UC-91 | `POST /api/seller/products/{id}/lots` — nhập lô + UnitCost | SellerCenter |
 | UC-92 | `PATCH /api/seller/products/{id}/price` — đổi giá bán + ghi history | SellerCenter |
 | UC-46/47 | `GET/PATCH /api/seller/orders` | SellerCenter |
