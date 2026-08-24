@@ -28,6 +28,8 @@ function pageTitle(pathname: string, variant: AdminShellVariant) {
   if (pathname.includes('/categories')) return 'Categories List';
   if (pathname.match(/\/seller-registrations\/[^/]+$/)) return 'Seller Registration Review';
   if (pathname.includes('/seller-registrations')) return 'Seller Registrations';
+  if (pathname.match(/\/products\/[^/]+\/inventory$/)) return 'Product Inventory';
+  if (pathname.includes('/inventory')) return 'Inventory';
   if (pathname.includes('/products/new')) return 'Create Product';
   if (pathname.match(/\/products\/[^/]+\/edit$/)) return 'Edit Product';
   if (pathname.match(/\/products\/[^/]+$/)) return 'Product Details';
@@ -216,6 +218,7 @@ export function AdminShell({ variant = 'admin', children }: AdminShellProps) {
               </li>
               </>
             ) : (
+              <>
               <li className="nav-item">
                 <a
                   className={`nav-link menu-arrow ${productOpen ? '' : 'collapsed'}`}
@@ -252,6 +255,19 @@ export function AdminShell({ variant = 'admin', children }: AdminShellProps) {
                   </ul>
                 </div>
               </li>
+              <li className="nav-item">
+                <NavLink
+                  className={({ isActive }) => `nav-link${isActive ? ' active' : ''}`}
+                  to="/seller/inventory"
+                  end
+                >
+                  <span className="nav-icon">
+                    <IconifyIcon icon="solar:box-minimalistic-bold-duotone" />
+                  </span>
+                  <span className="nav-text">Inventory</span>
+                </NavLink>
+              </li>
+              </>
             )}
           </ul>
         </div>
