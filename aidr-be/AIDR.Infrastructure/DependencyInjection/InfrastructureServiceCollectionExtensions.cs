@@ -55,6 +55,7 @@ public static class InfrastructureServiceCollectionExtensions
         services.AddScoped<IProfileRepository, ProfileRepository>();
         services.AddScoped<IDiscoveryRepository, DiscoveryRepository>();
         services.AddScoped<IAdminCategoryRepository, AdminCategoryRepository>();
+        services.AddScoped<IAdminSellerRegistrationRepository, AdminSellerRegistrationRepository>();
         services.AddScoped<IPasswordResetTokenStore, PasswordResetTokenStore>();
         services.AddScoped<ITokenService, JwtTokenService>();
         services.AddSingleton<IPasswordHasher, AspNetPasswordHasher>();
