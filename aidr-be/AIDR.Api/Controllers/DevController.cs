@@ -28,6 +28,29 @@ public class DevController : ControllerBase
         });
     }
 
+    [HttpPost("seed-categories")]
+    public async Task<IActionResult> SeedCategories(
+        [FromServices] AidrDbContext db,
+        [FromServices] IWebHostEnvironment env,
+        CancellationToken ct)
+    {
+        if (!env.IsDevelopment())
+            return NotFound();
+
+        await CategoryHierarchyDemoSeeder.SeedAsync(db, env.ContentRootPath, ct);
+        var total = await db.Categories.CountAsync(ct);
+        var roots = await db.Categories.CountAsync(c => c.ParentId == null, ct);
+        var children = total - roots;
+
+        return Ok(new
+        {
+            message = "Category hierarchy demo seed completed.",
+            totalCount = total,
+            rootCount = roots,
+            childCount = children
+        });
+    }
+
     [HttpPost("seed-seller-registrations")]
     public async Task<IActionResult> SeedSellerRegistrations(
         [FromServices] AidrDbContext db,

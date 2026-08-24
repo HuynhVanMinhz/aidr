@@ -13,9 +13,13 @@ public sealed class AdminSellerRegistrationRepository : IAdminSellerRegistration
 
     public AdminSellerRegistrationRepository(AidrDbContext db) => _db = db;
 
-    public async Task<IReadOnlyList<AdminSellerRegistrationRecord>> ListAsync(
-        string? status,
-        CancellationToken cancellationToken = default)
+    public async Task<(IReadOnlyList<AdminSellerRegistrationRecord> Items, int TotalCount, int Page, AdminSellerRegistrationListSummary Summary)>
+        ListPagedAsync(
+            string? status,
+            string? keyword,
+            int page,
+            int pageSize,
+            CancellationToken cancellationToken = default)
     {
         var query = from r in _db.SellerRegistrationRequests.AsNoTracking()
                     join u in _db.Users.AsNoTracking() on r.UserId equals u.UserId
@@ -28,11 +32,42 @@ public sealed class AdminSellerRegistrationRepository : IAdminSellerRegistration
         if (!string.IsNullOrWhiteSpace(status))
             query = query.Where(x => x.Request.Status == status);
 
+        if (!string.IsNullOrWhiteSpace(keyword))
+        {
+            var term = keyword.Trim();
+            query = query.Where(x =>
+                x.Request.ShopName.Contains(term) ||
+                x.User.Email.Contains(term) ||
+                x.User.FullName.Contains(term));
+        }
+
+        var totalCount = await query.CountAsync(cancellationToken);
+
+        var summary = new AdminSellerRegistrationListSummary
+        {
+            PendingCount = await _db.SellerRegistrationRequests.AsNoTracking()
+                .CountAsync(r => r.Status == AdminConstants.SellerRegistrationStatusPending, cancellationToken),
+            ApprovedCount = await _db.SellerRegistrationRequests.AsNoTracking()
+                .CountAsync(r => r.Status == AdminConstants.SellerRegistrationStatusApproved, cancellationToken),
+            RejectedCount = await _db.SellerRegistrationRequests.AsNoTracking()
+                .CountAsync(r => r.Status == AdminConstants.SellerRegistrationStatusRejected, cancellationToken)
+        };
+
+        if (totalCount == 0)
+            return (Array.Empty<AdminSellerRegistrationRecord>(), 0, 1, summary);
+
+        var totalPages = (int)Math.Ceiling(totalCount / (double)pageSize);
+        if (page > totalPages)
+            page = totalPages;
+
         var rows = await query
             .OrderByDescending(x => x.Request.CreatedAt)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
             .ToListAsync(cancellationToken);
 
-        return rows.Select(x => Map(x.Request, x.User, x.Reviewer, x.Shop?.ShopId)).ToList();
+        var items = rows.Select(x => Map(x.Request, x.User, x.Reviewer, x.Shop?.ShopId)).ToList();
+        return (items, totalCount, page, summary);
     }
 
     public async Task<AdminSellerRegistrationRecord?> GetByIdAsync(

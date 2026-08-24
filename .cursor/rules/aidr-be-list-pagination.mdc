@@ -1,0 +1,45 @@
+---
+description: AIDR BE — mọi use case list phải phân trang server-side (page/pageSize + TotalCount).
+globs: aidr-be/**/*.cs
+alwaysApply: false
+---
+
+# AIDR — Backend list pagination
+
+Khi implement **list / search / queue** API trên BE:
+
+## Bắt buộc
+
+1. **Phân trang server-side** — `page` + `pageSize` query (hoặc request DTO). Không trả toàn bộ bảng khi UC là list.
+2. **Chuẩn hóa** — `page < 1` → 1; `pageSize < 1` → default; `pageSize` cap bằng max (thường 100). Dùng helper/constant module (`AdminConstants.NormalizePaging`, `SellerProductConstants`, …).
+3. **Response** — `Items` + `Page` + `PageSize` + `TotalCount` (+ `TotalPages` nếu có). Có thể reuse `PagedResult<T>` hoặc DTO list riêng cùng shape.
+4. **Lọc / tìm kiếm** — áp dụng **trước** `Count` + `Skip/Take`. `TotalCount` = số bản ghi sau filter.
+5. **KPI / summary** (nếu UI cần) — đếm global (hoặc theo rule nghiệp vụ), **không** suy ra từ trang hiện tại.
+
+## Gợi ý
+
+| Loại list | Default pageSize |
+|-----------|------------------|
+| Admin tables | 10 |
+| Catalog / seller products | 20 |
+
+Endpoint phụ (dropdown options, tree) có thể **không** paginate nếu payload nhỏ và UC yêu cầu full set — ghi rõ trong architecture.
+
+## Ví dụ
+
+```csharp
+// ❌ Sai — dump all
+return await _db.Categories.ToListAsync(ct);
+
+// ✅ Đúng
+var (page, pageSize) = AdminConstants.NormalizePaging(request.Page, request.PageSize);
+var total = await query.CountAsync(ct);
+var items = await query.Skip((page - 1) * pageSize).Take(pageSize).ToListAsync(ct);
+return new PagedResult<T> { Items = items, Page = page, PageSize = pageSize, TotalCount = total };
+```
+
+## Không làm
+
+- Chỉ phân trang trên FE khi list có thể lớn hoặc đã có filter/search.
+- Bỏ `TotalCount` khiến UI không biết tổng trang.
+- Đổi schema chỉ để paginate — dùng Skip/Take trên query hiện có.

@@ -23,6 +23,9 @@ import { AdminCategoryFormPage } from '../views/admin/AdminCategoryFormPage';
 import { AdminSellerRegistrationListPage } from '../views/admin/AdminSellerRegistrationListPage';
 import { AdminSellerRegistrationDetailPage } from '../views/admin/AdminSellerRegistrationDetailPage';
 import { SellerHomePage } from '../views/seller/SellerHomePage';
+import { SellerProductListPage } from '../views/seller/SellerProductListPage';
+import { SellerProductFormPage } from '../views/seller/SellerProductFormPage';
+import { SellerProductDetailPage } from '../views/seller/SellerProductDetailPage';
 import { ToastHost } from '../components/feedback/ToastHost';
 
 function AppThemeBridge() {
@@ -59,6 +62,10 @@ export function App() {
         <Route element={<ProtectedRoute roles={['SELLER']} />}>
           <Route path="/seller" element={<AdminShell variant="seller" />}>
             <Route index element={<SellerHomePage />} />
+            <Route path="products" element={<SellerProductListPage />} />
+            <Route path="products/new" element={<SellerProductFormPage />} />
+            <Route path="products/:id" element={<SellerProductDetailPage />} />
+            <Route path="products/:id/edit" element={<SellerProductFormPage />} />
           </Route>
         </Route>
 

@@ -4,6 +4,7 @@ import { appSlice } from './appSlice';
 import { authSlice } from './authSlice';
 import { cartSlice } from './cartSlice';
 import { catalogSlice } from './catalogSlice';
+import { sellerSlice } from './sellerSlice';
 import { themeSlice } from './themeSlice';
 import { userSlice } from './userSlice';
 
@@ -16,6 +17,7 @@ export const store = configureStore({
     cart: cartSlice.reducer,
     theme: themeSlice.reducer,
     admin: adminSlice.reducer,
+    seller: sellerSlice.reducer,
   },
 });
 

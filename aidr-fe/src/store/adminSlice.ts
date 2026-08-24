@@ -3,22 +3,49 @@ import * as adminApi from '../services/adminApi';
 import * as categoryApi from '../services/categoryApi';
 import type {
   AdminCategory,
+  AdminCategoryListQuery,
+  AdminCategoryOption,
   AdminSellerRegistration,
   CreateCategoryPayload,
   RejectSellerRegistrationPayload,
+  SellerRegistrationListQuery,
   SellerRegistrationStatusFilter,
   UpdateCategoryPayload,
 } from '../types/admin';
 import { getApiErrorMessage } from '../utils/apiError';
 
+export type AdminCategorySummary = {
+  totalCount: number;
+  activeCount: number;
+  inactiveCount: number;
+  withProductsCount: number;
+};
+
+export type AdminSellerRegistrationSummary = {
+  pendingCount: number;
+  approvedCount: number;
+  rejectedCount: number;
+};
+
 export type AdminState = {
   categories: AdminCategory[];
+  categoryOptions: AdminCategoryOption[];
+  categoryPage: number;
+  categoryPageSize: number;
+  categoryTotalCount: number;
+  categoryQuery: string;
+  categorySummary: AdminCategorySummary;
   loading: boolean;
   mutating: boolean;
   error: string | null;
   loaded: boolean;
   sellerRegistrations: AdminSellerRegistration[];
   sellerRegistrationsFilter: SellerRegistrationStatusFilter;
+  sellerRegistrationsPage: number;
+  sellerRegistrationsPageSize: number;
+  sellerRegistrationsTotalCount: number;
+  sellerRegistrationsQuery: string;
+  sellerRegistrationsSummary: AdminSellerRegistrationSummary;
   sellerRegistrationsLoading: boolean;
   sellerRegistrationsMutating: boolean;
   sellerRegistrationsError: string | null;
@@ -27,14 +54,38 @@ export type AdminState = {
 
 type AdminRoot = { admin: AdminState };
 
+const emptyCategorySummary: AdminCategorySummary = {
+  totalCount: 0,
+  activeCount: 0,
+  inactiveCount: 0,
+  withProductsCount: 0,
+};
+
+const emptySellerSummary: AdminSellerRegistrationSummary = {
+  pendingCount: 0,
+  approvedCount: 0,
+  rejectedCount: 0,
+};
+
 const initialState: AdminState = {
   categories: [],
+  categoryOptions: [],
+  categoryPage: 1,
+  categoryPageSize: 10,
+  categoryTotalCount: 0,
+  categoryQuery: '',
+  categorySummary: emptyCategorySummary,
   loading: false,
   mutating: false,
   error: null,
   loaded: false,
   sellerRegistrations: [],
   sellerRegistrationsFilter: 'Pending',
+  sellerRegistrationsPage: 1,
+  sellerRegistrationsPageSize: 10,
+  sellerRegistrationsTotalCount: 0,
+  sellerRegistrationsQuery: '',
+  sellerRegistrationsSummary: emptySellerSummary,
   sellerRegistrationsLoading: false,
   sellerRegistrationsMutating: false,
   sellerRegistrationsError: null,
@@ -50,12 +101,24 @@ function unwrap<T>(result: { success: boolean; data?: T; message?: string }, fal
 
 export const fetchAdminCategories = createAsyncThunk(
   'admin/fetchCategories',
-  async (_, { rejectWithValue }) => {
+  async (query: AdminCategoryListQuery | undefined, { rejectWithValue }) => {
     try {
-      const result = await categoryApi.listAdminCategories();
+      const result = await categoryApi.listAdminCategories(query ?? {});
       return unwrap(result, 'Unable to load categories.');
     } catch (error) {
       return rejectWithValue(getApiErrorMessage(error, 'Unable to load categories.'));
+    }
+  },
+);
+
+export const fetchAdminCategoryOptions = createAsyncThunk(
+  'admin/fetchCategoryOptions',
+  async (_, { rejectWithValue }) => {
+    try {
+      const result = await categoryApi.listAdminCategoryOptions();
+      return unwrap(result, 'Unable to load category options.');
+    } catch (error) {
+      return rejectWithValue(getApiErrorMessage(error, 'Unable to load category options.'));
     }
   },
 );
@@ -123,10 +186,16 @@ export const deleteAdminCategory = createAsyncThunk(
 
 export const fetchSellerRegistrations = createAsyncThunk(
   'admin/fetchSellerRegistrations',
-  async (status: SellerRegistrationStatusFilter, { rejectWithValue }) => {
+  async (query: SellerRegistrationListQuery | undefined, { rejectWithValue }) => {
     try {
-      const result = await adminApi.listSellerRegistrations(status);
-      return { items: unwrap(result, 'Unable to load seller registration requests.'), status };
+      const params = query ?? {};
+      const result = await adminApi.listSellerRegistrations(params);
+      const data = unwrap(result, 'Unable to load seller registration requests.');
+      return {
+        ...data,
+        status: (params.status ?? 'Pending') as SellerRegistrationStatusFilter,
+        q: params.q ?? '',
+      };
     } catch (error) {
       return rejectWithValue(getApiErrorMessage(error, 'Unable to load seller registration requests.'));
     }
@@ -223,12 +292,25 @@ export const adminSlice = createSlice({
       })
       .addCase(fetchAdminCategories.fulfilled, (state, action) => {
         state.loading = false;
-        state.categories = action.payload;
+        state.categories = action.payload.items;
+        state.categoryPage = action.payload.page;
+        state.categoryPageSize = action.payload.pageSize;
+        state.categoryTotalCount = action.payload.totalCount;
+        state.categoryQuery = action.meta.arg?.q ?? '';
+        state.categorySummary = {
+          totalCount: action.payload.activeCount + action.payload.inactiveCount,
+          activeCount: action.payload.activeCount,
+          inactiveCount: action.payload.inactiveCount,
+          withProductsCount: action.payload.withProductsCount,
+        };
         state.loaded = true;
       })
       .addCase(fetchAdminCategories.rejected, (state, action) => {
         state.loading = false;
         state.error = (action.payload as string) || 'Unable to load categories.';
+      })
+      .addCase(fetchAdminCategoryOptions.fulfilled, (state, action) => {
+        state.categoryOptions = action.payload;
       })
       .addCase(fetchAdminCategory.fulfilled, (state, action) => {
         state.categories = upsertCategory(state.categories, action.payload);
@@ -277,6 +359,15 @@ export const adminSlice = createSlice({
         state.sellerRegistrationsLoading = false;
         state.sellerRegistrations = action.payload.items;
         state.sellerRegistrationsFilter = action.payload.status;
+        state.sellerRegistrationsPage = action.payload.page;
+        state.sellerRegistrationsPageSize = action.payload.pageSize;
+        state.sellerRegistrationsTotalCount = action.payload.totalCount;
+        state.sellerRegistrationsQuery = action.payload.q;
+        state.sellerRegistrationsSummary = {
+          pendingCount: action.payload.pendingCount,
+          approvedCount: action.payload.approvedCount,
+          rejectedCount: action.payload.rejectedCount,
+        };
         state.sellerRegistrationsLoaded = true;
       })
       .addCase(fetchSellerRegistrations.rejected, (state, action) => {
@@ -320,6 +411,11 @@ export const adminSlice = createSlice({
 export const { clearAdminError } = adminSlice.actions;
 
 export const selectAdminCategories = (state: AdminRoot) => state.admin.categories;
+export const selectAdminCategoryOptions = (state: AdminRoot) => state.admin.categoryOptions;
+export const selectAdminCategoryPage = (state: AdminRoot) => state.admin.categoryPage;
+export const selectAdminCategoryPageSize = (state: AdminRoot) => state.admin.categoryPageSize;
+export const selectAdminCategoryTotalCount = (state: AdminRoot) => state.admin.categoryTotalCount;
+export const selectAdminCategorySummary = (state: AdminRoot) => state.admin.categorySummary;
 export const selectAdminCategoriesLoading = (state: AdminRoot) => state.admin.loading;
 export const selectAdminMutating = (state: AdminRoot) => state.admin.mutating;
 export const selectAdminError = (state: AdminRoot) => state.admin.error;
@@ -330,6 +426,13 @@ export const selectAdminCategoryById = (id: number) => (state: AdminRoot) =>
 export const selectSellerRegistrations = (state: AdminRoot) => state.admin.sellerRegistrations;
 export const selectSellerRegistrationsFilter = (state: AdminRoot) =>
   state.admin.sellerRegistrationsFilter;
+export const selectSellerRegistrationsPage = (state: AdminRoot) => state.admin.sellerRegistrationsPage;
+export const selectSellerRegistrationsPageSize = (state: AdminRoot) =>
+  state.admin.sellerRegistrationsPageSize;
+export const selectSellerRegistrationsTotalCount = (state: AdminRoot) =>
+  state.admin.sellerRegistrationsTotalCount;
+export const selectSellerRegistrationsSummary = (state: AdminRoot) =>
+  state.admin.sellerRegistrationsSummary;
 export const selectSellerRegistrationsLoading = (state: AdminRoot) =>
   state.admin.sellerRegistrationsLoading;
 export const selectSellerRegistrationsMutating = (state: AdminRoot) =>

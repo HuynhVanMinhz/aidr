@@ -25,13 +25,34 @@ public sealed class AdminSellerRegistrationService : IAdminSellerRegistrationSer
     public AdminSellerRegistrationService(IAdminSellerRegistrationRepository repository) =>
         _repository = repository;
 
-    public async Task<IReadOnlyList<AdminSellerRegistrationDto>> ListAsync(
+    public async Task<AdminSellerRegistrationListResultDto> ListAsync(
         string? status,
+        string? q,
+        int page,
+        int pageSize,
         CancellationToken cancellationToken = default)
     {
         var normalized = NormalizeStatusFilter(status);
-        var items = await _repository.ListAsync(normalized, cancellationToken);
-        return items.Select(Map).ToList();
+        var (normalizedPage, normalizedPageSize) = AdminConstants.NormalizePaging(page, pageSize);
+        var keyword = NormalizeSearch(q);
+
+        var (items, totalCount, effectivePage, summary) = await _repository.ListPagedAsync(
+            normalized,
+            keyword,
+            normalizedPage,
+            normalizedPageSize,
+            cancellationToken);
+
+        return new AdminSellerRegistrationListResultDto
+        {
+            Items = items.Select(Map).ToList(),
+            Page = effectivePage,
+            PageSize = normalizedPageSize,
+            TotalCount = totalCount,
+            PendingCount = summary.PendingCount,
+            ApprovedCount = summary.ApprovedCount,
+            RejectedCount = summary.RejectedCount
+        };
     }
 
     public async Task<AdminSellerRegistrationDto> GetByIdAsync(
@@ -195,6 +216,21 @@ public sealed class AdminSellerRegistrationService : IAdminSellerRegistrationSer
 
         var trimmed = value.Trim();
         return trimmed.Length <= maxLength ? trimmed : trimmed[..maxLength];
+    }
+
+    private static string? NormalizeSearch(string? q)
+    {
+        if (string.IsNullOrWhiteSpace(q))
+            return null;
+
+        var trimmed = q.Trim();
+        if (trimmed.Length > AdminConstants.MaxListSearchLength)
+        {
+            throw new AppException(
+                $"Search query must not exceed {AdminConstants.MaxListSearchLength} characters.");
+        }
+
+        return trimmed;
     }
 
     private static IReadOnlyList<string> ParseDocumentUrls(string? json)
