@@ -32,6 +32,8 @@ function pageTitle(pathname: string, variant: AdminShellVariant) {
   if (pathname.includes('/inventory')) return 'Inventory';
   if (pathname.includes('/products/new')) return 'Create Product';
   if (pathname.match(/\/products\/[^/]+\/edit$/)) return 'Edit Product';
+  if (variant === 'admin' && pathname.match(/\/products\/[^/]+$/)) return 'Product Moderation';
+  if (variant === 'admin' && pathname.includes('/products')) return 'Product Moderation';
   if (pathname.match(/\/products\/[^/]+$/)) return 'Product Details';
   if (pathname.includes('/products')) return 'Product List';
   return variant === 'seller' ? 'Welcome!' : 'Welcome!';
@@ -45,13 +47,19 @@ export function AdminShell({ variant = 'admin', children }: AdminShellProps) {
   const [categoryOpen, setCategoryOpen] = useState(pathname.includes('/categories'));
   const [sellerRegOpen, setSellerRegOpen] = useState(pathname.includes('/seller-registrations'));
   const [productOpen, setProductOpen] = useState(pathname.includes('/products'));
+  const [moderationOpen, setModerationOpen] = useState(
+    variant === 'admin' && pathname.includes('/products'),
+  );
   const [userOpen, setUserOpen] = useState(false);
 
   useEffect(() => {
     if (pathname.includes('/categories')) setCategoryOpen(true);
     if (pathname.includes('/seller-registrations')) setSellerRegOpen(true);
-    if (pathname.includes('/products')) setProductOpen(true);
-  }, [pathname]);
+    if (pathname.includes('/products')) {
+      setProductOpen(true);
+      if (variant === 'admin') setModerationOpen(true);
+    }
+  }, [pathname, variant]);
 
   const homePath = variant === 'seller' ? '/seller' : '/admin';
   const title = pageTitle(pathname, variant);
@@ -211,6 +219,34 @@ export function AdminShell({ variant = 'admin', children }: AdminShellProps) {
                         end
                       >
                         Requests
+                      </NavLink>
+                    </li>
+                  </ul>
+                </div>
+              </li>
+              <li className="nav-item">
+                <a
+                  className={`nav-link menu-arrow ${moderationOpen ? '' : 'collapsed'}`}
+                  href="#sidebarProductModeration"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setModerationOpen((v) => !v);
+                  }}
+                >
+                  <span className="nav-icon">
+                    <IconifyIcon icon="solar:t-shirt-bold-duotone" />
+                  </span>
+                  <span className="nav-text">Product Moderation</span>
+                </a>
+                <div className={`collapse ${moderationOpen ? 'show' : ''}`} id="sidebarProductModeration">
+                  <ul className="nav sub-navbar-nav">
+                    <li className="sub-nav-item">
+                      <NavLink
+                        className={({ isActive }) => `sub-nav-link${isActive ? ' active' : ''}`}
+                        to="/admin/products"
+                        end
+                      >
+                        Queue
                       </NavLink>
                     </li>
                   </ul>
