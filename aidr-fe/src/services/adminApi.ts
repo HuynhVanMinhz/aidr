@@ -1,7 +1,12 @@
 import type {
+  AdminProductDetail,
+  AdminProductListQuery,
+  AdminProductListResult,
   AdminSellerRegistration,
   AdminSellerRegistrationListResult,
   ApproveSellerRegistrationResult,
+  ProductModerationHistoryResult,
+  RejectProductPayload,
   RejectSellerRegistrationPayload,
   SellerRegistrationListQuery,
 } from '../types/admin';
@@ -41,6 +46,45 @@ export async function rejectSellerRegistration(id: string, payload: RejectSeller
   const { data } = await apiClient.post<ApiResult<AdminSellerRegistration>>(
     `/admin/seller-registrations/${id}/reject`,
     payload,
+  );
+  return data;
+}
+
+export async function listAdminProducts(query: AdminProductListQuery = {}) {
+  const { data } = await apiClient.get<ApiResult<AdminProductListResult>>('/admin/products', {
+    params: {
+      status: query.status ?? 'Pending',
+      q: query.q || undefined,
+      page: query.page ?? 1,
+      pageSize: query.pageSize ?? 10,
+    },
+  });
+  return data;
+}
+
+export async function getAdminProduct(id: string) {
+  const { data } = await apiClient.get<ApiResult<AdminProductDetail>>(`/admin/products/${id}`);
+  return data;
+}
+
+export async function approveAdminProduct(id: string) {
+  const { data } = await apiClient.post<ApiResult<AdminProductDetail>>(
+    `/admin/products/${id}/approve`,
+  );
+  return data;
+}
+
+export async function rejectAdminProduct(id: string, payload: RejectProductPayload) {
+  const { data } = await apiClient.post<ApiResult<AdminProductDetail>>(
+    `/admin/products/${id}/reject`,
+    payload,
+  );
+  return data;
+}
+
+export async function getProductModerationHistory(id: string) {
+  const { data } = await apiClient.get<ApiResult<ProductModerationHistoryResult>>(
+    `/admin/products/${id}/moderation-history`,
   );
   return data;
 }
