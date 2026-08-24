@@ -6,8 +6,8 @@ public sealed class AdminCategoryDto
     public int? ParentId { get; init; }
     public string Name { get; init; } = null!;
     public string Slug { get; init; } = null!;
-    public string? Description { get; init; }
-    public string? ImageUrl { get; init; }
+    public string Description { get; init; } = null!;
+    public string ImageUrl { get; init; } = null!;
     public int SortOrder { get; init; }
     public bool IsActive { get; init; }
     public int ProductCount { get; init; }
@@ -20,8 +20,8 @@ public sealed class CreateCategoryRequest
 {
     public string Name { get; set; } = null!;
     public string Slug { get; set; } = null!;
-    public string? Description { get; set; }
-    public string? ImageUrl { get; set; }
+    public string Description { get; set; } = null!;
+    public string ImageUrl { get; set; } = null!;
     public int? ParentId { get; set; }
     public int SortOrder { get; set; }
     public bool IsActive { get; set; } = true;
@@ -30,8 +30,8 @@ public sealed class CreateCategoryRequest
 public sealed class UpdateCategoryRequest
 {
     public string Name { get; set; } = null!;
-    public string? Description { get; set; }
-    public string? ImageUrl { get; set; }
+    public string Description { get; set; } = null!;
+    public string ImageUrl { get; set; } = null!;
     public int SortOrder { get; set; }
 }
 

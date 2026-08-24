@@ -1,40 +1,41 @@
 ---
-description: AIDR FE — tham khảo UI từ theme-for-aidr-fe và convert sang React; giữ visual language của theme.
+description: AIDR FE — storefront từ theme-for-aidr-fe; Admin/Seller từ theme-for-aidr-admin-fe.
 alwaysApply: true
 ---
 
 # AIDR UI — Theme Reference
 
-Khi implement **bất kỳ màn hình / component FE** nào:
+Khi implement **màn hình / component FE**:
 
-## Nguồn UI
+## Nguồn UI theo khu vực
 
-1. Thư mục tham khảo: `theme-for-aidr-fe/` (HTML + CSS + JS static).
-2. **Không** tự invent layout/style lệch theme khi đã có trang tương đương trong theme.
-3. Convert HTML theme → **React components** (JSX), tái sử dụng class/CSS của theme khi hợp lý; copy asset cần thiết vào `aidr-fe/src/assets` hoặc `public`.
+| Khu vực | Theme UI (HTML/CSS/class) | Màu brand |
+|---------|---------------------------|-----------|
+| Storefront (Guest/Buyer) | `theme-for-aidr-fe/` | theo theme đó |
+| **Admin / Seller** | `theme-for-aidr-admin-fe/admin/` | đồng bộ storefront (`#16181D`, `aidr-brand.css`) |
 
-## Mapping gợi ý (theme → React)
+1. **Không** tự invent layout/style lệch theme khi đã có trang tương đương.
+2. Convert HTML → **React**; copy asset vào `aidr-fe/public/theme` (storefront) hoặc `aidr-fe/public/admin-theme` (admin/seller).
+3. Admin/Seller: UI Larkon admin (sidebar, card, table, form). Chi tiết: rule `aidr-admin-ui-theme`.
 
-| Cần UI | Tham khảo trong `theme-for-aidr-fe/` |
-|--------|--------------------------------------|
-| Home / catalog | `index.html`, `products.html` |
-| Product detail | `product-single.html` |
-| Cart / checkout | `cart.html`, `checkout.html` |
-| Login / register / forgot | `login.html`, `forgot-password.html` |
-| Account / orders / wishlist | `account-*.html`, `account-wishlist.html` |
-| 404 | `404.html` |
-| Styles / icons | `css/`, `images/`, `js/` (chỉ lấy phần cần) |
+## Mapping gợi ý (storefront)
 
-## Quy tắc convert
+| Cần UI | Tham khảo `theme-for-aidr-fe/` |
+|--------|--------------------------------|
+| Home / catalog / cart / account | HTML tương ứng trong theme |
 
-- Giữ **cấu trúc section, typography, spacing, màu** của theme.
-- Tách thành components tái sử dụng (`Header`, `Footer`, `ProductCard`, …).
-- Logic & data: React + Redux + API — **không** nhúng jQuery business logic của theme.
-- Responsive: giữ behavior mobile/desktop của theme.
-- Nếu theme thiếu màn (Seller/Admin/AI): bám visual language (font, màu, button, form) của theme, không đổi brand sang style khác.
+## Mapping gợi ý (admin / seller)
+
+| Cần UI | Tham khảo `theme-for-aidr-admin-fe/admin/` |
+|--------|--------------------------------------------|
+| Shell | `index.html` |
+| Category CRUD | `category-list.html`, `category-add.html`, `category-edit.html` |
+| Product moderation | `product-list.html` |
+| Seller center | `seller-*.html`, `product-*.html` |
 
 ## Không làm
 
-- Bỏ qua `theme-for-aidr-fe` rồi tự làm UI “AI generic”.
+- Bỏ qua theme rồi tự làm UI “AI generic”.
+- Dùng class storefront cho màn Admin/Seller khi đã có bản admin theme.
 - Copy nguyên file HTML vào production mà không convert React.
-- Đổi design system (màu chủ đạo, font) khi chưa có yêu cầu từ user.
+- Đổi màu admin về orange Larkon gốc (`#ff6c2f`).

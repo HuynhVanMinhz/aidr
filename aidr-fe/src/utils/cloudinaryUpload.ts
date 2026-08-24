@@ -4,6 +4,7 @@ const MAX_AVATAR_BYTES = 2 * 1024 * 1024;
 export const CloudinaryFolders = {
   profile: 'profile',
   product: 'product',
+  category: 'category',
 } as const;
 
 export type CloudinaryFolder = (typeof CloudinaryFolders)[keyof typeof CloudinaryFolders];
@@ -20,6 +21,14 @@ export function validateAvatarFile(file: File): void {
   if (file.size > MAX_AVATAR_BYTES) {
     throw new Error('Ảnh đại diện tối đa 2MB.');
   }
+}
+
+/**
+ * Validate file upload cho category (giống avatar hiện tại: chỉ image/*, giới hạn theo MAX_AVATAR_BYTES).
+ * Nếu bạn muốn giới hạn khác cho category, chỉ cần đổi constant hoặc override tại đây.
+ */
+export function validateCategoryImageFile(file: File): void {
+  validateAvatarFile(file);
 }
 
 export function isCloudinaryConfigured(): boolean {
@@ -75,4 +84,11 @@ export async function uploadProductImageToCloudinary(file: File): Promise<Cloudi
     throw new Error('Vui lòng chọn file ảnh hợp lệ.');
   }
   return uploadImageToCloudinary(file, CloudinaryFolders.product);
+}
+
+/** Upload image cho category — dùng folder `category`. */
+export async function uploadCategoryImageToCloudinary(file: File): Promise<CloudinaryUploadResult> {
+  // Dùng validator chung để đảm bảo consistent rules trên FE.
+  validateCategoryImageFile(file);
+  return uploadImageToCloudinary(file, CloudinaryFolders.category);
 }

@@ -271,6 +271,8 @@ Hệ thống giải quyết các pain point chính:
 | BR-C03 | Trừ tồn bán hàng theo FIFO (mặc định) hoặc WeightedAverage theo Shop.CostingMethod |
 | BR-C04 | Đổi giá bán chỉ ghi ProductPriceHistories; không đụng lô / đơn đã bán |
 | BR-C05 | OrderItems snapshot UnitPrice; COGS snapshot qua OrderItemLotAllocations |
+| BR-CA01 | Category bắt buộc có Description (≤ 500 ký tự) khi tạo hoặc cập nhật |
+| BR-CA02 | Category bắt buộc có ImageUrl (http/https hoặc đường dẫn tương đối, ≤ 512 ký tự) khi tạo hoặc cập nhật |
 
 ---
 

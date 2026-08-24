@@ -16,10 +16,12 @@ function flattenCategories(nodes: CategoryTreeNode[]): CategoryTreeNode[] {
 
 export function StoreHeader() {
   const navigate = useNavigate();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, roles } = useAuth();
   const { categories } = useCategories();
   const [q, setQ] = useState('');
   const [categoriesOpen, setCategoriesOpen] = useState(false);
+  const isAdmin = roles.some((r) => r.toUpperCase() === 'ADMIN');
+  const isSeller = roles.some((r) => r.toUpperCase() === 'SELLER');
 
   function handleSearch(e: FormEvent) {
     e.preventDefault();
@@ -172,6 +174,20 @@ export function StoreHeader() {
                         </Link>
                       </li>
                     )}
+                    {isAdmin ? (
+                      <li className="nav-item">
+                        <Link className="nav-link" to="/admin/categories">
+                          Admin
+                        </Link>
+                      </li>
+                    ) : null}
+                    {isSeller ? (
+                      <li className="nav-item">
+                        <Link className="nav-link" to="/seller">
+                          Seller
+                        </Link>
+                      </li>
+                    ) : null}
                   </ul>
                 </div>
               </div>
