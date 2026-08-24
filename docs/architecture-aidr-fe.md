@@ -88,7 +88,7 @@ aidr-fe/
 | Buyer account | `/account/*`, `/cart`, `/checkout`, `/wishlist`, `/orders` | Buyer (+Seller nếu dual-role) |
 | AI | `/ai/assistant`, compare modal/page | Buyer |
 | Chat | `/chat` | Buyer / Seller |
-| Seller center | `/seller`, `/seller/products`, `/seller/products/new`, `/seller/products/:id`, `/seller/products/:id/edit` | Seller |
+| Seller center | `/seller`, `/seller/products`, `/seller/products/new`, `/seller/products/:id`, `/seller/products/:id/edit`, `/seller/inventory`, `/seller/products/:id/inventory` | Seller |
 | Admin | `/admin/*` | Admin |
 
 **Guard flow:**
@@ -111,7 +111,7 @@ aidr-fe/
 | `wishlist` | product ids | UC-36..38 |
 | `notifications` | inbox + unread count | UC-44/45 |
 | `chat` | threads + active messages window | UC-57/58 |
-| `seller` | my products, dashboard KPIs | UC-16, 69, 70, 85 |
+| `seller` | my products, inventory & pricing, dashboard KPIs | UC-16, 17, 91, 92, 69, 70, 85 |
 | `admin` | moderation queues, accounts | UC-18..25, 72..81 |
 
 **Caching rules:**
@@ -134,6 +134,7 @@ aidr-fe/
 | `profileApi.ts` | UC-07/08 |
 | `productApi.ts` | UC-09..11, 26, 27 (public catalog) |
 | `sellerProductApi.ts` | UC-12..16 (seller CRUD + images) |
+| `sellerInventoryApi.ts` | UC-17, UC-91, UC-92 (inventory, lots, selling price) |
 | `categoryApi.ts` | UC-11, 22..25 (admin list server-paged + options) |
 | `cartApi.ts` | UC-29..31 |
 | `voucherApi.ts` | UC-32/33, 78..81, 87..89 |

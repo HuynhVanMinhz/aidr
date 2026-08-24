@@ -26,3 +26,26 @@ export function sellerProductStatusBadgeClass(status: string): string {
       return adminBadgeClass.solidLight;
   }
 }
+
+export function sellerLotStatusBadgeClass(status: string): string {
+  switch (status) {
+    case 'Open':
+      return adminBadgeClass.outlineSuccess;
+    case 'Depleted':
+      return adminBadgeClass.outlineSecondary;
+    case 'Void':
+      return adminBadgeClass.outlineDanger;
+    default:
+      return adminBadgeClass.solidLight;
+  }
+}
+
+export function formatDateTime(value: string | null | undefined): string {
+  if (!value) return '—';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '—';
+  return new Intl.DateTimeFormat('en-GB', {
+    dateStyle: 'medium',
+    timeStyle: 'short',
+  }).format(date);
+}

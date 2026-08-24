@@ -25,6 +25,8 @@ import { AdminSellerRegistrationDetailPage } from '../views/admin/AdminSellerReg
 import { SellerHomePage } from '../views/seller/SellerHomePage';
 import { SellerProductListPage } from '../views/seller/SellerProductListPage';
 import { SellerProductFormPage } from '../views/seller/SellerProductFormPage';
+import { SellerInventoryDetailPage } from '../views/seller/SellerInventoryDetailPage';
+import { SellerInventoryListPage } from '../views/seller/SellerInventoryListPage';
 import { SellerProductDetailPage } from '../views/seller/SellerProductDetailPage';
 import { ToastHost } from '../components/feedback/ToastHost';
 
@@ -64,8 +66,10 @@ export function App() {
             <Route index element={<SellerHomePage />} />
             <Route path="products" element={<SellerProductListPage />} />
             <Route path="products/new" element={<SellerProductFormPage />} />
+            <Route path="products/:id/inventory" element={<SellerInventoryDetailPage />} />
             <Route path="products/:id" element={<SellerProductDetailPage />} />
             <Route path="products/:id/edit" element={<SellerProductFormPage />} />
+            <Route path="inventory" element={<SellerInventoryListPage />} />
           </Route>
         </Route>
 

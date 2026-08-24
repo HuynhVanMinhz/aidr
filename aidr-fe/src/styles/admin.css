@@ -168,6 +168,12 @@ html[data-aidr-shell='admin'] .wrapper .page-content > .container-xxl {
 
 .aidr-admin-select:not(.w-100) {
   min-width: 140px;
+  flex: 0 0 auto;
+}
+
+.aidr-admin-select:not(.w-100) .dropdown-toggle {
+  width: auto;
+  white-space: nowrap;
 }
 
 .aidr-admin-select.is-invalid .dropdown-toggle {
