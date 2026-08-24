@@ -22,7 +22,7 @@ export function GoogleCallbackPage() {
   useEffect(() => {
     if (oauthError || !code) {
       if (!oauthError && !code) {
-        setError('Thiếu mã xác thực (code). Vui lòng đăng nhập Google lại từ trang Login.');
+        setError('Missing authorization code. Please sign in with Google again from the Login page.');
       }
       setLoading(false);
       return;
@@ -33,7 +33,7 @@ export function GoogleCallbackPage() {
 
     const codeKey = CODE_STORAGE_PREFIX + code;
     if (sessionStorage.getItem(codeKey)) {
-      setError('Mã đăng nhập đã được dùng. Vui lòng bấm "Đăng nhập với Google" lại.');
+      setError('This sign-in code has already been used. Please click "Sign in with Google" again.');
       setLoading(false);
       return;
     }
@@ -47,7 +47,7 @@ export function GoogleCallbackPage() {
       } catch (err) {
         sessionStorage.removeItem(codeKey);
         if (!cancelled) {
-          setError(getErrorMessage(err, 'Đăng nhập Google thất bại.'));
+          setError(getErrorMessage(err, 'Google sign-in failed.'));
           setLoading(false);
         }
       }
@@ -65,15 +65,15 @@ export function GoogleCallbackPage() {
           <div className="login-form-content" style={{ maxWidth: 520, margin: '4rem auto', textAlign: 'center' }}>
             {loading && !error && (
               <>
-                <h2>Đang hoàn tất đăng nhập Google…</h2>
-                <p>Vui lòng đợi trong giây lát.</p>
+                <h2>Completing Google sign-in…</h2>
+                <p>Please wait a moment.</p>
               </>
             )}
             {error && (
               <>
                 <div className="auth-alert auth-alert--error">{error}</div>
                 <div className="login-content-form-btn login-now-btn">
-                  <Link to="/login">Quay lại đăng nhập</Link>
+                  <Link to="/login">Back to sign in</Link>
                 </div>
               </>
             )}

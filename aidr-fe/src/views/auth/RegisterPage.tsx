@@ -21,7 +21,7 @@ export function RegisterPage() {
     try {
       await register(fullName.trim(), email.trim(), password, returnUrl);
     } catch (err) {
-      setError(getErrorMessage(err, 'Đăng ký thất bại.'));
+      setError(getErrorMessage(err, 'Registration failed.'));
     } finally {
       setLoading(false);
     }
@@ -38,20 +38,20 @@ export function RegisterPage() {
                   <form onSubmit={handleSubmit}>
                     <div className="login-form-content">
                       <div className="login-content-title-box">
-                        <h2>Đăng ký tài khoản</h2>
-                        <p>Tạo tài khoản Buyer để bắt đầu mua sắm trên AIDR.</p>
+                        <h2>Create an account</h2>
+                        <p>Create a Buyer account to start shopping on AIDR.</p>
                       </div>
 
                       {error && <div className="auth-alert auth-alert--error">{error}</div>}
 
                       <div className="checkout-login-form">
                         <div className="form-group">
-                          <label htmlFor="fullName">Họ và tên *</label>
+                          <label htmlFor="fullName">Full name *</label>
                           <input
                             id="fullName"
                             type="text"
                             className="form-control"
-                            placeholder="Nguyễn Văn A"
+                            placeholder="Jane Doe"
                             value={fullName}
                             onChange={(e) => setFullName(e.target.value)}
                             required
@@ -74,12 +74,12 @@ export function RegisterPage() {
                         </div>
 
                         <div className="form-group">
-                          <label htmlFor="password">Mật khẩu *</label>
+                          <label htmlFor="password">Password *</label>
                           <input
                             id="password"
                             type="password"
                             className="form-control"
-                            placeholder="Tối thiểu 8 ký tự, có chữ hoa & ký tự đặc biệt"
+                            placeholder="At least 8 characters, uppercase & special character"
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
                             required
@@ -90,20 +90,20 @@ export function RegisterPage() {
 
                         <div className="login-form-info">
                           <p>
-                            Mật khẩu cần ≥ 8 ký tự, có chữ hoa và ký tự đặc biệt. Dữ liệu cá nhân được dùng
-                            theo chính sách bảo mật của AIDR.
+                            Password must be at least 8 characters and include an uppercase letter and a
+                            special character. Personal data is used according to AIDR&apos;s privacy policy.
                           </p>
                         </div>
 
                         <div className="checkout-login-btn signup-form-btn">
                           <button type="submit" className="btn-default btn-accent" disabled={loading}>
-                            {loading ? 'Đang đăng ký…' : 'Đăng ký'}
+                            {loading ? 'Creating account…' : 'Sign up'}
                           </button>
                         </div>
 
                         <div className="login-content-form-btn login-now-btn">
                           <Link to={returnUrl ? `/login?returnUrl=${encodeURIComponent(returnUrl)}` : '/login'}>
-                            Đã có tài khoản? Đăng nhập
+                            Already have an account? Sign in
                           </Link>
                         </div>
                       </div>

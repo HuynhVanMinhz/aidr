@@ -62,7 +62,7 @@ export function ProductDetailPage() {
     return (
       <div className="page-product-single">
         <div className="container">
-          <p>Đang tải sản phẩm…</p>
+          <p>Loading product…</p>
         </div>
       </div>
     );
@@ -73,7 +73,7 @@ export function ProductDetailPage() {
       <div className="page-product-single">
         <div className="container">
           <div className="alert alert-danger" role="alert">
-            {error || 'Không tìm thấy sản phẩm.'}
+            {error || 'Product not found.'}
           </div>
           <Link to="/products" className="btn-default btn-accent">
             Back to Products
@@ -174,7 +174,7 @@ export function ProductDetailPage() {
                       <button
                         type="button"
                         className="qty-btn minus"
-                        aria-label="Giảm số lượng"
+                        aria-label="Decrease quantity"
                         disabled={safeQty <= 1}
                         onClick={() => setQty((v) => Math.max(1, v - 1))}
                       >
@@ -185,12 +185,12 @@ export function ProductDetailPage() {
                         className="qty-input"
                         readOnly
                         value={String(safeQty).padStart(2, '0')}
-                        aria-label="Số lượng"
+                        aria-label="Quantity"
                       />
                       <button
                         type="button"
                         className="qty-btn plus"
-                        aria-label="Tăng số lượng"
+                        aria-label="Increase quantity"
                         disabled={safeQty >= maxQty}
                         onClick={() => setQty((v) => Math.min(maxQty, v + 1))}
                       >
@@ -289,7 +289,7 @@ export function ProductDetailPage() {
                         {product.shop.isVerified ? ' · Verified seller' : ''}
                       </p>
                       <Link to={`/products?q=${encodeURIComponent(product.shop.shopName)}`}>
-                        Xem thêm sản phẩm từ shop
+                        More products from this shop
                       </Link>
                     </div>
                   </div>
@@ -336,7 +336,7 @@ export function ProductDetailPage() {
                         {product.description ? (
                           <p style={{ whiteSpace: 'pre-wrap' }}>{product.description}</p>
                         ) : (
-                          <p>Chưa có mô tả chi tiết.</p>
+                          <p>No detailed description yet.</p>
                         )}
                       </div>
                     </div>
@@ -418,12 +418,12 @@ export function ProductDetailPage() {
                         <div className="catalog-detail-review-summary">
                           <StarRow rating={product.avgRating} showValue />
                           <p>
-                            {product.reviewCount} đánh giá · {product.soldCount} đã bán
+                            {product.reviewCount} reviews · {product.soldCount} sold
                           </p>
                         </div>
                         <div className="customer-review-list">
                           {product.recentReviews.length === 0 ? (
-                            <p>Chưa có đánh giá.</p>
+                            <p>No reviews yet.</p>
                           ) : (
                             product.recentReviews.map((review) => (
                               <div key={review.reviewId} className="customer-review-item">
