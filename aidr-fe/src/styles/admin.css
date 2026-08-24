@@ -13,3 +13,12 @@
 html[data-aidr-shell='admin'] .dropdown-menu.show {
   display: block;
 }
+
+/* Light topbar has no theme padding-top; keep content clear of header/sidebar edges. */
+html[data-aidr-shell='admin'] .wrapper .page-content {
+  padding-top: 1.5rem;
+}
+
+html[data-aidr-shell='admin'] .wrapper .page-content > .container-xxl {
+  padding-bottom: 1.5rem;
+}
