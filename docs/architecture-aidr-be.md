@@ -137,7 +137,10 @@ aidr-be/
 ### 6.5 Admin
 | UC | Endpoint | Module |
 |----|----------|--------|
-| UC-18..21 | Product moderation + history | Admin |
+| UC-18 | `GET /api/admin/products?status=&q=&page=&pageSize=` (default `status=Pending`; `status=all`; paged + status summary); `GET .../{id}` | Admin |
+| UC-19 | `POST /api/admin/products/{id}/approve` → Pending→Approved + moderation history + PublishedAt | Admin |
+| UC-20 | `POST /api/admin/products/{id}/reject` + `reason` → Pending→Rejected + history | Admin |
+| UC-21 | `GET /api/admin/products/{id}/moderation-history` — timeline Approve/Reject | Admin |
 | UC-22..25 | Categories: `GET /api/admin/categories?q=&page=&pageSize=` (paged + summary); `GET /api/admin/categories/options` (parent select); CRUD | Admin |
 | UC-48..52 | Return requests | Admin |
 | UC-71..74 | Insights, accounts lock/unlock | Admin |

@@ -32,10 +32,10 @@
 | UC-15 | Delete Product | **Actor:** Seller. Soft-delete / Inactive; không xóa cứng nếu đã có order. **Business:** Dọn catalog; bảo toàn lịch sử đơn. | Done | P1 |
 | UC-16 | View My Products | **Actor:** Seller. List SP của shop theo status (Draft/Pending/Approved…). **Business:** Quản lý danh mục bán. | Done | P0 |
 | UC-17 | Manage Product Inventory | **Actor:** Seller. Xem tồn, reserved, low-stock; điều chỉnh thủ công có ghi InventoryTransactions. **Business:** Tránh oversell. | Done | P0 |
-| UC-18 | View Product List (Admin) | **Actor:** Admin. Queue toàn bộ SP (ưu tiên Pending). **Business:** Kiểm soát chất lượng catalog. | Todo | P0 |
-| UC-19 | Approve Product | **Actor:** Admin. Pending → Approved; ghi moderation history. **Business:** SP đủ chuẩn mới hiện buyer. | Todo | P0 |
-| UC-20 | Reject Product | **Actor:** Admin. Pending → Rejected + lý do. **Business:** Chặn SP sai/thiếu thông tin. | Todo | P0 |
-| UC-21 | View Moderation History | **Actor:** Admin. Timeline Approve/Reject theo product. **Business:** Audit & tranh chấp. | Todo | P1 |
+| UC-18 | View Product List (Admin) | **Actor:** Admin. Queue toàn bộ SP (ưu tiên Pending). **Business:** Kiểm soát chất lượng catalog. | Done | P0 |
+| UC-19 | Approve Product | **Actor:** Admin. Pending → Approved; ghi moderation history. **Business:** SP đủ chuẩn mới hiện buyer. | Done | P0 |
+| UC-20 | Reject Product | **Actor:** Admin. Pending → Rejected + lý do. **Business:** Chặn SP sai/thiếu thông tin. | Done | P0 |
+| UC-21 | View Moderation History | **Actor:** Admin. Timeline Approve/Reject theo product. **Business:** Audit & tranh chấp. | Done | P1 |
 | UC-22 | Create Category | **Actor:** Admin. Tạo category (parent/child, slug unique). **Business:** Cấu trúc ngành hàng. | Done | P0 |
 | UC-23 | Update Category | **Actor:** Admin. Sửa tên, mô tả, ảnh, sort, parent (không tạo vòng lặp). **Business:** Duy trì taxonomy. | Done | P1 |
 | UC-24 | Delete Category | **Actor:** Admin. Xóa khi không còn SP phụ thuộc (hoặc soft). **Business:** Tránh orphan catalog. | Done | P2 |
