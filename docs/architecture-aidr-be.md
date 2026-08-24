@@ -117,7 +117,7 @@ aidr-be/
 | UC-14 | `PUT /api/seller/products/{id}` — update → reset `Pending` | SellerCenter |
 | UC-15 | `DELETE /api/seller/products/{id}` — soft-delete (`Deleted`) | SellerCenter |
 | UC-16 | `GET /api/seller/products`, `GET /api/seller/products/{id}` | SellerCenter |
-| UC-17 | inventory adjust (module Inventory & Pricing) | SellerCenter |
+| UC-17 | `GET /api/seller/inventory`; `GET/PATCH /api/seller/products/{id}/inventory`; `POST .../inventory/adjust` | SellerCenter |
 | UC-91 | `POST /api/seller/products/{id}/lots` — nhập lô + UnitCost | SellerCenter |
 | UC-92 | `PATCH /api/seller/products/{id}/price` — đổi giá bán + ghi history | SellerCenter |
 | UC-46/47 | `GET/PATCH /api/seller/orders` | SellerCenter |
