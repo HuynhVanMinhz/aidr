@@ -14,6 +14,8 @@ public class AidrDbContext : DbContext
     public DbSet<Address> Addresses => Set<Address>();
     public DbSet<Category> Categories => Set<Category>();
     public DbSet<Shop> Shops => Set<Shop>();
+    public DbSet<SellerRegistrationRequest> SellerRegistrationRequests => Set<SellerRegistrationRequest>();
+    public DbSet<Wallet> Wallets => Set<Wallet>();
     public DbSet<Product> Products => Set<Product>();
     public DbSet<ProductImage> ProductImages => Set<ProductImage>();
     public DbSet<ProductReview> ProductReviews => Set<ProductReview>();
@@ -94,11 +96,44 @@ public class AidrDbContext : DbContext
             e.HasKey(x => x.ShopId);
             e.Property(x => x.ShopName).HasMaxLength(150).IsRequired();
             e.Property(x => x.Slug).HasMaxLength(160).IsRequired();
+            e.Property(x => x.Tagline).HasMaxLength(200);
+            e.Property(x => x.ShortDescription).HasMaxLength(500);
             e.Property(x => x.LogoUrl).HasMaxLength(512);
+            e.Property(x => x.CostingMethod).HasMaxLength(20).IsRequired();
             e.Property(x => x.Status).HasMaxLength(20).IsRequired();
             e.Property(x => x.AvgRating).HasPrecision(3, 2);
             e.HasIndex(x => x.Slug).IsUnique();
             e.HasIndex(x => x.OwnerUserId).IsUnique();
+        });
+
+        modelBuilder.Entity<SellerRegistrationRequest>(e =>
+        {
+            e.ToTable("SellerRegistrationRequests");
+            e.HasKey(x => x.RequestId);
+            e.Property(x => x.ShopName).HasMaxLength(150).IsRequired();
+            e.Property(x => x.BusinessInfo).HasMaxLength(1000);
+            e.Property(x => x.Status).HasMaxLength(20).IsRequired();
+            e.Property(x => x.AdminNote).HasMaxLength(500);
+            e.HasOne(x => x.User)
+                .WithMany()
+                .HasForeignKey(x => x.UserId)
+                .OnDelete(DeleteBehavior.Restrict);
+            e.HasOne(x => x.Reviewer)
+                .WithMany()
+                .HasForeignKey(x => x.ReviewedBy)
+                .OnDelete(DeleteBehavior.Restrict);
+            e.HasIndex(x => x.Status);
+        });
+
+        modelBuilder.Entity<Wallet>(e =>
+        {
+            e.ToTable("Wallets");
+            e.HasKey(x => x.WalletId);
+            e.Property(x => x.AvailableBalance).HasPrecision(18, 2);
+            e.Property(x => x.PendingBalance).HasPrecision(18, 2);
+            e.Property(x => x.Currency).HasMaxLength(3).IsRequired();
+            e.HasOne(x => x.Shop).WithMany().HasForeignKey(x => x.ShopId);
+            e.HasIndex(x => x.ShopId).IsUnique();
         });
 
         modelBuilder.Entity<Product>(e =>
