@@ -22,6 +22,8 @@ import { AdminCategoryListPage } from '../views/admin/AdminCategoryListPage';
 import { AdminCategoryFormPage } from '../views/admin/AdminCategoryFormPage';
 import { AdminSellerRegistrationListPage } from '../views/admin/AdminSellerRegistrationListPage';
 import { AdminSellerRegistrationDetailPage } from '../views/admin/AdminSellerRegistrationDetailPage';
+import { AdminProductListPage } from '../views/admin/AdminProductListPage';
+import { AdminProductDetailPage } from '../views/admin/AdminProductDetailPage';
 import { SellerHomePage } from '../views/seller/SellerHomePage';
 import { SellerProductListPage } from '../views/seller/SellerProductListPage';
 import { SellerProductFormPage } from '../views/seller/SellerProductFormPage';
@@ -58,6 +60,8 @@ export function App() {
             <Route path="categories/:id/edit" element={<AdminCategoryFormPage />} />
             <Route path="seller-registrations" element={<AdminSellerRegistrationListPage />} />
             <Route path="seller-registrations/:id" element={<AdminSellerRegistrationDetailPage />} />
+            <Route path="products" element={<AdminProductListPage />} />
+            <Route path="products/:id" element={<AdminProductDetailPage />} />
           </Route>
         </Route>
 
