@@ -87,8 +87,8 @@
 | UC-72 | View Account List | **Actor:** Admin. List user + role + status. **Business:** Quản trị tài khoản. | Todo | P1 |
 | UC-73 | Lock User Account | **Actor:** Admin. Status → Locked. **Business:** Xử lý vi phạm / gian lận. | Todo | P1 |
 | UC-74 | Unlock User Account | **Actor:** Admin. Mở khóa tài khoản. **Business:** Khôi phục sau xử lý. | Todo | P1 |
-| UC-75 | View Seller Registration Requests | **Actor:** Admin. Queue Pending đăng ký seller. **Business:** Kiểm soát ai được bán. | Todo | P0 |
-| UC-76 | Approve / Reject Seller Registration | **Actor:** Admin. Approve → gán role Seller + tạo Shop + Wallet; Reject + note. **Business:** Onboarding seller an toàn. | Todo | P0 |
+| UC-75 | View Seller Registration Requests | **Actor:** Admin. Queue Pending đăng ký seller. **Business:** Kiểm soát ai được bán. | Done | P0 |
+| UC-76 | Approve / Reject Seller Registration | **Actor:** Admin. Approve → gán role Seller + tạo Shop + Wallet; Reject + note. **Business:** Onboarding seller an toàn. | Done | P0 |
 | UC-78 | Create Voucher in System | **Actor:** Admin. Tạo voucher Scope=System. **Business:** Campaign toàn sàn. | Todo | P1 |
 | UC-79 | Update Voucher in System | **Actor:** Admin. Sửa điều kiện / thời hạn. **Business:** Điều chỉnh campaign. | Todo | P2 |
 | UC-80 | Delete Voucher in System | **Actor:** Admin. Xóa / vô hiệu voucher chưa dùng nhiều. **Business:** Dọn KM hết hạn. | Todo | P2 |
