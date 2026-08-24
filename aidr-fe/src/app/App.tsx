@@ -20,6 +20,8 @@ import { CategoriesPage } from '../views/catalog/CategoriesPage';
 import { AdminHomePage } from '../views/admin/AdminHomePage';
 import { AdminCategoryListPage } from '../views/admin/AdminCategoryListPage';
 import { AdminCategoryFormPage } from '../views/admin/AdminCategoryFormPage';
+import { AdminSellerRegistrationListPage } from '../views/admin/AdminSellerRegistrationListPage';
+import { AdminSellerRegistrationDetailPage } from '../views/admin/AdminSellerRegistrationDetailPage';
 import { SellerHomePage } from '../views/seller/SellerHomePage';
 import { ToastHost } from '../components/feedback/ToastHost';
 
@@ -49,6 +51,8 @@ export function App() {
             <Route path="categories" element={<AdminCategoryListPage />} />
             <Route path="categories/new" element={<AdminCategoryFormPage />} />
             <Route path="categories/:id/edit" element={<AdminCategoryFormPage />} />
+            <Route path="seller-registrations" element={<AdminSellerRegistrationListPage />} />
+            <Route path="seller-registrations/:id" element={<AdminSellerRegistrationDetailPage />} />
           </Route>
         </Route>
 

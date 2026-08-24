@@ -243,6 +243,7 @@ VITE_SIGNALR_HUB_URL=https://api.aidr.local/hubs
 | Search results + filter bar | UC-26, 27, 90 |
 | Seller product form | UC-12..17 |
 | Admin moderation / categories | UC-18..25 |
+| Admin seller registration queue / review | UC-75, UC-76 |
 | Cart / Checkout | UC-29..35 |
 | Wishlist | UC-36..38 |
 | My orders / detail | UC-39..43 |

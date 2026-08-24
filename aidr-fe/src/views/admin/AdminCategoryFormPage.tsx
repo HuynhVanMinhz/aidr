@@ -194,44 +194,43 @@ export function AdminCategoryFormPage() {
   }
 
   return (
-    <div className="container-xxl">
-      <form onSubmit={(e) => void handleSubmit(e)}>
-        <div className="row">
-          <div className="col-xl-3 col-lg-4">
-            <div className="card">
-              <div className="card-body">
-                <div className="bg-light text-center rounded bg-light">
-                  {effectiveImageUrl ? (
-                    <img src={effectiveImageUrl} alt="" className="avatar-xxl" />
-                  ) : (
-                    <i className="bx bx-image-alt fs-48 text-primary" />
-                  )}
-                </div>
-                <div className="mt-3">
-                  <h4>{form.name.trim() || (mode === 'create' ? 'New Category' : 'Edit Category')}</h4>
-                  {mode === 'edit' ? <p className="mb-0 text-muted">Slug: {form.slug}</p> : null}
-                </div>
+    <form onSubmit={(e) => void handleSubmit(e)}>
+      <div className="row">
+        <div className="col-xl-3 col-lg-4">
+          <div className="card">
+            <div className="card-body">
+              <div className="bg-light text-center rounded bg-light">
+                {effectiveImageUrl ? (
+                  <img src={effectiveImageUrl} alt="" className="avatar-xxl" />
+                ) : (
+                  <i className="bx bx-image-alt fs-48 text-primary" />
+                )}
               </div>
-              <div className="card-footer border-top">
-                <div className="row g-2">
-                  <div className="col-lg-6">
-                    <button
-                      type="submit"
-                      className="btn btn-outline-secondary w-100"
-                      disabled={!canSubmit || mutating || uploadingImage}
-                    >
-                      {mode === 'create' ? 'Create Category' : 'Save Change'}
-                    </button>
-                  </div>
-                  <div className="col-lg-6">
-                    <Link to="/admin/categories" className="btn btn-primary w-100">
-                      Cancel
-                    </Link>
-                  </div>
+              <div className="mt-3">
+                <h4>{form.name.trim() || (mode === 'create' ? 'New Category' : 'Edit Category')}</h4>
+                {mode === 'edit' ? <p className="mb-0 text-muted">Slug: {form.slug}</p> : null}
+              </div>
+            </div>
+            <div className="card-footer border-top">
+              <div className="row g-2">
+                <div className="col-lg-6">
+                  <button
+                    type="submit"
+                    className="btn btn-outline-secondary w-100"
+                    disabled={!canSubmit || mutating || uploadingImage}
+                  >
+                    {mode === 'create' ? 'Create Category' : 'Save Change'}
+                  </button>
+                </div>
+                <div className="col-lg-6">
+                  <Link to="/admin/categories" className="btn btn-primary w-100">
+                    Cancel
+                  </Link>
                 </div>
               </div>
             </div>
           </div>
+        </div>
 
           <div className="col-xl-9 col-lg-8 ">
             {submitError ? <div className="alert alert-danger">{submitError}</div> : null}
@@ -423,7 +422,6 @@ export function AdminCategoryFormPage() {
             </div>
           </div>
         </div>
-      </form>
-    </div>
+    </form>
   );
 }
