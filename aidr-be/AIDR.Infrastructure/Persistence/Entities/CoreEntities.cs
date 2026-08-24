@@ -272,3 +272,18 @@ public class ViewedProductHistory
     public Product Product { get; set; } = null!;
     public User? User { get; set; }
 }
+
+public class ProductModerationHistory
+{
+    public long ModerationId { get; set; }
+    public Guid ProductId { get; set; }
+    public Guid AdminUserId { get; set; }
+    public string Action { get; set; } = null!;
+    public string FromStatus { get; set; } = null!;
+    public string ToStatus { get; set; } = null!;
+    public string? Reason { get; set; }
+    public DateTime CreatedAt { get; set; }
+
+    public Product Product { get; set; } = null!;
+    public User AdminUser { get; set; } = null!;
+}
