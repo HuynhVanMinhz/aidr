@@ -36,10 +36,10 @@
 | UC-19 | Approve Product | **Actor:** Admin. Pending → Approved; ghi moderation history. **Business:** SP đủ chuẩn mới hiện buyer. | Todo | P0 |
 | UC-20 | Reject Product | **Actor:** Admin. Pending → Rejected + lý do. **Business:** Chặn SP sai/thiếu thông tin. | Todo | P0 |
 | UC-21 | View Moderation History | **Actor:** Admin. Timeline Approve/Reject theo product. **Business:** Audit & tranh chấp. | Todo | P1 |
-| UC-22 | Create Category | **Actor:** Admin. Tạo category (parent/child, slug unique). **Business:** Cấu trúc ngành hàng. | Todo | P0 |
-| UC-23 | Update Category | **Actor:** Admin. Sửa tên, mô tả, ảnh, sort. **Business:** Duy trì taxonomy. | Todo | P1 |
-| UC-24 | Delete Category | **Actor:** Admin. Xóa khi không còn SP phụ thuộc (hoặc soft). **Business:** Tránh orphan catalog. | Todo | P2 |
-| UC-25 | Activate / Disable Category | **Actor:** Admin. Bật/tắt hiển thị category. **Business:** Ẩn nhóm hàng tạm thời. | Todo | P1 |
+| UC-22 | Create Category | **Actor:** Admin. Tạo category (parent/child, slug unique). **Business:** Cấu trúc ngành hàng. | Done | P0 |
+| UC-23 | Update Category | **Actor:** Admin. Sửa tên, mô tả, ảnh, sort. **Business:** Duy trì taxonomy. | Done | P1 |
+| UC-24 | Delete Category | **Actor:** Admin. Xóa khi không còn SP phụ thuộc (hoặc soft). **Business:** Tránh orphan catalog. | Done | P2 |
+| UC-25 | Activate / Disable Category | **Actor:** Admin. Bật/tắt hiển thị category. **Business:** Ẩn nhóm hàng tạm thời. | Done | P1 |
 | UC-26 | Search Products | **Actor:** Guest/Buyer. Full-text / keyword trên name, brand, specs. **Business:** Giảm thời gian tìm SP. | Done | P0 |
 | UC-27 | Filter & Sort Products | **Actor:** Guest/Buyer. Lọc category, brand, giá, rating; sort price/newest/popular. **Business:** Thu hẹp lựa chọn khi catalog lớn. | Done | P0 |
 | UC-28 | AI Compare Products | **Actor:** Buyer. Chọn 2–N SP → Ollama tóm tắt so sánh theo specs. **Business:** Hỗ trợ quyết định mua điện tử phức tạp. | Todo | P2 |
