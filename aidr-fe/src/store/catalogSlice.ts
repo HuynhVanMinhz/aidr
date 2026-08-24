@@ -187,6 +187,10 @@ export const catalogSlice = createSlice({
       state.detailError = null;
       state.detailLoading = false;
     },
+    invalidateCategories(state) {
+      state.categoriesLoaded = false;
+      state.categories = [];
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -238,7 +242,7 @@ export const catalogSlice = createSlice({
   },
 });
 
-export const { setFilters, replaceFilters, clearSelectedProduct } = catalogSlice.actions;
+export const { setFilters, replaceFilters, clearSelectedProduct, invalidateCategories } = catalogSlice.actions;
 
 export const selectCatalogFilters = (state: CatalogRoot) => state.catalog.filters;
 export const selectCatalogProducts = (state: CatalogRoot) => state.catalog.products;

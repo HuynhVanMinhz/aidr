@@ -69,8 +69,8 @@ public sealed class AdminCategoryRepository : IAdminCategoryRepository
     public async Task<AdminCategoryRecord> CreateAsync(
         string name,
         string slug,
-        string? description,
-        string? imageUrl,
+        string description,
+        string imageUrl,
         int? parentId,
         int sortOrder,
         bool isActive,
@@ -99,8 +99,8 @@ public sealed class AdminCategoryRepository : IAdminCategoryRepository
     public async Task<AdminCategoryRecord> UpdateAsync(
         int categoryId,
         string name,
-        string? description,
-        string? imageUrl,
+        string description,
+        string imageUrl,
         int sortOrder,
         CancellationToken cancellationToken = default)
     {

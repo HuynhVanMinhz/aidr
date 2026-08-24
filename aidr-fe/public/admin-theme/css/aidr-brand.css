@@ -1,0 +1,89 @@
+/**
+ * AIDR brand override for Larkon admin theme.
+ * Aligns primary/accent with storefront theme-for-aidr-fe (#16181D).
+ */
+:root,
+[data-bs-theme='light'] {
+  --bs-primary: #16181d;
+  --bs-primary-rgb: 22, 24, 29;
+  --bs-orange: #16181d;
+  --bs-orange-rgb: 22, 24, 29;
+  --bs-primary-text-emphasis: #0c0d10;
+  --bs-primary-bg-subtle: rgba(22, 24, 29, 0.08);
+  --bs-primary-border-subtle: rgba(22, 24, 29, 0.2);
+  --bs-headings-color: #16181d;
+  --bs-link-color: #16181d;
+  --bs-link-hover-color: #2a2e36;
+  --bs-main-nav-item-hover-color: #16181d;
+}
+
+html[data-menu-color='light'] {
+  --bs-main-nav-bg: #ffffff;
+  --bs-main-nav-item-color: #707070;
+  --bs-main-nav-item-hover-color: #16181d;
+  --bs-main-nav-border-color: rgba(22, 24, 29, 0.1);
+}
+
+html[data-topbar-color='light'] {
+  --bs-topbar-bg: #ffffff;
+  --bs-topbar-item-color: #707070;
+  --bs-topbar-search-bg: #f3f3f3;
+}
+
+html[data-bs-theme='dark'],
+[data-bs-theme='dark'] {
+  --bs-primary: #2dd4bf;
+  --bs-primary-rgb: 45, 212, 191;
+  --bs-primary-text-emphasis: #5eead4;
+  --bs-primary-bg-subtle: rgba(45, 212, 191, 0.15);
+  --bs-primary-border-subtle: rgba(45, 212, 191, 0.35);
+  --bs-main-nav-item-hover-color: #2dd4bf;
+}
+
+.btn-primary,
+.bg-primary,
+.badge.bg-primary,
+.page-item.active .page-link,
+.nav-pills .nav-link.active {
+  --bs-btn-bg: #16181d;
+  --bs-btn-border-color: #16181d;
+  --bs-btn-hover-bg: #2a2e36;
+  --bs-btn-hover-border-color: #2a2e36;
+  --bs-btn-active-bg: #0c0d10;
+  --bs-btn-active-border-color: #0c0d10;
+  --bs-btn-disabled-bg: #16181d;
+  --bs-btn-disabled-border-color: #16181d;
+}
+
+.text-primary {
+  color: #16181d !important;
+}
+
+.bg-primary {
+  background-color: #16181d !important;
+}
+
+.bg-primary-subtle {
+  background-color: rgba(22, 24, 29, 0.08) !important;
+}
+
+.btn-soft-primary {
+  color: #16181d;
+  background-color: rgba(22, 24, 29, 0.08);
+  border-color: transparent;
+}
+
+.btn-soft-primary:hover,
+.btn-soft-primary:focus {
+  color: #ffffff;
+  background-color: #16181d;
+}
+
+.btn-outline-primary {
+  --bs-btn-color: #16181d;
+  --bs-btn-border-color: #16181d;
+  --bs-btn-hover-bg: #16181d;
+  --bs-btn-hover-border-color: #16181d;
+  --bs-btn-active-bg: #16181d;
+  --bs-btn-active-border-color: #16181d;
+}

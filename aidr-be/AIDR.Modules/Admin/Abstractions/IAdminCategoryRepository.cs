@@ -6,8 +6,8 @@ public sealed class AdminCategoryRecord
     public int? ParentId { get; init; }
     public string Name { get; init; } = null!;
     public string Slug { get; init; } = null!;
-    public string? Description { get; init; }
-    public string? ImageUrl { get; init; }
+    public string Description { get; init; } = null!;
+    public string ImageUrl { get; init; } = null!;
     public int SortOrder { get; init; }
     public bool IsActive { get; init; }
     public int ProductCount { get; init; }
@@ -33,8 +33,8 @@ public interface IAdminCategoryRepository
     Task<AdminCategoryRecord> CreateAsync(
         string name,
         string slug,
-        string? description,
-        string? imageUrl,
+        string description,
+        string imageUrl,
         int? parentId,
         int sortOrder,
         bool isActive,
@@ -43,8 +43,8 @@ public interface IAdminCategoryRepository
     Task<AdminCategoryRecord> UpdateAsync(
         int categoryId,
         string name,
-        string? description,
-        string? imageUrl,
+        string description,
+        string imageUrl,
         int sortOrder,
         CancellationToken cancellationToken = default);
 
