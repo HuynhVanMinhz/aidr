@@ -143,7 +143,7 @@ export function HomePage() {
           <div className="row">
             <div className="col-lg-12">
               <div className="category-slider">
-                {categoriesLoading && <p>Đang tải danh mục…</p>}
+                {categoriesLoading && <p>Loading categories…</p>}
                 <div className="category-slider-track">
                   {(categories.length > 0 ? categories : []).slice(0, 6).map((cat, index) => (
                     <div key={cat.categoryId} className="category-slider-slide">
@@ -191,7 +191,7 @@ export function HomePage() {
             </div>
           </div>
 
-          {loading && <p>Đang tải sản phẩm…</p>}
+          {loading && <p>Loading products…</p>}
           {error && (
             <div className="alert alert-danger" role="alert">
               {error}

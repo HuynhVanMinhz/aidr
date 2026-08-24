@@ -41,17 +41,17 @@ export function ProductCard({ product, variant = 'list' }: Props) {
       <div className="product-item-action">
         <ul>
           <li>
-            <Link to="/login" title="Yêu thích" aria-label="Yêu thích">
+            <Link to="/login" title="Wishlist" aria-label="Wishlist">
               <img src="/theme/images/icon-wishlist-primary.svg" alt="" />
             </Link>
           </li>
           <li>
-            <Link to={detailTo} title="Xem nhanh" aria-label="Xem nhanh">
+            <Link to={detailTo} title="Quick view" aria-label="Quick view">
               <img src="/theme/images/icon-preview-primary.svg" alt="" />
             </Link>
           </li>
           <li>
-            <Link to="/login" title="Giỏ hàng" aria-label="Giỏ hàng">
+            <Link to="/login" title="Cart" aria-label="Cart">
               <img src="/theme/images/icon-cart-primary.svg" alt="" />
             </Link>
           </li>
@@ -73,7 +73,7 @@ export function ProductCard({ product, variant = 'list' }: Props) {
           </div>
           <div className="product-item-btn">
             <Link to={detailTo} className="btn-default">
-              Xem chi tiết
+              View details
             </Link>
           </div>
         </div>

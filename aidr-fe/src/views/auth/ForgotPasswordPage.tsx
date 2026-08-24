@@ -25,7 +25,7 @@ export function ForgotPasswordPage() {
       const result = await authApi.forgotPassword({ email: email.trim() });
       setSuccess(
         result.message ||
-          'Nếu email đã đăng ký, chúng tôi đã gửi link đặt lại mật khẩu (hoặc xem log API ở môi trường dev).',
+          'If this email is registered, we have sent a password reset link (or check the API log in development).',
       );
     } catch (err) {
       setError(getApiErrorMessage(err));
@@ -45,8 +45,8 @@ export function ForgotPasswordPage() {
                   <form onSubmit={handleSubmit}>
                     <div className="login-form-content">
                       <div className="login-content-title-box">
-                        <h2>Quên mật khẩu</h2>
-                        <p>Nhập email đã đăng ký. Bạn sẽ nhận link đặt lại mật khẩu (one-time, có hạn).</p>
+                        <h2>Forgot password</h2>
+                        <p>Enter your registered email. You will receive a one-time, time-limited reset link.</p>
                       </div>
 
                       {error && <div className="auth-alert auth-alert--error">{error}</div>}
@@ -69,14 +69,14 @@ export function ForgotPasswordPage() {
 
                         <div className="checkout-login-btn reset-password-btn">
                           <button type="submit" className="btn-default btn-accent" disabled={loading}>
-                            {loading ? 'Đang gửi…' : 'Gửi link đặt lại mật khẩu'}
+                            {loading ? 'Sending…' : 'Send reset link'}
                           </button>
                         </div>
 
                         <div className="login-content-form-btn login-now-btn">
-                          <Link to="/login">Quay lại đăng nhập</Link>
+                          <Link to="/login">Back to sign in</Link>
                           {' · '}
-                          <Link to="/account/change-password">Về trang mật khẩu</Link>
+                          <Link to="/account/change-password">Password settings</Link>
                         </div>
                       </div>
                     </div>

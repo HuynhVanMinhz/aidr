@@ -75,7 +75,7 @@ aidr-fe/
 └── package.json
 ```
 
-**Theme tham khảo:** thư mục `theme-for-aidr-fe/` (HTML static) — chuyển dần sang React components, giữ visual language khi implement.
+**Theme tham khảo:** storefront `theme-for-aidr-fe/`; Admin & Seller `theme-for-aidr-admin-fe/admin/` (CSS trong `aidr-fe/public/admin-theme`).
 
 ---
 
@@ -263,5 +263,6 @@ VITE_SIGNALR_HUB_URL=https://api.aidr.local/hubs
 - `bussiness-system.md` — nghiệp vụ & UC
 - `database.sql` — schema (FE chỉ consume qua API)
 - `architecture-aidr-be.md` — backend contracts & hubs
-- `theme-for-aidr-fe/` — HTML theme tham khảo UI
+- `theme-for-aidr-fe/` — HTML theme storefront
+- `theme-for-aidr-admin-fe/` — HTML theme Admin / Seller
 - Report7 — System Design §1.1 / Table 20

@@ -45,7 +45,7 @@ export function useAuth() {
     async (email: string, password: string, returnUrl?: string | null) => {
       const result = await authApi.login({ email, password });
       if (!result.success || !result.data) {
-        throw new Error(result.message || 'Đăng nhập thất bại.');
+        throw new Error(result.message || 'Login failed.');
       }
       applySession(result.data);
       redirectAfterAuth(returnUrl);
@@ -58,7 +58,7 @@ export function useAuth() {
     async (fullName: string, email: string, password: string, returnUrl?: string | null) => {
       const result = await authApi.register({ fullName, email, password });
       if (!result.success || !result.data) {
-        throw new Error(result.message || 'Đăng ký thất bại.');
+        throw new Error(result.message || 'Registration failed.');
       }
       applySession(result.data);
       redirectAfterAuth(returnUrl);
@@ -70,7 +70,7 @@ export function useAuth() {
   const startGoogleLogin = useCallback(async () => {
     const result = await authApi.getGoogleAuthUrl(googleRedirectUri);
     if (!result.success || !result.data?.authorizationUrl) {
-      throw new Error(result.message || 'Không lấy được URL đăng nhập Google.');
+      throw new Error(result.message || 'Unable to get Google login URL.');
     }
     window.location.assign(result.data.authorizationUrl);
   }, []);
@@ -79,7 +79,7 @@ export function useAuth() {
     async (code: string, returnUrl?: string | null) => {
       const result = await authApi.completeGoogleLogin(code, googleRedirectUri);
       if (!result.success || !result.data) {
-        throw new Error(result.message || 'Đăng nhập Google thất bại.');
+        throw new Error(result.message || 'Google login failed.');
       }
       applySession(result.data);
       redirectAfterAuth(returnUrl);
