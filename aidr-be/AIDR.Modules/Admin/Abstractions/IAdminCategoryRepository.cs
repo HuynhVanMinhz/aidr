@@ -4,6 +4,7 @@ public sealed class AdminCategoryRecord
 {
     public int CategoryId { get; init; }
     public int? ParentId { get; init; }
+    public string? ParentName { get; init; }
     public string Name { get; init; } = null!;
     public string Slug { get; init; } = null!;
     public string Description { get; init; } = null!;
@@ -16,9 +17,31 @@ public sealed class AdminCategoryRecord
     public DateTime UpdatedAt { get; init; }
 }
 
+public sealed class AdminCategoryOptionRecord
+{
+    public int CategoryId { get; init; }
+    public int? ParentId { get; init; }
+    public string Name { get; init; } = null!;
+    public int SortOrder { get; init; }
+}
+
+public sealed class AdminCategoryListSummary
+{
+    public int ActiveCount { get; init; }
+    public int InactiveCount { get; init; }
+    public int WithProductsCount { get; init; }
+}
+
 public interface IAdminCategoryRepository
 {
-    Task<IReadOnlyList<AdminCategoryRecord>> ListAsync(CancellationToken cancellationToken = default);
+    Task<(IReadOnlyList<AdminCategoryRecord> Items, int TotalCount, int Page, AdminCategoryListSummary Summary)> ListPagedAsync(
+        string? keyword,
+        int page,
+        int pageSize,
+        CancellationToken cancellationToken = default);
+
+    Task<IReadOnlyList<AdminCategoryOptionRecord>> ListOptionsAsync(
+        CancellationToken cancellationToken = default);
 
     Task<AdminCategoryRecord?> GetByIdAsync(int categoryId, CancellationToken cancellationToken = default);
 
@@ -40,12 +63,15 @@ public interface IAdminCategoryRepository
         bool isActive,
         CancellationToken cancellationToken = default);
 
+    Task<int?> GetParentIdAsync(int categoryId, CancellationToken cancellationToken = default);
+
     Task<AdminCategoryRecord> UpdateAsync(
         int categoryId,
         string name,
         string description,
         string imageUrl,
         int sortOrder,
+        int? parentId,
         CancellationToken cancellationToken = default);
 
     Task<AdminCategoryRecord> UpdateStatusAsync(

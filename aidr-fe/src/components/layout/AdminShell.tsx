@@ -28,6 +28,10 @@ function pageTitle(pathname: string, variant: AdminShellVariant) {
   if (pathname.includes('/categories')) return 'Categories List';
   if (pathname.match(/\/seller-registrations\/[^/]+$/)) return 'Seller Registration Review';
   if (pathname.includes('/seller-registrations')) return 'Seller Registrations';
+  if (pathname.includes('/products/new')) return 'Create Product';
+  if (pathname.match(/\/products\/[^/]+\/edit$/)) return 'Edit Product';
+  if (pathname.match(/\/products\/[^/]+$/)) return 'Product Details';
+  if (pathname.includes('/products')) return 'Product List';
   return variant === 'seller' ? 'Welcome!' : 'Welcome!';
 }
 
@@ -38,11 +42,13 @@ export function AdminShell({ variant = 'admin', children }: AdminShellProps) {
   const { isDark, toggleTheme } = useTheme();
   const [categoryOpen, setCategoryOpen] = useState(pathname.includes('/categories'));
   const [sellerRegOpen, setSellerRegOpen] = useState(pathname.includes('/seller-registrations'));
+  const [productOpen, setProductOpen] = useState(pathname.includes('/products'));
   const [userOpen, setUserOpen] = useState(false);
 
   useEffect(() => {
     if (pathname.includes('/categories')) setCategoryOpen(true);
     if (pathname.includes('/seller-registrations')) setSellerRegOpen(true);
+    if (pathname.includes('/products')) setProductOpen(true);
   }, [pathname]);
 
   const homePath = variant === 'seller' ? '/seller' : '/admin';
@@ -211,12 +217,40 @@ export function AdminShell({ variant = 'admin', children }: AdminShellProps) {
               </>
             ) : (
               <li className="nav-item">
-                <span className="nav-link">
+                <a
+                  className={`nav-link menu-arrow ${productOpen ? '' : 'collapsed'}`}
+                  href="#sidebarSellerProducts"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setProductOpen((v) => !v);
+                  }}
+                >
                   <span className="nav-icon">
                     <IconifyIcon icon="solar:t-shirt-bold-duotone" />
                   </span>
                   <span className="nav-text">Products</span>
-                </span>
+                </a>
+                <div className={`collapse ${productOpen ? 'show' : ''}`} id="sidebarSellerProducts">
+                  <ul className="nav sub-navbar-nav">
+                    <li className="sub-nav-item">
+                      <NavLink
+                        className={({ isActive }) => `sub-nav-link${isActive ? ' active' : ''}`}
+                        to="/seller/products"
+                        end
+                      >
+                        List
+                      </NavLink>
+                    </li>
+                    <li className="sub-nav-item">
+                      <NavLink
+                        className={({ isActive }) => `sub-nav-link${isActive ? ' active' : ''}`}
+                        to="/seller/products/new"
+                      >
+                        Create
+                      </NavLink>
+                    </li>
+                  </ul>
+                </div>
               </li>
             )}
           </ul>

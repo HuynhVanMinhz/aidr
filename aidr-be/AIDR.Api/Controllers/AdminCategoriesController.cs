@@ -15,13 +15,25 @@ public sealed class AdminCategoriesController : ControllerBase
 
     public AdminCategoriesController(IAdminCategoryService categories) => _categories = categories;
 
-    /// <summary>List all categories for admin management.</summary>
+    /// <summary>List categories with server-side paging, optional search, and summary counts.</summary>
     [HttpGet]
-    public async Task<ActionResult<ApiResult<IReadOnlyList<AdminCategoryDto>>>> List(
+    public async Task<ActionResult<ApiResult<AdminCategoryListResultDto>>> List(
+        [FromQuery] string? q,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 10,
+        CancellationToken cancellationToken = default)
+    {
+        var result = await _categories.ListAsync(q, page, pageSize, cancellationToken);
+        return Ok(ApiResult<AdminCategoryListResultDto>.Ok(result));
+    }
+
+    /// <summary>List compact category options for parent selection (not paginated).</summary>
+    [HttpGet("options")]
+    public async Task<ActionResult<ApiResult<IReadOnlyList<AdminCategoryOptionDto>>>> ListOptions(
         CancellationToken cancellationToken)
     {
-        var result = await _categories.ListAsync(cancellationToken);
-        return Ok(ApiResult<IReadOnlyList<AdminCategoryDto>>.Ok(result));
+        var result = await _categories.ListOptionsAsync(cancellationToken);
+        return Ok(ApiResult<IReadOnlyList<AdminCategoryOptionDto>>.Ok(result));
     }
 
     /// <summary>Get a category by id.</summary>
