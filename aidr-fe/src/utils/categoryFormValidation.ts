@@ -24,9 +24,9 @@ export function validateCategoryFormFields(
 
   const nameError = tryValidateField(() =>
     validateMaxLength(
-      validateRequired(form.name, 'Tên danh mục'),
+      validateRequired(form.name, 'Category name'),
       CATEGORY_MAX_NAME,
-      'Tên danh mục',
+      'Category name',
     ),
   );
   if (nameError) errors.name = nameError;
@@ -38,16 +38,16 @@ export function validateCategoryFormFields(
     if (form.parentId.trim()) {
       const parentId = Number(form.parentId);
       if (!Number.isInteger(parentId) || parentId <= 0) {
-        errors.parentId = 'Danh mục cha không hợp lệ.';
+        errors.parentId = 'Parent category is invalid.';
       }
     }
   }
 
   const descriptionError = tryValidateField(() =>
     validateMaxLength(
-      validateRequired(form.description, 'Mô tả'),
+      validateRequired(form.description, 'Description'),
       CATEGORY_MAX_DESCRIPTION,
-      'Mô tả',
+      'Description',
     ),
   );
   if (descriptionError) errors.description = descriptionError;
@@ -57,9 +57,9 @@ export function validateCategoryFormFields(
 
   const sortError = tryValidateField(() => {
     const sortRaw = form.sortOrder.trim();
-    if (!sortRaw) throw new Error('Thứ tự sắp xếp là bắt buộc.');
+    if (!sortRaw) throw new Error('Sort order is required.');
     const sortOrder = Number(sortRaw);
-    if (!Number.isInteger(sortOrder)) throw new Error('Thứ tự sắp xếp phải là số nguyên.');
+    if (!Number.isInteger(sortOrder)) throw new Error('Sort order must be an integer.');
   });
   if (sortError) errors.sortOrder = sortError;
 

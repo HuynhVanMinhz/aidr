@@ -23,11 +23,11 @@ export const fetchProfile = createAsyncThunk('user/fetchProfile', async (_, { re
   try {
     const result = await profileApi.getProfile();
     if (!result.success || !result.data) {
-      return rejectWithValue(result.message || 'Không tải được hồ sơ.');
+      return rejectWithValue(result.message || 'Unable to load profile.');
     }
     return result.data;
   } catch (error) {
-    return rejectWithValue(error instanceof Error ? error.message : 'Không tải được hồ sơ.');
+    return rejectWithValue(error instanceof Error ? error.message : 'Unable to load profile.');
   }
 });
 
@@ -37,12 +37,12 @@ export const saveProfile = createAsyncThunk(
     try {
       const result = await profileApi.updateProfile(payload);
       if (!result.success || !result.data) {
-        return rejectWithValue(result.message || 'Cập nhật hồ sơ thất bại.');
+        return rejectWithValue(result.message || 'Unable to update profile.');
       }
       dispatch(patchAuthUser({ fullName: result.data.fullName }));
       return result.data;
     } catch (error) {
-      return rejectWithValue(error instanceof Error ? error.message : 'Cập nhật hồ sơ thất bại.');
+      return rejectWithValue(error instanceof Error ? error.message : 'Unable to update profile.');
     }
   },
 );
@@ -70,7 +70,7 @@ export const userSlice = createSlice({
       })
       .addCase(fetchProfile.rejected, (state, action) => {
         state.loading = false;
-        state.error = (action.payload as string) || 'Không tải được hồ sơ.';
+        state.error = (action.payload as string) || 'Unable to load profile.';
       })
       .addCase(saveProfile.pending, (state) => {
         state.saving = true;
@@ -82,7 +82,7 @@ export const userSlice = createSlice({
       })
       .addCase(saveProfile.rejected, (state, action) => {
         state.saving = false;
-        state.error = (action.payload as string) || 'Cập nhật hồ sơ thất bại.';
+        state.error = (action.payload as string) || 'Unable to update profile.';
       });
   },
 });

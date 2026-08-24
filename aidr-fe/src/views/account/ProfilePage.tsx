@@ -47,7 +47,7 @@ export function ProfilePage() {
     try {
       validateAvatarFile(file);
       if (!isCloudinaryConfigured()) {
-        setFormError('Cloudinary chưa cấu hình — không thể upload avatar.');
+        setFormError('Cloudinary is not configured — unable to upload avatar.');
         return;
       }
 
@@ -75,8 +75,8 @@ export function ProfilePage() {
     setFormSuccess(null);
 
     try {
-      const name = validateRequired(fullName, 'Họ và tên');
-      const phoneValue = validateVnPhone(phone, 'Số điện thoại');
+      const name = validateRequired(fullName, 'Full name');
+      const phoneValue = validateVnPhone(phone, 'Phone number');
 
       await updateProfile({
         fullName: name,
@@ -84,7 +84,7 @@ export function ProfilePage() {
         avatarUrl,
         avatarPublicId,
       });
-      setFormSuccess('Đã cập nhật thông tin tài khoản.');
+      setFormSuccess('Account information updated.');
     } catch (err) {
       setFormError(getErrorMessage(err));
     }
@@ -93,7 +93,7 @@ export function ProfilePage() {
   if (loading && !profile) {
     return (
       <div className="account-details-content-box">
-        <p className="account-muted">Đang tải hồ sơ…</p>
+        <p className="account-muted">Loading profile…</p>
       </div>
     );
   }
@@ -105,7 +105,7 @@ export function ProfilePage() {
       <form className="checkout-bill-address-form" onSubmit={handleProfileSubmit} noValidate>
         <div className="account-details-content-item">
           <div className="checkout-bill-address-title">
-            <h2>Thông tin cá nhân</h2>
+            <h2>Personal information</h2>
           </div>
 
           {formError && <div className="auth-alert auth-alert--error">{formError}</div>}
@@ -120,7 +120,7 @@ export function ProfilePage() {
               )}
             </div>
             <div className="account-avatar-actions">
-              <p>Ảnh đại diện (tối đa 2MB)</p>
+              <p>Profile photo (max 2MB)</p>
               <input
                 ref={fileInputRef}
                 type="file"
@@ -135,7 +135,7 @@ export function ProfilePage() {
                 onClick={() => fileInputRef.current?.click()}
                 disabled={uploadingAvatar || saving}
               >
-                {uploadingAvatar ? 'Đang upload…' : 'Chọn ảnh'}
+                {uploadingAvatar ? 'Uploading…' : 'Choose image'}
               </button>
             </div>
           </div>
@@ -143,12 +143,12 @@ export function ProfilePage() {
           <div className="checkout-bill-address-form">
             <div className="row">
               <div className="form-group col-lg-12">
-                <label htmlFor="fullName">Họ và tên *</label>
+                <label htmlFor="fullName">Full name *</label>
                 <input
                   id="fullName"
                   type="text"
                   className="form-control"
-                  placeholder="Nhập họ và tên"
+                  placeholder="Enter your full name"
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
                   maxLength={128}
@@ -169,12 +169,12 @@ export function ProfilePage() {
               </div>
 
               <div className="form-group col-lg-12">
-                <label htmlFor="phone">Số điện thoại *</label>
+                <label htmlFor="phone">Phone number *</label>
                 <input
                   id="phone"
                   type="tel"
                   className="form-control"
-                  placeholder="Ví dụ: 0912345678"
+                  placeholder="Example: 0912345678"
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
                   maxLength={20}
@@ -189,7 +189,7 @@ export function ProfilePage() {
                     className="btn-default btn-accent"
                     disabled={saving || uploadingAvatar || !isProfileDirty}
                   >
-                    {saving ? 'Đang lưu…' : 'Lưu thay đổi'}
+                    {saving ? 'Saving…' : 'Save changes'}
                   </button>
                 </div>
               </div>

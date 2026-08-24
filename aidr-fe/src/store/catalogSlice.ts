@@ -126,7 +126,7 @@ export const fetchProducts = createAsyncThunk(
         : await productApi.listProducts(query);
 
       if (!result.success || !result.data) {
-        return rejectWithValue(result.message || 'Không tải được danh sách sản phẩm.');
+        return rejectWithValue(result.message || 'Unable to load products.');
       }
 
       return {
@@ -136,7 +136,7 @@ export const fetchProducts = createAsyncThunk(
       };
     } catch (error) {
       return rejectWithValue(
-        error instanceof Error ? error.message : 'Không tải được danh sách sản phẩm.',
+        error instanceof Error ? error.message : 'Unable to load products.',
       );
     }
   },
@@ -148,11 +148,11 @@ export const fetchCategories = createAsyncThunk(
     try {
       const result = await categoryApi.getCategoryTree();
       if (!result.success || !result.data) {
-        return rejectWithValue(result.message || 'Không tải được danh mục.');
+        return rejectWithValue(result.message || 'Unable to load categories.');
       }
       return result.data;
     } catch (error) {
-      return rejectWithValue(error instanceof Error ? error.message : 'Không tải được danh mục.');
+      return rejectWithValue(error instanceof Error ? error.message : 'Unable to load categories.');
     }
   },
 );
@@ -163,11 +163,11 @@ export const fetchProductDetail = createAsyncThunk(
     try {
       const result = await productApi.getProduct(productId);
       if (!result.success || !result.data) {
-        return rejectWithValue(result.message || 'Không tìm thấy sản phẩm.');
+        return rejectWithValue(result.message || 'Product not found.');
       }
       return result.data;
     } catch (error) {
-      return rejectWithValue(error instanceof Error ? error.message : 'Không tìm thấy sản phẩm.');
+      return rejectWithValue(error instanceof Error ? error.message : 'Product not found.');
     }
   },
 );
@@ -211,7 +211,7 @@ export const catalogSlice = createSlice({
       })
       .addCase(fetchProducts.rejected, (state, action) => {
         state.listLoading = false;
-        state.listError = (action.payload as string) || 'Không tải được danh sách sản phẩm.';
+        state.listError = (action.payload as string) || 'Unable to load products.';
       })
       .addCase(fetchCategories.pending, (state) => {
         state.categoriesLoading = true;
@@ -224,7 +224,7 @@ export const catalogSlice = createSlice({
       })
       .addCase(fetchCategories.rejected, (state, action) => {
         state.categoriesLoading = false;
-        state.categoriesError = (action.payload as string) || 'Không tải được danh mục.';
+        state.categoriesError = (action.payload as string) || 'Unable to load categories.';
       })
       .addCase(fetchProductDetail.pending, (state) => {
         state.detailLoading = true;
@@ -237,7 +237,7 @@ export const catalogSlice = createSlice({
       .addCase(fetchProductDetail.rejected, (state, action) => {
         state.detailLoading = false;
         state.selectedProduct = null;
-        state.detailError = (action.payload as string) || 'Không tìm thấy sản phẩm.';
+        state.detailError = (action.payload as string) || 'Product not found.';
       });
   },
 });

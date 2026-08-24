@@ -10,9 +10,9 @@ type Props = {
 };
 
 const RATING_OPTIONS: { value: number | null; label: string }[] = [
-  { value: null, label: 'Tất cả' },
-  { value: 4, label: '4 sao trở lên' },
-  { value: 3, label: '3 sao trở lên' },
+  { value: null, label: 'All' },
+  { value: 4, label: '4 stars & up' },
+  { value: 3, label: '3 stars & up' },
 ];
 
 function flattenCategories(nodes: CategoryTreeNode[], depth = 0): { id: number; label: string }[] {
@@ -82,7 +82,7 @@ export function ProductFilters({ filters, categories, onChange, onApply, onClear
                 checked={filters.categoryId == null}
                 onChange={() => onChange({ categoryId: null })}
               />
-              <label htmlFor="cat_all">Tất cả</label>
+              <label htmlFor="cat_all">All</label>
             </li>
             {flatCategories.map((c) => (
               <li key={c.id}>

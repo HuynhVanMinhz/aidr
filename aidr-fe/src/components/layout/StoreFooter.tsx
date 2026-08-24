@@ -56,8 +56,7 @@ export function StoreFooter() {
               </div>
               <div className="about-footer-content">
                 <p>
-                  AIDR — cửa hàng điện tử tích hợp AI, cung cấp thiết bị chính hãng và trải nghiệm mua sắm thông
-                  minh.
+                  AIDR — an AI-integrated electronics store with genuine devices and a transparent shopping experience.
                 </p>
               </div>
               <div className="footer-social-links">
@@ -115,7 +114,7 @@ export function StoreFooter() {
 
               <div className="footer-links footer-newsletter-form">
                 <h2>Our Newsletter</h2>
-                <p>Nhận ưu đãi, sản phẩm mới và tin công nghệ.</p>
+                <p>Get offers, new products, and tech news.</p>
                 <form
                   onSubmit={(e) => {
                     e.preventDefault();

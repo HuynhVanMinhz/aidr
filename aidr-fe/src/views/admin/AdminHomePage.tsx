@@ -56,7 +56,7 @@ export function AdminHomePage() {
             </div>
             <div className="card-body">
               <p className="text-muted mb-0">
-                Quản lý danh mục theo đúng luồng UC-22..25: tạo mới, cập nhật, bật/tắt hiển thị và xóa có điều kiện.
+                Create, update, show or hide categories, and delete them when they have no products or child categories.
               </p>
             </div>
           </div>

@@ -28,7 +28,7 @@ alwaysApply: true
 
 // ✅ Đúng — chỉ hiện khi field đã vi phạm
 {visible.name && <p className="form-field-error">{visible.name}</p>}
-<button disabled={!canSubmit}>Lưu</button>
+<button disabled={!canSubmit}>Save</button>
 ```
 
 ## Không làm

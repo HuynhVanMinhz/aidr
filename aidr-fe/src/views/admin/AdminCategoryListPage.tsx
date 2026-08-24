@@ -43,9 +43,9 @@ export function AdminCategoryListPage() {
     try {
       const nextActive = !category.isActive;
       await setStatus(category.categoryId, nextActive);
-      toast.success(nextActive ? 'Đã hiện danh mục.' : 'Đã ẩn danh mục.');
+      toast.success(nextActive ? 'Category is now visible.' : 'Category is now hidden.');
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Không đổi được trạng thái.';
+      const message = err instanceof Error ? err.message : 'Unable to update status.';
       setActionError(message);
       toast.error(message);
     } finally {
@@ -55,16 +55,16 @@ export function AdminCategoryListPage() {
 
   async function handleDelete(category: AdminCategory) {
     const ok = window.confirm(
-      `Xóa danh mục "${category.name}"? Chỉ xóa được khi không còn sản phẩm và danh mục con.`,
+      `Delete category "${category.name}"? You can delete it only when it has no products and no child categories.`,
     );
     if (!ok) return;
     setActionError(null);
     setBusyId(category.categoryId);
     try {
       await remove(category.categoryId);
-      toast.success('Đã xóa danh mục.');
+      toast.success('Category deleted.');
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Không xóa được danh mục.';
+      const message = err instanceof Error ? err.message : 'Unable to delete category.';
       setActionError(message);
       toast.error(message);
     } finally {
@@ -79,7 +79,7 @@ export function AdminCategoryListPage() {
           <div className="card">
             <div className="card-body text-center">
               <h3 className="mb-1">{stats.total}</h3>
-              <p className="text-muted mb-0">Tổng danh mục</p>
+              <p className="text-muted mb-0">Total categories</p>
             </div>
           </div>
         </div>
@@ -87,7 +87,7 @@ export function AdminCategoryListPage() {
           <div className="card">
             <div className="card-body text-center">
               <h3 className="mb-1">{stats.active}</h3>
-              <p className="text-muted mb-0">Đang hiện</p>
+              <p className="text-muted mb-0">Visible</p>
             </div>
           </div>
         </div>
@@ -95,7 +95,7 @@ export function AdminCategoryListPage() {
           <div className="card">
             <div className="card-body text-center">
               <h3 className="mb-1">{stats.inactive}</h3>
-              <p className="text-muted mb-0">Đã ẩn</p>
+              <p className="text-muted mb-0">Hidden</p>
             </div>
           </div>
         </div>
@@ -103,7 +103,7 @@ export function AdminCategoryListPage() {
           <div className="card">
             <div className="card-body text-center">
               <h3 className="mb-1">{stats.withProducts}</h3>
-              <p className="text-muted mb-0">Có sản phẩm</p>
+              <p className="text-muted mb-0">With products</p>
             </div>
           </div>
         </div>
@@ -113,18 +113,18 @@ export function AdminCategoryListPage() {
         <div className="col-xl-12">
           <div className="card">
             <div className="card-header d-flex justify-content-between align-items-center gap-1 flex-wrap">
-              <h4 className="card-title flex-grow-1 mb-0">Tất cả danh mục</h4>
+              <h4 className="card-title flex-grow-1 mb-0">All Categories</h4>
               <div className="d-flex align-items-center gap-2">
                 <input
                   type="search"
                   className="form-control form-control-sm"
-                  placeholder="Tìm tên / slug..."
+                  placeholder="Search name / slug..."
                   value={q}
                   onChange={(e) => setQ(e.target.value)}
                   style={{ minWidth: 200 }}
                 />
                 <Link to="/admin/categories/new" className="btn btn-sm btn-primary">
-                  Thêm danh mục
+                  Add Category
                 </Link>
               </div>
             </div>
@@ -139,27 +139,27 @@ export function AdminCategoryListPage() {
               <table className="table align-middle mb-0 table-hover table-centered">
                 <thead className="bg-light-subtle">
                   <tr>
-                    <th>Danh mục</th>
+                    <th>Category</th>
                     <th>Slug</th>
-                    <th>Danh mục cha</th>
-                    <th>Thứ tự</th>
-                    <th>Sản phẩm</th>
-                    <th>Trạng thái</th>
-                    <th>Thao tác</th>
+                    <th>Parent</th>
+                    <th>Sort</th>
+                    <th>Products</th>
+                    <th>Status</th>
+                    <th>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   {loading && categories.length === 0 ? (
                     <tr>
                       <td colSpan={7} className="text-center py-4 text-muted">
-                        Đang tải...
+                        Loading...
                       </td>
                     </tr>
                   ) : null}
                   {!loading && filtered.length === 0 ? (
                     <tr>
                       <td colSpan={7} className="text-center py-4 text-muted">
-                        Chưa có danh mục.
+                        No categories yet.
                       </td>
                     </tr>
                   ) : null}
@@ -192,10 +192,10 @@ export function AdminCategoryListPage() {
                             checked={category.isActive}
                             disabled={busyId === category.categoryId}
                             onChange={() => void handleToggle(category)}
-                            aria-label={category.isActive ? 'Ẩn danh mục' : 'Hiện danh mục'}
+                            aria-label={category.isActive ? 'Hide category' : 'Show category'}
                           />
                           <label className="form-check-label">
-                            {category.isActive ? 'Hiện' : 'Ẩn'}
+                            {category.isActive ? 'Visible' : 'Hidden'}
                           </label>
                         </div>
                       </td>
@@ -204,14 +204,14 @@ export function AdminCategoryListPage() {
                           <Link
                             to={`/admin/categories/${category.categoryId}/edit`}
                             className="btn btn-soft-primary btn-sm"
-                            title="Sửa"
+                            title="Edit"
                           >
                             <i className="bx bx-edit-alt align-middle fs-18" />
                           </Link>
                           <button
                             type="button"
                             className="btn btn-soft-danger btn-sm"
-                            title="Xóa"
+                            title="Delete"
                             disabled={busyId === category.categoryId}
                             onClick={() => void handleDelete(category)}
                           >
