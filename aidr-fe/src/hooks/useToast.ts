@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useMemo } from 'react';
 import { toast } from 'sonner';
 
 export function useToast() {
@@ -10,5 +10,5 @@ export function useToast() {
     toast.error(message);
   }, []);
 
-  return { success, error };
+  return useMemo(() => ({ success, error }), [success, error]);
 }

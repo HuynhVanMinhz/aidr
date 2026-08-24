@@ -65,9 +65,12 @@ export function SellerProductListPage() {
       <div className="row">
         <div className="col-xl-12">
           <div className="card">
-            <div className="card-header d-flex justify-content-between align-items-center gap-1 flex-wrap">
-              <h4 className="card-title flex-grow-1 mb-0">All Product List</h4>
-              <form className="d-flex align-items-center gap-2 flex-wrap" onSubmit={handleSearchSubmit}>
+            <div className="card-header d-flex flex-wrap justify-content-between align-items-center gap-2">
+              <h4 className="card-title mb-0">All Product List</h4>
+              <form
+                className="d-flex flex-nowrap align-items-center gap-2"
+                onSubmit={handleSearchSubmit}
+              >
                 <AdminSelect
                   id="seller-product-status"
                   size="sm"
@@ -88,12 +91,12 @@ export function SellerProductListPage() {
                   placeholder="Search name / brand..."
                   value={q}
                   onChange={(e) => setQ(e.target.value)}
-                  style={{ minWidth: 200 }}
+                  style={{ width: 220, flex: '0 0 auto' }}
                 />
-                <button type="submit" className="btn btn-sm btn-outline-light">
+                <button type="submit" className="btn btn-sm btn-outline-light text-nowrap">
                   Search
                 </button>
-                <Link to="/seller/products/new" className="btn btn-sm btn-primary">
+                <Link to="/seller/products/new" className="btn btn-sm btn-primary text-nowrap">
                   Add Product
                 </Link>
               </form>
@@ -190,6 +193,13 @@ export function SellerProductListPage() {
                           </Link>
                           {product.status !== 'Deleted' ? (
                             <>
+                              <Link
+                                to={`/seller/products/${product.productId}/inventory`}
+                                className="btn btn-soft-success btn-sm"
+                                title="Inventory"
+                              >
+                                <IconifyIcon icon="solar:box-minimalistic-broken" className="align-middle fs-18" />
+                              </Link>
                               <Link
                                 to={`/seller/products/${product.productId}/edit`}
                                 className="btn btn-soft-primary btn-sm"

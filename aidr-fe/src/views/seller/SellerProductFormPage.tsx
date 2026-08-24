@@ -115,6 +115,7 @@ export function SellerProductFormPage() {
 
     let cancelled = false;
     setLoadingDetail(true);
+    setLoadError(null);
     void loadOne(id)
       .then((item) => {
         if (cancelled) return;
@@ -140,7 +141,9 @@ export function SellerProductFormPage() {
     return () => {
       cancelled = true;
     };
-  }, [id, loadOne, mode, toast]);
+    // toast.error is stable; omit toast object to avoid remount loops
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id, loadOne, mode]);
 
   const errors = useMemo(
     () => validateSellerProductFormFields(form, images, { requireImages: mode === 'create' }),
@@ -360,21 +363,17 @@ export function SellerProductFormPage() {
               </div>
             </div>
             <div className="card-footer bg-light-subtle">
-              <div className="row g-2">
-                <div className="col-lg-6">
-                  <button
-                    type="submit"
-                    className="btn btn-outline-secondary w-100"
-                    disabled={!canSubmit || mutating || uploadingImage}
-                  >
-                    {mode === 'create' ? 'Create Product' : 'Save Changes'}
-                  </button>
-                </div>
-                <div className="col-lg-6">
-                  <Link to="/seller/products" className="btn btn-primary w-100">
-                    Cancel
-                  </Link>
-                </div>
+              <div className="d-flex flex-nowrap align-items-center gap-2">
+                <button
+                  type="submit"
+                  className="btn btn-primary flex-fill text-nowrap"
+                  disabled={!canSubmit || mutating || uploadingImage}
+                >
+                  {mode === 'create' ? 'Create Product' : 'Save Changes'}
+                </button>
+                <Link to="/seller/products" className="btn btn-outline-light flex-fill text-nowrap">
+                  Cancel
+                </Link>
               </div>
             </div>
           </div>
@@ -728,21 +727,17 @@ export function SellerProductFormPage() {
           </div>
 
           <div className="p-3 bg-light mb-3 rounded">
-            <div className="row justify-content-end g-2">
-              <div className="col-lg-2">
-                <button
-                  type="submit"
-                  className="btn btn-outline-secondary w-100"
-                  disabled={!canSubmit || mutating || uploadingImage}
-                >
-                  {mode === 'create' ? 'Create Product' : 'Save Changes'}
-                </button>
-              </div>
-              <div className="col-lg-2">
-                <Link to="/seller/products" className="btn btn-primary w-100">
-                  Cancel
-                </Link>
-              </div>
+            <div className="d-flex flex-nowrap justify-content-end align-items-center gap-2">
+              <button
+                type="submit"
+                className="btn btn-primary text-nowrap"
+                disabled={!canSubmit || mutating || uploadingImage}
+              >
+                {mode === 'create' ? 'Create Product' : 'Save Changes'}
+              </button>
+              <Link to="/seller/products" className="btn btn-outline-light text-nowrap">
+                Cancel
+              </Link>
             </div>
           </div>
         </div>
