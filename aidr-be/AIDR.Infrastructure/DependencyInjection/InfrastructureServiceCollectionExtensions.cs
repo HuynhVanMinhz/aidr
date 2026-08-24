@@ -1,9 +1,11 @@
 using System.Text;
+using AIDR.Infrastructure.Admin;
 using AIDR.Infrastructure.Auth;
 using AIDR.Infrastructure.Caching;
 using AIDR.Infrastructure.Discovery;
 using AIDR.Infrastructure.Persistence;
 using AIDR.Infrastructure.Profile;
+using AIDR.Modules.Admin.Abstractions;
 using AIDR.Modules.Auth.Abstractions;
 using AIDR.Modules.Auth.Services;
 using AIDR.Modules.Discovery.Abstractions;
@@ -52,6 +54,7 @@ public static class InfrastructureServiceCollectionExtensions
         services.AddScoped<IAuthUserRepository, AuthUserRepository>();
         services.AddScoped<IProfileRepository, ProfileRepository>();
         services.AddScoped<IDiscoveryRepository, DiscoveryRepository>();
+        services.AddScoped<IAdminCategoryRepository, AdminCategoryRepository>();
         services.AddScoped<IPasswordResetTokenStore, PasswordResetTokenStore>();
         services.AddScoped<ITokenService, JwtTokenService>();
         services.AddSingleton<IPasswordHasher, AspNetPasswordHasher>();
