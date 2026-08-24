@@ -9,7 +9,7 @@ const kpis = [
 
 export function AdminHomePage() {
   return (
-    <div className="container-fluid">
+    <>
       <div className="row">
         {kpis.map((item) => (
           <div className="col-md-6 col-xl-3" key={item.label}>
@@ -46,7 +46,7 @@ export function AdminHomePage() {
       </div>
 
       <div className="row">
-        <div className="col-12">
+        <div className="col-lg-6">
           <div className="card card-height-100">
             <div className="card-header d-flex align-items-center justify-content-between gap-2">
               <h4 className="card-title flex-grow-1">Category Management</h4>
@@ -61,7 +61,22 @@ export function AdminHomePage() {
             </div>
           </div>
         </div>
+        <div className="col-lg-6">
+          <div className="card card-height-100">
+            <div className="card-header d-flex align-items-center justify-content-between gap-2">
+              <h4 className="card-title flex-grow-1">Seller Onboarding</h4>
+              <Link to="/admin/seller-registrations" className="btn btn-sm btn-primary">
+                Review Requests
+              </Link>
+            </div>
+            <div className="card-body">
+              <p className="text-muted mb-0">
+                Review pending seller applications. Approve to create a shop and wallet, or reject with a note.
+              </p>
+            </div>
+          </div>
+        </div>
       </div>
-    </div>
+    </>
   );
 }

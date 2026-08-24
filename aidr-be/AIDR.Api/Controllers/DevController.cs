@@ -27,4 +27,25 @@ public class DevController : ControllerBase
             approvedProductCount = count
         });
     }
+
+    [HttpPost("seed-seller-registrations")]
+    public async Task<IActionResult> SeedSellerRegistrations(
+        [FromServices] AidrDbContext db,
+        [FromServices] IWebHostEnvironment env,
+        CancellationToken ct)
+    {
+        if (!env.IsDevelopment())
+            return NotFound();
+
+        await SellerRegistrationDemoSeeder.SeedAsync(db, env.ContentRootPath, ct);
+        var pending = await db.SellerRegistrationRequests.CountAsync(r => r.Status == "Pending", ct);
+        var total = await db.SellerRegistrationRequests.CountAsync(ct);
+
+        return Ok(new
+        {
+            message = "Seller registration demo seed completed.",
+            pendingCount = pending,
+            totalCount = total
+        });
+    }
 }
