@@ -37,7 +37,7 @@
 | UC-20 | Reject Product | **Actor:** Admin. Pending → Rejected + lý do. **Business:** Chặn SP sai/thiếu thông tin. | Todo | P0 |
 | UC-21 | View Moderation History | **Actor:** Admin. Timeline Approve/Reject theo product. **Business:** Audit & tranh chấp. | Todo | P1 |
 | UC-22 | Create Category | **Actor:** Admin. Tạo category (parent/child, slug unique). **Business:** Cấu trúc ngành hàng. | Done | P0 |
-| UC-23 | Update Category | **Actor:** Admin. Sửa tên, mô tả, ảnh, sort. **Business:** Duy trì taxonomy. | Done | P1 |
+| UC-23 | Update Category | **Actor:** Admin. Sửa tên, mô tả, ảnh, sort, parent (không tạo vòng lặp). **Business:** Duy trì taxonomy. | Done | P1 |
 | UC-24 | Delete Category | **Actor:** Admin. Xóa khi không còn SP phụ thuộc (hoặc soft). **Business:** Tránh orphan catalog. | Done | P2 |
 | UC-25 | Activate / Disable Category | **Actor:** Admin. Bật/tắt hiển thị category. **Business:** Ẩn nhóm hàng tạm thời. | Done | P1 |
 | UC-26 | Search Products | **Actor:** Guest/Buyer. Full-text / keyword trên name, brand, specs. **Business:** Giảm thời gian tìm SP. | Done | P0 |

@@ -13,6 +13,11 @@ public static class AdminConstants
     public const int MaxSellerAdminNoteLength = 500;
     public const int MaxSellerBusinessInfoLength = 1000;
 
+    public const int DefaultListPage = 1;
+    public const int DefaultListPageSize = 10;
+    public const int MaxListPageSize = 100;
+    public const int MaxListSearchLength = 100;
+
     public const string SellerRegistrationStatusPending = "Pending";
     public const string SellerRegistrationStatusApproved = "Approved";
     public const string SellerRegistrationStatusRejected = "Rejected";
@@ -20,4 +25,13 @@ public static class AdminConstants
     public const string ShopStatusActive = "Active";
     public const string ShopCostingMethodFifo = "FIFO";
     public const string WalletCurrencyVnd = "VND";
+
+    public static (int Page, int PageSize) NormalizePaging(int page, int pageSize)
+    {
+        var normalizedPage = page < 1 ? DefaultListPage : page;
+        var normalizedSize = pageSize < 1
+            ? DefaultListPageSize
+            : Math.Min(pageSize, MaxListPageSize);
+        return (normalizedPage, normalizedSize);
+    }
 }

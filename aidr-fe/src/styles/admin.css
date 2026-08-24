@@ -22,3 +22,154 @@ html[data-aidr-shell='admin'] .wrapper .page-content {
 html[data-aidr-shell='admin'] .wrapper .page-content > .container-xxl {
   padding-bottom: 1.5rem;
 }
+
+/* Category form — preview card */
+.aidr-category-preview {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  border-radius: 1rem;
+  overflow: hidden;
+  background: linear-gradient(160deg, #f3f5f9 0%, #e8ecf3 100%);
+  border: 1px solid rgba(22, 24, 29, 0.06);
+}
+
+.aidr-category-preview__image {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: center;
+  padding: 0.75rem;
+  display: block;
+  box-sizing: border-box;
+}
+
+.aidr-category-preview__empty {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 1rem;
+  text-align: center;
+}
+
+.aidr-category-preview__icon {
+  width: 4rem;
+  height: 4rem;
+  border-radius: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(22, 24, 29, 0.06);
+  color: #6c757d;
+  font-size: 1.75rem;
+}
+
+/* Category form — upload dropzone */
+.aidr-dropzone {
+  position: relative;
+  min-height: 220px;
+  border: 1.5px dashed rgba(22, 24, 29, 0.18);
+  border-radius: 1rem;
+  background: linear-gradient(180deg, #fbfcfe 0%, #f4f6fa 100%);
+  cursor: pointer;
+  transition: border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+  overflow: hidden;
+}
+
+.aidr-dropzone:hover,
+.aidr-dropzone.is-dragging {
+  border-color: var(--bs-primary, #16181d);
+  background: #fff;
+  box-shadow: 0 0 0 4px rgba(22, 24, 29, 0.06);
+}
+
+.aidr-dropzone.is-uploading {
+  pointer-events: none;
+  opacity: 0.75;
+}
+
+.aidr-dropzone__empty {
+  min-height: 220px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 1.5rem;
+}
+
+.aidr-dropzone__badge {
+  width: 4.25rem;
+  height: 4.25rem;
+  border-radius: 1.15rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(22, 24, 29, 0.06);
+  color: var(--bs-primary, #16181d);
+  font-size: 2rem;
+}
+
+.aidr-dropzone__preview {
+  position: relative;
+  min-height: 220px;
+  height: 100%;
+}
+
+.aidr-dropzone__preview img {
+  width: 100%;
+  height: 220px;
+  object-fit: contain;
+  object-position: center;
+  padding: 0.75rem;
+  display: block;
+  box-sizing: border-box;
+  background: #fff;
+}
+
+.aidr-dropzone__overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(22, 24, 29, 0.35);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.aidr-dropzone:hover .aidr-dropzone__overlay,
+.aidr-dropzone:focus-visible .aidr-dropzone__overlay {
+  opacity: 1;
+}
+
+/* Theme select — Larkon btn-outline-light dropdown */
+.aidr-admin-select .dropdown-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  text-align: left;
+}
+
+.aidr-admin-select .dropdown-toggle::after {
+  margin-left: 0.35rem;
+  flex-shrink: 0;
+}
+
+.aidr-admin-select .dropdown-menu {
+  min-width: 100%;
+  max-height: 280px;
+  overflow-y: auto;
+}
+
+.aidr-admin-select:not(.w-100) {
+  min-width: 140px;
+}
+
+.aidr-admin-select.is-invalid .dropdown-toggle {
+  border-color: var(--bs-form-invalid-border-color, #dc3545);
+}

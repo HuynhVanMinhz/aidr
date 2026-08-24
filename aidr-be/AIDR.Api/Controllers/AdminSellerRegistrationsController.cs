@@ -18,18 +18,24 @@ public sealed class AdminSellerRegistrationsController : ControllerBase
     public AdminSellerRegistrationsController(IAdminSellerRegistrationService registrations) =>
         _registrations = registrations;
 
-    /// <summary>List seller registration requests. Default status is Pending; pass status=all for every status.</summary>
+    /// <summary>
+    /// List seller registration requests with server-side paging.
+    /// Default status is Pending; pass status=all for every status.
+    /// </summary>
     [HttpGet]
-    public async Task<ActionResult<ApiResult<IReadOnlyList<AdminSellerRegistrationDto>>>> List(
+    public async Task<ActionResult<ApiResult<AdminSellerRegistrationListResultDto>>> List(
         [FromQuery] string? status,
-        CancellationToken cancellationToken)
+        [FromQuery] string? q,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 10,
+        CancellationToken cancellationToken = default)
     {
         var filter = string.IsNullOrWhiteSpace(status)
             ? AdminConstants.SellerRegistrationStatusPending
             : status;
 
-        var result = await _registrations.ListAsync(filter, cancellationToken);
-        return Ok(ApiResult<IReadOnlyList<AdminSellerRegistrationDto>>.Ok(result));
+        var result = await _registrations.ListAsync(filter, q, page, pageSize, cancellationToken);
+        return Ok(ApiResult<AdminSellerRegistrationListResultDto>.Ok(result));
     }
 
     /// <summary>Get a seller registration request by id.</summary>

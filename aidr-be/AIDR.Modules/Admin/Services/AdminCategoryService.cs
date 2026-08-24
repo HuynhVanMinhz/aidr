@@ -26,10 +26,46 @@ public sealed class AdminCategoryService : IAdminCategoryService
         _cache = cache;
     }
 
-    public async Task<IReadOnlyList<AdminCategoryDto>> ListAsync(CancellationToken cancellationToken = default)
+    public async Task<AdminCategoryListResultDto> ListAsync(
+        string? q,
+        int page,
+        int pageSize,
+        CancellationToken cancellationToken = default)
     {
-        var items = await _repository.ListAsync(cancellationToken);
-        return items.Select(Map).ToList();
+        var (normalizedPage, normalizedPageSize) = AdminConstants.NormalizePaging(page, pageSize);
+        var keyword = NormalizeSearch(q);
+
+        var (items, totalCount, effectivePage, summary) = await _repository.ListPagedAsync(
+            keyword,
+            normalizedPage,
+            normalizedPageSize,
+            cancellationToken);
+
+        return new AdminCategoryListResultDto
+        {
+            Items = items.Select(Map).ToList(),
+            Page = effectivePage,
+            PageSize = normalizedPageSize,
+            TotalCount = totalCount,
+            ActiveCount = summary.ActiveCount,
+            InactiveCount = summary.InactiveCount,
+            WithProductsCount = summary.WithProductsCount
+        };
+    }
+
+    public async Task<IReadOnlyList<AdminCategoryOptionDto>> ListOptionsAsync(
+        CancellationToken cancellationToken = default)
+    {
+        var items = await _repository.ListOptionsAsync(cancellationToken);
+        return items
+            .Select(x => new AdminCategoryOptionDto
+            {
+                CategoryId = x.CategoryId,
+                ParentId = x.ParentId,
+                Name = x.Name,
+                SortOrder = x.SortOrder
+            })
+            .ToList();
     }
 
     public async Task<AdminCategoryDto> GetByIdAsync(int categoryId, CancellationToken cancellationToken = default)
@@ -55,10 +91,7 @@ public sealed class AdminCategoryService : IAdminCategoryService
             throw new AppException("Parent id must be a positive number when provided.");
 
         if (request.ParentId is { } parentId)
-        {
-            if (!await _repository.ExistsAsync(parentId, cancellationToken))
-                throw new NotFoundException("Parent category not found.");
-        }
+            await RequireAssignableParentAsync(excludeCategoryId: null, parentId, cancellationToken);
 
         if (await _repository.SlugExistsAsync(slug, cancellationToken: cancellationToken))
             throw new ConflictException("Category slug already exists.");
@@ -89,7 +122,8 @@ public sealed class AdminCategoryService : IAdminCategoryService
 
         var name = RequireName(request.Name);
         var description = RequireDescription(request.Description);
-        var imageUrl = RequireImageUrl(request.ImageUrl);
+        var imageUrl = OptionalImageUrl(request.ImageUrl);
+        var parentId = await RequireAssignableParentAsync(categoryId, request.ParentId, cancellationToken);
 
         var record = await _repository.UpdateAsync(
             categoryId,
@@ -97,6 +131,7 @@ public sealed class AdminCategoryService : IAdminCategoryService
             description,
             imageUrl,
             request.SortOrder,
+            parentId,
             cancellationToken);
 
         await InvalidateCategoryCacheAsync(cancellationToken);
@@ -141,6 +176,41 @@ public sealed class AdminCategoryService : IAdminCategoryService
     private async Task InvalidateCategoryCacheAsync(CancellationToken cancellationToken)
     {
         await _cache.RemoveAsync(DiscoveryConstants.CacheKeyCategoriesTree, cancellationToken);
+    }
+
+    private async Task<int?> RequireAssignableParentAsync(
+        int? excludeCategoryId,
+        int? parentId,
+        CancellationToken cancellationToken)
+    {
+        if (parentId is null)
+            return null;
+
+        if (parentId <= 0)
+            throw new AppException("Parent id must be a positive number when provided.");
+
+        if (excludeCategoryId is { } selfId && parentId == selfId)
+            throw new AppException("A category cannot be its own parent.");
+
+        if (!await _repository.ExistsAsync(parentId.Value, cancellationToken))
+            throw new NotFoundException("Parent category not found.");
+
+        if (excludeCategoryId is { } categoryId)
+        {
+            var cursor = parentId;
+            var seen = new HashSet<int>();
+            while (cursor is { } current)
+            {
+                if (current == categoryId)
+                    throw new AppException("Cannot move a category under one of its descendants.");
+                if (!seen.Add(current))
+                    break;
+
+                cursor = await _repository.GetParentIdAsync(current, cancellationToken);
+            }
+        }
+
+        return parentId;
     }
 
     private static void EnsurePositiveId(int id, string fieldName)
@@ -194,6 +264,20 @@ public sealed class AdminCategoryService : IAdminCategoryService
         if (string.IsNullOrWhiteSpace(trimmed))
             throw new AppException("Category image URL is required.");
 
+        return ValidateImageUrlFormat(trimmed);
+    }
+
+    private static string OptionalImageUrl(string? imageUrl)
+    {
+        var trimmed = imageUrl?.Trim() ?? string.Empty;
+        if (string.IsNullOrWhiteSpace(trimmed))
+            return string.Empty;
+
+        return ValidateImageUrlFormat(trimmed);
+    }
+
+    private static string ValidateImageUrlFormat(string trimmed)
+    {
         if (trimmed.Length > AdminConstants.MaxCategoryImageUrlLength)
             throw new AppException($"Image URL must not exceed {AdminConstants.MaxCategoryImageUrlLength} characters.");
 
@@ -203,10 +287,26 @@ public sealed class AdminCategoryService : IAdminCategoryService
         return trimmed;
     }
 
+    private static string? NormalizeSearch(string? q)
+    {
+        if (string.IsNullOrWhiteSpace(q))
+            return null;
+
+        var trimmed = q.Trim();
+        if (trimmed.Length > AdminConstants.MaxListSearchLength)
+        {
+            throw new AppException(
+                $"Search query must not exceed {AdminConstants.MaxListSearchLength} characters.");
+        }
+
+        return trimmed;
+    }
+
     private static AdminCategoryDto Map(AdminCategoryRecord record) => new()
     {
         CategoryId = record.CategoryId,
         ParentId = record.ParentId,
+        ParentName = record.ParentName,
         Name = record.Name,
         Slug = record.Slug,
         Description = record.Description,

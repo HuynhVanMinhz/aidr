@@ -78,10 +78,17 @@ export async function uploadAvatarToCloudinary(file: File): Promise<CloudinaryUp
 }
 
 /** Reserved for product images — folder `product`. */
-export async function uploadProductImageToCloudinary(file: File): Promise<CloudinaryUploadResult> {
+export function validateProductImageFile(file: File): void {
   if (!file.type.startsWith('image/')) {
     throw new Error('Please choose a valid image file.');
   }
+  if (file.size > MAX_AVATAR_BYTES) {
+    throw new Error('Product image must be 2MB or smaller.');
+  }
+}
+
+export async function uploadProductImageToCloudinary(file: File): Promise<CloudinaryUploadResult> {
+  validateProductImageFile(file);
   return uploadImageToCloudinary(file, CloudinaryFolders.product);
 }
 
