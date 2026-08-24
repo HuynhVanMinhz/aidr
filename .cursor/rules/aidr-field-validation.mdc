@@ -11,30 +11,28 @@ alwaysApply: true
 2. Chỉ **không** validate (hoặc cho optional) khi `bussiness-system.md` / BR / UC mô tả rõ field đó không bắt buộc hoặc không ràng buộc.
 3. BE là nguồn chặn cuối — FE validate để UX, không thay thế BE.
 
-## Khi implement form / DTO
+## Form UX (FE)
 
-| Loại field | Mặc định |
-|------------|----------|
-| Text / name | Required, trim, max length theo schema |
-| Email | Required + format (trừ field chỉ đọc) |
-| Phone | Required + định dạng VN hợp lệ (trừ BR nói optional) |
-| Password | Theo BR-02 |
-| URL ảnh | Optional trừ khi UC bắt buộc; nếu có thì format/length + BR size |
-| Địa chỉ | Mọi phần tử required khi thêm/sửa địa chỉ |
-| Số / tiền / qty | Required + range hợp lệ |
+1. **Lỗi theo từng field** — hiển thị ngay dưới `input` / `select` / `textarea` tương ứng. Alert trên cùng chỉ dùng cho lỗi API/server.
+2. **Ẩn khi chưa vi phạm** — lúc mở form **không** hiện lỗi. Chỉ hiện sau khi field không hợp lệ (blur / đổi giá trị sai / bấm submit).
+3. **Validate đồng thời** — submit phải kiểm tra **tất cả** field, không dừng ở lỗi đầu tiên.
+4. **Nút submit**
+   - **Create:** `disabled` khi form chưa chỉnh (chưa dirty), còn lỗi, hoặc thiếu field bắt buộc.
+   - **Update:** `disabled` khi chưa có thay đổi (`dirty`) hoặc còn lỗi validation.
+
+5. Dùng helper chung (`tryValidateField`, `FormField`, `canSubmit*`, `visibleFieldErrors`) thay vì chỉ 1 alert chung.
+
+```tsx
+// ❌ Sai — hiện lỗi required ngay khi form trống
+<p className="form-field-error">{errors.name}</p>
+
+// ✅ Đúng — chỉ hiện khi field đã vi phạm
+{visible.name && <p className="form-field-error">{visible.name}</p>}
+<button disabled={!canSubmit}>Lưu</button>
+```
 
 ## Không làm
 
-- Để trống field “có vẻ quan trọng” (SĐT, địa chỉ nhận hàng…) chỉ vì cột DB `NULL`.
-- Chỉ có `MaxLength` mà không có required/format khi business cần dữ liệu đó.
-- Validate một phía (chỉ FE hoặc chỉ BE).
-
-## Ví dụ
-
-```ts
-// ❌ Sai — phone để trống được
-phone: phone.trim() || null
-
-// ✅ Đúng — phone bắt buộc + format
-const phone = validateVnPhone(phoneInput); // throw / set error nếu sai
-```
+- Chỉ hiện 1 lỗi đầu tiên trong alert khi nhiều field sai.
+- Enable nút Tạo/Lưu khi form trống hoặc chưa thay đổi (edit).
+- Hiện hết lỗi required ngay lúc vào màn create/edit.

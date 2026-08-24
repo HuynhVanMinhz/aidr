@@ -1,4 +1,5 @@
 import { configureStore } from '@reduxjs/toolkit';
+import { adminSlice } from './adminSlice';
 import { appSlice } from './appSlice';
 import { authSlice } from './authSlice';
 import { cartSlice } from './cartSlice';
@@ -14,6 +15,7 @@ export const store = configureStore({
     catalog: catalogSlice.reducer,
     cart: cartSlice.reducer,
     theme: themeSlice.reducer,
+    admin: adminSlice.reducer,
   },
 });
 

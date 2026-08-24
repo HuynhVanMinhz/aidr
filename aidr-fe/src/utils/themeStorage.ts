@@ -17,6 +17,7 @@ export function saveTheme(mode: ThemeMode): void {
 
 export function applyThemeToDocument(mode: ThemeMode): void {
   document.documentElement.setAttribute('data-theme', mode);
+  document.documentElement.setAttribute('data-bs-theme', mode);
   document.documentElement.style.colorScheme = mode;
 }
 
