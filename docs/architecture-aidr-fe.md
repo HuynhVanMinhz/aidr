@@ -88,7 +88,7 @@ aidr-fe/
 | Buyer account | `/account/*`, `/cart`, `/checkout`, `/wishlist`, `/orders` | Buyer (+Seller nếu dual-role) |
 | AI | `/ai/assistant`, compare modal/page | Buyer |
 | Chat | `/chat` | Buyer / Seller |
-| Seller center | `/seller/*` | Seller |
+| Seller center | `/seller`, `/seller/products`, `/seller/products/new`, `/seller/products/:id`, `/seller/products/:id/edit` | Seller |
 | Admin | `/admin/*` | Admin |
 
 **Guard flow:**
@@ -132,8 +132,9 @@ aidr-fe/
 |--------------|---------|
 | `authApi.ts` | UC-01..06 |
 | `profileApi.ts` | UC-07/08 |
-| `productApi.ts` | UC-09..17, 26, 27 |
-| `categoryApi.ts` | UC-11, 22..25 |
+| `productApi.ts` | UC-09..11, 26, 27 (public catalog) |
+| `sellerProductApi.ts` | UC-12..16 (seller CRUD + images) |
+| `categoryApi.ts` | UC-11, 22..25 (admin list server-paged + options) |
 | `cartApi.ts` | UC-29..31 |
 | `voucherApi.ts` | UC-32/33, 78..81, 87..89 |
 | `orderApi.ts` | UC-34, 39..47 |
@@ -144,7 +145,7 @@ aidr-fe/
 | `chatApi.ts` | UC-57/58 |
 | `reviewApi.ts` | UC-59..62a |
 | `sellerApi.ts` | UC-62b..67, 69, 70, 85 |
-| `adminApi.ts` | UC-18..21, 71..76 |
+| `adminApi.ts` | UC-18..21, 71..76 (seller registrations list is server-paged) |
 | `aiApi.ts` | UC-28, 53, 54, 56, 90 |
 
 ---

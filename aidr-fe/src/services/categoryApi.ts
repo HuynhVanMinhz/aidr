@@ -1,5 +1,12 @@
 import type { ApiResult, CategoryTreeNode } from '../types/catalog';
-import type { AdminCategory, CreateCategoryPayload, UpdateCategoryPayload } from '../types/admin';
+import type {
+  AdminCategory,
+  AdminCategoryListQuery,
+  AdminCategoryListResult,
+  AdminCategoryOption,
+  CreateCategoryPayload,
+  UpdateCategoryPayload,
+} from '../types/admin';
 import { apiClient } from './apiClient';
 
 export async function getCategoryTree() {
@@ -7,8 +14,19 @@ export async function getCategoryTree() {
   return data;
 }
 
-export async function listAdminCategories() {
-  const { data } = await apiClient.get<ApiResult<AdminCategory[]>>('/admin/categories');
+export async function listAdminCategories(query: AdminCategoryListQuery = {}) {
+  const { data } = await apiClient.get<ApiResult<AdminCategoryListResult>>('/admin/categories', {
+    params: {
+      q: query.q || undefined,
+      page: query.page ?? 1,
+      pageSize: query.pageSize ?? 10,
+    },
+  });
+  return data;
+}
+
+export async function listAdminCategoryOptions() {
+  const { data } = await apiClient.get<ApiResult<AdminCategoryOption[]>>('/admin/categories/options');
   return data;
 }
 

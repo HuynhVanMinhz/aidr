@@ -1,0 +1,27 @@
+const BASE = 'badge px-2 py-1 fs-13';
+
+/** Larkon orders-list badge variants. */
+export const adminBadgeClass = {
+  solidSuccess: `${BASE} bg-success text-light`,
+  solidLight: `${BASE} bg-light text-dark`,
+  outlineSecondary: `${BASE} border border-secondary text-secondary`,
+  outlineWarning: `${BASE} border border-warning text-warning`,
+  outlineSuccess: `${BASE} border border-success text-success`,
+  outlineDanger: `${BASE} border border-danger text-danger`,
+  outlinePrimary: `${BASE} border border-primary text-primary`,
+} as const;
+
+export function sellerRegistrationBadgeClass(status: string): string {
+  switch (status) {
+    case 'Approved':
+      return adminBadgeClass.solidSuccess;
+    case 'Rejected':
+      return adminBadgeClass.outlineDanger;
+    default:
+      return adminBadgeClass.outlineWarning;
+  }
+}
+
+export function categoryVisibilityBadgeClass(isActive: boolean): string {
+  return isActive ? adminBadgeClass.solidSuccess : adminBadgeClass.outlineSecondary;
+}

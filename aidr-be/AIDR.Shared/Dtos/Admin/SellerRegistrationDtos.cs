@@ -18,6 +18,19 @@ public sealed class AdminSellerRegistrationDto
     public Guid? ShopId { get; init; }
 }
 
+public sealed class AdminSellerRegistrationListResultDto
+{
+    public IReadOnlyList<AdminSellerRegistrationDto> Items { get; init; } =
+        Array.Empty<AdminSellerRegistrationDto>();
+    public int Page { get; init; }
+    public int PageSize { get; init; }
+    public int TotalCount { get; init; }
+    public int TotalPages => PageSize <= 0 ? 0 : (int)Math.Ceiling(TotalCount / (double)PageSize);
+    public int PendingCount { get; init; }
+    public int ApprovedCount { get; init; }
+    public int RejectedCount { get; init; }
+}
+
 public sealed class RejectSellerRegistrationRequest
 {
     public string AdminNote { get; set; } = null!;
