@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type ChangeEvent, type FormEvent } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
+import { AdminSelect } from '../../components/admin/AdminSelect';
 import { FormField } from '../../components/admin/FormField';
 import {
   emptyCategoryForm,
@@ -14,6 +15,7 @@ import {
   type CategoryFormField,
   validateCategoryFormFields,
 } from '../../utils/categoryFormValidation';
+import { categoryDisplayOrderOptions, wouldCreateCategoryCycle } from '../../utils/categorySortUi';
 import { visibleFieldErrors } from '../../utils/formValidation';
 import { isCloudinaryConfigured, uploadCategoryImageToCloudinary, validateCategoryImageFile } from '../../utils/cloudinaryUpload';
 import { slugFromName } from '../../utils/validators';
@@ -25,12 +27,20 @@ export function AdminCategoryFormPage() {
   const mode: Mode = id ? 'edit' : 'create';
   const categoryId = id ? Number(id) : NaN;
   const navigate = useNavigate();
-  const { categories, mutating, create, update, loadOne } = useAdminCategories();
+  const { categoryOptions, mutating, create, update, loadOne, loadOptions } = useAdminCategories(
+    undefined,
+    { autoLoad: false },
+  );
   const toast = useToast();
   const existing = useAppSelector(selectAdminCategoryById(Number.isFinite(categoryId) ? categoryId : -1));
 
+  useEffect(() => {
+    void loadOptions();
+  }, [loadOptions]);
+
   const [form, setForm] = useState<CategoryFormValues>(emptyCategoryForm());
   const [initial, setInitial] = useState<CategoryFormValues>(emptyCategoryForm());
+  const hydratedIdRef = useRef<number | null>(null);
   const [slugTouched, setSlugTouched] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -41,11 +51,17 @@ export function AdminCategoryFormPage() {
   const [uploadingImage, setUploadingImage] = useState(false);
   const [imagePreview, setImagePreview] = useState<string | null>(null); // preview local blob
   const [imageUploadError, setImageUploadError] = useState<string | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
+
+  useEffect(() => {
+    hydratedIdRef.current = null;
+  }, [categoryId]);
 
   useEffect(() => {
     if (mode !== 'edit' || !Number.isFinite(categoryId)) return;
 
     const apply = (item: NonNullable<typeof existing>) => {
+      if (hydratedIdRef.current === categoryId) return;
       const values = emptyCategoryForm({
         name: item.name,
         slug: item.slug,
@@ -57,6 +73,7 @@ export function AdminCategoryFormPage() {
       });
       setForm(values);
       setInitial(values);
+      hydratedIdRef.current = categoryId;
     };
 
     if (existing) {
@@ -85,14 +102,17 @@ export function AdminCategoryFormPage() {
     return () => {
       cancelled = true;
     };
-  }, [categoryId, existing, loadOne, mode]);
+  }, [categoryId, existing, loadOne, mode, toast]);
 
   const errors = useMemo(() => validateCategoryFormFields(form, mode), [form, mode]);
   const displayErrors = useMemo(() => visibleFieldErrors(errors, touched, submitted), [errors, touched, submitted]);
   const canSubmit = canSubmitCategoryForm(form, initial, mode, errors);
   const effectiveImageUrl = imagePreview ?? form.imageUrl;
 
-  const parentOptions = categories.filter((c) => c.categoryId !== categoryId);
+  const parentOptions = categoryOptions.filter((c) => {
+    if (!Number.isFinite(categoryId)) return true;
+    return !wouldCreateCategoryCycle(categoryOptions, categoryId, c.categoryId);
+  });
 
   function markTouched(field: CategoryFormField) {
     setTouched((prev) => ({ ...prev, [field]: true }));
@@ -105,8 +125,11 @@ export function AdminCategoryFormPage() {
   async function handleCategoryImageChange(e: ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
+    await uploadCategoryImageFile(file);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  }
 
-    // Clear status from previous attempt.
+  async function uploadCategoryImageFile(file: File) {
     setImageUploadError(null);
     setSubmitError(null);
 
@@ -118,7 +141,6 @@ export function AdminCategoryFormPage() {
         throw new Error('Cloudinary is not configured — unable to upload image.');
       }
 
-      // Local preview only (do not set to form.imageUrl because backend validates URL format).
       if (prevPreview?.startsWith('blob:')) URL.revokeObjectURL(prevPreview);
       localPreview = URL.createObjectURL(file);
       setImagePreview(localPreview);
@@ -139,7 +161,6 @@ export function AdminCategoryFormPage() {
     } finally {
       setUploadingImage(false);
       if (localPreview?.startsWith('blob:')) URL.revokeObjectURL(localPreview);
-      if (fileInputRef.current) fileInputRef.current.value = '';
     }
   }
 
@@ -169,6 +190,7 @@ export function AdminCategoryFormPage() {
           description: form.description.trim(),
           imageUrl: form.imageUrl.trim(),
           sortOrder: Number(form.sortOrder),
+          parentId: form.parentId ? Number(form.parentId) : null,
         });
         toast.success('Category updated.');
       }
@@ -199,34 +221,43 @@ export function AdminCategoryFormPage() {
         <div className="col-xl-3 col-lg-4">
           <div className="card">
             <div className="card-body">
-              <div className="bg-light text-center rounded bg-light">
+              <div className="aidr-category-preview">
                 {effectiveImageUrl ? (
-                  <img src={effectiveImageUrl} alt="" className="avatar-xxl" />
+                  <img src={effectiveImageUrl} alt="" className="aidr-category-preview__image" />
                 ) : (
-                  <i className="bx bx-image-alt fs-48 text-primary" />
+                  <div className="aidr-category-preview__empty">
+                    <div className="aidr-category-preview__icon">
+                      <i className="bx bx-image-alt" />
+                    </div>
+                    <p className="mb-0 text-muted fs-13">Thumbnail preview</p>
+                  </div>
                 )}
               </div>
               <div className="mt-3">
-                <h4>{form.name.trim() || (mode === 'create' ? 'New Category' : 'Edit Category')}</h4>
-                {mode === 'edit' ? <p className="mb-0 text-muted">Slug: {form.slug}</p> : null}
+                <h4 className="mb-2">
+                  {form.name.trim() || (mode === 'create' ? 'New Category' : 'Edit Category')}
+                </h4>
+                {mode === 'edit' && form.slug ? (
+                  <span className="badge bg-info-subtle text-info">{form.slug}</span>
+                ) : mode === 'create' && form.slug ? (
+                  <span className="badge bg-info-subtle text-info">{form.slug}</span>
+                ) : (
+                  <span className="badge bg-light text-muted">slug preview</span>
+                )}
               </div>
             </div>
             <div className="card-footer border-top">
-              <div className="row g-2">
-                <div className="col-lg-6">
-                  <button
-                    type="submit"
-                    className="btn btn-outline-secondary w-100"
-                    disabled={!canSubmit || mutating || uploadingImage}
-                  >
-                    {mode === 'create' ? 'Create Category' : 'Save Change'}
-                  </button>
-                </div>
-                <div className="col-lg-6">
-                  <Link to="/admin/categories" className="btn btn-primary w-100">
-                    Cancel
-                  </Link>
-                </div>
+              <div className="d-flex flex-nowrap gap-2">
+                <button
+                  type="submit"
+                  className="btn btn-outline-secondary flex-fill text-nowrap"
+                  disabled={!canSubmit || mutating || uploadingImage}
+                >
+                  {mode === 'create' ? 'Create' : 'Save'}
+                </button>
+                <Link to="/admin/categories" className="btn btn-primary flex-fill text-nowrap">
+                  Cancel
+                </Link>
               </div>
             </div>
           </div>
@@ -246,7 +277,7 @@ export function AdminCategoryFormPage() {
                   error={imageUploadError ?? displayErrors.imageUrl}
                 >
                   <div
-                    className="dropzone needsclick"
+                    className={`aidr-dropzone${isDragging ? ' is-dragging' : ''}${effectiveImageUrl ? ' has-preview' : ''}${uploadingImage ? ' is-uploading' : ''}`}
                     role="button"
                     tabIndex={0}
                     onClick={() => {
@@ -257,6 +288,28 @@ export function AdminCategoryFormPage() {
                       if (ev.key !== 'Enter' && ev.key !== ' ') return;
                       if (uploadingImage || mutating) return;
                       fileInputRef.current?.click();
+                    }}
+                    onDragEnter={(ev) => {
+                      ev.preventDefault();
+                      ev.stopPropagation();
+                      if (!uploadingImage && !mutating) setIsDragging(true);
+                    }}
+                    onDragOver={(ev) => {
+                      ev.preventDefault();
+                      ev.stopPropagation();
+                    }}
+                    onDragLeave={(ev) => {
+                      ev.preventDefault();
+                      ev.stopPropagation();
+                      setIsDragging(false);
+                    }}
+                    onDrop={(ev) => {
+                      ev.preventDefault();
+                      ev.stopPropagation();
+                      setIsDragging(false);
+                      if (uploadingImage || mutating) return;
+                      const file = ev.dataTransfer.files?.[0];
+                      if (file) void uploadCategoryImageFile(file);
                     }}
                   >
                     <input
@@ -269,23 +322,29 @@ export function AdminCategoryFormPage() {
                       onChange={handleCategoryImageChange}
                     />
 
-                    <div className="fallback">
-                      {/* Keep markup consistent with admin theme dropzone examples */}
-                      <input name="file" type="file" multiple className="d-none" />
-                    </div>
-
                     {effectiveImageUrl ? (
-                      <div className="d-flex flex-column align-items-center justify-content-center py-3">
-                        <img src={effectiveImageUrl} alt="Category thumbnail preview" className="avatar-md rounded" />
-                        <div className="mt-2 text-primary fw-semibold">{uploadingImage ? 'Uploading…' : 'Click to change image'}</div>
+                      <div className="aidr-dropzone__preview">
+                        <img src={effectiveImageUrl} alt="Category thumbnail preview" />
+                        <div className="aidr-dropzone__overlay">
+                          <span className="btn btn-sm btn-light">
+                            {uploadingImage ? 'Uploading…' : 'Change image'}
+                          </span>
+                        </div>
                       </div>
                     ) : (
-                      <div className="dz-message needsclick">
-                        <i className="bx bx-cloud-upload fs-48 text-primary" />
-                        <h3 className="mt-4">
-                          Drop your image here, or <span className="text-primary">click to browse</span>
-                        </h3>
-                        <span className="text-muted fs-13">Choose an image file to upload to Cloudinary.</span>
+                      <div className="aidr-dropzone__empty">
+                        <div className="aidr-dropzone__badge">
+                          <i className="bx bx-cloud-upload" />
+                        </div>
+                        <h5 className="mt-3 mb-1">
+                          {isDragging ? 'Drop image to upload' : 'Drop your image here'}
+                        </h5>
+                        <p className="text-muted mb-2 fs-13">
+                          or <span className="text-primary fw-semibold">click to browse</span>
+                        </p>
+                        <p className="text-muted mb-0 fs-12">
+                          PNG, JPG, WEBP · max 2MB · square crop recommended
+                        </p>
                       </div>
                     )}
                   </div>
@@ -335,39 +394,47 @@ export function AdminCategoryFormPage() {
                         />
                       </FormField>
                     </div>
-                  ) : null}
-
-                  {mode === 'create' ? (
+                  ) : (
                     <div className="col-lg-6">
-                      <FormField label="Parent Category" htmlFor="category-parent" error={displayErrors.parentId}>
-                        <select
-                          id="category-parent"
-                          className="form-control"
-                          value={form.parentId}
-                          onBlur={() => markTouched('parentId')}
-                          onChange={(e) => patch('parentId', e.target.value)}
-                        >
-                          <option value="">Select Parent (Optional)</option>
-                          {parentOptions.map((c) => (
-                            <option key={c.categoryId} value={c.categoryId}>
-                              {c.name}
-                            </option>
-                          ))}
-                        </select>
+                      <FormField label="Slug" htmlFor="category-slug-readonly">
+                        <div id="category-slug-readonly" className="pt-1">
+                          <span className="badge bg-info-subtle text-info fs-13">{form.slug || '—'}</span>
+                        </div>
                       </FormField>
                     </div>
-                  ) : null}
+                  )}
 
                   <div className="col-lg-6">
-                    <FormField label="Sort Order" htmlFor="category-sort" error={displayErrors.sortOrder}>
-                      <input
+                    <FormField label="Parent Category" htmlFor="category-parent" error={displayErrors.parentId}>
+                      <AdminSelect
+                        id="category-parent"
+                        value={form.parentId}
+                        placeholder="Select Parent (Optional)"
+                        options={[
+                          { value: '', label: 'None — root category' },
+                          ...parentOptions.map((c) => ({
+                            value: String(c.categoryId),
+                            label: c.name,
+                          })),
+                        ]}
+                        onBlur={() => markTouched('parentId')}
+                        onChange={(next) => patch('parentId', next)}
+                      />
+                    </FormField>
+                  </div>
+
+                  <div className="col-lg-6">
+                    <FormField
+                      label="Display order"
+                      htmlFor="category-sort"
+                      error={displayErrors.sortOrder}
+                    >
+                      <AdminSelect
                         id="category-sort"
-                        type="number"
-                        className="form-control"
-                        placeholder="0"
                         value={form.sortOrder}
+                        options={categoryDisplayOrderOptions(Number(form.sortOrder))}
                         onBlur={() => markTouched('sortOrder')}
-                        onChange={(e) => patch('sortOrder', e.target.value)}
+                        onChange={(next) => patch('sortOrder', next)}
                       />
                     </FormField>
                   </div>
@@ -407,17 +474,17 @@ export function AdminCategoryFormPage() {
             </div>
 
             <div className="p-3 bg-light mb-3 rounded">
-              <div className="row justify-content-end g-2">
-                <div className="col-lg-2">
-                  <button type="submit" className="btn btn-outline-secondary w-100" disabled={!canSubmit || mutating}>
-                    {mode === 'create' ? 'Create Category' : 'Save Change'}
-                  </button>
-                </div>
-                <div className="col-lg-2">
-                  <Link to="/admin/categories" className="btn btn-primary w-100">
-                    Cancel
-                  </Link>
-                </div>
+              <div className="d-flex flex-wrap justify-content-end gap-2">
+                <button
+                  type="submit"
+                  className="btn btn-outline-secondary text-nowrap"
+                  disabled={!canSubmit || mutating || uploadingImage}
+                >
+                  {mode === 'create' ? 'Create Category' : 'Save Changes'}
+                </button>
+                <Link to="/admin/categories" className="btn btn-primary text-nowrap">
+                  Cancel
+                </Link>
               </div>
             </div>
           </div>

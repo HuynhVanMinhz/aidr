@@ -4,9 +4,15 @@ import {
   deleteAdminCategory,
   fetchAdminCategories,
   fetchAdminCategory,
+  fetchAdminCategoryOptions,
   selectAdminCategories,
   selectAdminCategoriesLoaded,
   selectAdminCategoriesLoading,
+  selectAdminCategoryOptions,
+  selectAdminCategoryPage,
+  selectAdminCategoryPageSize,
+  selectAdminCategorySummary,
+  selectAdminCategoryTotalCount,
   selectAdminError,
   selectAdminMutating,
   updateAdminCategory,
@@ -14,25 +20,44 @@ import {
 } from '../store/adminSlice';
 import { invalidateCategories } from '../store/catalogSlice';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
-import type { CreateCategoryPayload, UpdateCategoryPayload } from '../types/admin';
+import type { AdminCategoryListQuery, CreateCategoryPayload, UpdateCategoryPayload } from '../types/admin';
 import { getApiErrorMessage } from '../utils/apiError';
 
-export function useAdminCategories(options?: { autoLoad?: boolean }) {
+export function useAdminCategories(
+  query?: AdminCategoryListQuery,
+  options?: { autoLoad?: boolean },
+) {
   const dispatch = useAppDispatch();
   const categories = useAppSelector(selectAdminCategories);
+  const categoryOptions = useAppSelector(selectAdminCategoryOptions);
+  const page = useAppSelector(selectAdminCategoryPage);
+  const pageSize = useAppSelector(selectAdminCategoryPageSize);
+  const totalCount = useAppSelector(selectAdminCategoryTotalCount);
+  const summary = useAppSelector(selectAdminCategorySummary);
   const loading = useAppSelector(selectAdminCategoriesLoading);
   const mutating = useAppSelector(selectAdminMutating);
   const error = useAppSelector(selectAdminError);
   const loaded = useAppSelector(selectAdminCategoriesLoaded);
   const autoLoad = options?.autoLoad ?? true;
 
-  useEffect(() => {
-    if (autoLoad && !loaded && !loading) {
-      void dispatch(fetchAdminCategories());
-    }
-  }, [autoLoad, dispatch, loaded, loading]);
+  const listQuery: AdminCategoryListQuery = {
+    q: query?.q ?? '',
+    page: query?.page ?? 1,
+    pageSize: query?.pageSize ?? 10,
+  };
 
-  const reload = useCallback(() => dispatch(fetchAdminCategories()), [dispatch]);
+  useEffect(() => {
+    if (!autoLoad) return;
+    void dispatch(fetchAdminCategories(listQuery));
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- reload when list query changes
+  }, [autoLoad, dispatch, listQuery.q, listQuery.page, listQuery.pageSize]);
+
+  const reload = useCallback(
+    (next?: AdminCategoryListQuery) => dispatch(fetchAdminCategories(next ?? listQuery)),
+    [dispatch, listQuery.page, listQuery.pageSize, listQuery.q],
+  );
+
+  const loadOptions = useCallback(() => dispatch(fetchAdminCategoryOptions()), [dispatch]);
 
   const invalidatePublicTree = useCallback(() => {
     dispatch(invalidateCategories());
@@ -98,11 +123,17 @@ export function useAdminCategories(options?: { autoLoad?: boolean }) {
 
   return {
     categories,
+    categoryOptions,
+    page,
+    pageSize,
+    totalCount,
+    summary,
     loading,
     mutating,
     error,
     loaded,
     reload,
+    loadOptions,
     create,
     update,
     setStatus,

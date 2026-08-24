@@ -9,21 +9,11 @@ import {
 } from '../../hooks/useAdminSellerRegistrations';
 import { useToast } from '../../hooks/useToast';
 import { tryValidateField, visibleFieldErrors } from '../../utils/formValidation';
+import { sellerRegistrationBadgeClass } from '../../utils/adminBadge';
 import {
   SELLER_REGISTRATION_MAX_ADMIN_NOTE,
   validateSellerRejectNote,
 } from '../../utils/sellerRegistrationValidation';
-
-function statusBadgeClass(status: string) {
-  switch (status) {
-    case 'Approved':
-      return 'badge bg-success-subtle text-success';
-    case 'Rejected':
-      return 'badge bg-danger-subtle text-danger';
-    default:
-      return 'badge bg-warning-subtle text-warning';
-  }
-}
 
 function formatDate(value?: string | null) {
   if (!value) return '—';
@@ -162,7 +152,7 @@ export function AdminSellerRegistrationDetailPage() {
           <div className="card-header d-flex justify-content-between align-items-center gap-2 flex-wrap">
             <div>
               <h4 className="card-title mb-1">{item.shopName}</h4>
-              <span className={statusBadgeClass(item.status)}>{item.status}</span>
+              <span className={sellerRegistrationBadgeClass(item.status)}>{item.status}</span>
             </div>
             <Link to="/admin/seller-registrations" className="btn btn-sm btn-light">
               Back to list

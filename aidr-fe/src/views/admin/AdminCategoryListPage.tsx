@@ -1,41 +1,49 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { AdminPagination, AdminStatCard } from '../../components/admin/AdminStatCard';
+import { IconifyIcon } from '../../components/admin/IconifyIcon';
 import { useAdminCategories } from '../../hooks/useAdminCategories';
 import { useToast } from '../../hooks/useToast';
 import type { AdminCategory } from '../../types/admin';
+import { adminBadgeClass, categoryVisibilityBadgeClass } from '../../utils/adminBadge';
+import { formatCategorySortOrder } from '../../utils/categorySortUi';
 
-function parentName(categories: AdminCategory[], parentId?: number | null) {
-  if (!parentId) return '—';
-  return categories.find((c) => c.categoryId === parentId)?.name ?? `#${parentId}`;
+const PAGE_SIZE = 10;
+
+function ParentCell({ category }: { category: AdminCategory }) {
+  if (!category.parentId) {
+    return <span className={adminBadgeClass.solidLight}>Root</span>;
+  }
+  return (
+    <span className={adminBadgeClass.outlinePrimary}>
+      {category.parentName ?? `#${category.parentId}`}
+    </span>
+  );
 }
 
 export function AdminCategoryListPage() {
-  const { categories, loading, error, setStatus, remove } = useAdminCategories();
   const toast = useToast();
   const [q, setQ] = useState('');
+  const [debouncedQ, setDebouncedQ] = useState('');
+  const [page, setPage] = useState(1);
   const [busyId, setBusyId] = useState<number | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
 
-  const filtered = useMemo(() => {
-    const term = q.trim().toLowerCase();
-    if (!term) return categories;
-    return categories.filter(
-      (c) =>
-        c.name.toLowerCase().includes(term) ||
-        c.slug.toLowerCase().includes(term) ||
-        (c.description ?? '').toLowerCase().includes(term),
-    );
-  }, [categories, q]);
+  useEffect(() => {
+    const timer = window.setTimeout(() => setDebouncedQ(q.trim()), 300);
+    return () => window.clearTimeout(timer);
+  }, [q]);
 
-  const stats = useMemo(() => {
-    const active = categories.filter((c) => c.isActive).length;
-    return {
-      total: categories.length,
-      active,
-      inactive: categories.length - active,
-      withProducts: categories.filter((c) => c.productCount > 0).length,
-    };
-  }, [categories]);
+  useEffect(() => {
+    setPage(1);
+  }, [debouncedQ]);
+
+  const { categories, loading, error, summary, totalCount, page: serverPage, setStatus, remove, reload } =
+    useAdminCategories({ q: debouncedQ, page, pageSize: PAGE_SIZE });
+
+  useEffect(() => {
+    if (serverPage !== page) setPage(serverPage);
+  }, [serverPage, page]);
 
   async function handleToggle(category: AdminCategory) {
     setActionError(null);
@@ -43,6 +51,7 @@ export function AdminCategoryListPage() {
     try {
       const nextActive = !category.isActive;
       await setStatus(category.categoryId, nextActive);
+      await reload({ q: debouncedQ, page, pageSize: PAGE_SIZE });
       toast.success(nextActive ? 'Category is now visible.' : 'Category is now hidden.');
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Unable to update status.';
@@ -62,6 +71,7 @@ export function AdminCategoryListPage() {
     setBusyId(category.categoryId);
     try {
       await remove(category.categoryId);
+      await reload({ q: debouncedQ, page, pageSize: PAGE_SIZE });
       toast.success('Category deleted.');
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Unable to delete category.';
@@ -76,54 +86,62 @@ export function AdminCategoryListPage() {
     <>
       <div className="row">
         <div className="col-md-6 col-xl-3">
-          <div className="card">
-            <div className="card-body text-center">
-              <h3 className="mb-1">{stats.total}</h3>
-              <p className="text-muted mb-0">Total categories</p>
-            </div>
-          </div>
+          <AdminStatCard
+            title="Total Categories"
+            value={summary.totalCount}
+            unit="Categories"
+            icon="solar:widget-2-bold-duotone"
+            tone="primary"
+          />
         </div>
         <div className="col-md-6 col-xl-3">
-          <div className="card">
-            <div className="card-body text-center">
-              <h3 className="mb-1">{stats.active}</h3>
-              <p className="text-muted mb-0">Visible</p>
-            </div>
-          </div>
+          <AdminStatCard
+            title="Visible"
+            value={summary.activeCount}
+            unit="Active"
+            icon="solar:eye-bold-duotone"
+            tone="success"
+          />
         </div>
         <div className="col-md-6 col-xl-3">
-          <div className="card">
-            <div className="card-body text-center">
-              <h3 className="mb-1">{stats.inactive}</h3>
-              <p className="text-muted mb-0">Hidden</p>
-            </div>
-          </div>
+          <AdminStatCard
+            title="Hidden"
+            value={summary.inactiveCount}
+            unit="Hidden"
+            icon="solar:eye-closed-bold-duotone"
+            tone="warning"
+          />
         </div>
         <div className="col-md-6 col-xl-3">
-          <div className="card">
-            <div className="card-body text-center">
-              <h3 className="mb-1">{stats.withProducts}</h3>
-              <p className="text-muted mb-0">With products</p>
-            </div>
-          </div>
+          <AdminStatCard
+            title="With Products"
+            value={summary.withProductsCount}
+            unit="Mapped"
+            icon="solar:box-bold-duotone"
+            tone="info"
+          />
         </div>
       </div>
 
       <div className="row">
         <div className="col-xl-12">
           <div className="card">
-            <div className="card-header d-flex justify-content-between align-items-center gap-1 flex-wrap">
-              <h4 className="card-title flex-grow-1 mb-0">All Categories</h4>
-              <div className="d-flex align-items-center gap-2">
+            <div className="card-header d-flex flex-wrap justify-content-between align-items-center gap-2">
+              <h4 className="card-title mb-0">All Categories</h4>
+              <div className="d-flex flex-nowrap align-items-center gap-2">
                 <input
                   type="search"
                   className="form-control form-control-sm"
                   placeholder="Search name / slug..."
                   value={q}
                   onChange={(e) => setQ(e.target.value)}
-                  style={{ minWidth: 200 }}
+                  style={{ width: 220, flex: '0 0 auto' }}
                 />
-                <Link to="/admin/categories/new" className="btn btn-sm btn-primary">
+                <Link
+                  to="/admin/categories/new"
+                  className="btn btn-sm btn-primary text-nowrap"
+                  style={{ flex: '0 0 auto' }}
+                >
                   Add Category
                 </Link>
               </div>
@@ -142,7 +160,7 @@ export function AdminCategoryListPage() {
                     <th>Category</th>
                     <th>Slug</th>
                     <th>Parent</th>
-                    <th>Sort</th>
+                    <th>Display order</th>
                     <th>Products</th>
                     <th>Status</th>
                     <th>Actions</th>
@@ -156,14 +174,14 @@ export function AdminCategoryListPage() {
                       </td>
                     </tr>
                   ) : null}
-                  {!loading && filtered.length === 0 ? (
+                  {!loading && categories.length === 0 ? (
                     <tr>
                       <td colSpan={7} className="text-center py-4 text-muted">
                         No categories yet.
                       </td>
                     </tr>
                   ) : null}
-                  {filtered.map((category) => (
+                  {categories.map((category) => (
                     <tr key={category.categoryId}>
                       <td>
                         <div className="d-flex align-items-center gap-2">
@@ -174,29 +192,50 @@ export function AdminCategoryListPage() {
                               <i className="bx bx-category fs-24 text-muted" />
                             )}
                           </div>
-                          <p className="text-dark fw-medium fs-15 mb-0">{category.name}</p>
+                          <div>
+                            <p className="text-dark fw-medium fs-15 mb-0">{category.name}</p>
+                            {category.parentId ? (
+                              <p className="text-muted mb-0 fs-12">Child category</p>
+                            ) : (
+                              <p className="text-muted mb-0 fs-12">Root category</p>
+                            )}
+                          </div>
                         </div>
                       </td>
                       <td>
-                        <code>{category.slug}</code>
+                        <span className={adminBadgeClass.solidLight}>{category.slug}</span>
                       </td>
-                      <td>{parentName(categories, category.parentId)}</td>
-                      <td>{category.sortOrder}</td>
+                      <td>
+                        <ParentCell category={category} />
+                      </td>
+                      <td>
+                        <span
+                          className={
+                            category.sortOrder === 0
+                              ? adminBadgeClass.solidLight
+                              : adminBadgeClass.outlineSecondary
+                          }
+                        >
+                          {formatCategorySortOrder(category.sortOrder)}
+                        </span>
+                      </td>
                       <td>{category.productCount}</td>
                       <td>
-                        <div className="form-check form-switch">
-                          <input
-                            className="form-check-input"
-                            type="checkbox"
-                            role="switch"
-                            checked={category.isActive}
-                            disabled={busyId === category.categoryId}
-                            onChange={() => void handleToggle(category)}
-                            aria-label={category.isActive ? 'Hide category' : 'Show category'}
-                          />
-                          <label className="form-check-label">
+                        <div className="d-flex align-items-center gap-2">
+                          <span className={categoryVisibilityBadgeClass(category.isActive)}>
                             {category.isActive ? 'Visible' : 'Hidden'}
-                          </label>
+                          </span>
+                          <div className="form-check form-switch mb-0">
+                            <input
+                              className="form-check-input"
+                              type="checkbox"
+                              role="switch"
+                              checked={category.isActive}
+                              disabled={busyId === category.categoryId}
+                              onChange={() => void handleToggle(category)}
+                              aria-label={category.isActive ? 'Hide category' : 'Show category'}
+                            />
+                          </div>
                         </div>
                       </td>
                       <td>
@@ -206,7 +245,7 @@ export function AdminCategoryListPage() {
                             className="btn btn-soft-primary btn-sm"
                             title="Edit"
                           >
-                            <i className="bx bx-edit-alt align-middle fs-18" />
+                            <IconifyIcon icon="solar:pen-2-broken" className="align-middle fs-18" />
                           </Link>
                           <button
                             type="button"
@@ -215,7 +254,10 @@ export function AdminCategoryListPage() {
                             disabled={busyId === category.categoryId}
                             onClick={() => void handleDelete(category)}
                           >
-                            <i className="bx bx-trash align-middle fs-18" />
+                            <IconifyIcon
+                              icon="solar:trash-bin-minimalistic-2-broken"
+                              className="align-middle fs-18"
+                            />
                           </button>
                         </div>
                       </td>
@@ -224,6 +266,13 @@ export function AdminCategoryListPage() {
                 </tbody>
               </table>
             </div>
+
+            <AdminPagination
+              page={page}
+              pageSize={PAGE_SIZE}
+              total={totalCount}
+              onPageChange={setPage}
+            />
           </div>
         </div>
       </div>
