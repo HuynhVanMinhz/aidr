@@ -125,7 +125,9 @@ aidr-be/
 | UC-46/47 | `GET /api/seller/orders`, `GET/PATCH /api/seller/orders/{orderId}` — shop orders; status Paid→Confirmed→Shipping→Delivered + tracking | SellerCenter |
 | UC-69/70 | `GET /api/seller/dashboard`, `/reports` | SellerCenter |
 | UC-85 | `GET /api/seller/wallet` | SellerCenter |
-| UC-87..89 | Shop vouchers CRUD | SellerCenter |
+| UC-87 | `POST /api/seller/vouchers` — create Scope=Shop voucher for seller's shop | SellerCenter |
+| UC-88 | `PUT /api/seller/vouchers/{id}` — update shop voucher; `PATCH .../status` activate/disable | SellerCenter |
+| UC-89 | `DELETE /api/seller/vouchers/{id}` — hard-delete when unused; `GET /api/seller/vouchers`, `GET .../{id}` list/detail | SellerCenter |
 
 ### 6.4 Order & Payment
 | UC | Endpoint | Module |
