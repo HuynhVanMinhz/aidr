@@ -181,7 +181,8 @@ aidr-be/
 | UC-67 | `GET /api/follows?page=&pageSize=` — buyer followed shops (paged, newest first) | Engagement |
 | UC-44 | `GET /api/notifications?page=&pageSize=&unreadOnly=` — inbox (paged, newest first); `GET /api/notifications/unread-count`; `POST /api/notifications/{id}/read`; `POST /api/notifications/read-all`; SignalR `NotificationHub` group `user:{userId}` event `ReceiveNotification` | Engagement |
 | UC-45 | `DELETE /api/notifications/{notificationId}` — owner hard-delete | Engagement |
-| UC-57/58 | Chat REST + `ChatHub` | Engagement |
+| UC-57 | `GET /api/chat/threads?page=&pageSize=` — thread list for buyer or shop owner (paged, by `LastMessageAt`); `GET /api/chat/threads/{threadId}`; `GET /api/chat/threads/{threadId}/messages?page=&pageSize=` — message window (page 1 = newest chunk, chronological within page) | Engagement |
+| UC-58 | `POST /api/chat/threads` — open/get-or-create `{ shopId, productId? }` (buyer); `POST /api/chat/threads/{threadId}/messages` — `{ content, attachmentUrl? }`; `POST /api/chat/threads/{threadId}/read`; SignalR `ChatHub` group `thread:{threadId}` event `ReceiveMessage` (+ `JoinThread`/`LeaveThread`) | Engagement |
 
 ### 6.7 AI
 | UC | Endpoint | Module |

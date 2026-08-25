@@ -22,6 +22,7 @@ builder.Services.AddAidrInfrastructure(builder.Configuration);
 builder.Services.AddAidrModules();
 builder.Services.AddAidrJwtAuthentication(builder.Configuration);
 builder.Services.AddScoped<INotificationRealtimePublisher, SignalRNotificationRealtimePublisher>();
+builder.Services.AddScoped<IChatRealtimePublisher, SignalRChatRealtimePublisher>();
 
 builder.Services.AddAuthorization(options =>
 {
@@ -71,6 +72,7 @@ app.UseAuthorization();
 
 app.MapControllers();
 app.MapHub<NotificationHub>("/hubs/notifications");
+app.MapHub<ChatHub>("/hubs/chat");
 
 app.MapGet("/api/health/live", () => Results.Json(new
 {
@@ -100,7 +102,7 @@ app.MapGet("/api", () => Results.Ok(new
 {
     name = "AIDR API",
     version = "0.4.0",
-    module = "Auth, Profile, Discovery, Admin, SellerCenter, Order, Payment, Engagement"
+    module = "Auth, Profile, Discovery, Admin, SellerCenter, Order, Payment, Engagement, Chat"
 }));
 
 app.Run();
