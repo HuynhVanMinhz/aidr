@@ -97,13 +97,29 @@ public class Shop
     public string Slug { get; set; } = null!;
     public string? Tagline { get; set; }
     public string? ShortDescription { get; set; }
+    public string? Description { get; set; }
     public string? LogoUrl { get; set; }
+    public string? BannerUrl { get; set; }
+    public string? Email { get; set; }
+    public string? Phone { get; set; }
+    public string? Hotline { get; set; }
+    public string? Province { get; set; }
+    public string? District { get; set; }
+    public string? Ward { get; set; }
+    public string? StreetAddress { get; set; }
     public string CostingMethod { get; set; } = "FIFO";
+    public string? ReturnPolicy { get; set; }
+    public string? ShippingPolicy { get; set; }
+    public string? OpeningHoursJson { get; set; }
+    public string? WebsiteUrl { get; set; }
+    public string? FacebookUrl { get; set; }
     public bool IsVerified { get; set; }
     public DateTime? VerifiedAt { get; set; }
     public string Status { get; set; } = "Active";
     public decimal AvgRating { get; set; }
     public int RatingCount { get; set; }
+    public int FollowerCount { get; set; }
+    public int ProductCount { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
 }
