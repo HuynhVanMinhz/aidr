@@ -5,6 +5,7 @@ import { authSlice } from './authSlice';
 import { cartSlice } from './cartSlice';
 import { catalogSlice } from './catalogSlice';
 import { sellerSlice } from './sellerSlice';
+import { shopSlice } from './shopSlice';
 import { themeSlice } from './themeSlice';
 import { userSlice } from './userSlice';
 
@@ -14,6 +15,7 @@ export const store = configureStore({
     auth: authSlice.reducer,
     user: userSlice.reducer,
     catalog: catalogSlice.reducer,
+    shop: shopSlice.reducer,
     cart: cartSlice.reducer,
     theme: themeSlice.reducer,
     admin: adminSlice.reducer,
