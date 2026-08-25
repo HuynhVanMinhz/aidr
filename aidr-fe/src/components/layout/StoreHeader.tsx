@@ -4,6 +4,7 @@ import { ThemeToggle } from '../ThemeToggle';
 import { useAuth } from '../../hooks/useAuth';
 import { useCart } from '../../hooks/useCart';
 import { useCategories } from '../../hooks/useCatalog';
+import { useWishlistMembership } from '../../hooks/useWishlist';
 import type { CategoryTreeNode } from '../../types/catalog';
 
 function flattenCategories(nodes: CategoryTreeNode[]): CategoryTreeNode[] {
@@ -19,12 +20,16 @@ export function StoreHeader() {
   const navigate = useNavigate();
   const { isAuthenticated, roles } = useAuth();
   const { totalQuantity } = useCart({ autoLoad: isAuthenticated });
+  const { totalCount: wishlistCount } = useWishlistMembership({ autoLoad: isAuthenticated });
   const { categories } = useCategories();
   const [q, setQ] = useState('');
   const [categoriesOpen, setCategoriesOpen] = useState(false);
   const isAdmin = roles.some((r) => r.toUpperCase() === 'ADMIN');
   const isSeller = roles.some((r) => r.toUpperCase() === 'SELLER');
   const cartTo = isAuthenticated ? '/cart' : `/login?returnUrl=${encodeURIComponent('/cart')}`;
+  const wishlistTo = isAuthenticated
+    ? '/wishlist'
+    : `/login?returnUrl=${encodeURIComponent('/wishlist')}`;
 
   function handleSearch(e: FormEvent) {
     e.preventDefault();
@@ -95,8 +100,16 @@ export function StoreHeader() {
                     <ThemeToggle iconOnly />
                   </li>
                   <li>
-                    <Link to="/login" aria-label="Wishlist">
+                    <Link to={wishlistTo} aria-label="Wishlist">
                       <img src="/theme/images/icon-wishlist-primary.svg" alt="" />
+                      {isAuthenticated && wishlistCount > 0 ? (
+                        <span
+                          className="store-header-cart-count"
+                          aria-label={`${wishlistCount} items in wishlist`}
+                        >
+                          {wishlistCount > 99 ? '99+' : wishlistCount}
+                        </span>
+                      ) : null}
                     </Link>
                   </li>
                   <li>
