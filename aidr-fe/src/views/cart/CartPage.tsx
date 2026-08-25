@@ -1,8 +1,11 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { CatalogBreadcrumb } from '../../components/catalog/CatalogBreadcrumb';
+import { VoucherApplyPanel } from '../../components/cart/VoucherApplyPanel';
 import { useCart } from '../../hooks/useCart';
 import { useToast } from '../../hooks/useToast';
+import { useAppSelector } from '../../store/hooks';
+import { selectAppliedDiscountTotal, selectAppliedVouchers } from '../../store/voucherSlice';
 import { formatMoney } from '../../utils/formatCatalog';
 
 const PLACEHOLDER = '/theme/images/product-image-1.png';
@@ -27,7 +30,29 @@ export function CartPage() {
     clearAll,
     getErrorMessage,
   } = useCart({ autoLoad: true });
+  const applied = useAppSelector(selectAppliedVouchers);
+  const discountTotal = useAppSelector(selectAppliedDiscountTotal);
   const [busyItemId, setBusyItemId] = useState<string | null>(null);
+
+  const cartItemIds = useMemo(() => items.map((i) => i.cartItemId), [items]);
+  const shopOptions = useMemo(() => {
+    const map = new Map<string, { shopId: string; shopName: string; subtotal: number }>();
+    for (const item of items) {
+      const existing = map.get(item.shopId);
+      if (existing) {
+        existing.subtotal += item.lineTotal;
+      } else {
+        map.set(item.shopId, {
+          shopId: item.shopId,
+          shopName: item.shopName,
+          subtotal: item.lineTotal,
+        });
+      }
+    }
+    return [...map.values()];
+  }, [items]);
+
+  const payableTotal = Math.max(0, subtotal - discountTotal);
 
   async function changeQty(cartItemId: string, nextQty: number, maxAvailable: number) {
     const qty = Math.min(Math.max(1, nextQty), Math.min(MAX_QTY, Math.max(1, maxAvailable)));
@@ -235,14 +260,26 @@ export function CartPage() {
                         <h2>Order Summary</h2>
                       </div>
                       <div className="order-summary-promocode-box">
+                        <VoucherApplyPanel
+                          variant="cart"
+                          cartItemIds={cartItemIds}
+                          shopOptions={shopOptions}
+                          currency={currency}
+                        />
                         <div className="order-summary-total">
                           <h3>Subtotal</h3>
                           <h3>{formatMoney(subtotal, currency)}</h3>
                         </div>
+                        {discountTotal > 0 && (
+                          <div className="order-summary-total order-summary-discount">
+                            <h3>Discount{applied.length > 1 ? ` (${applied.length})` : ''}</h3>
+                            <h3>−{formatMoney(discountTotal, currency)}</h3>
+                          </div>
+                        )}
                       </div>
                       <div className="order-summary-total">
                         <h3>Total</h3>
-                        <h3>{formatMoney(subtotal, currency)}</h3>
+                        <h3>{formatMoney(payableTotal, currency)}</h3>
                       </div>
                     </div>
                     <div className="order-checkout-button">

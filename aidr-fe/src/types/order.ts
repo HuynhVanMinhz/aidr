@@ -5,6 +5,7 @@ export type CreateOrderRequest = {
   shippingAddressId: string;
   cartItemIds?: string[] | null;
   buyerNote?: string | null;
+  vouchers?: Array<{ shopId: string; voucherId: string }> | null;
 };
 
 export type CreatedOrderItem = {
