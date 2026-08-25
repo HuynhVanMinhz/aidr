@@ -256,13 +256,14 @@ VITE_SIGNALR_HUB_URL=https://api.aidr.local/hubs
 | Cart / Checkout | UC-29..31 (`/cart`, `cartApi`); UC-32/33 (`voucherApi`, `voucherSlice`, apply on cart + checkout); UC-34 (`/checkout`, `orderApi` + `vouchers` on create); UC-35 (`paymentApi`, payOS + `/order-received`) |
 | My orders / detail | UC-39..42 (`/account/orders`, `/account/orders/:orderId`, `ordersSlice`, cancel + confirm received); `/orders` redirects here |
 | Wishlist | UC-36..38 (`/wishlist` → `/account/wishlist`, `wishlistApi`, `wishlistSlice`, add/remove on catalog + detail) |
+| Following | UC-65..67 (`/following` → `/account/following`, `followApi`, `followSlice`, follow/unfollow on shop page + list) |
 | Notifications | UC-44/45 |
 | Seller orders | UC-46/47 (`/seller/orders`, `/seller/orders/:orderId`, `sellerOrdersSlice`, update status + tracking) |
 | Admin returns | UC-48..52 |
 | Recommend / Similar blocks | UC-53/54 |
 | AI chatbot | UC-56 |
 | Chat list / room | UC-57/58 |
-| Reviews / Seller profile / Follow | UC-59..63 (`reviewApi`, `reviewSlice`, product detail reviews tab; order detail review + seller rating when Completed) |
+| Reviews / Seller profile / Follow | UC-59..63 (`reviewApi`, `reviewSlice`, product detail reviews tab; order detail review + seller rating when Completed); UC-65..67 (`followApi`, `followSlice`, shop page follow + `/account/following`) |
 | Seller dashboard / reports / wallet / shop vouchers | UC-69, 70, 85; UC-87..89 (`/seller/vouchers`, `voucherApi` seller + `sellerVoucherSlice`, create/edit/status/delete) |
 | Admin accounts / seller requests / system vouchers / insights | UC-71..81 (`/admin/vouchers`, `voucherApi` admin + `adminVoucherSlice`, create/edit/status/delete) |
 
