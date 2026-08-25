@@ -685,6 +685,19 @@ html[data-theme='dark'] .popular-categories-list li a {
   margin-top: 4px;
 }
 
+.shop-public-follow-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem 1rem;
+  margin-top: 1.25rem;
+}
+
+.shop-public-following-link {
+  font-size: 0.9375rem;
+  text-decoration: underline;
+}
+
 @media (max-width: 767px) {
   .shop-public-logo {
     left: 12px;
