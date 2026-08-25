@@ -73,6 +73,7 @@ public sealed class AdminProductModerationRepository : IAdminProductModerationRe
             .Select(p => new
             {
                 Product = p,
+                ShopOwnerUserId = p.Shop.OwnerUserId,
                 ShopName = p.Shop.ShopName,
                 CategoryName = p.Category.Name,
                 PrimaryImageUrl = p.Images
@@ -83,7 +84,9 @@ public sealed class AdminProductModerationRepository : IAdminProductModerationRe
             })
             .ToListAsync(cancellationToken);
 
-        var items = rows.Select(x => MapList(x.Product, x.ShopName, x.CategoryName, x.PrimaryImageUrl)).ToList();
+        var items = rows
+            .Select(x => MapList(x.Product, x.ShopOwnerUserId, x.ShopName, x.CategoryName, x.PrimaryImageUrl))
+            .ToList();
         return (items, totalCount, page, summary);
     }
 
@@ -96,6 +99,7 @@ public sealed class AdminProductModerationRepository : IAdminProductModerationRe
             .Select(p => new
             {
                 Product = p,
+                ShopOwnerUserId = p.Shop.OwnerUserId,
                 ShopName = p.Shop.ShopName,
                 CategoryName = p.Category.Name,
                 Images = p.Images
@@ -116,7 +120,7 @@ public sealed class AdminProductModerationRepository : IAdminProductModerationRe
         if (row is null)
             return null;
 
-        return MapDetail(row.Product, row.ShopName, row.CategoryName, row.Images);
+        return MapDetail(row.Product, row.ShopOwnerUserId, row.ShopName, row.CategoryName, row.Images);
     }
 
     public async Task<AdminProductRecord> ApproveAsync(
@@ -240,12 +244,14 @@ public sealed class AdminProductModerationRepository : IAdminProductModerationRe
 
     private static AdminProductRecord MapList(
         Product product,
+        Guid shopOwnerUserId,
         string shopName,
         string categoryName,
         string? primaryImageUrl) => new()
     {
         ProductId = product.ProductId,
         ShopId = product.ShopId,
+        ShopOwnerUserId = shopOwnerUserId,
         ShopName = shopName,
         CategoryId = product.CategoryId,
         CategoryName = categoryName,
@@ -267,12 +273,14 @@ public sealed class AdminProductModerationRepository : IAdminProductModerationRe
 
     private static AdminProductRecord MapDetail(
         Product product,
+        Guid shopOwnerUserId,
         string shopName,
         string categoryName,
         IReadOnlyList<AdminProductImageRecord> images) => new()
     {
         ProductId = product.ProductId,
         ShopId = product.ShopId,
+        ShopOwnerUserId = shopOwnerUserId,
         ShopName = shopName,
         CategoryId = product.CategoryId,
         CategoryName = categoryName,

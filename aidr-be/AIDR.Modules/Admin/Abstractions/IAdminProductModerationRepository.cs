@@ -13,6 +13,7 @@ public sealed class AdminProductRecord
 {
     public Guid ProductId { get; init; }
     public Guid ShopId { get; init; }
+    public Guid ShopOwnerUserId { get; init; }
     public string ShopName { get; init; } = null!;
     public int CategoryId { get; init; }
     public string CategoryName { get; init; } = null!;
