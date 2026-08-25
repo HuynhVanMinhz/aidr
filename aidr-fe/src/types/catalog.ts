@@ -4,6 +4,7 @@ export type ProductSort = 'newest' | 'price_asc' | 'price_desc' | 'popular' | 'r
 
 export type ProductQuery = {
   q?: string;
+  shopId?: string;
   categoryId?: number;
   brand?: string;
   minPrice?: number;

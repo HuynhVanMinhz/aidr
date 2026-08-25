@@ -17,6 +17,7 @@ import { ChangePasswordPage } from '../views/account/ChangePasswordPage';
 import { ProductListPage } from '../views/catalog/ProductListPage';
 import { ProductDetailPage } from '../views/catalog/ProductDetailPage';
 import { CategoriesPage } from '../views/catalog/CategoriesPage';
+import { ShopPublicPage } from '../views/catalog/ShopPublicPage';
 import { AdminHomePage } from '../views/admin/AdminHomePage';
 import { AdminCategoryListPage } from '../views/admin/AdminCategoryListPage';
 import { AdminCategoryFormPage } from '../views/admin/AdminCategoryFormPage';
@@ -81,6 +82,7 @@ export function App() {
           <Route index element={<HomePage />} />
           <Route path="products" element={<ProductListPage />} />
           <Route path="products/:id" element={<ProductDetailPage />} />
+          <Route path="shops/:shopKey" element={<ShopPublicPage />} />
           <Route path="categories" element={<CategoriesPage />} />
           <Route path="health" element={<HealthPage />} />
 

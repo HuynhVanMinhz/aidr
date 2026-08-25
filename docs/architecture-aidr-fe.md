@@ -83,7 +83,7 @@ aidr-fe/
 
 | Area | Path prefix | Roles |
 |------|-------------|-------|
-| Public catalog | `/`, `/products`, `/products/:id`, `/categories` | Guest+ |
+| Public catalog | `/`, `/products`, `/products/:id`, `/shops/:shopKey`, `/categories` | Guest+ |
 | Auth | `/login`, `/register`, `/forgot-password` | Guest |
 | Buyer account | `/account/*`, `/cart`, `/checkout`, `/wishlist`, `/orders` | Buyer (+Seller nếu dual-role) |
 | AI | `/ai/assistant`, compare modal/page | Buyer |
@@ -106,6 +106,7 @@ aidr-fe/
 | `auth` | accessToken, refresh, roles, session flags | UC-01..06 |
 | `user` | profile, addresses | UC-07/08 |
 | `catalog` | product lists, filters, category tree | UC-09..11, 26, 27, 90 |
+| `shop` | public shop detail, seller rating, shop products | UC-62b, UC-64 |
 | `cart` | items, applied voucher preview | UC-29..33 |
 | `orders` | buyer order list/detail cache | UC-39..42 |
 | `wishlist` | product ids | UC-36..38 |
@@ -242,6 +243,7 @@ VITE_SIGNALR_HUB_URL=https://api.aidr.local/hubs
 | Login / Register / Forgot | UC-01..05 |
 | Profile / Security | UC-06..08 |
 | Product list / detail / categories | UC-09..11 |
+| Shop public page (seller detail + rating) | UC-62b, UC-64 |
 | Search results + filter bar | UC-26, 27, 90 |
 | Seller product form | UC-12..17 |
 | Admin moderation / categories | UC-18..25 |
