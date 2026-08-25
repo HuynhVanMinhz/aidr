@@ -27,6 +27,7 @@ public class AidrDbContext : DbContext
     public DbSet<ProductModerationHistory> ProductModerationHistories => Set<ProductModerationHistory>();
     public DbSet<Cart> Carts => Set<Cart>();
     public DbSet<CartItem> CartItems => Set<CartItem>();
+    public DbSet<WishlistItem> WishlistItems => Set<WishlistItem>();
     public DbSet<Voucher> Vouchers => Set<Voucher>();
     public DbSet<VoucherRedemption> VoucherRedemptions => Set<VoucherRedemption>();
     public DbSet<Order> Orders => Set<Order>();
@@ -334,6 +335,22 @@ public class AidrDbContext : DbContext
                 .HasForeignKey(x => x.ProductId)
                 .OnDelete(DeleteBehavior.Restrict);
             e.HasIndex(x => new { x.CartId, x.ProductId, x.VariantId }).IsUnique();
+        });
+
+        modelBuilder.Entity<WishlistItem>(e =>
+        {
+            e.ToTable("WishlistItems");
+            e.HasKey(x => x.WishlistItemId);
+            e.HasOne(x => x.User)
+                .WithMany()
+                .HasForeignKey(x => x.UserId)
+                .OnDelete(DeleteBehavior.Restrict);
+            e.HasOne(x => x.Product)
+                .WithMany()
+                .HasForeignKey(x => x.ProductId)
+                .OnDelete(DeleteBehavior.Restrict);
+            e.HasIndex(x => new { x.UserId, x.ProductId }).IsUnique();
+            e.HasIndex(x => new { x.UserId, x.CreatedAt });
         });
 
         modelBuilder.Entity<Order>(e =>
