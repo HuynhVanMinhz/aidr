@@ -14,6 +14,7 @@ import {
   productModerationBadgeClass,
 } from '../../utils/adminBadge';
 import { tryValidateField, visibleFieldErrors } from '../../utils/formValidation';
+import { displayOptionalNumber, displayText, isBlank } from '../../utils/displayValue';
 import {
   PRODUCT_MODERATION_MAX_REASON,
   validateProductRejectReason,
@@ -258,47 +259,66 @@ export function AdminProductDetailPage() {
             <div className="row g-3 mb-3">
               <div className="col-md-4">
                 <p className="text-muted mb-1">Brand</p>
-                <p className="mb-0">{item.brand?.trim() || '—'}</p>
+                <p className={`mb-0${isBlank(item.brand) ? ' text-muted' : ''}`}>
+                  {displayText(item.brand, 'No brand provided')}
+                </p>
               </div>
               <div className="col-md-4">
                 <p className="text-muted mb-1">Model</p>
-                <p className="mb-0">{item.modelNumber?.trim() || '—'}</p>
+                <p className={`mb-0${isBlank(item.modelNumber) ? ' text-muted' : ''}`}>
+                  {displayText(item.modelNumber, 'No model number')}
+                </p>
               </div>
               <div className="col-md-4">
                 <p className="text-muted mb-1">Condition</p>
-                <p className="mb-0">{item.conditionType}</p>
+                <p className="mb-0">{displayText(item.conditionType, 'Not specified')}</p>
               </div>
               <div className="col-md-4">
                 <p className="text-muted mb-1">Origin</p>
-                <p className="mb-0">{item.originCountry?.trim() || '—'}</p>
+                <p className={`mb-0${isBlank(item.originCountry) ? ' text-muted' : ''}`}>
+                  {displayText(item.originCountry, 'Origin not specified')}
+                </p>
               </div>
               <div className="col-md-4">
                 <p className="text-muted mb-1">Warranty</p>
-                <p className="mb-0">
-                  {item.warrantyMonths != null ? `${item.warrantyMonths} months` : '—'}
+                <p className={`mb-0${item.warrantyMonths == null ? ' text-muted' : ''}`}>
+                  {displayOptionalNumber(
+                    item.warrantyMonths,
+                    (n) => `${n} months`,
+                    'No warranty listed',
+                  )}
                 </p>
               </div>
               <div className="col-md-4">
                 <p className="text-muted mb-1">Published</p>
-                <p className="mb-0">{formatDateTime(item.publishedAt)}</p>
+                <p className={`mb-0${!item.publishedAt ? ' text-muted' : ''}`}>
+                  {formatDateTime(item.publishedAt, 'Not published yet')}
+                </p>
               </div>
             </div>
 
             <div className="mb-3">
               <p className="text-muted mb-1">Short description</p>
-              <p className="mb-0">{item.shortDescription?.trim() || '—'}</p>
+              <p className={`mb-0${isBlank(item.shortDescription) ? ' text-muted' : ''}`}>
+                {displayText(item.shortDescription, 'No short description')}
+              </p>
             </div>
 
             <div className="mb-3">
               <p className="text-muted mb-1">Description</p>
-              <p className="mb-0" style={{ whiteSpace: 'pre-wrap' }}>
-                {item.description?.trim() || '—'}
+              <p
+                className={`mb-0${isBlank(item.description) ? ' text-muted' : ''}`}
+                style={{ whiteSpace: 'pre-wrap' }}
+              >
+                {displayText(item.description, 'No description provided')}
               </p>
             </div>
 
-            {item.images.length > 0 ? (
-              <div className="mb-3">
-                <p className="text-muted mb-2">Images</p>
+            <div className="mb-3">
+              <p className="text-muted mb-2">Images</p>
+              {item.images.length === 0 ? (
+                <p className="text-muted mb-0">No images uploaded</p>
+              ) : (
                 <div className="d-flex flex-wrap gap-2">
                   {item.images.map((img) => (
                     <a
@@ -317,8 +337,8 @@ export function AdminProductDetailPage() {
                     </a>
                   ))}
                 </div>
-              </div>
-            ) : null}
+              )}
+            </div>
 
             <div className="border-top pt-3">
               <div className="d-flex justify-content-between align-items-center mb-2">

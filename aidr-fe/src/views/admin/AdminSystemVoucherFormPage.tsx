@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
+import { AdminDatePicker } from '../../components/admin/AdminDatePicker';
 import { AdminSelect } from '../../components/admin/AdminSelect';
 import { FormField } from '../../components/admin/FormField';
 import {
@@ -10,12 +11,12 @@ import {
 } from '../../components/admin/systemVoucherFormConstants';
 import { useAdminSystemVoucherDetail, useAdminSystemVouchers } from '../../hooks/useAdminSystemVouchers';
 import { useToast } from '../../hooks/useToast';
+import { visibleFieldErrors } from '../../utils/formValidation';
 import {
   canSubmitSystemVoucherForm,
   type SystemVoucherFormField,
   validateSystemVoucherFormFields,
 } from '../../utils/systemVoucherFormValidation';
-import { visibleFieldErrors } from '../../utils/formValidation';
 
 type Mode = 'create' | 'edit';
 
@@ -231,23 +232,27 @@ export function AdminSystemVoucherFormPage() {
             </div>
             <div className="card-body">
               <FormField label="Start date" htmlFor="voucher-starts" error={visible.startsAt}>
-                <input
+                <AdminDatePicker
                   id="voucher-starts"
-                  type="datetime-local"
-                  className="form-control"
+                  enableTime
                   value={form.startsAt}
-                  onChange={(e) => patchForm({ startsAt: e.target.value })}
-                  onBlur={() => markTouched('startsAt')}
+                  maxDate={form.endsAt || undefined}
+                  onChange={(next) => {
+                    patchForm({ startsAt: next });
+                    markTouched('startsAt');
+                  }}
                 />
               </FormField>
               <FormField label="End date" htmlFor="voucher-ends" error={visible.endsAt}>
-                <input
+                <AdminDatePicker
                   id="voucher-ends"
-                  type="datetime-local"
-                  className="form-control"
+                  enableTime
                   value={form.endsAt}
-                  onChange={(e) => patchForm({ endsAt: e.target.value })}
-                  onBlur={() => markTouched('endsAt')}
+                  minDate={form.startsAt || undefined}
+                  onChange={(next) => {
+                    patchForm({ endsAt: next });
+                    markTouched('endsAt');
+                  }}
                 />
               </FormField>
             </div>
