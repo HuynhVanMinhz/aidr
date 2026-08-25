@@ -129,3 +129,73 @@ export type UploadSellerProductImagesPayload = {
   images: SellerProductImageInput[];
   replaceExisting: boolean;
 };
+
+export type SellerShopVoucher = {
+  voucherId: string;
+  code: string;
+  name: string;
+  description?: string | null;
+  scope: string;
+  shopId: string;
+  shopName?: string | null;
+  discountType: string;
+  discountValue: number;
+  maxDiscountAmount?: number | null;
+  minOrderAmount: number;
+  usageLimit?: number | null;
+  perUserLimit: number;
+  usedCount: number;
+  startsAt: string;
+  endsAt: string;
+  isActive: boolean;
+  createdBy: string;
+  createdAt: string;
+  updatedAt: string;
+  canDelete: boolean;
+};
+
+export type SellerShopVoucherListResult = {
+  items: SellerShopVoucher[];
+  page: number;
+  pageSize: number;
+  totalCount: number;
+  totalPages: number;
+  activeCount: number;
+  inactiveCount: number;
+  expiredCount: number;
+};
+
+export type SellerShopVoucherListQuery = {
+  q?: string;
+  isActive?: boolean | null;
+  page?: number;
+  pageSize?: number;
+};
+
+export type CreateShopVoucherPayload = {
+  code: string;
+  name: string;
+  description?: string | null;
+  discountType: string;
+  discountValue: number;
+  maxDiscountAmount?: number | null;
+  minOrderAmount: number;
+  usageLimit?: number | null;
+  perUserLimit: number;
+  startsAt: string;
+  endsAt: string;
+  isActive: boolean;
+};
+
+export type UpdateShopVoucherPayload = {
+  name: string;
+  description?: string | null;
+  discountType: string;
+  discountValue: number;
+  maxDiscountAmount?: number | null;
+  minOrderAmount: number;
+  usageLimit?: number | null;
+  perUserLimit: number;
+  startsAt: string;
+  endsAt: string;
+};
