@@ -24,7 +24,7 @@ Cập nhật cột **status**: `Todo` · `In Progress` · `Done` · `Blocked`.
 | 11 | Order — Cart | Giỏ hàng add/view/remove. | UC-29, UC-30, UC-31 | Done |
 | 12 | Order — Checkout | Tạo đơn (split shop), snapshot địa chỉ/giá, reserve stock FIFO lot allocation. | UC-34 | Done |
 | 13 | Payment | payOS create link + webhook → Paid; gắn UC-35. | UC-35 | Done |
-| 14 | Order — Buyer Lifecycle | List/detail đơn, hủy, xác nhận nhận hàng. | UC-39, UC-40, UC-41, UC-42 | Todo |
+| 14 | Order — Buyer Lifecycle | List/detail đơn, hủy, xác nhận nhận hàng. | UC-39, UC-40, UC-41, UC-42 | Done |
 | 15 | SellerCenter — Orders | Seller xem đơn & cập nhật status + tracking. | UC-46, UC-47 | Todo |
 | 16 | Voucher (Buyer apply) | Xem & apply voucher (cần có data voucher — seed hoặc làm song song Admin/Seller voucher). | UC-32, UC-33 | Todo |
 | 17 | Admin — System Voucher | CRUD/activate voucher toàn sàn. | UC-78, UC-79, UC-80, UC-81 | Todo |
