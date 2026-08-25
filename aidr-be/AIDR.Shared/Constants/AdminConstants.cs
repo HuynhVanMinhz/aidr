@@ -38,6 +38,41 @@ public static class AdminConstants
     public const string ShopCostingMethodFifo = "FIFO";
     public const string WalletCurrencyVnd = "VND";
 
+    public const string UserStatusActive = AuthConstants.UserStatusActive;
+    public const string UserStatusLocked = AuthConstants.UserStatusLocked;
+    public const string UserStatusPendingDeletion = AuthConstants.UserStatusPendingDeletion;
+
+    public const string InsightGranularityDay = "day";
+    public const string InsightGranularityWeek = "week";
+    public const string InsightGranularityMonth = "month";
+    public const int DefaultInsightDays = 30;
+    public const int MaxInsightDays = 366;
+    public const int TopProductLimit = 10;
+
+    public static readonly HashSet<string> AllowedUserStatuses = new(StringComparer.OrdinalIgnoreCase)
+    {
+        UserStatusActive,
+        UserStatusLocked,
+        UserStatusPendingDeletion
+    };
+
+    public static readonly HashSet<string> AllowedInsightGranularities = new(StringComparer.OrdinalIgnoreCase)
+    {
+        InsightGranularityDay,
+        InsightGranularityWeek,
+        InsightGranularityMonth
+    };
+
+    /// <summary>Paid shop orders that count toward platform GMV / top products.</summary>
+    public static readonly HashSet<string> InsightSalesOrderStatuses = new(StringComparer.OrdinalIgnoreCase)
+    {
+        OrderConstants.StatusPaid,
+        OrderConstants.StatusConfirmed,
+        OrderConstants.StatusShipping,
+        OrderConstants.StatusDelivered,
+        OrderConstants.StatusCompleted
+    };
+
     public static (int Page, int PageSize) NormalizePaging(int page, int pageSize)
     {
         var normalizedPage = page < 1 ? DefaultListPage : page;
