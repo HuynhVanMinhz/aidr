@@ -32,6 +32,8 @@ import { SellerProductListPage } from '../views/seller/SellerProductListPage';
 import { SellerProductFormPage } from '../views/seller/SellerProductFormPage';
 import { SellerInventoryDetailPage } from '../views/seller/SellerInventoryDetailPage';
 import { SellerInventoryListPage } from '../views/seller/SellerInventoryListPage';
+import { SellerOrderDetailPage } from '../views/seller/SellerOrderDetailPage';
+import { SellerOrderListPage } from '../views/seller/SellerOrderListPage';
 import { SellerProductDetailPage } from '../views/seller/SellerProductDetailPage';
 import { CartPage } from '../views/cart/CartPage';
 import { CheckoutPage } from '../views/checkout/CheckoutPage';
@@ -85,6 +87,8 @@ export function App() {
             <Route path="products/:id" element={<SellerProductDetailPage />} />
             <Route path="products/:id/edit" element={<SellerProductFormPage />} />
             <Route path="inventory" element={<SellerInventoryListPage />} />
+            <Route path="orders" element={<SellerOrderListPage />} />
+            <Route path="orders/:orderId" element={<SellerOrderDetailPage />} />
           </Route>
         </Route>
 
