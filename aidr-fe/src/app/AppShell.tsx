@@ -1,9 +1,11 @@
 import { Outlet, useLocation } from 'react-router-dom';
 import { StoreFooter } from '../components/layout/StoreFooter';
 import { StoreHeader } from '../components/layout/StoreHeader';
+import { useNotificationHub } from '../hooks/useNotificationHub';
 
 /** Catalog shell — theme topbar + header + footer (AIDR). */
 export function AppShell() {
+  useNotificationHub();
   const location = useLocation();
   const isAccount = location.pathname.startsWith('/account');
 
