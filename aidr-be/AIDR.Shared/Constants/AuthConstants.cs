@@ -11,4 +11,5 @@ public static class AuthConstants
     public const string RefreshTokenCachePrefix = "auth:refresh:";
     public const string UserStatusActive = "Active";
     public const string UserStatusLocked = "Locked";
+    public const string UserStatusPendingDeletion = "PendingDeletion";
 }

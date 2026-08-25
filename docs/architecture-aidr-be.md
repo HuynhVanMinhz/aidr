@@ -158,7 +158,10 @@ aidr-be/
 | UC-49 | `GET /api/admin/return-requests/{id}` — reason, Unboxing/Testing evidences, order lines, status history | Admin |
 | UC-50 | `POST /api/admin/return-requests/{id}/approve`; `POST .../reject` + `adminNote` (required, BR-R03) | Admin |
 | UC-52 | `POST /api/admin/return-requests/{id}/status` — body `{ status, note?, refundToBin?, refundToAccountNumber? }`; transitions `Approved→Receiving→Refunded→Closed`; on `Refunded`: payOS **payout (chi hộ)** refund to buyer bank + mark payment Refunded + `WalletTransactions.RefundDebit` (BR-R04; wallet may go negative). Bank account from webhook counter account or request override. | Admin |
-| UC-71..74 | Insights, accounts lock/unlock | Admin |
+| UC-71 | `GET /api/admin/insights/customers?from=&to=&granularity=` — KPIs, registration/order series, top products, simple new/returning buyer cohort (default last 30 days, granularity=day) | Admin |
+| UC-72 | `GET /api/admin/accounts?status=&role=&q=&page=&pageSize=` (default status/role=`all`; paged + Active/Locked/role summary); `GET .../{id}` | Admin |
+| UC-73 | `POST /api/admin/accounts/{id}/lock` → Status=Locked (cannot lock self or Admin accounts) | Admin |
+| UC-74 | `POST /api/admin/accounts/{id}/unlock` → Status=Active (+ clear temporary login lockout) | Admin |
 | UC-75 | `GET /api/admin/seller-registrations?status=&q=&page=&pageSize=` (default `status=Pending`; `status=all`; paged + status summary); `GET .../{id}` | Admin |
 | UC-76 | `POST /api/admin/seller-registrations/{id}/approve` → role Seller + Shop + Wallet; `POST .../reject` + `adminNote` | Admin |
 | UC-78 | `POST /api/admin/vouchers` — create Scope=System voucher | Admin |
