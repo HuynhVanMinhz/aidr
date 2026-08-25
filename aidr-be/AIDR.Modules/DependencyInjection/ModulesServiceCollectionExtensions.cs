@@ -29,12 +29,14 @@ public static class ModulesServiceCollectionExtensions
         services.AddScoped<IAdminSellerRegistrationService, AdminSellerRegistrationService>();
         services.AddScoped<IAdminProductModerationService, AdminProductModerationService>();
         services.AddScoped<IAdminSystemVoucherService, AdminSystemVoucherService>();
+        services.AddScoped<IAdminReturnService, AdminReturnService>();
         services.AddScoped<ISellerProductService, SellerProductService>();
         services.AddScoped<ISellerInventoryService, SellerInventoryService>();
         services.AddScoped<ISellerOrderService, SellerOrderService>();
         services.AddScoped<ISellerShopVoucherService, SellerShopVoucherService>();
         services.AddScoped<ICartService, CartService>();
         services.AddScoped<IOrderService, OrderService>();
+        services.AddScoped<IReturnService, ReturnService>();
         services.AddScoped<IVoucherService, VoucherService>();
         services.AddScoped<IPaymentService, PaymentService>();
         services.AddScoped<IWishlistService, WishlistService>();

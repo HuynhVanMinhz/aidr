@@ -40,4 +40,18 @@ public sealed class PaymentsController : ControllerBase
         var result = await _payments.HandlePayOsWebhookAsync(request, cancellationToken);
         return Ok(ApiResult<PayOsWebhookResult>.Ok(result, result.Message));
     }
+
+    /// <summary>
+    /// Register or update the merchant webhook URL with payOS.
+    /// payOS probes the endpoint first — use a public HTTPS URL (e.g. ngrok) in local/dev.
+    /// </summary>
+    [HttpPost("confirm-webhook")]
+    [Authorize(Policy = "Admin")]
+    public async Task<ActionResult<ApiResult<ConfirmPayOsWebhookResponse>>> ConfirmWebhook(
+        [FromBody] ConfirmPayOsWebhookRequest request,
+        CancellationToken cancellationToken)
+    {
+        var result = await _payments.ConfirmPayOsWebhookAsync(request, cancellationToken);
+        return Ok(ApiResult<ConfirmPayOsWebhookResponse>.Ok(result, result.Message));
+    }
 }
