@@ -43,6 +43,7 @@ public static class ModulesServiceCollectionExtensions
         services.AddScoped<IProductReviewService, ProductReviewService>();
         services.AddScoped<ISellerRatingService, SellerRatingService>();
         services.AddScoped<IFollowService, FollowService>();
+        services.AddScoped<INotificationService, NotificationService>();
         return services;
     }
 }

@@ -1,7 +1,10 @@
+using AIDR.Modules.Engagement.Abstractions;
 using AIDR.Modules.SellerCenter.Abstractions;
 using AIDR.Shared.Constants;
+using AIDR.Shared.Dtos.Engagement;
 using AIDR.Shared.Dtos.Seller;
 using AIDR.Shared.Exceptions;
+using Microsoft.Extensions.Logging;
 
 namespace AIDR.Modules.SellerCenter.Services;
 
@@ -9,11 +12,19 @@ public sealed class SellerOrderService : ISellerOrderService
 {
     private readonly ISellerProductRepository _products;
     private readonly ISellerOrderRepository _orders;
+    private readonly INotificationService _notifications;
+    private readonly ILogger<SellerOrderService> _logger;
 
-    public SellerOrderService(ISellerProductRepository products, ISellerOrderRepository orders)
+    public SellerOrderService(
+        ISellerProductRepository products,
+        ISellerOrderRepository orders,
+        INotificationService notifications,
+        ILogger<SellerOrderService> logger)
     {
         _products = products;
         _orders = orders;
+        _notifications = notifications;
+        _logger = logger;
     }
 
     public async Task<SellerOrderListResultDto> ListAsync(
@@ -76,7 +87,7 @@ public sealed class SellerOrderService : ISellerOrderService
             "Status note",
             OrderConstants.MaxStatusNoteLength);
 
-        return await _orders.UpdateStatusAsync(
+        var updated = await _orders.UpdateStatusAsync(
             shop.ShopId,
             orderId,
             ownerUserId,
@@ -85,6 +96,44 @@ public sealed class SellerOrderService : ISellerOrderService
             sellerNote,
             historyNote,
             cancellationToken);
+
+        await NotifyBuyerOrderStatusAsync(updated, cancellationToken);
+        return updated;
+    }
+
+    private async Task NotifyBuyerOrderStatusAsync(
+        SellerOrderDetailDto order,
+        CancellationToken cancellationToken)
+    {
+        if (order.BuyerUserId == Guid.Empty)
+            return;
+
+        var tracking = string.IsNullOrWhiteSpace(order.TrackingCode)
+            ? string.Empty
+            : $" Tracking: {order.TrackingCode}.";
+
+        try
+        {
+            await _notifications.CreateAsync(
+                new CreateNotificationRequest
+                {
+                    UserId = order.BuyerUserId,
+                    Title = "Order status updated",
+                    Body = $"Order {order.OrderCode} is now {order.Status}.{tracking}",
+                    Type = NotificationConstants.TypeOrder,
+                    ReferenceType = NotificationConstants.RefOrder,
+                    ReferenceId = order.OrderId
+                },
+                cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(
+                ex,
+                "Failed to notify buyer {BuyerId} about order status {OrderId}",
+                order.BuyerUserId,
+                order.OrderId);
+        }
     }
 
     private async Task<SellerShopRecord> RequireActiveShopAsync(

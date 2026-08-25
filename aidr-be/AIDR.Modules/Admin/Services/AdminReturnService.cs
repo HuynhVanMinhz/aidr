@@ -1,15 +1,28 @@
 using AIDR.Modules.Admin.Abstractions;
+using AIDR.Modules.Engagement.Abstractions;
 using AIDR.Shared.Constants;
 using AIDR.Shared.Dtos.Admin;
+using AIDR.Shared.Dtos.Engagement;
 using AIDR.Shared.Exceptions;
+using Microsoft.Extensions.Logging;
 
 namespace AIDR.Modules.Admin.Services;
 
 public sealed class AdminReturnService : IAdminReturnService
 {
     private readonly IAdminReturnRepository _repository;
+    private readonly INotificationService _notifications;
+    private readonly ILogger<AdminReturnService> _logger;
 
-    public AdminReturnService(IAdminReturnRepository repository) => _repository = repository;
+    public AdminReturnService(
+        IAdminReturnRepository repository,
+        INotificationService notifications,
+        ILogger<AdminReturnService> logger)
+    {
+        _repository = repository;
+        _notifications = notifications;
+        _logger = logger;
+    }
 
     public async Task<AdminReturnRequestListResultDto> ListAsync(
         string? status,
@@ -68,7 +81,13 @@ public sealed class AdminReturnService : IAdminReturnService
         if (!string.Equals(existing.Status, ReturnConstants.StatusPending, StringComparison.OrdinalIgnoreCase))
             throw new ConflictException("Only pending return requests can be approved.");
 
-        return await _repository.ApproveAsync(returnRequestId, adminUserId, cancellationToken);
+        var result = await _repository.ApproveAsync(returnRequestId, adminUserId, cancellationToken);
+        await NotifyBuyerReturnAsync(
+            result,
+            "Return request approved",
+            $"Your return request for order {result.OrderCode} was approved.",
+            cancellationToken);
+        return result;
     }
 
     public async Task<AdminReturnRequestDetailDto> RejectAsync(
@@ -91,7 +110,13 @@ public sealed class AdminReturnService : IAdminReturnService
         if (!string.Equals(existing.Status, ReturnConstants.StatusPending, StringComparison.OrdinalIgnoreCase))
             throw new ConflictException("Only pending return requests can be rejected.");
 
-        return await _repository.RejectAsync(returnRequestId, adminUserId, adminNote, cancellationToken);
+        var result = await _repository.RejectAsync(returnRequestId, adminUserId, adminNote, cancellationToken);
+        await NotifyBuyerReturnAsync(
+            result,
+            "Return request rejected",
+            $"Your return request for order {result.OrderCode} was rejected. Note: {adminNote}",
+            cancellationToken);
+        return result;
     }
 
     public async Task<AdminReturnRequestDetailDto> UpdateStatusAsync(
@@ -158,7 +183,7 @@ public sealed class AdminReturnService : IAdminReturnService
                 throw new AppException("Refund bank account number must not exceed 30 characters.");
         }
 
-        return await _repository.UpdateStatusAsync(
+        var result = await _repository.UpdateStatusAsync(
             returnRequestId,
             adminUserId,
             canonical,
@@ -166,6 +191,52 @@ public sealed class AdminReturnService : IAdminReturnService
             refundToBin,
             refundToAccountNumber,
             cancellationToken);
+
+        if (string.Equals(canonical, ReturnConstants.StatusRefunded, StringComparison.OrdinalIgnoreCase))
+        {
+            await NotifyBuyerReturnAsync(
+                result,
+                "Refund completed",
+                $"Your refund for order {result.OrderCode} has been completed.",
+                cancellationToken);
+        }
+
+        return result;
+    }
+
+    private async Task NotifyBuyerReturnAsync(
+        AdminReturnRequestDetailDto detail,
+        string title,
+        string body,
+        CancellationToken cancellationToken)
+    {
+        if (detail.BuyerUserId == Guid.Empty)
+            return;
+
+        try
+        {
+            await _notifications.CreateAsync(
+                new CreateNotificationRequest
+                {
+                    UserId = detail.BuyerUserId,
+                    Title = title,
+                    Body = body.Length <= NotificationConstants.MaxBodyLength
+                        ? body
+                        : body[..NotificationConstants.MaxBodyLength],
+                    Type = NotificationConstants.TypeReturn,
+                    ReferenceType = NotificationConstants.RefReturnRequest,
+                    ReferenceId = detail.ReturnRequestId
+                },
+                cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(
+                ex,
+                "Failed to notify buyer {BuyerId} about return {ReturnRequestId}",
+                detail.BuyerUserId,
+                detail.ReturnRequestId);
+        }
     }
 
     private static AdminReturnRequestListItemDto MapListItem(AdminReturnListRecord record) =>
