@@ -23,9 +23,15 @@ function toggleAdminMenu() {
 }
 
 function pageTitle(pathname: string, variant: AdminShellVariant) {
-  if (pathname.includes('/vouchers/new')) return 'Create System Voucher';
-  if (pathname.includes('/vouchers/') && pathname.endsWith('/edit')) return 'Edit System Voucher';
-  if (pathname.includes('/vouchers')) return 'System Vouchers';
+  if (pathname.includes('/vouchers/new')) {
+    return variant === 'seller' ? 'Create Shop Voucher' : 'Create System Voucher';
+  }
+  if (pathname.includes('/vouchers/') && pathname.endsWith('/edit')) {
+    return variant === 'seller' ? 'Edit Shop Voucher' : 'Edit System Voucher';
+  }
+  if (pathname.includes('/vouchers')) {
+    return variant === 'seller' ? 'Shop Vouchers' : 'System Vouchers';
+  }
   if (pathname.includes('/categories/new')) return 'Create Category';
   if (pathname.includes('/categories/') && pathname.endsWith('/edit')) return 'Edit Category';
   if (pathname.includes('/categories')) return 'Categories List';
@@ -356,6 +362,42 @@ export function AdminShell({ variant = 'admin', children }: AdminShellProps) {
                   </span>
                   <span className="nav-text">Orders</span>
                 </NavLink>
+              </li>
+              <li className="nav-item">
+                <a
+                  className={`nav-link menu-arrow ${voucherOpen ? '' : 'collapsed'}`}
+                  href="#sidebarShopVouchers"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setVoucherOpen((v) => !v);
+                  }}
+                >
+                  <span className="nav-icon">
+                    <IconifyIcon icon="solar:ticket-sale-bold-duotone" />
+                  </span>
+                  <span className="nav-text">Shop Vouchers</span>
+                </a>
+                <div className={`collapse ${voucherOpen ? 'show' : ''}`} id="sidebarShopVouchers">
+                  <ul className="nav sub-navbar-nav">
+                    <li className="sub-nav-item">
+                      <NavLink
+                        className={({ isActive }) => `sub-nav-link${isActive ? ' active' : ''}`}
+                        to="/seller/vouchers"
+                        end
+                      >
+                        List
+                      </NavLink>
+                    </li>
+                    <li className="sub-nav-item">
+                      <NavLink
+                        className={({ isActive }) => `sub-nav-link${isActive ? ' active' : ''}`}
+                        to="/seller/vouchers/new"
+                      >
+                        Create
+                      </NavLink>
+                    </li>
+                  </ul>
+                </div>
               </li>
               </>
             )}
