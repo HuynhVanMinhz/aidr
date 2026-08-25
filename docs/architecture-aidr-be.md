@@ -165,7 +165,9 @@ aidr-be/
 ### 6.6 Engagement
 | UC | Endpoint / Hub | Module |
 |----|----------------|--------|
-| UC-36..38 | Wishlist | Engagement |
+| UC-36 | `GET /api/wishlist?page=&pageSize=` — buyer wishlist (paged, newest first); includes price, availability, shop | Engagement |
+| UC-37 | `POST /api/wishlist/items` — body `{ productId }`; unique user+product; only Approved + active shop/category | Engagement |
+| UC-38 | `DELETE /api/wishlist/items/{wishlistItemId}`; `DELETE /api/wishlist/products/{productId}` | Engagement |
 | UC-44/45 | Notifications REST (+ SignalR push) | Engagement |
 | UC-57/58 | Chat REST + `ChatHub` | Engagement |
 | UC-59..63 | Reviews & rate seller | Engagement |
