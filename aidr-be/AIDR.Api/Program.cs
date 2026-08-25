@@ -1,7 +1,9 @@
 using AIDR.Api.Hubs;
 using AIDR.Api.Middleware;
+using AIDR.Api.Realtime;
 using AIDR.Infrastructure.DependencyInjection;
 using AIDR.Modules.DependencyInjection;
+using AIDR.Modules.Engagement.Abstractions;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Serilog;
 using System.Text.Json;
@@ -19,6 +21,7 @@ builder.Services.AddSignalR();
 builder.Services.AddAidrInfrastructure(builder.Configuration);
 builder.Services.AddAidrModules();
 builder.Services.AddAidrJwtAuthentication(builder.Configuration);
+builder.Services.AddScoped<INotificationRealtimePublisher, SignalRNotificationRealtimePublisher>();
 
 builder.Services.AddAuthorization(options =>
 {
@@ -96,8 +99,8 @@ app.MapHealthChecks("/api/health/ready", new HealthCheckOptions
 app.MapGet("/api", () => Results.Ok(new
 {
     name = "AIDR API",
-    version = "0.3.0",
-    module = "Auth, Profile, Discovery, Admin, SellerCenter, Order, Payment"
+    version = "0.4.0",
+    module = "Auth, Profile, Discovery, Admin, SellerCenter, Order, Payment, Engagement"
 }));
 
 app.Run();

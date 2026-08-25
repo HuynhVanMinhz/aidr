@@ -179,7 +179,8 @@ aidr-be/
 | UC-65 | `POST /api/follows/shops` — body `{ shopId }`; unique buyer+shop; only Active shop; cannot follow own shop; updates Shop.FollowerCount | Engagement |
 | UC-66 | `DELETE /api/follows/shops/{shopId}` — unfollow; recalc Shop.FollowerCount | Engagement |
 | UC-67 | `GET /api/follows?page=&pageSize=` — buyer followed shops (paged, newest first) | Engagement |
-| UC-44/45 | Notifications REST (+ SignalR push) | Engagement |
+| UC-44 | `GET /api/notifications?page=&pageSize=&unreadOnly=` — inbox (paged, newest first); `GET /api/notifications/unread-count`; `POST /api/notifications/{id}/read`; `POST /api/notifications/read-all`; SignalR `NotificationHub` group `user:{userId}` event `ReceiveNotification` | Engagement |
+| UC-45 | `DELETE /api/notifications/{notificationId}` — owner hard-delete | Engagement |
 | UC-57/58 | Chat REST + `ChatHub` | Engagement |
 
 ### 6.7 AI

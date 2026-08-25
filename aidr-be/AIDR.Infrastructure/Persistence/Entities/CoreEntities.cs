@@ -371,6 +371,21 @@ public class WishlistItem
     public Product Product { get; set; } = null!;
 }
 
+public class Notification
+{
+    public Guid NotificationId { get; set; }
+    public Guid UserId { get; set; }
+    public string Title { get; set; } = null!;
+    public string Body { get; set; } = null!;
+    public string Type { get; set; } = null!;
+    public string? ReferenceType { get; set; }
+    public Guid? ReferenceId { get; set; }
+    public bool IsRead { get; set; }
+    public DateTime CreatedAt { get; set; }
+
+    public User User { get; set; } = null!;
+}
+
 public class CartItem
 {
     public Guid CartItemId { get; set; }
