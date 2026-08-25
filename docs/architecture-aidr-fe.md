@@ -249,7 +249,7 @@ VITE_SIGNALR_HUB_URL=https://api.aidr.local/hubs
 | Admin moderation / categories | UC-18..25 |
 | Admin product moderation list / review | UC-18..21 |
 | Admin seller registration queue / review | UC-75, UC-76 |
-| Cart / Checkout | UC-29..31 (`/cart`, `cartApi`, add from product detail/card); UC-32..35 (voucher/checkout later) |
+| Cart / Checkout | UC-29..31 (`/cart`, `cartApi`, add from product detail/card); UC-34 (`/checkout`, `orderApi`, order received); UC-32/33/35 (voucher/payOS later) |
 | Wishlist | UC-36..38 |
 | My orders / detail | UC-39..43 |
 | Notifications | UC-44/45 |
