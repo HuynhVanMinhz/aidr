@@ -23,6 +23,9 @@ function toggleAdminMenu() {
 }
 
 function pageTitle(pathname: string, variant: AdminShellVariant) {
+  if (pathname.includes('/vouchers/new')) return 'Create System Voucher';
+  if (pathname.includes('/vouchers/') && pathname.endsWith('/edit')) return 'Edit System Voucher';
+  if (pathname.includes('/vouchers')) return 'System Vouchers';
   if (pathname.includes('/categories/new')) return 'Create Category';
   if (pathname.includes('/categories/') && pathname.endsWith('/edit')) return 'Edit Category';
   if (pathname.includes('/categories')) return 'Categories List';
@@ -47,6 +50,7 @@ export function AdminShell({ variant = 'admin', children }: AdminShellProps) {
   const { user, logout } = useAuth();
   const { isDark, toggleTheme } = useTheme();
   const [categoryOpen, setCategoryOpen] = useState(pathname.includes('/categories'));
+  const [voucherOpen, setVoucherOpen] = useState(pathname.includes('/vouchers'));
   const [sellerRegOpen, setSellerRegOpen] = useState(pathname.includes('/seller-registrations'));
   const [productOpen, setProductOpen] = useState(pathname.includes('/products'));
   const [moderationOpen, setModerationOpen] = useState(
@@ -56,6 +60,7 @@ export function AdminShell({ variant = 'admin', children }: AdminShellProps) {
 
   useEffect(() => {
     if (pathname.includes('/categories')) setCategoryOpen(true);
+    if (pathname.includes('/vouchers')) setVoucherOpen(true);
     if (pathname.includes('/seller-registrations')) setSellerRegOpen(true);
     if (pathname.includes('/products')) {
       setProductOpen(true);
@@ -191,6 +196,42 @@ export function AdminShell({ variant = 'admin', children }: AdminShellProps) {
                       <NavLink
                         className={({ isActive }) => `sub-nav-link${isActive ? ' active' : ''}`}
                         to="/admin/categories/new"
+                      >
+                        Create
+                      </NavLink>
+                    </li>
+                  </ul>
+                </div>
+              </li>
+              <li className="nav-item">
+                <a
+                  className={`nav-link menu-arrow ${voucherOpen ? '' : 'collapsed'}`}
+                  href="#sidebarSystemVouchers"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setVoucherOpen((v) => !v);
+                  }}
+                >
+                  <span className="nav-icon">
+                    <IconifyIcon icon="solar:ticket-sale-bold-duotone" />
+                  </span>
+                  <span className="nav-text">System Vouchers</span>
+                </a>
+                <div className={`collapse ${voucherOpen ? 'show' : ''}`} id="sidebarSystemVouchers">
+                  <ul className="nav sub-navbar-nav">
+                    <li className="sub-nav-item">
+                      <NavLink
+                        className={({ isActive }) => `sub-nav-link${isActive ? ' active' : ''}`}
+                        to="/admin/vouchers"
+                        end
+                      >
+                        List
+                      </NavLink>
+                    </li>
+                    <li className="sub-nav-item">
+                      <NavLink
+                        className={({ isActive }) => `sub-nav-link${isActive ? ' active' : ''}`}
+                        to="/admin/vouchers/new"
                       >
                         Create
                       </NavLink>

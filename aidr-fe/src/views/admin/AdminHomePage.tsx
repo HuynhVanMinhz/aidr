@@ -91,6 +91,21 @@ export function AdminHomePage() {
             </div>
           </div>
         </div>
+        <div className="col-lg-4">
+          <div className="card card-height-100">
+            <div className="card-header d-flex align-items-center justify-content-between gap-2">
+              <h4 className="card-title flex-grow-1">System Vouchers</h4>
+              <Link to="/admin/vouchers/new" className="btn btn-sm btn-primary">
+                Create Voucher
+              </Link>
+            </div>
+            <div className="card-body">
+              <p className="text-muted mb-0">
+                Create platform-wide campaigns, update conditions, activate or disable vouchers, and delete unused codes.
+              </p>
+            </div>
+          </div>
+        </div>
       </div>
     </>
   );
