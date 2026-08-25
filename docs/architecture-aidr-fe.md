@@ -107,7 +107,7 @@ aidr-fe/
 | `user` | profile, addresses | UC-07/08 |
 | `catalog` | product lists, filters, category tree | UC-09..11, 26, 27, 90 |
 | `shop` | public shop detail, seller rating, shop products | UC-62b, UC-64 |
-| `cart` | items, applied voucher preview | UC-29..33 |
+| `cart` | items, qty, unit price snapshot, subtotal; cleared on logout | UC-29..31 |
 | `orders` | buyer order list/detail cache | UC-39..42 |
 | `wishlist` | product ids | UC-36..38 |
 | `notifications` | inbox + unread count | UC-44/45 |
@@ -249,7 +249,7 @@ VITE_SIGNALR_HUB_URL=https://api.aidr.local/hubs
 | Admin moderation / categories | UC-18..25 |
 | Admin product moderation list / review | UC-18..21 |
 | Admin seller registration queue / review | UC-75, UC-76 |
-| Cart / Checkout | UC-29..35 |
+| Cart / Checkout | UC-29..31 (`/cart`, `cartApi`, add from product detail/card); UC-32..35 (voucher/checkout later) |
 | Wishlist | UC-36..38 |
 | My orders / detail | UC-39..43 |
 | Notifications | UC-44/45 |

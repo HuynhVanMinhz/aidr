@@ -31,6 +31,7 @@ import { SellerProductFormPage } from '../views/seller/SellerProductFormPage';
 import { SellerInventoryDetailPage } from '../views/seller/SellerInventoryDetailPage';
 import { SellerInventoryListPage } from '../views/seller/SellerInventoryListPage';
 import { SellerProductDetailPage } from '../views/seller/SellerProductDetailPage';
+import { CartPage } from '../views/cart/CartPage';
 import { ToastHost } from '../components/feedback/ToastHost';
 
 function AppThemeBridge() {
@@ -87,6 +88,7 @@ export function App() {
           <Route path="health" element={<HealthPage />} />
 
           <Route element={<ProtectedRoute />}>
+            <Route path="cart" element={<CartPage />} />
             <Route path="account" element={<AccountLayout />}>
               <Route index element={<Navigate to="profile" replace />} />
               <Route path="profile" element={<ProfilePage />} />

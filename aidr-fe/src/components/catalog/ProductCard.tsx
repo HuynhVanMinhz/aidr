@@ -1,4 +1,8 @@
-import { Link } from 'react-router-dom';
+import { useState, type MouseEvent } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '../../hooks/useAuth';
+import { useCart } from '../../hooks/useCart';
+import { useToast } from '../../hooks/useToast';
 import type { ProductListItem } from '../../types/catalog';
 import { discountPercent, formatMoney } from '../../utils/formatCatalog';
 
@@ -11,9 +15,40 @@ type Props = {
 };
 
 export function ProductCard({ product, variant = 'list' }: Props) {
+  const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
+  const { addItem, getErrorMessage } = useCart();
+  const toast = useToast();
+  const [adding, setAdding] = useState(false);
+
   const off = discountPercent(product.basePrice, product.salePrice);
   const imageUrl = product.primaryImageUrl || PLACEHOLDER;
   const detailTo = `/products/${product.productId}`;
+  const outOfStock = product.availableQuantity < 1;
+
+  async function handleQuickAdd(e: MouseEvent) {
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (!isAuthenticated) {
+      navigate(`/login?returnUrl=${encodeURIComponent(detailTo)}`);
+      return;
+    }
+    if (outOfStock) {
+      toast.error('Product is out of stock.');
+      return;
+    }
+
+    setAdding(true);
+    try {
+      await addItem(product.productId, 1);
+      toast.success('Added to cart.');
+    } catch (err) {
+      toast.error(getErrorMessage(err, 'Unable to add item to cart.'));
+    } finally {
+      setAdding(false);
+    }
+  }
 
   const priceBlock = (
     <h3>
@@ -51,9 +86,16 @@ export function ProductCard({ product, variant = 'list' }: Props) {
             </Link>
           </li>
           <li>
-            <Link to="/login" title="Cart" aria-label="Cart">
+            <button
+              type="button"
+              className="product-card-cart-btn"
+              title="Add to cart"
+              aria-label="Add to cart"
+              disabled={adding || outOfStock}
+              onClick={(e) => void handleQuickAdd(e)}
+            >
               <img src="/theme/images/icon-cart-primary.svg" alt="" />
-            </Link>
+            </button>
           </li>
         </ul>
       </div>
