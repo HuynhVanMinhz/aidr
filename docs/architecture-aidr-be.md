@@ -52,7 +52,7 @@ aidr-be/
 │   ├── Profile
 │   ├── Discovery            # search, filter, category, product/shop public read
 │   ├── SellerCenter         # products, inventory, shop orders, vouchers, wallet, dashboard
-│   ├── Order                # cart, checkout, buyer orders, returns (buyer side)
+│   ├── Order                # cart, checkout, vouchers (buyer), buyer orders, returns (buyer side)
 │   ├── Payment              # payOS integration
 │   ├── Engagement           # reviews, wishlist, follow, ratings, chat, notifications
 │   ├── AI                   # chatbot, compare, NL→filter, recommendations
@@ -133,7 +133,8 @@ aidr-be/
 | UC-29 | `GET /api/cart` — items, qty, unit price snapshot, subtotal | Order |
 | UC-30 | `POST /api/cart/items` — body `{ productId, quantity }`; merge qty nếu trùng | Order |
 | UC-31 | `PATCH /api/cart/items/{cartItemId}` (set qty); `DELETE /api/cart/items/{cartItemId}` | Order |
-| UC-32/33 | Voucher list / apply preview | Order |
+| UC-32 | `GET /api/vouchers?cartItemIds=&scope=&shopId=&page=&pageSize=` — list System + Shop vouchers (active period) with eligibility vs cart | Order |
+| UC-33 | `POST /api/vouchers/preview` — preview discount (min order, limit, scope); apply at `POST /api/orders` via `vouchers: [{ shopId, voucherId }]` | Order |
 | UC-34 | `POST /api/orders` | Order |
 | UC-35 | `POST /api/payments/payos/create` + webhook | Payment |
 | UC-39 | `GET /api/orders?status=&page=&pageSize=` — buyer purchased orders (paged, newest first) | Order |

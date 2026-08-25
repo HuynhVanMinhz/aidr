@@ -46,8 +46,8 @@
 | UC-29 | View Cart | **Actor:** Buyer. Xem items, qty, giá snapshot, tổng. **Business:** Chuẩn bị checkout. | Done | P0 |
 | UC-30 | Add Product to Cart | **Actor:** Buyer. Thêm SP Approved còn tồn; gộp qty nếu trùng. **Business:** Capture intent mua. | Done | P0 |
 | UC-31 | Remove Product from Cart | **Actor:** Buyer. Xóa / giảm qty item. **Business:** Sửa giỏ trước thanh toán. | Done | P0 |
-| UC-32 | View Voucher | **Actor:** Buyer. List voucher System + Shop đang hiệu lực & đủ điều kiện. **Business:** Thúc đẩy conversion bằng KM. | Todo | P1 |
-| UC-33 | Apply Voucher | **Actor:** Buyer. Preview/apply giảm giá theo min order, limit, scope. **Business:** Áp dụng đúng policy KM. | Todo | P1 |
+| UC-32 | View Voucher | **Actor:** Buyer. List voucher System + Shop đang hiệu lực & đủ điều kiện. **Business:** Thúc đẩy conversion bằng KM. | Done | P1 |
+| UC-33 | Apply Voucher | **Actor:** Buyer. Preview/apply giảm giá theo min order, limit, scope. **Business:** Áp dụng đúng policy KM. | Done | P1 |
 | UC-34 | Create Order | **Actor:** Buyer. Split theo shop; snapshot địa chỉ & giá; reserve stock; tạo Payment pending. **Business:** Chốt đơn mua. | Done | P0 |
 | UC-35 | Make Payment | **Actor:** Buyer. Tạo link payOS; webhook cập nhật Paid. **Business:** Thu tiền online an toàn. | Done | P0 |
 | UC-36 | View Wishlist | **Actor:** Buyer. Danh sách SP yêu thích. **Business:** Lưu SP quan tâm để mua sau. | Todo | P1 |

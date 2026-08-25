@@ -25,6 +25,7 @@ public sealed class OrderRepository : IOrderRepository
         Guid shippingAddressId,
         IReadOnlyCollection<Guid>? cartItemIds,
         string? buyerNote,
+        IReadOnlyDictionary<Guid, Guid>? vouchersByShopId,
         CancellationToken cancellationToken = default)
     {
         await using var transaction = await _db.Database.BeginTransactionAsync(cancellationToken);
@@ -51,13 +52,31 @@ public sealed class OrderRepository : IOrderRepository
 
         ValidateCartItems(selectedItems);
 
+        var shopIdsInCart = selectedItems.Select(i => i.Product.ShopId).Distinct().ToHashSet();
+        if (vouchersByShopId is not null)
+        {
+            foreach (var shopId in vouchersByShopId.Keys)
+            {
+                if (!shopIdsInCart.Contains(shopId))
+                    throw new AppException("Voucher selection references a shop that is not in the cart.");
+            }
+        }
+
         var shippingSnapshotJson = BuildShippingSnapshotJson(address);
         var now = DateTime.UtcNow;
         var createdOrders = new List<CreatedOrderDto>();
+        var voucherUsageInCheckout = new Dictionary<Guid, int>();
 
         foreach (var shopGroup in selectedItems.GroupBy(i => i.Product.ShopId))
         {
             var shop = shopGroup.First().Product.Shop;
+            Guid? voucherId = null;
+            if (vouchersByShopId is not null &&
+                vouchersByShopId.TryGetValue(shop.ShopId, out var selectedVoucherId))
+            {
+                voucherId = selectedVoucherId;
+            }
+
             var order = await CreateShopOrderAsync(
                 buyerUserId,
                 shop,
@@ -65,6 +84,8 @@ public sealed class OrderRepository : IOrderRepository
                 address.AddressId,
                 shippingSnapshotJson,
                 buyerNote,
+                voucherId,
+                voucherUsageInCheckout,
                 now,
                 cancellationToken);
 
@@ -210,6 +231,7 @@ public sealed class OrderRepository : IOrderRepository
         var fromStatus = order.Status;
 
         await ReleaseReservedStockAsync(order, buyerUserId, now, cancellationToken);
+        await ReleaseVoucherRedemptionAsync(order, cancellationToken);
 
         order.Status = OrderConstants.StatusCancelled;
         order.CancelledAt = now;
@@ -513,6 +535,31 @@ public sealed class OrderRepository : IOrderRepository
         return null;
     }
 
+    private async Task ReleaseVoucherRedemptionAsync(Order order, CancellationToken cancellationToken)
+    {
+        if (order.VoucherId is null)
+            return;
+
+        var redemptions = await _db.VoucherRedemptions
+            .Where(r => r.OrderId == order.OrderId)
+            .ToListAsync(cancellationToken);
+
+        if (redemptions.Count == 0)
+            return;
+
+        var voucher = await _db.Vouchers
+            .FirstOrDefaultAsync(v => v.VoucherId == order.VoucherId.Value, cancellationToken);
+
+        if (voucher is not null)
+        {
+            voucher.UsedCount = Math.Max(0, voucher.UsedCount - redemptions.Count);
+            voucher.UpdatedAt = DateTime.UtcNow;
+        }
+
+        _db.VoucherRedemptions.RemoveRange(redemptions);
+        order.VoucherId = null;
+    }
+
     private async Task<CreatedOrderDto> CreateShopOrderAsync(
         Guid buyerUserId,
         Shop shop,
@@ -520,6 +567,8 @@ public sealed class OrderRepository : IOrderRepository
         Guid shippingAddressId,
         string shippingSnapshotJson,
         string? buyerNote,
+        Guid? voucherId,
+        Dictionary<Guid, int> voucherUsageInCheckout,
         DateTime now,
         CancellationToken cancellationToken)
     {
@@ -595,6 +644,26 @@ public sealed class OrderRepository : IOrderRepository
 
         subtotal = decimal.Round(subtotal, 2, MidpointRounding.AwayFromZero);
         var discount = OrderConstants.DefaultDiscountAmount;
+        Voucher? appliedVoucher = null;
+
+        if (voucherId is Guid selectedVoucherId && selectedVoucherId != Guid.Empty)
+        {
+            appliedVoucher = await ResolveAndValidateVoucherAsync(
+                selectedVoucherId,
+                buyerUserId,
+                shop.ShopId,
+                subtotal,
+                voucherUsageInCheckout,
+                now,
+                cancellationToken);
+
+            discount = VoucherConstants.CalculateDiscountAmount(
+                appliedVoucher.DiscountType,
+                appliedVoucher.DiscountValue,
+                appliedVoucher.MaxDiscountAmount,
+                subtotal);
+        }
+
         var shippingFee = OrderConstants.DefaultShippingFee;
         var total = decimal.Round(subtotal - discount + shippingFee, 2, MidpointRounding.AwayFromZero);
         if (total < 0)
@@ -614,6 +683,7 @@ public sealed class OrderRepository : IOrderRepository
             ShippingFee = shippingFee,
             TotalAmount = total,
             Currency = currency,
+            VoucherId = appliedVoucher?.VoucherId,
             BuyerNote = buyerNote,
             CreatedAt = now,
             UpdatedAt = now,
@@ -647,6 +717,25 @@ public sealed class OrderRepository : IOrderRepository
 
         _db.Orders.Add(order);
         _db.Payments.Add(payment);
+
+        if (appliedVoucher is not null)
+        {
+            appliedVoucher.UsedCount += 1;
+            appliedVoucher.UpdatedAt = now;
+            voucherUsageInCheckout[appliedVoucher.VoucherId] =
+                voucherUsageInCheckout.GetValueOrDefault(appliedVoucher.VoucherId) + 1;
+
+            _db.VoucherRedemptions.Add(new VoucherRedemption
+            {
+                RedemptionId = Guid.NewGuid(),
+                VoucherId = appliedVoucher.VoucherId,
+                UserId = buyerUserId,
+                OrderId = orderId,
+                DiscountAmount = discount,
+                RedeemedAt = now
+            });
+        }
+
         await _db.SaveChangesAsync(cancellationToken);
 
         return new CreatedOrderDto
@@ -666,6 +755,53 @@ public sealed class OrderRepository : IOrderRepository
             Items = itemDtos,
             CreatedAt = now
         };
+    }
+
+    private async Task<Voucher> ResolveAndValidateVoucherAsync(
+        Guid voucherId,
+        Guid buyerUserId,
+        Guid shopId,
+        decimal subtotal,
+        Dictionary<Guid, int> voucherUsageInCheckout,
+        DateTime now,
+        CancellationToken cancellationToken)
+    {
+        var voucher = await _db.Vouchers
+            .FirstOrDefaultAsync(v => v.VoucherId == voucherId, cancellationToken)
+            ?? throw new NotFoundException("Voucher not found.");
+
+        if (!voucher.IsActive)
+            throw new AppException("Voucher is not active.");
+
+        if (now < voucher.StartsAt)
+            throw new AppException("Voucher has not started yet.");
+
+        if (now > voucher.EndsAt)
+            throw new AppException("Voucher has expired.");
+
+        if (string.Equals(voucher.Scope, VoucherConstants.ScopeShop, StringComparison.OrdinalIgnoreCase))
+        {
+            if (voucher.ShopId is null || voucher.ShopId.Value != shopId)
+                throw new AppException("Shop voucher does not apply to this shop.");
+        }
+        else if (!string.Equals(voucher.Scope, VoucherConstants.ScopeSystem, StringComparison.OrdinalIgnoreCase))
+        {
+            throw new AppException("Voucher scope is invalid.");
+        }
+
+        var pendingInCheckout = voucherUsageInCheckout.GetValueOrDefault(voucher.VoucherId);
+        if (voucher.UsageLimit is int usageLimit && voucher.UsedCount + pendingInCheckout >= usageLimit)
+            throw new AppException("Voucher usage limit has been reached.");
+
+        var userUsed = await _db.VoucherRedemptions
+            .CountAsync(r => r.VoucherId == voucher.VoucherId && r.UserId == buyerUserId, cancellationToken);
+        if (userUsed + pendingInCheckout >= voucher.PerUserLimit)
+            throw new AppException("You have already used this voucher the maximum number of times.");
+
+        if (subtotal < voucher.MinOrderAmount)
+            throw new AppException($"Minimum order amount is {voucher.MinOrderAmount:0.##}.");
+
+        return voucher;
     }
 
     private async Task<List<OrderItemLotAllocation>> AllocateLotsFifoAsync(
