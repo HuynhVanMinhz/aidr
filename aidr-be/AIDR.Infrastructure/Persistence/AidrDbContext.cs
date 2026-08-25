@@ -37,6 +37,10 @@ public class AidrDbContext : DbContext
     public DbSet<OrderItemLotAllocation> OrderItemLotAllocations => Set<OrderItemLotAllocation>();
     public DbSet<OrderStatusHistory> OrderStatusHistories => Set<OrderStatusHistory>();
     public DbSet<Payment> Payments => Set<Payment>();
+    public DbSet<ReturnRequest> ReturnRequests => Set<ReturnRequest>();
+    public DbSet<ReturnRequestItem> ReturnRequestItems => Set<ReturnRequestItem>();
+    public DbSet<ReturnEvidence> ReturnEvidences => Set<ReturnEvidence>();
+    public DbSet<ReturnStatusHistory> ReturnStatusHistories => Set<ReturnStatusHistory>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -546,6 +550,77 @@ public class AidrDbContext : DbContext
                 .HasForeignKey(x => x.OrderId)
                 .OnDelete(DeleteBehavior.Restrict);
             e.HasIndex(x => x.OrderId);
+        });
+
+        modelBuilder.Entity<ReturnRequest>(e =>
+        {
+            e.ToTable("ReturnRequests");
+            e.HasKey(x => x.ReturnRequestId);
+            e.Property(x => x.Reason).HasMaxLength(500).IsRequired();
+            e.Property(x => x.Description).HasMaxLength(2000);
+            e.Property(x => x.ResolutionType).HasMaxLength(20).IsRequired();
+            e.Property(x => x.Status).HasMaxLength(30).IsRequired();
+            e.Property(x => x.RefundAmount).HasPrecision(18, 2);
+            e.Property(x => x.AdminNote).HasMaxLength(500);
+            e.HasOne(x => x.Order)
+                .WithMany()
+                .HasForeignKey(x => x.OrderId)
+                .OnDelete(DeleteBehavior.Restrict);
+            e.HasOne(x => x.Buyer)
+                .WithMany()
+                .HasForeignKey(x => x.BuyerUserId)
+                .OnDelete(DeleteBehavior.Restrict);
+            e.HasOne(x => x.Reviewer)
+                .WithMany()
+                .HasForeignKey(x => x.ReviewedBy)
+                .OnDelete(DeleteBehavior.Restrict);
+            e.HasIndex(x => x.OrderId);
+            e.HasIndex(x => x.Status);
+            e.HasIndex(x => x.BuyerUserId);
+        });
+
+        modelBuilder.Entity<ReturnRequestItem>(e =>
+        {
+            e.ToTable("ReturnRequestItems");
+            e.HasKey(x => x.ReturnItemId);
+            e.HasOne(x => x.ReturnRequest)
+                .WithMany(x => x.Items)
+                .HasForeignKey(x => x.ReturnRequestId)
+                .OnDelete(DeleteBehavior.Cascade);
+            e.HasOne(x => x.OrderItem)
+                .WithMany()
+                .HasForeignKey(x => x.OrderItemId)
+                .OnDelete(DeleteBehavior.Restrict);
+            e.HasIndex(x => x.ReturnRequestId);
+        });
+
+        modelBuilder.Entity<ReturnEvidence>(e =>
+        {
+            e.ToTable("ReturnEvidences");
+            e.HasKey(x => x.EvidenceId);
+            e.Property(x => x.EvidenceType).HasMaxLength(20).IsRequired();
+            e.Property(x => x.MediaUrl).HasMaxLength(512).IsRequired();
+            e.Property(x => x.PublicId).HasMaxLength(256);
+            e.HasOne(x => x.ReturnRequest)
+                .WithMany(x => x.Evidences)
+                .HasForeignKey(x => x.ReturnRequestId)
+                .OnDelete(DeleteBehavior.Cascade);
+            e.HasIndex(x => new { x.ReturnRequestId, x.EvidenceType });
+        });
+
+        modelBuilder.Entity<ReturnStatusHistory>(e =>
+        {
+            e.ToTable("ReturnStatusHistories");
+            e.HasKey(x => x.HistoryId);
+            e.Property(x => x.HistoryId).ValueGeneratedOnAdd();
+            e.Property(x => x.FromStatus).HasMaxLength(30);
+            e.Property(x => x.ToStatus).HasMaxLength(30).IsRequired();
+            e.Property(x => x.Note).HasMaxLength(300);
+            e.HasOne(x => x.ReturnRequest)
+                .WithMany(x => x.StatusHistories)
+                .HasForeignKey(x => x.ReturnRequestId)
+                .OnDelete(DeleteBehavior.Cascade);
+            e.HasIndex(x => x.ReturnRequestId);
         });
     }
 }
