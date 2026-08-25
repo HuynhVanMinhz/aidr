@@ -122,7 +122,7 @@ aidr-be/
 | UC-17 | `GET /api/seller/inventory`; `GET/PATCH /api/seller/products/{id}/inventory`; `POST .../inventory/adjust` | SellerCenter |
 | UC-91 | `POST /api/seller/products/{id}/lots` — nhập lô + UnitCost | SellerCenter |
 | UC-92 | `PATCH /api/seller/products/{id}/price` — đổi giá bán + ghi history | SellerCenter |
-| UC-46/47 | `GET/PATCH /api/seller/orders` | SellerCenter |
+| UC-46/47 | `GET /api/seller/orders`, `GET/PATCH /api/seller/orders/{orderId}` — shop orders; status Paid→Confirmed→Shipping→Delivered + tracking | SellerCenter |
 | UC-69/70 | `GET /api/seller/dashboard`, `/reports` | SellerCenter |
 | UC-85 | `GET /api/seller/wallet` | SellerCenter |
 | UC-87..89 | Shop vouchers CRUD | SellerCenter |
