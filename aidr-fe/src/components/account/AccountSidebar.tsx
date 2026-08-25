@@ -19,6 +19,11 @@ export function AccountSidebar() {
       icon: '/theme/images/icon-order-primary.svg',
     },
     {
+      to: '/account/wishlist',
+      label: 'Wishlist',
+      icon: '/theme/images/icon-wishlist-primary.svg',
+    },
+    {
       to: '/account/addresses',
       label: 'Shipping addresses',
       icon: '/theme/images/icon-location-primary.svg',

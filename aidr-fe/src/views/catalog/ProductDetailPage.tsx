@@ -5,6 +5,7 @@ import { useAuth } from '../../hooks/useAuth';
 import { useProductDetail } from '../../hooks/useCatalog';
 import { useCart } from '../../hooks/useCart';
 import { useToast } from '../../hooks/useToast';
+import { useWishlistProduct } from '../../hooks/useWishlist';
 import {
   discountPercent,
   formatDateVi,
@@ -53,11 +54,18 @@ export function ProductDetailPage() {
   const { isAuthenticated } = useAuth();
   const { product, loading, error } = useProductDetail(id);
   const { addItem, mutating, getErrorMessage } = useCart({ autoLoad: isAuthenticated });
+  const {
+    inWishlist,
+    toggle: toggleWishlist,
+    mutating: wishlistBusy,
+    getErrorMessage: getWishlistError,
+  } = useWishlistProduct(id);
   const toast = useToast();
   const [activeImage, setActiveImage] = useState(0);
   const [tab, setTab] = useState<'description' | 'specs' | 'reviews'>('description');
   const [qty, setQty] = useState(1);
   const [adding, setAdding] = useState(false);
+  const [wishlistPending, setWishlistPending] = useState(false);
 
   const images = useMemo(() => {
     if (!product) return [];
@@ -120,6 +128,24 @@ export function ProductDetailPage() {
       toast.error(getErrorMessage(err, 'Unable to add item to cart.'));
     } finally {
       setAdding(false);
+    }
+  }
+
+  async function handleWishlistToggle() {
+    if (!isAuthenticated) {
+      const returnUrl = encodeURIComponent(location.pathname + location.search);
+      navigate(`/login?returnUrl=${returnUrl}`);
+      return;
+    }
+
+    setWishlistPending(true);
+    try {
+      await toggleWishlist();
+      toast.success(inWishlist ? 'Removed from wishlist.' : 'Added to wishlist.');
+    } catch (err) {
+      toast.error(getWishlistError(err, 'Unable to update wishlist.'));
+    } finally {
+      setWishlistPending(false);
     }
   }
 
@@ -245,9 +271,17 @@ export function ProductDetailPage() {
                     <div className="product-single-action">
                       <ul>
                         <li>
-                          <Link to="/login" aria-label="Wishlist">
+                          <button
+                            type="button"
+                            className={`product-card-cart-btn${inWishlist ? ' is-wishlisted' : ''}`}
+                            aria-label={inWishlist ? 'Remove from wishlist' : 'Add to wishlist'}
+                            aria-pressed={inWishlist}
+                            title={inWishlist ? 'Remove from wishlist' : 'Add to wishlist'}
+                            disabled={wishlistPending || wishlistBusy}
+                            onClick={() => void handleWishlistToggle()}
+                          >
                             <img src="/theme/images/icon-wishlist-primary.svg" alt="" />
-                          </Link>
+                          </button>
                         </li>
                         <li>
                           <a href="#compare" onClick={(e) => e.preventDefault()} aria-label="Compare">

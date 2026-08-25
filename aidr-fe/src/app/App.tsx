@@ -16,6 +16,7 @@ import { AddressesPage } from '../views/account/AddressesPage';
 import { ChangePasswordPage } from '../views/account/ChangePasswordPage';
 import { OrdersPage } from '../views/account/OrdersPage';
 import { OrderDetailPage } from '../views/account/OrderDetailPage';
+import { WishlistPage } from '../views/account/WishlistPage';
 import { ProductListPage } from '../views/catalog/ProductListPage';
 import { ProductDetailPage } from '../views/catalog/ProductDetailPage';
 import { CategoriesPage } from '../views/catalog/CategoriesPage';
@@ -120,9 +121,11 @@ export function App() {
               <Route path="profile" element={<ProfilePage />} />
               <Route path="orders" element={<OrdersPage />} />
               <Route path="orders/:orderId" element={<OrderDetailPage />} />
+              <Route path="wishlist" element={<WishlistPage />} />
               <Route path="addresses" element={<AddressesPage />} />
               <Route path="change-password" element={<ChangePasswordPage />} />
             </Route>
+            <Route path="wishlist" element={<Navigate to="/account/wishlist" replace />} />
             <Route path="orders" element={<Navigate to="/account/orders" replace />} />
             <Route path="orders/:orderId" element={<OrdersRedirect />} />
           </Route>
