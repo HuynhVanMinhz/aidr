@@ -34,6 +34,9 @@ import { AdminSystemVoucherListPage } from '../views/admin/AdminSystemVoucherLis
 import { AdminSystemVoucherFormPage } from '../views/admin/AdminSystemVoucherFormPage';
 import { AdminReturnRequestListPage } from '../views/admin/AdminReturnRequestListPage';
 import { AdminReturnRequestDetailPage } from '../views/admin/AdminReturnRequestDetailPage';
+import { AdminAccountListPage } from '../views/admin/AdminAccountListPage';
+import { AdminAccountDetailPage } from '../views/admin/AdminAccountDetailPage';
+import { AdminCustomerInsightsPage } from '../views/admin/AdminCustomerInsightsPage';
 import { SellerHomePage } from '../views/seller/SellerHomePage';
 import { SellerProductListPage } from '../views/seller/SellerProductListPage';
 import { SellerProductFormPage } from '../views/seller/SellerProductFormPage';
@@ -94,6 +97,9 @@ export function App() {
             <Route path="vouchers" element={<AdminSystemVoucherListPage />} />
             <Route path="vouchers/new" element={<AdminSystemVoucherFormPage />} />
             <Route path="vouchers/:id/edit" element={<AdminSystemVoucherFormPage />} />
+            <Route path="accounts" element={<AdminAccountListPage />} />
+            <Route path="accounts/:id" element={<AdminAccountDetailPage />} />
+            <Route path="insights" element={<AdminCustomerInsightsPage />} />
           </Route>
         </Route>
 

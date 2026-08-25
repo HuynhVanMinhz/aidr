@@ -1,5 +1,6 @@
 import { configureStore } from '@reduxjs/toolkit';
 import { adminSlice } from './adminSlice';
+import { adminGovernanceSlice } from './adminGovernanceSlice';
 import { adminReturnsSlice } from './adminReturnsSlice';
 import { appSlice } from './appSlice';
 import { authSlice } from './authSlice';
@@ -46,6 +47,7 @@ export const store = configureStore({
     sellerOrders: sellerOrdersSlice.reducer,
     theme: themeSlice.reducer,
     admin: adminSlice.reducer,
+    adminGovernance: adminGovernanceSlice.reducer,
     adminReturns: adminReturnsSlice.reducer,
     seller: sellerSlice.reducer,
   },
