@@ -115,7 +115,8 @@ aidr-fe/
 | `notifications` | inbox + unread count | UC-44/45 |
 | `chat` | threads + active messages window | UC-57/58 |
 | `seller` | my products, inventory & pricing, dashboard KPIs | UC-16, 17, 91, 92, 69, 70, 85 |
-| `admin` | moderation queues, accounts | UC-18..25, 72..81 |
+| `admin` | moderation queues, accounts | UC-18..25, 72..76 |
+| `adminVoucher` | system voucher list/detail cache | UC-78..81 |
 
 **Caching rules:**
 - List/search: giữ theo `queryKey` (q + filters + sort + page); stale-time ngắn.
@@ -262,7 +263,7 @@ VITE_SIGNALR_HUB_URL=https://api.aidr.local/hubs
 | Chat list / room | UC-57/58 |
 | Reviews / Seller profile / Follow | UC-59..67 |
 | Seller dashboard / reports / wallet / shop vouchers | UC-69, 70, 85, 87..89 |
-| Admin accounts / seller requests / system vouchers / insights | UC-71..81 |
+| Admin accounts / seller requests / system vouchers / insights | UC-71..81 (`/admin/vouchers`, `voucherApi` admin + `adminVoucherSlice`, create/edit/status/delete) |
 
 ---
 
