@@ -14,6 +14,71 @@ html[data-aidr-shell='admin'] .dropdown-menu.show {
   display: block;
 }
 
+/* Flatpickr — align with AIDR admin primary (#16181D) */
+html[data-aidr-shell='admin'] .flatpickr-calendar {
+  box-shadow: 0 0.5rem 1.5rem rgba(22, 24, 29, 0.12);
+  border: 1px solid rgba(22, 24, 29, 0.08);
+}
+
+html[data-aidr-shell='admin'] .flatpickr-day.selected,
+html[data-aidr-shell='admin'] .flatpickr-day.startRange,
+html[data-aidr-shell='admin'] .flatpickr-day.endRange,
+html[data-aidr-shell='admin'] .flatpickr-day.selected:hover,
+html[data-aidr-shell='admin'] .flatpickr-day.startRange:hover,
+html[data-aidr-shell='admin'] .flatpickr-day.endRange:hover {
+  background: #16181d;
+  border-color: #16181d;
+}
+
+html[data-aidr-shell='admin'] .flatpickr-day.today:not(.selected) {
+  border-color: #16181d;
+}
+
+html[data-aidr-shell='admin'] .flatpickr-months .flatpickr-month,
+html[data-aidr-shell='admin'] .flatpickr-current-month .flatpickr-monthDropdown-months,
+html[data-aidr-shell='admin'] span.flatpickr-weekday {
+  color: #16181d;
+}
+
+html[data-aidr-shell='admin'] .flatpickr-input[readonly],
+html[data-aidr-shell='admin'] .flatpickr-input.form-control[readonly],
+html[data-aidr-shell='admin'] .aidr-datepicker input.form-control[readonly] {
+  background-color: var(--bs-body-bg, #fff);
+  cursor: pointer;
+  width: 100%;
+}
+
+html[data-aidr-shell='admin'] .aidr-datepicker {
+  width: 100%;
+}
+
+/* Hard-hide any accidental duplicate flatpickr inputs */
+html[data-aidr-shell='admin'] .aidr-datepicker > input:nth-child(n + 2),
+html[data-aidr-shell='admin'] .aidr-datepicker input.flatpickr-mobile {
+  display: none !important;
+}
+
+/* Prevent Bootstrap columns / ApexCharts from overflowing cards */
+html[data-aidr-shell='admin'] .row > [class*='col-'] {
+  min-width: 0;
+}
+
+html[data-aidr-shell='admin'] .aidr-apex-chart {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  overflow: hidden;
+}
+
+html[data-aidr-shell='admin'] .aidr-apex-chart .apexcharts-canvas,
+html[data-aidr-shell='admin'] .aidr-apex-chart .apexcharts-svg {
+  max-width: 100% !important;
+}
+
+html[data-aidr-shell='admin'] .card .card-body:has(.aidr-apex-chart) {
+  overflow: hidden;
+}
+
 /* Light topbar has no theme padding-top; keep content clear of header/sidebar edges. */
 html[data-aidr-shell='admin'] .wrapper .page-content {
   padding-top: 1.5rem;

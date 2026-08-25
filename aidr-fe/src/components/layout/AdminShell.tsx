@@ -30,6 +30,9 @@ function pageTitle(pathname: string, variant: AdminShellVariant) {
   if (variant === 'seller' && pathname === '/seller') return 'Dashboard';
   if (pathname.includes('/chat')) return 'Chat';
   if (pathname.includes('/notifications')) return 'Notifications';
+  if (pathname.match(/\/accounts\/[^/]+$/)) return 'Account Details';
+  if (pathname.includes('/accounts')) return 'Accounts';
+  if (pathname.includes('/insights')) return 'Customer Insights';
   if (pathname.includes('/vouchers/new')) {
     return variant === 'seller' ? 'Create Shop Voucher' : 'Create System Voucher';
   }
@@ -73,6 +76,9 @@ export function AdminShell({ variant = 'admin', children }: AdminShellProps) {
   const [moderationOpen, setModerationOpen] = useState(
     variant === 'admin' && pathname.includes('/products'),
   );
+  const [governanceOpen, setGovernanceOpen] = useState(
+    pathname.includes('/accounts') || pathname.includes('/insights'),
+  );
   const [userOpen, setUserOpen] = useState(false);
 
   useEffect(() => {
@@ -80,6 +86,7 @@ export function AdminShell({ variant = 'admin', children }: AdminShellProps) {
     if (pathname.includes('/vouchers')) setVoucherOpen(true);
     if (pathname.includes('/seller-registrations')) setSellerRegOpen(true);
     if (pathname.includes('/return-requests')) setReturnOpen(true);
+    if (pathname.includes('/accounts') || pathname.includes('/insights')) setGovernanceOpen(true);
     if (pathname.includes('/products')) {
       setProductOpen(true);
       if (variant === 'admin') setModerationOpen(true);
@@ -340,6 +347,42 @@ export function AdminShell({ variant = 'admin', children }: AdminShellProps) {
                         end
                       >
                         Queue
+                      </NavLink>
+                    </li>
+                  </ul>
+                </div>
+              </li>
+              <li className="nav-item">
+                <a
+                  className={`nav-link menu-arrow ${governanceOpen ? '' : 'collapsed'}`}
+                  href="#sidebarGovernance"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setGovernanceOpen((v) => !v);
+                  }}
+                >
+                  <span className="nav-icon">
+                    <IconifyIcon icon="solar:shield-user-bold-duotone" />
+                  </span>
+                  <span className="nav-text">Governance</span>
+                </a>
+                <div className={`collapse ${governanceOpen ? 'show' : ''}`} id="sidebarGovernance">
+                  <ul className="nav sub-navbar-nav">
+                    <li className="sub-nav-item">
+                      <NavLink
+                        className={({ isActive }) => `sub-nav-link${isActive ? ' active' : ''}`}
+                        to="/admin/accounts"
+                        end
+                      >
+                        Accounts
+                      </NavLink>
+                    </li>
+                    <li className="sub-nav-item">
+                      <NavLink
+                        className={({ isActive }) => `sub-nav-link${isActive ? ' active' : ''}`}
+                        to="/admin/insights"
+                      >
+                        Customer Insights
                       </NavLink>
                     </li>
                   </ul>

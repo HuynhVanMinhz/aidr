@@ -1,4 +1,9 @@
 import type {
+  AdminAccount,
+  AdminAccountListQuery,
+  AdminAccountListResult,
+  AdminCustomerInsights,
+  AdminCustomerInsightsQuery,
   AdminProductDetail,
   AdminProductListQuery,
   AdminProductListResult,
@@ -85,6 +90,48 @@ export async function rejectAdminProduct(id: string, payload: RejectProductPaylo
 export async function getProductModerationHistory(id: string) {
   const { data } = await apiClient.get<ApiResult<ProductModerationHistoryResult>>(
     `/admin/products/${id}/moderation-history`,
+  );
+  return data;
+}
+
+export async function listAdminAccounts(query: AdminAccountListQuery = {}) {
+  const { data } = await apiClient.get<ApiResult<AdminAccountListResult>>('/admin/accounts', {
+    params: {
+      status: query.status ?? 'all',
+      role: query.role ?? 'all',
+      q: query.q || undefined,
+      page: query.page ?? 1,
+      pageSize: query.pageSize ?? 10,
+    },
+  });
+  return data;
+}
+
+export async function getAdminAccount(id: string) {
+  const { data } = await apiClient.get<ApiResult<AdminAccount>>(`/admin/accounts/${id}`);
+  return data;
+}
+
+export async function lockAdminAccount(id: string) {
+  const { data } = await apiClient.post<ApiResult<AdminAccount>>(`/admin/accounts/${id}/lock`);
+  return data;
+}
+
+export async function unlockAdminAccount(id: string) {
+  const { data } = await apiClient.post<ApiResult<AdminAccount>>(`/admin/accounts/${id}/unlock`);
+  return data;
+}
+
+export async function getAdminCustomerInsights(query: AdminCustomerInsightsQuery = {}) {
+  const { data } = await apiClient.get<ApiResult<AdminCustomerInsights>>(
+    '/admin/insights/customers',
+    {
+      params: {
+        from: query.from || undefined,
+        to: query.to || undefined,
+        granularity: query.granularity || undefined,
+      },
+    },
   );
   return data;
 }
