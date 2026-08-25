@@ -27,6 +27,8 @@ public class AidrDbContext : DbContext
     public DbSet<ProductModerationHistory> ProductModerationHistories => Set<ProductModerationHistory>();
     public DbSet<Cart> Carts => Set<Cart>();
     public DbSet<CartItem> CartItems => Set<CartItem>();
+    public DbSet<Voucher> Vouchers => Set<Voucher>();
+    public DbSet<VoucherRedemption> VoucherRedemptions => Set<VoucherRedemption>();
     public DbSet<Order> Orders => Set<Order>();
     public DbSet<OrderItem> OrderItems => Set<OrderItem>();
     public DbSet<OrderItemLotAllocation> OrderItemLotAllocations => Set<OrderItemLotAllocation>();
@@ -364,6 +366,55 @@ public class AidrDbContext : DbContext
                 .WithMany()
                 .HasForeignKey(x => x.ShippingAddressId)
                 .OnDelete(DeleteBehavior.Restrict);
+            e.HasOne(x => x.Voucher)
+                .WithMany()
+                .HasForeignKey(x => x.VoucherId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<Voucher>(e =>
+        {
+            e.ToTable("Vouchers");
+            e.HasKey(x => x.VoucherId);
+            e.Property(x => x.Code).HasMaxLength(40).IsRequired();
+            e.Property(x => x.Name).HasMaxLength(150).IsRequired();
+            e.Property(x => x.Description).HasMaxLength(500);
+            e.Property(x => x.Scope).HasMaxLength(20).IsRequired();
+            e.Property(x => x.DiscountType).HasMaxLength(20).IsRequired();
+            e.Property(x => x.DiscountValue).HasPrecision(18, 2);
+            e.Property(x => x.MaxDiscountAmount).HasPrecision(18, 2);
+            e.Property(x => x.MinOrderAmount).HasPrecision(18, 2);
+            e.HasIndex(x => x.Code).IsUnique();
+            e.HasIndex(x => new { x.IsActive, x.StartsAt, x.EndsAt });
+            e.HasOne(x => x.Shop)
+                .WithMany()
+                .HasForeignKey(x => x.ShopId)
+                .OnDelete(DeleteBehavior.Restrict);
+            e.HasOne(x => x.Creator)
+                .WithMany()
+                .HasForeignKey(x => x.CreatedBy)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<VoucherRedemption>(e =>
+        {
+            e.ToTable("VoucherRedemptions");
+            e.HasKey(x => x.RedemptionId);
+            e.Property(x => x.DiscountAmount).HasPrecision(18, 2);
+            e.HasOne(x => x.Voucher)
+                .WithMany(x => x.Redemptions)
+                .HasForeignKey(x => x.VoucherId)
+                .OnDelete(DeleteBehavior.Restrict);
+            e.HasOne(x => x.User)
+                .WithMany()
+                .HasForeignKey(x => x.UserId)
+                .OnDelete(DeleteBehavior.Restrict);
+            e.HasOne(x => x.Order)
+                .WithMany()
+                .HasForeignKey(x => x.OrderId)
+                .OnDelete(DeleteBehavior.Restrict);
+            e.HasIndex(x => new { x.VoucherId, x.UserId });
+            e.HasIndex(x => x.OrderId);
         });
 
         modelBuilder.Entity<OrderItem>(e =>

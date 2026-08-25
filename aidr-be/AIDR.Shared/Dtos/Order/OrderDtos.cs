@@ -8,6 +8,9 @@ public sealed class CreateOrderRequest
     public List<Guid>? CartItemIds { get; set; }
 
     public string? BuyerNote { get; set; }
+
+    /// <summary>Optional one voucher per shop order (System or Shop scope).</summary>
+    public List<OrderVoucherSelection>? Vouchers { get; set; }
 }
 
 public sealed class CreateOrderResponse

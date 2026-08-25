@@ -9,6 +9,7 @@ public interface IOrderRepository
         Guid shippingAddressId,
         IReadOnlyCollection<Guid>? cartItemIds,
         string? buyerNote,
+        IReadOnlyDictionary<Guid, Guid>? vouchersByShopId,
         CancellationToken cancellationToken = default);
 
     Task<(IReadOnlyList<BuyerOrderListItemDto> Items, int TotalCount, int EffectivePage)> ListBuyerOrdersAsync(
