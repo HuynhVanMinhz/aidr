@@ -92,4 +92,21 @@ public class DevController : ControllerBase
             totalCount = total
         });
     }
+
+    [HttpPost("seed-vouchers")]
+    public async Task<IActionResult> SeedVouchers(
+        [FromServices] AidrDbContext db,
+        [FromServices] IWebHostEnvironment env,
+        CancellationToken ct)
+    {
+        if (!env.IsDevelopment())
+            return NotFound();
+
+        var result = await VoucherDemoSeeder.SeedAsync(db, ct);
+        return Ok(new
+        {
+            message = "Voucher demo seed completed.",
+            vouchers = result.Vouchers
+        });
+    }
 }

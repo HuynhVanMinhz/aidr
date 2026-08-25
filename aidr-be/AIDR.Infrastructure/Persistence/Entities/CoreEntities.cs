@@ -374,9 +374,51 @@ public class Order
     public User Buyer { get; set; } = null!;
     public Shop Shop { get; set; } = null!;
     public Address? ShippingAddress { get; set; }
+    public Voucher? Voucher { get; set; }
     public ICollection<OrderItem> Items { get; set; } = new List<OrderItem>();
     public ICollection<OrderStatusHistory> StatusHistories { get; set; } = new List<OrderStatusHistory>();
     public ICollection<Payment> Payments { get; set; } = new List<Payment>();
+}
+
+public class Voucher
+{
+    public Guid VoucherId { get; set; }
+    public string Code { get; set; } = null!;
+    public string Name { get; set; } = null!;
+    public string? Description { get; set; }
+    public string Scope { get; set; } = null!;
+    public Guid? ShopId { get; set; }
+    public string DiscountType { get; set; } = null!;
+    public decimal DiscountValue { get; set; }
+    public decimal? MaxDiscountAmount { get; set; }
+    public decimal MinOrderAmount { get; set; }
+    public int? UsageLimit { get; set; }
+    public int PerUserLimit { get; set; } = 1;
+    public int UsedCount { get; set; }
+    public DateTime StartsAt { get; set; }
+    public DateTime EndsAt { get; set; }
+    public bool IsActive { get; set; } = true;
+    public Guid CreatedBy { get; set; }
+    public DateTime CreatedAt { get; set; }
+    public DateTime UpdatedAt { get; set; }
+
+    public Shop? Shop { get; set; }
+    public User Creator { get; set; } = null!;
+    public ICollection<VoucherRedemption> Redemptions { get; set; } = new List<VoucherRedemption>();
+}
+
+public class VoucherRedemption
+{
+    public Guid RedemptionId { get; set; }
+    public Guid VoucherId { get; set; }
+    public Guid UserId { get; set; }
+    public Guid? OrderId { get; set; }
+    public decimal DiscountAmount { get; set; }
+    public DateTime RedeemedAt { get; set; }
+
+    public Voucher Voucher { get; set; } = null!;
+    public User User { get; set; } = null!;
+    public Order? Order { get; set; }
 }
 
 public class OrderItem
