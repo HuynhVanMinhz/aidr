@@ -1,0 +1,46 @@
+---
+description: AIDR — Null/blank fields must show contextual English empty text, not bare "—".
+globs: aidr-fe/src/**/*.{tsx,ts}
+alwaysApply: false
+---
+
+# AIDR — Null / empty display text
+
+When rendering optional or nullable data on **FE UI** (detail cards, tables, summaries):
+
+## Rule
+
+1. **Do not** leave the UI blank, or only show a bare dash `—` / `N/A` with no meaning.
+2. Show a **short English phrase** that explains the missing value for that field.
+3. Prefer muted styling (`text-muted`) for empty-state copy so it does not look like real data.
+4. Reuse helpers in `utils/displayValue.ts` (`displayText`, `displayOptionalNumber`, `isBlank`) and `formatDateTime(value, emptyLabel)`.
+
+## Examples
+
+```tsx
+// ❌
+<p>{product.brand || '—'}</p>
+<p>{formatDateTime(product.publishedAt)}</p> // defaults to "—"
+
+// ✅
+<p className={isBlank(product.brand) ? 'text-muted' : undefined}>
+  {displayText(product.brand, 'No brand provided')}
+</p>
+<p className={!product.publishedAt ? 'text-muted' : undefined}>
+  {formatDateTime(product.publishedAt, 'Not published yet')}
+</p>
+```
+
+| Field kind | Suggested empty copy |
+|------------|----------------------|
+| Brand / model / origin | `No brand provided` / `No model number` / `Origin not specified` |
+| Description | `No description provided` |
+| Date not set yet | `Not published yet`, `Not reviewed yet` |
+| Images / list | `No images uploaded`, `No items yet` |
+| Warranty / count | `No warranty listed` |
+
+## Do not
+
+- Invent fake data (fake dates, “0 months”) when the value is truly unknown.
+- Mix Vietnamese empty labels on English UI screens.
+- Use only `—` on Admin/Seller detail pages where context matters (moderation, returns, inventory).
