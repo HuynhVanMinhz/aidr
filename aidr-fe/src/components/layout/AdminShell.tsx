@@ -1,7 +1,9 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { IconifyIcon } from '../admin/IconifyIcon';
+import { AdminNotificationDropdown } from '../notifications/AdminNotificationDropdown';
 import { useAuth } from '../../hooks/useAuth';
+import { useNotificationHub } from '../../hooks/useNotificationHub';
 import { useTheme } from '../../hooks/useTheme';
 import '../../styles/admin.css';
 
@@ -23,6 +25,7 @@ function toggleAdminMenu() {
 }
 
 function pageTitle(pathname: string, variant: AdminShellVariant) {
+  if (pathname.includes('/notifications')) return 'Notifications';
   if (pathname.includes('/vouchers/new')) {
     return variant === 'seller' ? 'Create Shop Voucher' : 'Create System Voucher';
   }
@@ -53,6 +56,7 @@ function pageTitle(pathname: string, variant: AdminShellVariant) {
 }
 
 export function AdminShell({ variant = 'admin', children }: AdminShellProps) {
+  useNotificationHub();
   const { pathname } = useLocation();
   const navigate = useNavigate();
   const { user, logout } = useAuth();
@@ -111,6 +115,10 @@ export function AdminShell({ variant = 'admin', children }: AdminShellProps) {
                   />
                 </button>
               </div>
+
+              {variant === 'seller' ? (
+                <AdminNotificationDropdown inboxPath="/seller/notifications" />
+              ) : null}
 
               <div className={`dropdown topbar-item ${userOpen ? 'show' : ''}`}>
                 <button
@@ -393,6 +401,17 @@ export function AdminShell({ variant = 'admin', children }: AdminShellProps) {
                     <IconifyIcon icon="solar:bag-check-bold-duotone" />
                   </span>
                   <span className="nav-text">Orders</span>
+                </NavLink>
+              </li>
+              <li className="nav-item">
+                <NavLink
+                  className={({ isActive }) => `nav-link${isActive ? ' active' : ''}`}
+                  to="/seller/notifications"
+                >
+                  <span className="nav-icon">
+                    <IconifyIcon icon="solar:bell-bing-bold-duotone" />
+                  </span>
+                  <span className="nav-text">Notifications</span>
                 </NavLink>
               </li>
               <li className="nav-item">
