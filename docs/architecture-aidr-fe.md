@@ -88,7 +88,7 @@ aidr-fe/
 | Buyer account | `/account/*`, `/cart`, `/checkout`, `/wishlist`, `/orders` | Buyer (+Seller nếu dual-role) |
 | AI | `/ai/assistant`, compare modal/page | Buyer |
 | Chat | `/chat` | Buyer / Seller |
-| Seller center | `/seller`, `/seller/products`, `/seller/products/new`, `/seller/products/:id`, `/seller/products/:id/edit`, `/seller/inventory`, `/seller/products/:id/inventory` | Seller |
+| Seller center | `/seller`, `/seller/products`, `/seller/products/new`, `/seller/products/:id`, `/seller/products/:id/edit`, `/seller/inventory`, `/seller/products/:id/inventory`, `/seller/orders`, `/seller/orders/:orderId` | Seller |
 | Admin | `/admin/*` | Admin |
 
 **Guard flow:**
@@ -109,6 +109,7 @@ aidr-fe/
 | `shop` | public shop detail, seller rating, shop products | UC-62b, UC-64 |
 | `cart` | items, qty, unit price snapshot, subtotal; cleared on logout | UC-29..31 |
 | `orders` | buyer order list/detail cache | UC-39..42 |
+| `sellerOrders` | seller shop order list/detail cache | UC-46/47 |
 | `wishlist` | product ids | UC-36..38 |
 | `notifications` | inbox + unread count | UC-44/45 |
 | `chat` | threads + active messages window | UC-57/58 |
@@ -253,7 +254,7 @@ VITE_SIGNALR_HUB_URL=https://api.aidr.local/hubs
 | My orders / detail | UC-39..42 (`/account/orders`, `/account/orders/:orderId`, `ordersSlice`, cancel + confirm received); `/orders` redirects here |
 | Wishlist | UC-36..38 |
 | Notifications | UC-44/45 |
-| Seller orders | UC-46/47 |
+| Seller orders | UC-46/47 (`/seller/orders`, `/seller/orders/:orderId`, `sellerOrdersSlice`, update status + tracking) |
 | Admin returns | UC-48..52 |
 | Recommend / Similar blocks | UC-53/54 |
 | AI chatbot | UC-56 |
