@@ -303,3 +303,29 @@ public class ProductModerationHistory
     public Product Product { get; set; } = null!;
     public User AdminUser { get; set; } = null!;
 }
+
+public class Cart
+{
+    public Guid CartId { get; set; }
+    public Guid UserId { get; set; }
+    public DateTime UpdatedAt { get; set; }
+    public DateTime CreatedAt { get; set; }
+
+    public User User { get; set; } = null!;
+    public ICollection<CartItem> Items { get; set; } = new List<CartItem>();
+}
+
+public class CartItem
+{
+    public Guid CartItemId { get; set; }
+    public Guid CartId { get; set; }
+    public Guid ProductId { get; set; }
+    public Guid? VariantId { get; set; }
+    public int Quantity { get; set; } = 1;
+    public decimal? UnitPriceSnapshot { get; set; }
+    public DateTime CreatedAt { get; set; }
+    public DateTime UpdatedAt { get; set; }
+
+    public Cart Cart { get; set; } = null!;
+    public Product Product { get; set; } = null!;
+}
