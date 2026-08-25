@@ -123,8 +123,9 @@ aidr-be/
 | UC-91 | `POST /api/seller/products/{id}/lots` — nhập lô + UnitCost | SellerCenter |
 | UC-92 | `PATCH /api/seller/products/{id}/price` — đổi giá bán + ghi history | SellerCenter |
 | UC-46/47 | `GET /api/seller/orders`, `GET/PATCH /api/seller/orders/{orderId}` — shop orders; status Paid→Confirmed→Shipping→Delivered + tracking | SellerCenter |
-| UC-69/70 | `GET /api/seller/dashboard`, `/reports` | SellerCenter |
-| UC-85 | `GET /api/seller/wallet` | SellerCenter |
+| UC-69 | `GET /api/seller/dashboard` — KPI đơn (kể cả awaiting fulfillment), doanh thu recognized (Completed), tồn thấp, SP Pending, snapshot ví | SellerCenter |
+| UC-70 | `GET /api/seller/reports?granularity=day\|week\|month&from=&to=` — series + totals + top SP; COGS từ `OrderItemLotAllocations` (BR-C05/C06); mặc định 30 ngày, tối đa 366 | SellerCenter |
+| UC-85 | `GET /api/seller/wallet?txType=&page=&pageSize=` — Available (ledger) + Pending (đơn Paid…Delivered chưa Completed) + lịch sử `WalletTransactions` phân trang | SellerCenter |
 | UC-87 | `POST /api/seller/vouchers` — create Scope=Shop voucher for seller's shop | SellerCenter |
 | UC-88 | `PUT /api/seller/vouchers/{id}` — update shop voucher; `PATCH .../status` activate/disable | SellerCenter |
 | UC-89 | `DELETE /api/seller/vouchers/{id}` — hard-delete when unused; `GET /api/seller/vouchers`, `GET .../{id}` list/detail | SellerCenter |
