@@ -521,3 +521,65 @@ public class Payment
 
     public Order Order { get; set; } = null!;
 }
+
+public class ReturnRequest
+{
+    public Guid ReturnRequestId { get; set; }
+    public Guid OrderId { get; set; }
+    public Guid BuyerUserId { get; set; }
+    public string Reason { get; set; } = null!;
+    public string? Description { get; set; }
+    public string? EvidenceUrls { get; set; }
+    public string ResolutionType { get; set; } = "ReturnRefund";
+    public string Status { get; set; } = "Pending";
+    public decimal? RefundAmount { get; set; }
+    public string? AdminNote { get; set; }
+    public Guid? ReviewedBy { get; set; }
+    public DateTime? ReviewedAt { get; set; }
+    public DateTime CreatedAt { get; set; }
+    public DateTime UpdatedAt { get; set; }
+
+    public Order Order { get; set; } = null!;
+    public User Buyer { get; set; } = null!;
+    public User? Reviewer { get; set; }
+    public ICollection<ReturnRequestItem> Items { get; set; } = new List<ReturnRequestItem>();
+    public ICollection<ReturnEvidence> Evidences { get; set; } = new List<ReturnEvidence>();
+    public ICollection<ReturnStatusHistory> StatusHistories { get; set; } = new List<ReturnStatusHistory>();
+}
+
+public class ReturnRequestItem
+{
+    public Guid ReturnItemId { get; set; }
+    public Guid ReturnRequestId { get; set; }
+    public Guid OrderItemId { get; set; }
+    public int Quantity { get; set; }
+
+    public ReturnRequest ReturnRequest { get; set; } = null!;
+    public OrderItem OrderItem { get; set; } = null!;
+}
+
+public class ReturnEvidence
+{
+    public Guid EvidenceId { get; set; }
+    public Guid ReturnRequestId { get; set; }
+    public string EvidenceType { get; set; } = null!;
+    public string MediaUrl { get; set; } = null!;
+    public string? PublicId { get; set; }
+    public int SortOrder { get; set; }
+    public DateTime CreatedAt { get; set; }
+
+    public ReturnRequest ReturnRequest { get; set; } = null!;
+}
+
+public class ReturnStatusHistory
+{
+    public long HistoryId { get; set; }
+    public Guid ReturnRequestId { get; set; }
+    public string? FromStatus { get; set; }
+    public string ToStatus { get; set; } = null!;
+    public Guid? ChangedBy { get; set; }
+    public string? Note { get; set; }
+    public DateTime CreatedAt { get; set; }
+
+    public ReturnRequest ReturnRequest { get; set; } = null!;
+}

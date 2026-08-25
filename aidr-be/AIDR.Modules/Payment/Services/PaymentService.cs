@@ -179,6 +179,47 @@ public sealed class PaymentService : IPaymentService
             cancellationToken);
     }
 
+    public async Task<ConfirmPayOsWebhookResponse> ConfirmPayOsWebhookAsync(
+        ConfirmPayOsWebhookRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        if (request is null)
+            throw new AppException("Confirm webhook body is required.");
+
+        var webhookUrl = request.WebhookUrl?.Trim() ?? string.Empty;
+        if (string.IsNullOrWhiteSpace(webhookUrl))
+            throw new AppException("Webhook URL is required.");
+
+        if (webhookUrl.Length > 512)
+            throw new AppException("Webhook URL must not exceed 512 characters.");
+
+        if (!Uri.TryCreate(webhookUrl, UriKind.Absolute, out var uri)
+            || (uri.Scheme != Uri.UriSchemeHttp && uri.Scheme != Uri.UriSchemeHttps))
+        {
+            throw new AppException("Webhook URL must be an absolute http or https URL.");
+        }
+
+        if (!uri.AbsolutePath.Contains("/api/payments/payos/webhook", StringComparison.OrdinalIgnoreCase))
+        {
+            throw new AppException(
+                "Webhook URL path should end with /api/payments/payos/webhook so payOS can reach this API.");
+        }
+
+        var confirmed = await _payOs.ConfirmWebhookAsync(uri.ToString(), cancellationToken);
+
+        _logger.LogInformation("Registered payOS webhook URL {WebhookUrl}", confirmed.WebhookUrl);
+
+        return new ConfirmPayOsWebhookResponse
+        {
+            WebhookUrl = confirmed.WebhookUrl,
+            AccountNumber = confirmed.AccountNumber,
+            AccountName = confirmed.AccountName,
+            Message = _payOs.UseMock
+                ? "Mock webhook confirm completed (UseMock=true)."
+                : "payOS webhook URL confirmed. Payment notifications will be sent to this endpoint."
+        };
+    }
+
     private static CreatePayOsPaymentResponse MapResponse(
         PendingPaymentForCheckout payment,
         string checkoutUrl,
