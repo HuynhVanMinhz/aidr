@@ -71,5 +71,9 @@ export function getNotificationHref(
     return audience === 'seller' ? '/seller/orders' : '/account/orders';
   }
 
+  if (refType === 'chatthread' || item.type.toLowerCase() === 'chat') {
+    return audience === 'seller' ? `/seller/chat?threadId=${refId}` : `/chat?threadId=${refId}`;
+  }
+
   return null;
 }

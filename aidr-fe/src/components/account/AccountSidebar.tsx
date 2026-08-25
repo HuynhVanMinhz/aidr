@@ -24,6 +24,11 @@ export function AccountSidebar() {
       icon: '/theme/images/icon-order-primary.svg',
     },
     {
+      to: '/chat',
+      label: 'Messages',
+      icon: '/theme/images/icon-order-primary.svg',
+    },
+    {
       to: '/account/wishlist',
       label: 'Wishlist',
       icon: '/theme/images/icon-wishlist-primary.svg',
