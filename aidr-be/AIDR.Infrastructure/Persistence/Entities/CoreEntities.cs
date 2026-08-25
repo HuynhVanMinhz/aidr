@@ -285,12 +285,31 @@ public class ProductReview
     public byte Rating { get; set; }
     public string? Title { get; set; }
     public string? Content { get; set; }
+    public string? SentimentLabel { get; set; }
+    public decimal? SentimentScore { get; set; }
     public bool IsVisible { get; set; } = true;
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
 
     public Product Product { get; set; } = null!;
     public User Buyer { get; set; } = null!;
+    public Order? Order { get; set; }
+}
+
+public class SellerRating
+{
+    public Guid SellerRatingId { get; set; }
+    public Guid ShopId { get; set; }
+    public Guid BuyerUserId { get; set; }
+    public Guid? OrderId { get; set; }
+    public byte Score { get; set; }
+    public string? Comment { get; set; }
+    public DateTime CreatedAt { get; set; }
+    public DateTime UpdatedAt { get; set; }
+
+    public Shop Shop { get; set; } = null!;
+    public User Buyer { get; set; } = null!;
+    public Order? Order { get; set; }
 }
 
 public class ViewedProductHistory
