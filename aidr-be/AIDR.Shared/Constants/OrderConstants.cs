@@ -6,6 +6,8 @@ public static class OrderConstants
 
     public const string PaymentProviderPayOs = "payOS";
     public const string PaymentStatusPending = "Pending";
+    public const string PaymentStatusSucceeded = "Succeeded";
+    public const string StatusPaid = "Paid";
 
     public const string InventoryReasonOrderReserve = "OrderReserve";
     public const string InventoryReferenceTypeOrder = "Order";
