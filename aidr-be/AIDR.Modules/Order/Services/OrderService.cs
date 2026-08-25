@@ -35,11 +35,28 @@ public sealed class OrderService : IOrderService
                 throw new AppException("Cart item ids are invalid.");
         }
 
+        IReadOnlyDictionary<Guid, Guid>? vouchersByShopId = null;
+        if (request.Vouchers is { Count: > 0 })
+        {
+            var map = new Dictionary<Guid, Guid>();
+            foreach (var selection in request.Vouchers)
+            {
+                if (selection.ShopId == Guid.Empty || selection.VoucherId == Guid.Empty)
+                    throw new AppException("Voucher selection requires shop id and voucher id.");
+
+                if (!map.TryAdd(selection.ShopId, selection.VoucherId))
+                    throw new AppException("Only one voucher can be applied per shop.");
+            }
+
+            vouchersByShopId = map;
+        }
+
         return await _orders.CreateOrdersFromCartAsync(
             buyerUserId,
             request.ShippingAddressId,
             cartItemIds,
             string.IsNullOrWhiteSpace(buyerNote) ? null : buyerNote,
+            vouchersByShopId,
             cancellationToken);
     }
 
