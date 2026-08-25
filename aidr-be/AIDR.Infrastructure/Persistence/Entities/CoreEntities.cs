@@ -598,3 +598,32 @@ public class ReturnStatusHistory
 
     public ReturnRequest ReturnRequest { get; set; } = null!;
 }
+
+public class ChatThread
+{
+    public Guid ThreadId { get; set; }
+    public Guid BuyerUserId { get; set; }
+    public Guid ShopId { get; set; }
+    public Guid? ProductId { get; set; }
+    public DateTime? LastMessageAt { get; set; }
+    public DateTime CreatedAt { get; set; }
+
+    public User Buyer { get; set; } = null!;
+    public Shop Shop { get; set; } = null!;
+    public Product? Product { get; set; }
+    public ICollection<ChatMessage> Messages { get; set; } = new List<ChatMessage>();
+}
+
+public class ChatMessage
+{
+    public Guid MessageId { get; set; }
+    public Guid ThreadId { get; set; }
+    public Guid SenderUserId { get; set; }
+    public string Content { get; set; } = null!;
+    public string? AttachmentUrl { get; set; }
+    public bool IsRead { get; set; }
+    public DateTime CreatedAt { get; set; }
+
+    public ChatThread Thread { get; set; } = null!;
+    public User Sender { get; set; } = null!;
+}

@@ -34,7 +34,7 @@ Cập nhật cột **status**: `Todo` · `In Progress` · `Done` · `Blocked`.
 | 21 | Engagement — Follow | Follow / unfollow / list. | UC-65, UC-66, UC-67 | Done |
 | 22 | Return & Refund | Buyer request **Trả hàng+Hoàn tiền** (video Unboxing/Testing); Admin duyệt; **không Exchange**; refund buyer rồi debit seller wallet. | UC-43, UC-48, UC-49, UC-50, UC-52 | Done |
 | 23 | Notifications | REST inbox + SignalR push (order/payment/moderation). | UC-44, UC-45 | Done |
-| 24 | Chat | Thread list + gửi tin SignalR. | UC-57, UC-58 | Todo |
+| 24 | Chat | Thread list + gửi tin SignalR. | UC-57, UC-58 | Done |
 | 25 | SellerCenter — Finance & Insights | Wallet, dashboard, sales reports (dùng cost lot → margin). | UC-69, UC-70, UC-85 | Todo |
 | 26 | Admin — Governance | Account list, lock/unlock, customer insights. | UC-71, UC-72, UC-73, UC-74 | Todo |
 | 27 | AI — Recommendation & Similar | Recommend + similar (rule/hybrid trước, LLM sau nếu cần). | UC-53, UC-54 | Todo |
