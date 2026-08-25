@@ -83,6 +83,7 @@ public static class InfrastructureServiceCollectionExtensions
         services.AddScoped<ISellerRatingRepository, SellerRatingRepository>();
         services.AddScoped<IFollowRepository, FollowRepository>();
         services.AddScoped<INotificationRepository, NotificationRepository>();
+        services.AddScoped<IChatRepository, ChatRepository>();
         services.AddSingleton<IPayOsClient, PayOsClient>();
         services.AddScoped<IPasswordResetTokenStore, PasswordResetTokenStore>();
         services.AddScoped<ITokenService, JwtTokenService>();

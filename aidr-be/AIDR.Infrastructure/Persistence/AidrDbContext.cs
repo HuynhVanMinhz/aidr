@@ -42,6 +42,8 @@ public class AidrDbContext : DbContext
     public DbSet<ReturnRequestItem> ReturnRequestItems => Set<ReturnRequestItem>();
     public DbSet<ReturnEvidence> ReturnEvidences => Set<ReturnEvidence>();
     public DbSet<ReturnStatusHistory> ReturnStatusHistories => Set<ReturnStatusHistory>();
+    public DbSet<ChatThread> ChatThreads => Set<ChatThread>();
+    public DbSet<ChatMessage> ChatMessages => Set<ChatMessage>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -637,6 +639,43 @@ public class AidrDbContext : DbContext
                 .HasForeignKey(x => x.ReturnRequestId)
                 .OnDelete(DeleteBehavior.Cascade);
             e.HasIndex(x => x.ReturnRequestId);
+        });
+
+        modelBuilder.Entity<ChatThread>(e =>
+        {
+            e.ToTable("ChatThreads");
+            e.HasKey(x => x.ThreadId);
+            e.HasOne(x => x.Buyer)
+                .WithMany()
+                .HasForeignKey(x => x.BuyerUserId)
+                .OnDelete(DeleteBehavior.Restrict);
+            e.HasOne(x => x.Shop)
+                .WithMany()
+                .HasForeignKey(x => x.ShopId)
+                .OnDelete(DeleteBehavior.Restrict);
+            e.HasOne(x => x.Product)
+                .WithMany()
+                .HasForeignKey(x => x.ProductId)
+                .OnDelete(DeleteBehavior.Restrict);
+            e.HasIndex(x => new { x.BuyerUserId, x.ShopId }).IsUnique();
+            e.HasIndex(x => x.LastMessageAt);
+        });
+
+        modelBuilder.Entity<ChatMessage>(e =>
+        {
+            e.ToTable("ChatMessages");
+            e.HasKey(x => x.MessageId);
+            e.Property(x => x.Content).HasMaxLength(2000).IsRequired();
+            e.Property(x => x.AttachmentUrl).HasMaxLength(512);
+            e.HasOne(x => x.Thread)
+                .WithMany(x => x.Messages)
+                .HasForeignKey(x => x.ThreadId)
+                .OnDelete(DeleteBehavior.Cascade);
+            e.HasOne(x => x.Sender)
+                .WithMany()
+                .HasForeignKey(x => x.SenderUserId)
+                .OnDelete(DeleteBehavior.Restrict);
+            e.HasIndex(x => new { x.ThreadId, x.CreatedAt });
         });
     }
 }
