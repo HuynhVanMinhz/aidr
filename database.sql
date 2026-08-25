@@ -847,7 +847,8 @@ CREATE TABLE dbo.Wallets (
     UpdatedAt       DATETIME2(3)     NOT NULL CONSTRAINT DF_Wallets_UpdatedAt DEFAULT (SYSUTCDATETIME()),
     CONSTRAINT UQ_Wallets_ShopId UNIQUE (ShopId),
     CONSTRAINT FK_Wallets_Shop FOREIGN KEY (ShopId) REFERENCES dbo.Shops (ShopId),
-    CONSTRAINT CK_Wallets_Balance CHECK (AvailableBalance >= 0 AND PendingBalance >= 0)
+    -- AvailableBalance may go negative after RefundDebit (BR-R04); PendingBalance stays non-negative.
+    CONSTRAINT CK_Wallets_Balance CHECK (PendingBalance >= 0)
 );
 GO
 
