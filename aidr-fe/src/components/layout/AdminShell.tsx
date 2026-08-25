@@ -25,6 +25,7 @@ function toggleAdminMenu() {
 }
 
 function pageTitle(pathname: string, variant: AdminShellVariant) {
+  if (pathname.includes('/chat')) return 'Chat';
   if (pathname.includes('/notifications')) return 'Notifications';
   if (pathname.includes('/vouchers/new')) {
     return variant === 'seller' ? 'Create Shop Voucher' : 'Create System Voucher';
@@ -401,6 +402,17 @@ export function AdminShell({ variant = 'admin', children }: AdminShellProps) {
                     <IconifyIcon icon="solar:bag-check-bold-duotone" />
                   </span>
                   <span className="nav-text">Orders</span>
+                </NavLink>
+              </li>
+              <li className="nav-item">
+                <NavLink
+                  className={({ isActive }) => `nav-link${isActive ? ' active' : ''}`}
+                  to="/seller/chat"
+                >
+                  <span className="nav-icon">
+                    <IconifyIcon icon="solar:chat-round-bold-duotone" />
+                  </span>
+                  <span className="nav-text">Chat</span>
                 </NavLink>
               </li>
               <li className="nav-item">
