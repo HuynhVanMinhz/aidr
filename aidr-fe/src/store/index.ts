@@ -15,6 +15,7 @@ import { voucherSlice } from './voucherSlice';
 import { adminVoucherSlice } from './adminVoucherSlice';
 import { sellerVoucherSlice } from './sellerVoucherSlice';
 import { wishlistSlice } from './wishlistSlice';
+import { reviewSlice } from './reviewSlice';
 
 export const store = configureStore({
   reducer: {
@@ -25,6 +26,7 @@ export const store = configureStore({
     shop: shopSlice.reducer,
     cart: cartSlice.reducer,
     wishlist: wishlistSlice.reducer,
+    review: reviewSlice.reducer,
     voucher: voucherSlice.reducer,
     adminVoucher: adminVoucherSlice.reducer,
     sellerVoucher: sellerVoucherSlice.reducer,
