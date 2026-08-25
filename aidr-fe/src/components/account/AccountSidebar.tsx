@@ -24,6 +24,11 @@ export function AccountSidebar() {
       icon: '/theme/images/icon-wishlist-primary.svg',
     },
     {
+      to: '/account/following',
+      label: 'Following',
+      icon: '/theme/images/icon-dashboard-primary.svg',
+    },
+    {
       to: '/account/addresses',
       label: 'Shipping addresses',
       icon: '/theme/images/icon-location-primary.svg',
