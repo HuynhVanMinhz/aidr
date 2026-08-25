@@ -1,0 +1,120 @@
+/* Checkout + order received — layout from theme; small AIDR helpers */
+
+.checkout-alerts {
+  margin-bottom: 24px;
+}
+
+.checkout-empty-addresses {
+  margin-bottom: 24px;
+}
+
+.checkout-empty-addresses p {
+  margin-bottom: 16px;
+}
+
+.checkout-address-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.checkout-address-card {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 14px 16px;
+  border: 1px solid rgba(22, 24, 29, 0.12);
+  cursor: pointer;
+  margin: 0;
+}
+
+.checkout-address-card--selected {
+  border-color: var(--primary-color, #16181d);
+  background: rgba(22, 24, 29, 0.03);
+}
+
+.checkout-address-card input {
+  margin-top: 4px;
+  flex-shrink: 0;
+}
+
+.checkout-address-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.95rem;
+}
+
+.checkout-manage-addresses {
+  margin: 4px 0 0;
+  font-size: 0.9rem;
+}
+
+.checkout-note-hint {
+  margin-top: 6px;
+  font-size: 0.85rem;
+  color: var(--text-color, #707070);
+}
+
+.checkout-shop-group {
+  margin-bottom: 8px;
+}
+
+.checkout-shop-group-title {
+  margin: 12px 0 8px;
+  font-weight: 600;
+}
+
+.checkout-shop-group-title a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.checkout-shop-group-title a:hover {
+  text-decoration: underline;
+}
+
+.checkout-item-qty {
+  opacity: 0.7;
+  font-weight: 400;
+}
+
+.checkout-split-note {
+  margin-top: 16px;
+  font-size: 0.9rem;
+  color: var(--text-color, #707070);
+}
+
+.place-order-button .btn-default {
+  width: 100%;
+  border: 0;
+  cursor: pointer;
+}
+
+.place-order-button .btn-default:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.checkout-back-to-cart {
+  margin-top: 14px;
+  text-align: center;
+}
+
+.page-checkout .form-field-error {
+  margin-top: 8px;
+  color: #c0392b;
+  font-size: 0.9rem;
+}
+
+.order-receive-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 28px;
+}
+
+.order-receive-actions .btn-default {
+  border: 0;
+}

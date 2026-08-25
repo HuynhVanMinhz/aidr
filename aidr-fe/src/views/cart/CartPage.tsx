@@ -246,14 +246,18 @@ export function CartPage() {
                       </div>
                     </div>
                     <div className="order-checkout-button">
-                      <button
-                        type="button"
-                        className="btn-default btn-accent"
-                        disabled
-                        title="Checkout will be available in the next module"
+                      <Link
+                        to="/checkout"
+                        className={`btn-default btn-accent${
+                          items.some((i) => i.isAvailable) ? '' : ' disabled'
+                        }`}
+                        aria-disabled={!items.some((i) => i.isAvailable)}
+                        onClick={(e) => {
+                          if (!items.some((i) => i.isAvailable)) e.preventDefault();
+                        }}
                       >
                         Proceed to Checkout
-                      </button>
+                      </Link>
                     </div>
                   </div>
                 </div>
