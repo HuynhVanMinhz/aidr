@@ -22,6 +22,7 @@ public static class NotificationConstants
     public const string RefPayment = "Payment";
     public const string RefProduct = "Product";
     public const string RefReturnRequest = "ReturnRequest";
+    public const string RefChatThread = "ChatThread";
 
     public const string HubUserGroupPrefix = "user:";
     public const string HubReceiveMethod = "ReceiveNotification";
