@@ -32,6 +32,8 @@ import { SellerInventoryDetailPage } from '../views/seller/SellerInventoryDetail
 import { SellerInventoryListPage } from '../views/seller/SellerInventoryListPage';
 import { SellerProductDetailPage } from '../views/seller/SellerProductDetailPage';
 import { CartPage } from '../views/cart/CartPage';
+import { CheckoutPage } from '../views/checkout/CheckoutPage';
+import { OrderReceivedPage } from '../views/checkout/OrderReceivedPage';
 import { ToastHost } from '../components/feedback/ToastHost';
 
 function AppThemeBridge() {
@@ -89,6 +91,8 @@ export function App() {
 
           <Route element={<ProtectedRoute />}>
             <Route path="cart" element={<CartPage />} />
+            <Route path="checkout" element={<CheckoutPage />} />
+            <Route path="checkout/success" element={<OrderReceivedPage />} />
             <Route path="account" element={<AccountLayout />}>
               <Route index element={<Navigate to="profile" replace />} />
               <Route path="profile" element={<ProfilePage />} />
