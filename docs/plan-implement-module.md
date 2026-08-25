@@ -27,7 +27,7 @@ Cập nhật cột **status**: `Todo` · `In Progress` · `Done` · `Blocked`.
 | 14 | Order — Buyer Lifecycle | List/detail đơn, hủy, xác nhận nhận hàng. | UC-39, UC-40, UC-41, UC-42 | Done |
 | 15 | SellerCenter — Orders | Seller xem đơn & cập nhật status + tracking. | UC-46, UC-47 | Done |
 | 16 | Voucher (Buyer apply) | Xem & apply voucher (cần có data voucher — seed hoặc làm song song Admin/Seller voucher). | UC-32, UC-33 | Done |
-| 17 | Admin — System Voucher | CRUD/activate voucher toàn sàn. | UC-78, UC-79, UC-80, UC-81 | Todo |
+| 17 | Admin — System Voucher | CRUD/activate voucher toàn sàn. | UC-78, UC-79, UC-80, UC-81 | Done |
 | 18 | SellerCenter — Shop Voucher | CRUD voucher của shop. | UC-87, UC-88, UC-89 | Todo |
 | 19 | Engagement — Wishlist | Wishlist CRUD. | UC-36, UC-37, UC-38 | Todo |
 | 20 | Engagement — Reviews & Ratings | Review SP + rate seller. | UC-59, UC-60, UC-61, UC-62a, UC-63 | Todo |

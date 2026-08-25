@@ -9,8 +9,15 @@ public static class VoucherConstants
     public const string DiscountTypeFixedAmount = "FixedAmount";
 
     public const int MaxCodeLength = 40;
+    public const int MaxNameLength = 150;
+    public const int MaxDescriptionLength = 500;
+    public const int MinPerUserLimit = 1;
+    public const int MaxPerUserLimit = 1000;
+    public const decimal MaxPercentValue = 100m;
+
     public const int DefaultListPage = 1;
     public const int DefaultListPageSize = 20;
+    public const int DefaultAdminListPageSize = 10;
     public const int MaxListPageSize = 100;
 
     public static readonly HashSet<string> Scopes = new(StringComparer.OrdinalIgnoreCase)
@@ -30,6 +37,15 @@ public static class VoucherConstants
         var normalizedPage = page < 1 ? DefaultListPage : page;
         var normalizedSize = pageSize < 1
             ? DefaultListPageSize
+            : Math.Min(pageSize, MaxListPageSize);
+        return (normalizedPage, normalizedSize);
+    }
+
+    public static (int Page, int PageSize) NormalizeAdminPaging(int page, int pageSize)
+    {
+        var normalizedPage = page < 1 ? DefaultListPage : page;
+        var normalizedSize = pageSize < 1
+            ? DefaultAdminListPageSize
             : Math.Min(pageSize, MaxListPageSize);
         return (normalizedPage, normalizedSize);
     }
