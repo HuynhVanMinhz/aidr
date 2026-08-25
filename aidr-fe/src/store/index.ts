@@ -12,6 +12,7 @@ import { shopSlice } from './shopSlice';
 import { themeSlice } from './themeSlice';
 import { userSlice } from './userSlice';
 import { voucherSlice } from './voucherSlice';
+import { adminVoucherSlice } from './adminVoucherSlice';
 
 export const store = configureStore({
   reducer: {
@@ -22,6 +23,7 @@ export const store = configureStore({
     shop: shopSlice.reducer,
     cart: cartSlice.reducer,
     voucher: voucherSlice.reducer,
+    adminVoucher: adminVoucherSlice.reducer,
     checkout: checkoutSlice.reducer,
     orders: ordersSlice.reducer,
     sellerOrders: sellerOrdersSlice.reducer,

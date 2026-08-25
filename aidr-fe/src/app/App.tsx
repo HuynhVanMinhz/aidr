@@ -27,6 +27,8 @@ import { AdminSellerRegistrationListPage } from '../views/admin/AdminSellerRegis
 import { AdminSellerRegistrationDetailPage } from '../views/admin/AdminSellerRegistrationDetailPage';
 import { AdminProductListPage } from '../views/admin/AdminProductListPage';
 import { AdminProductDetailPage } from '../views/admin/AdminProductDetailPage';
+import { AdminSystemVoucherListPage } from '../views/admin/AdminSystemVoucherListPage';
+import { AdminSystemVoucherFormPage } from '../views/admin/AdminSystemVoucherFormPage';
 import { SellerHomePage } from '../views/seller/SellerHomePage';
 import { SellerProductListPage } from '../views/seller/SellerProductListPage';
 import { SellerProductFormPage } from '../views/seller/SellerProductFormPage';
@@ -75,6 +77,9 @@ export function App() {
             <Route path="seller-registrations/:id" element={<AdminSellerRegistrationDetailPage />} />
             <Route path="products" element={<AdminProductListPage />} />
             <Route path="products/:id" element={<AdminProductDetailPage />} />
+            <Route path="vouchers" element={<AdminSystemVoucherListPage />} />
+            <Route path="vouchers/new" element={<AdminSystemVoucherFormPage />} />
+            <Route path="vouchers/:id/edit" element={<AdminSystemVoucherFormPage />} />
           </Route>
         </Route>
 
