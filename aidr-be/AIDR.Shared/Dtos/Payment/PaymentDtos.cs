@@ -63,3 +63,19 @@ public sealed class PayOsWebhookResult
     public string? PaymentStatus { get; init; }
     public string? OrderStatus { get; init; }
 }
+
+public sealed class ConfirmPayOsWebhookRequest
+{
+    /// <summary>
+    /// Public HTTPS URL of this API webhook, e.g. https://xxxx.ngrok-free.app/api/payments/payos/webhook
+    /// </summary>
+    public string WebhookUrl { get; set; } = null!;
+}
+
+public sealed class ConfirmPayOsWebhookResponse
+{
+    public string WebhookUrl { get; init; } = null!;
+    public string? AccountNumber { get; init; }
+    public string? AccountName { get; init; }
+    public string Message { get; init; } = null!;
+}
