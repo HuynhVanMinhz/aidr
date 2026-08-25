@@ -1,7 +1,10 @@
 import { useMemo, useState, type ReactNode } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { CatalogBreadcrumb } from '../../components/catalog/CatalogBreadcrumb';
+import { useAuth } from '../../hooks/useAuth';
 import { useProductDetail } from '../../hooks/useCatalog';
+import { useCart } from '../../hooks/useCart';
+import { useToast } from '../../hooks/useToast';
 import {
   discountPercent,
   formatDateVi,
@@ -11,6 +14,7 @@ import {
 } from '../../utils/formatCatalog';
 
 const PLACEHOLDER = '/theme/images/product-image-1.png';
+const MAX_QTY = 99;
 
 function StarRow({ rating, showValue }: { rating: number; showValue?: boolean }) {
   const full = Math.round(Math.min(5, Math.max(0, rating)));
@@ -44,10 +48,16 @@ function DetailRow({ label, value }: { label: string; value: ReactNode }) {
 
 export function ProductDetailPage() {
   const { id } = useParams<{ id: string }>();
+  const location = useLocation();
+  const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
   const { product, loading, error } = useProductDetail(id);
+  const { addItem, mutating, getErrorMessage } = useCart({ autoLoad: isAuthenticated });
+  const toast = useToast();
   const [activeImage, setActiveImage] = useState(0);
   const [tab, setTab] = useState<'description' | 'specs' | 'reviews'>('description');
   const [qty, setQty] = useState(1);
+  const [adding, setAdding] = useState(false);
 
   const images = useMemo(() => {
     if (!product) return [];
@@ -85,8 +95,33 @@ export function ProductDetailPage() {
 
   const mainImage = images[Math.min(activeImage, images.length - 1)]?.imageUrl ?? PLACEHOLDER;
   const off = discountPercent(product.basePrice, product.salePrice);
-  const maxQty = Math.max(1, product.availableQuantity);
+  const maxQty = Math.min(MAX_QTY, Math.max(1, product.availableQuantity));
   const safeQty = Math.min(Math.max(1, qty), maxQty);
+  const outOfStock = product.availableQuantity < 1;
+  const addBusy = adding || mutating;
+  const productId = product.productId;
+
+  async function handleAddToCart() {
+    if (!isAuthenticated) {
+      const returnUrl = encodeURIComponent(location.pathname + location.search);
+      navigate(`/login?returnUrl=${returnUrl}`);
+      return;
+    }
+    if (outOfStock) {
+      toast.error('Product is out of stock.');
+      return;
+    }
+
+    setAdding(true);
+    try {
+      await addItem(productId, safeQty);
+      toast.success('Added to cart.');
+    } catch (err) {
+      toast.error(getErrorMessage(err, 'Unable to add item to cart.'));
+    } finally {
+      setAdding(false);
+    }
+  }
 
   return (
     <div className="page-product-single">
@@ -198,9 +233,14 @@ export function ProductDetailPage() {
                       </button>
                     </div>
                     <div className="product-single-content-btn">
-                      <Link to="/login" className="btn-default btn-accent">
-                        Add To cart
-                      </Link>
+                      <button
+                        type="button"
+                        className="btn-default btn-accent"
+                        disabled={outOfStock || addBusy}
+                        onClick={() => void handleAddToCart()}
+                      >
+                        {outOfStock ? 'Out of Stock' : addBusy ? 'Adding…' : 'Add To Cart'}
+                      </button>
                     </div>
                     <div className="product-single-action">
                       <ul>
