@@ -130,7 +130,9 @@ aidr-be/
 ### 6.4 Order & Payment
 | UC | Endpoint | Module |
 |----|----------|--------|
-| UC-29..31 | Cart APIs | Order |
+| UC-29 | `GET /api/cart` — items, qty, unit price snapshot, subtotal | Order |
+| UC-30 | `POST /api/cart/items` — body `{ productId, quantity }`; merge qty nếu trùng | Order |
+| UC-31 | `PATCH /api/cart/items/{cartItemId}` (set qty); `DELETE /api/cart/items/{cartItemId}` | Order |
 | UC-32/33 | Voucher list / apply preview | Order |
 | UC-34 | `POST /api/orders` | Order |
 | UC-35 | `POST /api/payments/payos/create` + webhook | Payment |

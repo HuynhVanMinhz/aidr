@@ -4,6 +4,8 @@ using AIDR.Modules.Auth.Abstractions;
 using AIDR.Modules.Auth.Services;
 using AIDR.Modules.Discovery.Abstractions;
 using AIDR.Modules.Discovery.Services;
+using AIDR.Modules.Order.Abstractions;
+using AIDR.Modules.Order.Services;
 using AIDR.Modules.Profile.Abstractions;
 using AIDR.Modules.Profile.Services;
 using AIDR.Modules.SellerCenter.Abstractions;
@@ -24,6 +26,7 @@ public static class ModulesServiceCollectionExtensions
         services.AddScoped<IAdminProductModerationService, AdminProductModerationService>();
         services.AddScoped<ISellerProductService, SellerProductService>();
         services.AddScoped<ISellerInventoryService, SellerInventoryService>();
+        services.AddScoped<ICartService, CartService>();
         return services;
     }
 }
