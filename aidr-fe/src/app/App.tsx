@@ -45,6 +45,8 @@ import { SellerProductDetailPage } from '../views/seller/SellerProductDetailPage
 import { SellerShopVoucherListPage } from '../views/seller/SellerShopVoucherListPage';
 import { SellerShopVoucherFormPage } from '../views/seller/SellerShopVoucherFormPage';
 import { SellerNotificationsPage } from '../views/seller/SellerNotificationsPage';
+import { SellerReportsPage } from '../views/seller/SellerReportsPage';
+import { SellerWalletPage } from '../views/seller/SellerWalletPage';
 import { SellerChatPage } from '../views/seller/SellerChatPage';
 import { ChatPage } from '../views/chat/ChatPage';
 import { CartPage } from '../views/cart/CartPage';
@@ -106,6 +108,8 @@ export function App() {
             <Route path="inventory" element={<SellerInventoryListPage />} />
             <Route path="orders" element={<SellerOrderListPage />} />
             <Route path="orders/:orderId" element={<SellerOrderDetailPage />} />
+            <Route path="reports" element={<SellerReportsPage />} />
+            <Route path="wallet" element={<SellerWalletPage />} />
             <Route path="notifications" element={<SellerNotificationsPage />} />
             <Route path="chat" element={<SellerChatPage />} />
             <Route path="vouchers" element={<SellerShopVoucherListPage />} />

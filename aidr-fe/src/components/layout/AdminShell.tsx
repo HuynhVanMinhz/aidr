@@ -25,6 +25,9 @@ function toggleAdminMenu() {
 }
 
 function pageTitle(pathname: string, variant: AdminShellVariant) {
+  if (pathname.includes('/reports')) return 'Sales Reports';
+  if (pathname.includes('/wallet')) return 'Wallet';
+  if (variant === 'seller' && pathname === '/seller') return 'Dashboard';
   if (pathname.includes('/chat')) return 'Chat';
   if (pathname.includes('/notifications')) return 'Notifications';
   if (pathname.includes('/vouchers/new')) {
@@ -345,6 +348,40 @@ export function AdminShell({ variant = 'admin', children }: AdminShellProps) {
               </>
             ) : (
               <>
+              <li className="nav-item">
+                <NavLink
+                  className={({ isActive }) => `nav-link${isActive ? ' active' : ''}`}
+                  to="/seller"
+                  end
+                >
+                  <span className="nav-icon">
+                    <IconifyIcon icon="solar:chart-square-bold-duotone" />
+                  </span>
+                  <span className="nav-text">Dashboard</span>
+                </NavLink>
+              </li>
+              <li className="nav-item">
+                <NavLink
+                  className={({ isActive }) => `nav-link${isActive ? ' active' : ''}`}
+                  to="/seller/reports"
+                >
+                  <span className="nav-icon">
+                    <IconifyIcon icon="solar:graph-up-bold-duotone" />
+                  </span>
+                  <span className="nav-text">Sales Reports</span>
+                </NavLink>
+              </li>
+              <li className="nav-item">
+                <NavLink
+                  className={({ isActive }) => `nav-link${isActive ? ' active' : ''}`}
+                  to="/seller/wallet"
+                >
+                  <span className="nav-icon">
+                    <IconifyIcon icon="solar:wallet-bold-duotone" />
+                  </span>
+                  <span className="nav-text">Wallet</span>
+                </NavLink>
+              </li>
               <li className="nav-item">
                 <a
                   className={`nav-link menu-arrow ${productOpen ? '' : 'collapsed'}`}

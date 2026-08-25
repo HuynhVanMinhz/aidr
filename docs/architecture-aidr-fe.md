@@ -88,7 +88,7 @@ aidr-fe/
 | Buyer account | `/account/*`, `/cart`, `/checkout`, `/wishlist`, `/orders` | Buyer (+Seller nếu dual-role) |
 | AI | `/ai/assistant`, compare modal/page | Buyer |
 | Chat | `/chat` (buyer), `/seller/chat` (seller) | Buyer / Seller |
-| Seller center | `/seller`, `/seller/products`, `/seller/products/new`, `/seller/products/:id`, `/seller/products/:id/edit`, `/seller/inventory`, `/seller/products/:id/inventory`, `/seller/orders`, `/seller/orders/:orderId` | Seller |
+| Seller center | `/seller`, `/seller/reports`, `/seller/wallet`, `/seller/products`, … | Seller |
 | Admin | `/admin/*` | Admin |
 
 **Guard flow:**
@@ -114,7 +114,8 @@ aidr-fe/
 | `wishlist` | product ids | UC-36..38 |
 | `notifications` | inbox + unread count | UC-44/45 |
 | `chat` | threads + active messages window | UC-57/58 |
-| `seller` | my products, inventory & pricing, dashboard KPIs | UC-16, 17, 91, 92, 69, 70, 85 |
+| `sellerFinance` | dashboard KPIs, sales report, wallet ledger | UC-69, 70, 85 |
+| `seller` | my products, inventory & pricing | UC-16, 17, 91, 92 |
 | `admin` | moderation queues, accounts | UC-18..25, 72..76 |
 | `adminVoucher` | system voucher list/detail cache | UC-78..81 |
 | `sellerVoucher` | seller shop voucher list/detail cache | UC-87..89 |
@@ -150,7 +151,8 @@ aidr-fe/
 | `notificationApi.ts` | UC-44/45 |
 | `chatApi.ts` | UC-57/58 |
 | `reviewApi.ts` | UC-59..62a |
-| `sellerApi.ts` | UC-62b..67, 69, 70, 85 |
+| `sellerFinanceApi.ts` | UC-69, 70, 85 (dashboard, reports, wallet) |
+| `sellerApi.ts` | UC-62b..67 (public shop read) |
 | `adminApi.ts` | UC-18..21, 71..76 (seller registrations list is server-paged) |
 | `aiApi.ts` | UC-28, 53, 54, 56, 90 |
 
