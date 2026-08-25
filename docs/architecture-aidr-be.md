@@ -155,7 +155,10 @@ aidr-be/
 | UC-71..74 | Insights, accounts lock/unlock | Admin |
 | UC-75 | `GET /api/admin/seller-registrations?status=&q=&page=&pageSize=` (default `status=Pending`; `status=all`; paged + status summary); `GET .../{id}` | Admin |
 | UC-76 | `POST /api/admin/seller-registrations/{id}/approve` → role Seller + Shop + Wallet; `POST .../reject` + `adminNote` | Admin |
-| UC-78..81 | System vouchers | Admin |
+| UC-78 | `POST /api/admin/vouchers` — create Scope=System voucher | Admin |
+| UC-79 | `PUT /api/admin/vouchers/{id}` — update conditions / period | Admin |
+| UC-80 | `DELETE /api/admin/vouchers/{id}` — hard-delete when unused; otherwise disable | Admin |
+| UC-81 | `PATCH /api/admin/vouchers/{id}/status` — activate / disable; `GET /api/admin/vouchers`, `GET .../{id}` list/detail (paged) | Admin |
 
 ### 6.6 Engagement
 | UC | Endpoint / Hub | Module |
