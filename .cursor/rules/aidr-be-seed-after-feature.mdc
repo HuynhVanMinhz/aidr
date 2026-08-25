@@ -1,0 +1,31 @@
+---
+description: AIDR — sau khi code xong chức năng BE, luôn seed data (SQL + Dev endpoint) để test.
+alwaysApply: true
+---
+
+# AIDR — Seed data sau khi xong BE
+
+Khi implement **xong** API / module / usecase trên **aidr-be** (không chỉ stub), **bắt buộc** thêm seed data để test thủ công / FE.
+
+## Bắt buộc làm
+
+1. **Script SQL idempotent** trong `scripts/seed-<feature>.sql` (fixed GUID / unique code; skip nếu đã có).
+2. **Seeder** trong `AIDR.Infrastructure/Seeding/` (SQL qua `SqlScriptSeeder` hoặc EF upsert như `VoucherDemoSeeder`).
+3. **Dev endpoint** `POST /api/dev/seed-<feature>` trong `DevController` — chỉ chạy khi `IsDevelopment()`.
+4. Ghi rõ **prerequisites** trong comment script (demo accounts, catalog, …).
+5. Seed đủ **nhiều trạng thái / edge** cần test UI + pipeline (list filter, detail, approve/reject, transition…).
+
+## Ví dụ mapping
+
+| Feature | Script | Endpoint |
+|---------|--------|----------|
+| Demo accounts | (EF) `DemoAccountsSeeder` | `/api/dev/seed-demo-accounts` |
+| Pending products | `seed-pending-products.sql` | `/api/dev/seed-pending-products` |
+| Vouchers | (EF) `VoucherDemoSeeder` | `/api/dev/seed-vouchers` |
+| Returns | `seed-returns.sql` | `/api/dev/seed-returns` |
+
+## Không làm
+
+- Đánh BE `Done` mà không có cách seed để tái hiện data test.
+- Seed hard-code secret / production credentials.
+- Seed phá dữ liệu thật (chỉ fixed demo IDs / prefix code như `RET-`, `INS`).

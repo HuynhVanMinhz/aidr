@@ -114,16 +114,24 @@ export function validateSystemVoucherFormFields(
 
   const startsError = tryValidateField(() => {
     if (!form.startsAt.trim()) throw new Error('Start date is required.');
-    if (Number.isNaN(new Date(form.startsAt).getTime())) throw new Error('Start date is invalid.');
+    if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(form.startsAt.trim())) {
+      throw new Error('Start date is invalid.');
+    }
   });
   if (startsError) errors.startsAt = startsError;
 
   const endsError = tryValidateField(() => {
     if (!form.endsAt.trim()) throw new Error('End date is required.');
-    const end = new Date(form.endsAt);
-    if (Number.isNaN(end.getTime())) throw new Error('End date is invalid.');
+    if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(form.endsAt.trim())) {
+      throw new Error('End date is invalid.');
+    }
     const start = new Date(form.startsAt);
-    if (!Number.isNaN(start.getTime()) && end <= start) {
+    const end = new Date(form.endsAt);
+    if (
+      !Number.isNaN(start.getTime()) &&
+      !Number.isNaN(end.getTime()) &&
+      end.getTime() <= start.getTime()
+    ) {
       throw new Error('End date must be after start date.');
     }
   });

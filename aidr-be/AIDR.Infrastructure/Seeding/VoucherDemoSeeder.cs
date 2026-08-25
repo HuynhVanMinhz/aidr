@@ -6,13 +6,20 @@ using Microsoft.EntityFrameworkCore;
 namespace AIDR.Infrastructure.Seeding;
 
 /// <summary>
-/// Dev-only: seed sample system + shop vouchers so buyer apply APIs can be tested
-/// before Admin/Seller voucher CRUD modules land.
+/// Dev-only: seed sample system + shop vouchers for buyer apply, admin CRUD, and seller CRUD.
 /// </summary>
 public static class VoucherDemoSeeder
 {
-    public static readonly Guid SystemVoucherId = Guid.Parse("EEEEEEEE-EEEE-EEEE-EEEE-EEEEEEEEEEEE");
-    public static readonly Guid ShopVoucherId = Guid.Parse("FFFFFFFF-FFFF-FFFF-FFFF-FFFFFFFFFFFF");
+    public static readonly Guid SystemPercentId = Guid.Parse("EEEEEEEE-EEEE-EEEE-EEEE-EEEEEEEEEEEE");
+    public static readonly Guid SystemFixedId = Guid.Parse("EEEEEEEE-EEEE-EEEE-EEEE-EEEEEEEEEE01");
+    public static readonly Guid SystemInactiveId = Guid.Parse("EEEEEEEE-EEEE-EEEE-EEEE-EEEEEEEEEE02");
+    public static readonly Guid ShopFixedId = Guid.Parse("FFFFFFFF-FFFF-FFFF-FFFF-FFFFFFFFFFFF");
+    public static readonly Guid ShopPercentId = Guid.Parse("FFFFFFFF-FFFF-FFFF-FFFF-FFFFFFFFFF01");
+    public static readonly Guid ShopExpiredId = Guid.Parse("FFFFFFFF-FFFF-FFFF-FFFF-FFFFFFFFFF02");
+
+    // Back-compat aliases used by older call sites / docs.
+    public static readonly Guid SystemVoucherId = SystemPercentId;
+    public static readonly Guid ShopVoucherId = ShopFixedId;
 
     public static async Task<VoucherDemoSeedResult> SeedAsync(
         AidrDbContext db,
@@ -27,9 +34,21 @@ public static class VoucherDemoSeeder
         if (!shopExists)
             throw new InvalidOperationException("Demo shop is missing. Seed demo accounts first.");
 
+        var seeds = new List<(Guid Id, string Code, string Scope, Guid? ShopId)>
+        {
+            // System — Admin list + buyer apply
+            (SystemPercentId, "AIDR10", VoucherConstants.ScopeSystem, null),
+            (SystemFixedId, "AIDR50K", VoucherConstants.ScopeSystem, null),
+            (SystemInactiveId, "AIDR_OFF", VoucherConstants.ScopeSystem, null),
+            // Shop — Seller list + buyer apply on demo shop cart
+            (ShopFixedId, "SHOP20K", VoucherConstants.ScopeShop, DemoAccountsSeeder.ShopId),
+            (ShopPercentId, "SHOP15", VoucherConstants.ScopeShop, DemoAccountsSeeder.ShopId),
+            (ShopExpiredId, "SHOP_OLD", VoucherConstants.ScopeShop, DemoAccountsSeeder.ShopId),
+        };
+
         await UpsertAsync(
             db,
-            SystemVoucherId,
+            SystemPercentId,
             code: "AIDR10",
             name: "AIDR Welcome 10%",
             description: "System-wide 10% off (max 50,000 VND). Min order 100,000 VND.",
@@ -41,13 +60,58 @@ public static class VoucherDemoSeeder
             minOrderAmount: 100_000m,
             usageLimit: 1000,
             perUserLimit: 3,
+            startsAt: now.AddDays(-1),
+            endsAt: now.AddMonths(6),
+            isActive: true,
             createdBy: DemoAccountsSeeder.AdminId,
             now,
             ct);
 
         await UpsertAsync(
             db,
-            ShopVoucherId,
+            SystemFixedId,
+            code: "AIDR50K",
+            name: "AIDR Flat 50K",
+            description: "System-wide 50,000 VND off. Min order 200,000 VND.",
+            scope: VoucherConstants.ScopeSystem,
+            shopId: null,
+            discountType: VoucherConstants.DiscountTypeFixedAmount,
+            discountValue: 50_000m,
+            maxDiscountAmount: null,
+            minOrderAmount: 200_000m,
+            usageLimit: 200,
+            perUserLimit: 1,
+            startsAt: now.AddDays(-1),
+            endsAt: now.AddMonths(3),
+            isActive: true,
+            createdBy: DemoAccountsSeeder.AdminId,
+            now,
+            ct);
+
+        await UpsertAsync(
+            db,
+            SystemInactiveId,
+            code: "AIDR_OFF",
+            name: "AIDR Disabled (test)",
+            description: "Inactive system voucher — use to test activate/disable.",
+            scope: VoucherConstants.ScopeSystem,
+            shopId: null,
+            discountType: VoucherConstants.DiscountTypePercent,
+            discountValue: 5m,
+            maxDiscountAmount: 20_000m,
+            minOrderAmount: 0m,
+            usageLimit: 100,
+            perUserLimit: 1,
+            startsAt: now.AddDays(-1),
+            endsAt: now.AddMonths(6),
+            isActive: false,
+            createdBy: DemoAccountsSeeder.AdminId,
+            now,
+            ct);
+
+        await UpsertAsync(
+            db,
+            ShopFixedId,
             code: "SHOP20K",
             name: "Shop Flat 20K",
             description: "Demo shop voucher: 20,000 VND off. Min order 50,000 VND.",
@@ -59,6 +123,51 @@ public static class VoucherDemoSeeder
             minOrderAmount: 50_000m,
             usageLimit: 500,
             perUserLimit: 5,
+            startsAt: now.AddDays(-1),
+            endsAt: now.AddMonths(6),
+            isActive: true,
+            createdBy: DemoAccountsSeeder.SellerId,
+            now,
+            ct);
+
+        await UpsertAsync(
+            db,
+            ShopPercentId,
+            code: "SHOP15",
+            name: "Shop 15% Off",
+            description: "Demo shop 15% off (max 30,000 VND). Min order 80,000 VND.",
+            scope: VoucherConstants.ScopeShop,
+            shopId: DemoAccountsSeeder.ShopId,
+            discountType: VoucherConstants.DiscountTypePercent,
+            discountValue: 15m,
+            maxDiscountAmount: 30_000m,
+            minOrderAmount: 80_000m,
+            usageLimit: 300,
+            perUserLimit: 2,
+            startsAt: now.AddDays(-1),
+            endsAt: now.AddMonths(6),
+            isActive: true,
+            createdBy: DemoAccountsSeeder.SellerId,
+            now,
+            ct);
+
+        await UpsertAsync(
+            db,
+            ShopExpiredId,
+            code: "SHOP_OLD",
+            name: "Shop Expired (test)",
+            description: "Expired shop voucher — appears in Expired KPI, not eligible for apply.",
+            scope: VoucherConstants.ScopeShop,
+            shopId: DemoAccountsSeeder.ShopId,
+            discountType: VoucherConstants.DiscountTypeFixedAmount,
+            discountValue: 10_000m,
+            maxDiscountAmount: null,
+            minOrderAmount: 0m,
+            usageLimit: 50,
+            perUserLimit: 1,
+            startsAt: now.AddMonths(-3),
+            endsAt: now.AddDays(-7),
+            isActive: true,
             createdBy: DemoAccountsSeeder.SellerId,
             now,
             ct);
@@ -67,11 +176,9 @@ public static class VoucherDemoSeeder
 
         return new VoucherDemoSeedResult
         {
-            Vouchers =
-            [
-                new VoucherDemoInfo("AIDR10", VoucherConstants.ScopeSystem, null),
-                new VoucherDemoInfo("SHOP20K", VoucherConstants.ScopeShop, DemoAccountsSeeder.ShopId)
-            ]
+            Vouchers = seeds
+                .Select(s => new VoucherDemoInfo(s.Code, s.Scope, s.ShopId))
+                .ToList()
         };
     }
 
@@ -89,6 +196,9 @@ public static class VoucherDemoSeeder
         decimal minOrderAmount,
         int usageLimit,
         int perUserLimit,
+        DateTime startsAt,
+        DateTime endsAt,
+        bool isActive,
         Guid createdBy,
         DateTime now,
         CancellationToken ct)
@@ -116,9 +226,9 @@ public static class VoucherDemoSeeder
                 UsageLimit = usageLimit,
                 PerUserLimit = perUserLimit,
                 UsedCount = 0,
-                StartsAt = now.AddDays(-1),
-                EndsAt = now.AddMonths(6),
-                IsActive = true,
+                StartsAt = startsAt,
+                EndsAt = endsAt,
+                IsActive = isActive,
                 CreatedBy = createdBy,
                 CreatedAt = now,
                 UpdatedAt = now
@@ -137,9 +247,9 @@ public static class VoucherDemoSeeder
         existing.MinOrderAmount = minOrderAmount;
         existing.UsageLimit = usageLimit;
         existing.PerUserLimit = perUserLimit;
-        existing.StartsAt = now.AddDays(-1);
-        existing.EndsAt = now.AddMonths(6);
-        existing.IsActive = true;
+        existing.StartsAt = startsAt;
+        existing.EndsAt = endsAt;
+        existing.IsActive = isActive;
         existing.UpdatedAt = now;
     }
 }

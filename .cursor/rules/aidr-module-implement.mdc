@@ -42,6 +42,7 @@ Khi user yêu cầu implement **module** hoặc **usecase**, tuân thủ quy tr�
 2. `plan-implement-module.md`: module xong hết UC trong cột usecase → `Done`; chưa hết → giữ `In Progress`.
 3. Nếu blocked (thiếu payOS, Keycloak, Ollama…) → `Blocked` ở cả 2 file + ghi chú 1 câu.
 4. Không đánh `Done` khi mới scaffold / stub API.
+5. **BE:** luôn thêm **seed data test** (script `scripts/seed-*.sql` + seeder + `POST /api/dev/seed-*`) — xem rule `aidr-be-seed-after-feature`.
 
 ## 5. Ví dụ cập nhật status
 
