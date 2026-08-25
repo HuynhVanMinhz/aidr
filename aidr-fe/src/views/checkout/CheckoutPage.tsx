@@ -6,8 +6,10 @@ import { useProfile } from '../../hooks/useProfile';
 import { useToast } from '../../hooks/useToast';
 import {
   clearCheckoutError,
+  createPayOsLinksForOrders,
   placeOrder,
   selectCheckoutError,
+  selectCheckoutPaying,
   selectCheckoutSubmitting,
 } from '../../store/checkoutSlice';
 import { useAppDispatch, useAppSelector } from '../../store/hooks';
@@ -57,7 +59,9 @@ export function CheckoutPage() {
   } = useCart({ autoLoad: true });
   const { profile, loading: profileLoading } = useProfile();
   const submitting = useAppSelector(selectCheckoutSubmitting);
+  const paying = useAppSelector(selectCheckoutPaying);
   const checkoutError = useAppSelector(selectCheckoutError);
+  const busy = submitting || paying;
 
   const addresses = profile?.addresses ?? [];
   const [shippingAddressId, setShippingAddressId] = useState('');
@@ -99,7 +103,7 @@ export function CheckoutPage() {
       : null;
 
   const canSubmit =
-    !submitting &&
+    !busy &&
     availableItems.length > 0 &&
     Boolean(shippingAddressId) &&
     !noteError;
@@ -150,12 +154,27 @@ export function CheckoutPage() {
       return;
     }
 
+    const orders = result.payload.orders;
     toast.success(
-      result.payload.orders.length > 1
-        ? `${result.payload.orders.length} orders created.`
-        : 'Order created successfully.',
+      orders.length > 1 ? `${orders.length} orders created.` : 'Order created successfully.',
     );
-    navigate('/checkout/success', { replace: true });
+
+    const payResult = await dispatch(createPayOsLinksForOrders(orders));
+    if (createPayOsLinksForOrders.rejected.match(payResult)) {
+      toast.error(payResult.payload || 'Unable to start payment. You can retry from the order page.');
+      navigate('/order-received', { replace: true });
+      return;
+    }
+
+    const links = payResult.payload;
+    if (links.length === 1 && links[0].checkoutUrl) {
+      toast.success('Redirecting to payment…');
+      window.location.assign(links[0].checkoutUrl);
+      return;
+    }
+
+    toast.success('Payment links ready. Complete payment for each order.');
+    navigate('/order-received', { replace: true });
   }
 
   if (cartLoaded && items.length === 0) {
@@ -368,17 +387,17 @@ export function CheckoutPage() {
                               <span>
                                 <input
                                   type="radio"
-                                  id="payos_pending"
+                                  id="payos_online"
                                   name="payment"
                                   value="payos"
                                   checked
                                   readOnly
                                 />
-                                <label htmlFor="payos_pending">Online payment (payOS)</label>
+                                <label htmlFor="payos_online">Online payment (payOS)</label>
                               </span>
                               <p>
-                                Your order will be created with a pending payment. You can complete
-                                payment in the next step once payment is enabled.
+                                After placing your order you will be redirected to payOS to complete
+                                payment securely.
                               </p>
                             </div>
                           </div>
@@ -386,7 +405,7 @@ export function CheckoutPage() {
                           {shopGroups.length > 1 && (
                             <p className="checkout-split-note">
                               Items from {shopGroups.length} shops will create {shopGroups.length}{' '}
-                              separate orders.
+                              separate orders. Each order is paid separately.
                             </p>
                           )}
                         </div>
@@ -398,7 +417,11 @@ export function CheckoutPage() {
                           className="btn-default btn-accent"
                           disabled={!canSubmit || addresses.length === 0}
                         >
-                          {submitting ? 'Placing order…' : 'Place Order'}
+                          {submitting
+                            ? 'Placing order…'
+                            : paying
+                              ? 'Starting payment…'
+                              : 'Place order & pay'}
                         </button>
                         <p className="checkout-back-to-cart">
                           <Link to="/cart">Back to cart</Link>
