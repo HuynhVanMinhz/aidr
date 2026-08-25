@@ -4,6 +4,7 @@ import { ThemeToggle } from '../ThemeToggle';
 import { useAuth } from '../../hooks/useAuth';
 import { useCart } from '../../hooks/useCart';
 import { useCategories } from '../../hooks/useCatalog';
+import { useUnreadNotifications } from '../../hooks/useNotifications';
 import { useWishlistMembership } from '../../hooks/useWishlist';
 import type { CategoryTreeNode } from '../../types/catalog';
 
@@ -21,6 +22,7 @@ export function StoreHeader() {
   const { isAuthenticated, roles } = useAuth();
   const { totalQuantity } = useCart({ autoLoad: isAuthenticated });
   const { totalCount: wishlistCount } = useWishlistMembership({ autoLoad: isAuthenticated });
+  const { unreadCount } = useUnreadNotifications({ autoLoad: isAuthenticated });
   const { categories } = useCategories();
   const [q, setQ] = useState('');
   const [categoriesOpen, setCategoriesOpen] = useState(false);
@@ -30,6 +32,9 @@ export function StoreHeader() {
   const wishlistTo = isAuthenticated
     ? '/wishlist'
     : `/login?returnUrl=${encodeURIComponent('/wishlist')}`;
+  const notificationsTo = isAuthenticated
+    ? '/account/notifications'
+    : `/login?returnUrl=${encodeURIComponent('/account/notifications')}`;
 
   function handleSearch(e: FormEvent) {
     e.preventDefault();
@@ -98,6 +103,19 @@ export function StoreHeader() {
                 <ul>
                   <li className="store-header-theme-item">
                     <ThemeToggle iconOnly />
+                  </li>
+                  <li>
+                    <Link to={notificationsTo} aria-label="Notifications" title="Notifications">
+                      <i className="fa-regular fa-bell" aria-hidden="true" />
+                      {isAuthenticated && unreadCount > 0 ? (
+                        <span
+                          className="store-header-cart-count"
+                          aria-label={`${unreadCount} unread notifications`}
+                        >
+                          {unreadCount > 99 ? '99+' : unreadCount}
+                        </span>
+                      ) : null}
+                    </Link>
                   </li>
                   <li>
                     <Link to={wishlistTo} aria-label="Wishlist">
