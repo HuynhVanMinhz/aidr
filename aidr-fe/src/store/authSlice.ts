@@ -84,6 +84,7 @@ export const authSlice = createSlice({
 export const { setSession, clearSession, patchAuthUser } = authSlice.actions;
 
 export const selectAuth = (state: { auth: AuthState }) => state.auth;
+export const selectAccessToken = (state: { auth: AuthState }) => state.auth.accessToken;
 export const selectIsAuthenticated = (state: { auth: AuthState }) => state.auth.isAuthenticated;
 export const selectHasRole = (role: string) => (state: { auth: AuthState }) =>
   state.auth.roles.some((r) => r.toUpperCase() === role.toUpperCase());

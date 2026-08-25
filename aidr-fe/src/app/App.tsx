@@ -18,6 +18,7 @@ import { OrdersPage } from '../views/account/OrdersPage';
 import { OrderDetailPage } from '../views/account/OrderDetailPage';
 import { WishlistPage } from '../views/account/WishlistPage';
 import { FollowingPage } from '../views/account/FollowingPage';
+import { NotificationsPage } from '../views/account/NotificationsPage';
 import { ProductListPage } from '../views/catalog/ProductListPage';
 import { ProductDetailPage } from '../views/catalog/ProductDetailPage';
 import { CategoriesPage } from '../views/catalog/CategoriesPage';
@@ -43,6 +44,7 @@ import { SellerOrderListPage } from '../views/seller/SellerOrderListPage';
 import { SellerProductDetailPage } from '../views/seller/SellerProductDetailPage';
 import { SellerShopVoucherListPage } from '../views/seller/SellerShopVoucherListPage';
 import { SellerShopVoucherFormPage } from '../views/seller/SellerShopVoucherFormPage';
+import { SellerNotificationsPage } from '../views/seller/SellerNotificationsPage';
 import { CartPage } from '../views/cart/CartPage';
 import { CheckoutPage } from '../views/checkout/CheckoutPage';
 import { OrderReceivedPage } from '../views/checkout/OrderReceivedPage';
@@ -102,6 +104,7 @@ export function App() {
             <Route path="inventory" element={<SellerInventoryListPage />} />
             <Route path="orders" element={<SellerOrderListPage />} />
             <Route path="orders/:orderId" element={<SellerOrderDetailPage />} />
+            <Route path="notifications" element={<SellerNotificationsPage />} />
             <Route path="vouchers" element={<SellerShopVoucherListPage />} />
             <Route path="vouchers/new" element={<SellerShopVoucherFormPage />} />
             <Route path="vouchers/:id/edit" element={<SellerShopVoucherFormPage />} />
@@ -126,6 +129,7 @@ export function App() {
               <Route path="profile" element={<ProfilePage />} />
               <Route path="orders" element={<OrdersPage />} />
               <Route path="orders/:orderId" element={<OrderDetailPage />} />
+              <Route path="notifications" element={<NotificationsPage />} />
               <Route path="wishlist" element={<WishlistPage />} />
               <Route path="following" element={<FollowingPage />} />
               <Route path="addresses" element={<AddressesPage />} />
@@ -133,6 +137,7 @@ export function App() {
             </Route>
             <Route path="wishlist" element={<Navigate to="/account/wishlist" replace />} />
             <Route path="following" element={<Navigate to="/account/following" replace />} />
+            <Route path="notifications" element={<Navigate to="/account/notifications" replace />} />
             <Route path="orders" element={<Navigate to="/account/orders" replace />} />
             <Route path="orders/:orderId" element={<OrdersRedirect />} />
           </Route>
