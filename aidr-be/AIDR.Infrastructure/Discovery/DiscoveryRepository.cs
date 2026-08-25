@@ -36,6 +36,9 @@ public sealed class DiscoveryRepository : IDiscoveryRepository
         if (query.CategoryId is { } categoryId)
             q = q.Where(p => p.CategoryId == categoryId);
 
+        if (query.ShopId is { } shopId)
+            q = q.Where(p => p.ShopId == shopId);
+
         if (!string.IsNullOrWhiteSpace(query.Brand))
         {
             var brand = query.Brand.Trim();
@@ -249,6 +252,93 @@ public sealed class DiscoveryRepository : IDiscoveryRepository
                 SortOrder = c.SortOrder
             })
             .ToListAsync(cancellationToken);
+    }
+
+    public async Task<ShopPublicRecord?> GetActiveShopByKeyAsync(
+        string shopKey,
+        CancellationToken cancellationToken = default)
+    {
+        var key = shopKey.Trim();
+        IQueryable<Shop> query = _db.Shops.AsNoTracking()
+            .Where(s => s.Status == ActiveShopStatus);
+
+        if (Guid.TryParse(key, out var shopId))
+            query = query.Where(s => s.ShopId == shopId);
+        else
+            query = query.Where(s => s.Slug == key);
+
+        var shop = await query
+            .Select(s => new
+            {
+                s.ShopId,
+                s.ShopName,
+                s.Slug,
+                s.Tagline,
+                s.ShortDescription,
+                s.Description,
+                s.LogoUrl,
+                s.BannerUrl,
+                s.IsVerified,
+                s.VerifiedAt,
+                s.AvgRating,
+                s.RatingCount,
+                s.FollowerCount,
+                s.ReturnPolicy,
+                s.ShippingPolicy,
+                s.OpeningHoursJson,
+                s.Email,
+                s.Phone,
+                s.Hotline,
+                s.WebsiteUrl,
+                s.FacebookUrl,
+                s.Province,
+                s.District,
+                s.Ward,
+                s.StreetAddress,
+                s.CreatedAt
+            })
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (shop is null)
+            return null;
+
+        var approvedProductCount = await _db.Products.AsNoTracking()
+            .CountAsync(
+                p => p.ShopId == shop.ShopId
+                     && p.Status == ApprovedStatus
+                     && p.Category.IsActive,
+                cancellationToken);
+
+        return new ShopPublicRecord
+        {
+            ShopId = shop.ShopId,
+            ShopName = shop.ShopName,
+            Slug = shop.Slug,
+            Tagline = shop.Tagline,
+            ShortDescription = shop.ShortDescription,
+            Description = shop.Description,
+            LogoUrl = shop.LogoUrl,
+            BannerUrl = shop.BannerUrl,
+            IsVerified = shop.IsVerified,
+            VerifiedAt = shop.VerifiedAt,
+            AvgRating = shop.AvgRating,
+            RatingCount = shop.RatingCount,
+            FollowerCount = shop.FollowerCount,
+            ProductCount = approvedProductCount,
+            ReturnPolicy = shop.ReturnPolicy,
+            ShippingPolicy = shop.ShippingPolicy,
+            OpeningHoursJson = shop.OpeningHoursJson,
+            Email = shop.Email,
+            Phone = shop.Phone,
+            Hotline = shop.Hotline,
+            WebsiteUrl = shop.WebsiteUrl,
+            FacebookUrl = shop.FacebookUrl,
+            Province = shop.Province,
+            District = shop.District,
+            Ward = shop.Ward,
+            StreetAddress = shop.StreetAddress,
+            CreatedAt = shop.CreatedAt
+        };
     }
 
     private IQueryable<Product> BuildApprovedQuery()

@@ -111,6 +111,77 @@ public sealed class DiscoveryService : IDiscoveryService
         return tree;
     }
 
+    public async Task<ShopPublicDetailDto> GetShopAsync(
+        string shopKey,
+        ShopProductsQueryRequest? productsQuery = null,
+        CancellationToken cancellationToken = default)
+    {
+        var key = NormalizeShopKey(shopKey);
+        var productQuery = NormalizeShopProductsQuery(productsQuery);
+        var cacheKey = BuildShopDetailCacheKey(key, productQuery);
+
+        var cached = await _cache.GetAsync<ShopPublicDetailDto>(cacheKey, cancellationToken);
+        if (cached is not null)
+            return cached;
+
+        var shop = await _repository.GetActiveShopByKeyAsync(key, cancellationToken)
+            ?? throw new NotFoundException("Shop not found.");
+
+        var (items, total) = await _repository.QueryApprovedProductsAsync(
+            new ProductListQuery
+            {
+                Q = productQuery.Q,
+                ShopId = shop.ShopId,
+                CategoryId = productQuery.CategoryId,
+                Brand = productQuery.Brand,
+                MinPrice = productQuery.MinPrice,
+                MaxPrice = productQuery.MaxPrice,
+                MinRating = productQuery.MinRating,
+                Sort = productQuery.Sort,
+                Page = productQuery.Page,
+                PageSize = productQuery.PageSize
+            },
+            cancellationToken);
+
+        var detail = MapShopDetail(shop, new PagedResult<ProductListItemDto>
+        {
+            Items = items.Select(MapListItem).ToList(),
+            Page = productQuery.Page,
+            PageSize = productQuery.PageSize,
+            TotalCount = total
+        });
+
+        await _cache.SetAsync(cacheKey, detail, DiscoveryConstants.ShopDetailCacheTtl, cancellationToken);
+        return detail;
+    }
+
+    public async Task<ShopSellerRatingDto> GetShopRatingAsync(
+        string shopKey,
+        CancellationToken cancellationToken = default)
+    {
+        var key = NormalizeShopKey(shopKey);
+        var cacheKey = $"shop:rating:{key.ToLowerInvariant()}";
+
+        var cached = await _cache.GetAsync<ShopSellerRatingDto>(cacheKey, cancellationToken);
+        if (cached is not null)
+            return cached;
+
+        var shop = await _repository.GetActiveShopByKeyAsync(key, cancellationToken)
+            ?? throw new NotFoundException("Shop not found.");
+
+        var rating = new ShopSellerRatingDto
+        {
+            ShopId = shop.ShopId,
+            ShopName = shop.ShopName,
+            Slug = shop.Slug,
+            AvgRating = shop.AvgRating,
+            RatingCount = shop.RatingCount
+        };
+
+        await _cache.SetAsync(cacheKey, rating, DiscoveryConstants.ShopRatingCacheTtl, cancellationToken);
+        return rating;
+    }
+
     private async Task<PagedResult<ProductListItemDto>> QueryProductsAsync(
         ProductQueryRequest request,
         bool requireKeyword,
@@ -177,6 +248,7 @@ public sealed class DiscoveryService : IDiscoveryService
         return new ProductListQuery
         {
             Q = q,
+            ShopId = request.ShopId == Guid.Empty ? null : request.ShopId,
             CategoryId = request.CategoryId,
             Brand = brand,
             MinPrice = request.MinPrice,
@@ -186,6 +258,37 @@ public sealed class DiscoveryService : IDiscoveryService
             Page = page,
             PageSize = pageSize
         };
+    }
+
+    private static ProductListQuery NormalizeShopProductsQuery(ShopProductsQueryRequest? request)
+    {
+        request ??= new ShopProductsQueryRequest();
+        return NormalizeQuery(
+            new ProductQueryRequest
+            {
+                Q = request.Q,
+                CategoryId = request.CategoryId,
+                Brand = request.Brand,
+                MinPrice = request.MinPrice,
+                MaxPrice = request.MaxPrice,
+                MinRating = request.MinRating,
+                Sort = request.Sort,
+                Page = request.Page,
+                PageSize = request.PageSize
+            },
+            requireKeyword: false);
+    }
+
+    private static string NormalizeShopKey(string shopKey)
+    {
+        if (string.IsNullOrWhiteSpace(shopKey))
+            throw new AppException("Shop key is required.");
+
+        shopKey = shopKey.Trim();
+        if (shopKey.Length > DiscoveryConstants.MaxShopKeyLength)
+            throw new AppException($"Shop key must not exceed {DiscoveryConstants.MaxShopKeyLength} characters.");
+
+        return shopKey;
     }
 
     private static string? NormalizeSessionId(string? sessionId)
@@ -205,6 +308,7 @@ public sealed class DiscoveryService : IDiscoveryService
         var payload = JsonSerializer.Serialize(new
         {
             query.Q,
+            query.ShopId,
             query.CategoryId,
             query.Brand,
             query.MinPrice,
@@ -217,6 +321,26 @@ public sealed class DiscoveryService : IDiscoveryService
 
         var hash = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(payload))).ToLowerInvariant();
         return $"catalog:products:{query.Page}:{hash}";
+    }
+
+    private static string BuildShopDetailCacheKey(string shopKey, ProductListQuery productQuery)
+    {
+        var payload = JsonSerializer.Serialize(new
+        {
+            shopKey = shopKey.ToLowerInvariant(),
+            productQuery.Q,
+            productQuery.CategoryId,
+            productQuery.Brand,
+            productQuery.MinPrice,
+            productQuery.MaxPrice,
+            productQuery.MinRating,
+            productQuery.Sort,
+            productQuery.Page,
+            productQuery.PageSize
+        });
+
+        var hash = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(payload))).ToLowerInvariant();
+        return $"shop:detail:{hash}";
     }
 
     private static List<CategoryTreeNodeDto> BuildCategoryTree(IReadOnlyList<CategoryRecord> flat)
@@ -340,4 +464,43 @@ public sealed class DiscoveryService : IDiscoveryService
             CreatedAt = rv.CreatedAt
         }).ToList()
     };
+
+    private static ShopPublicDetailDto MapShopDetail(ShopPublicRecord shop, PagedResult<ProductListItemDto> products)
+        => new()
+        {
+            ShopId = shop.ShopId,
+            ShopName = shop.ShopName,
+            Slug = shop.Slug,
+            Tagline = shop.Tagline,
+            ShortDescription = shop.ShortDescription,
+            Description = shop.Description,
+            LogoUrl = shop.LogoUrl,
+            BannerUrl = shop.BannerUrl,
+            IsVerified = shop.IsVerified,
+            VerifiedAt = shop.VerifiedAt,
+            AvgRating = shop.AvgRating,
+            RatingCount = shop.RatingCount,
+            FollowerCount = shop.FollowerCount,
+            ProductCount = shop.ProductCount,
+            ReturnPolicy = shop.ReturnPolicy,
+            ShippingPolicy = shop.ShippingPolicy,
+            OpeningHoursJson = shop.OpeningHoursJson,
+            Contact = new ShopPublicContactDto
+            {
+                Email = shop.Email,
+                Phone = shop.Phone,
+                Hotline = shop.Hotline,
+                WebsiteUrl = shop.WebsiteUrl,
+                FacebookUrl = shop.FacebookUrl
+            },
+            Address = new ShopPublicAddressDto
+            {
+                Province = shop.Province,
+                District = shop.District,
+                Ward = shop.Ward,
+                StreetAddress = shop.StreetAddress
+            },
+            CreatedAt = shop.CreatedAt,
+            Products = products
+        };
 }
