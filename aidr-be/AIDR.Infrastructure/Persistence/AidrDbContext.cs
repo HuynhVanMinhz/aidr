@@ -16,6 +16,7 @@ public class AidrDbContext : DbContext
     public DbSet<Shop> Shops => Set<Shop>();
     public DbSet<SellerRegistrationRequest> SellerRegistrationRequests => Set<SellerRegistrationRequest>();
     public DbSet<Wallet> Wallets => Set<Wallet>();
+    public DbSet<WalletTransaction> WalletTransactions => Set<WalletTransaction>();
     public DbSet<Product> Products => Set<Product>();
     public DbSet<ProductImage> ProductImages => Set<ProductImage>();
     public DbSet<InventoryLot> InventoryLots => Set<InventoryLot>();
@@ -158,6 +159,23 @@ public class AidrDbContext : DbContext
             e.Property(x => x.Currency).HasMaxLength(3).IsRequired();
             e.HasOne(x => x.Shop).WithMany().HasForeignKey(x => x.ShopId);
             e.HasIndex(x => x.ShopId).IsUnique();
+        });
+
+        modelBuilder.Entity<WalletTransaction>(e =>
+        {
+            e.ToTable("WalletTransactions");
+            e.HasKey(x => x.WalletTxId);
+            e.Property(x => x.WalletTxId).ValueGeneratedOnAdd();
+            e.Property(x => x.TxType).HasMaxLength(30).IsRequired();
+            e.Property(x => x.Amount).HasPrecision(18, 2);
+            e.Property(x => x.BalanceAfter).HasPrecision(18, 2);
+            e.Property(x => x.ReferenceType).HasMaxLength(40);
+            e.Property(x => x.Note).HasMaxLength(300);
+            e.HasOne(x => x.Wallet)
+                .WithMany(w => w.Transactions)
+                .HasForeignKey(x => x.WalletId)
+                .OnDelete(DeleteBehavior.Cascade);
+            e.HasIndex(x => new { x.ReferenceType, x.ReferenceId });
         });
 
         modelBuilder.Entity<Product>(e =>

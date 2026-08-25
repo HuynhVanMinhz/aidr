@@ -151,6 +151,22 @@ public class Wallet
     public DateTime UpdatedAt { get; set; }
 
     public Shop Shop { get; set; } = null!;
+    public ICollection<WalletTransaction> Transactions { get; set; } = new List<WalletTransaction>();
+}
+
+public class WalletTransaction
+{
+    public long WalletTxId { get; set; }
+    public Guid WalletId { get; set; }
+    public string TxType { get; set; } = null!;
+    public decimal Amount { get; set; }
+    public decimal BalanceAfter { get; set; }
+    public string? ReferenceType { get; set; }
+    public Guid? ReferenceId { get; set; }
+    public string? Note { get; set; }
+    public DateTime CreatedAt { get; set; }
+
+    public Wallet Wallet { get; set; } = null!;
 }
 
 public class Product
