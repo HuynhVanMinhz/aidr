@@ -7,6 +7,7 @@ const PAGE_META: Record<string, { title: string; breadcrumb: string }> = {
   '/account/change-password': { title: 'Password', breadcrumb: 'Password' },
   '/account/orders': { title: 'My orders', breadcrumb: 'Orders' },
   '/account/wishlist': { title: 'Wishlist', breadcrumb: 'Wishlist' },
+  '/account/following': { title: 'Following', breadcrumb: 'Following' },
 };
 
 export function AccountLayout() {
@@ -58,7 +59,9 @@ export function AccountLayout() {
             ? 'page-account-order'
             : location.pathname.startsWith('/account/wishlist')
               ? 'page-account-wishlist'
-              : 'page-account-details'
+              : location.pathname.startsWith('/account/following')
+                ? 'page-account-following'
+                : 'page-account-details'
         }
       >
         <div className="container">
