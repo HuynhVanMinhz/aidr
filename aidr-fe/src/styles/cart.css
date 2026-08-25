@@ -122,3 +122,141 @@
   opacity: 0.55;
   cursor: not-allowed;
 }
+
+.order-summary-discount h3 {
+  color: #1a7f37;
+}
+
+.voucher-cart-panel {
+  margin-bottom: 16px;
+}
+
+.voucher-shop-picker {
+  margin-bottom: 12px;
+}
+
+.voucher-shop-picker label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 0.9rem;
+}
+
+.voucher-panel-error {
+  margin-top: 8px;
+  margin-bottom: 8px;
+  color: #c0392b;
+  font-size: 0.9rem;
+}
+
+.voucher-applied-list {
+  list-style: none;
+  margin: 12px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.voucher-applied-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 10px;
+  border: 1px solid rgba(22, 24, 29, 0.12);
+  background: rgba(22, 24, 29, 0.03);
+}
+
+.voucher-applied-item strong {
+  display: block;
+}
+
+.voucher-applied-item span {
+  font-size: 0.85rem;
+  opacity: 0.85;
+}
+
+.voucher-remove-btn {
+  border: 0;
+  background: none;
+  text-decoration: underline;
+  cursor: pointer;
+  font: inherit;
+  color: var(--text-color, #707070);
+  flex-shrink: 0;
+}
+
+.voucher-remove-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.voucher-available-list {
+  margin-top: 14px;
+}
+
+.voucher-available-hint {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--text-color, #707070);
+}
+
+.voucher-available-list ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: 240px;
+  overflow: auto;
+}
+
+.voucher-available-list li {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid rgba(22, 24, 29, 0.08);
+}
+
+.voucher-available-list li:last-child {
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+
+.voucher-item-main {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.voucher-item-meta,
+.voucher-item-reason {
+  font-size: 0.8rem;
+  color: var(--text-color, #707070);
+}
+
+.voucher-item-reason {
+  color: #c0392b;
+}
+
+.voucher-item--ineligible {
+  opacity: 0.72;
+}
+
+.voucher-item-apply {
+  flex-shrink: 0;
+  padding: 6px 12px !important;
+  font-size: 0.85rem !important;
+  border: 0;
+  cursor: pointer;
+}
+
+.voucher-item-apply:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
