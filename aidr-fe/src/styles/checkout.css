@@ -132,3 +132,12 @@
   opacity: 0.55;
   cursor: not-allowed;
 }
+
+.voucher-checkout-panel {
+  margin-bottom: 20px;
+}
+
+.voucher-checkout-panel .voucher-available-list ul {
+  max-height: 200px;
+}
+

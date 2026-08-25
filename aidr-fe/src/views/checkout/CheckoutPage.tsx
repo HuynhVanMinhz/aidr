@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { Link, Navigate, useNavigate } from 'react-router-dom';
 import { CatalogBreadcrumb } from '../../components/catalog/CatalogBreadcrumb';
+import { VoucherApplyPanel } from '../../components/cart/VoucherApplyPanel';
 import { useCart } from '../../hooks/useCart';
 import { useProfile } from '../../hooks/useProfile';
 import { useToast } from '../../hooks/useToast';
@@ -13,6 +14,11 @@ import {
   selectCheckoutSubmitting,
 } from '../../store/checkoutSlice';
 import { useAppDispatch, useAppSelector } from '../../store/hooks';
+import {
+  clearAppliedVouchers,
+  selectAppliedDiscountTotal,
+  selectAppliedVouchers,
+} from '../../store/voucherSlice';
 import type { CartItem } from '../../types/cart';
 import { formatMoney } from '../../utils/formatCatalog';
 
@@ -61,6 +67,8 @@ export function CheckoutPage() {
   const submitting = useAppSelector(selectCheckoutSubmitting);
   const paying = useAppSelector(selectCheckoutPaying);
   const checkoutError = useAppSelector(selectCheckoutError);
+  const appliedVouchers = useAppSelector(selectAppliedVouchers);
+  const discountTotal = useAppSelector(selectAppliedDiscountTotal);
   const busy = submitting || paying;
 
   const addresses = profile?.addresses ?? [];
@@ -75,6 +83,17 @@ export function CheckoutPage() {
     () => availableItems.reduce((sum, item) => sum + item.lineTotal, 0),
     [availableItems],
   );
+  const cartItemIds = useMemo(() => availableItems.map((i) => i.cartItemId), [availableItems]);
+  const shopOptions = useMemo(
+    () =>
+      shopGroups.map((g) => ({
+        shopId: g.shopId,
+        shopName: g.shopName,
+        subtotal: g.items.reduce((sum, item) => sum + item.lineTotal, 0),
+      })),
+    [shopGroups],
+  );
+  const payableTotal = Math.max(0, checkoutSubtotal - discountTotal);
 
   useEffect(() => {
     if (!addresses.length) {
@@ -130,12 +149,18 @@ export function CheckoutPage() {
     }
 
     const note = buyerNote.trim();
+    const vouchers =
+      appliedVouchers.length > 0
+        ? appliedVouchers.map((v) => ({ shopId: v.shopId, voucherId: v.voucherId }))
+        : null;
+
     const result = await dispatch(
       placeOrder({
         request: {
           shippingAddressId,
           cartItemIds: availableItems.map((i) => i.cartItemId),
           buyerNote: note || null,
+          vouchers,
         },
         shipping: {
           receiverName: selectedAddress.receiverName,
@@ -153,6 +178,8 @@ export function CheckoutPage() {
       toast.error(result.payload || getErrorMessage(result.error, 'Unable to create order.'));
       return;
     }
+
+    dispatch(clearAppliedVouchers());
 
     const orders = result.payload.orders;
     toast.success(
@@ -319,6 +346,13 @@ export function CheckoutPage() {
                   <div className="page-single-sidebar right-side-sidebar">
                     <div className="checkout-sidebar-box">
                       <div className="product-total-order-box">
+                        <VoucherApplyPanel
+                          variant="checkout"
+                          cartItemIds={cartItemIds}
+                          shopOptions={shopOptions}
+                          currency={currency}
+                        />
+
                         <div className="product-total-order-title">
                           <h3>Your Order</h3>
                         </div>
@@ -370,6 +404,13 @@ export function CheckoutPage() {
                                 Subtotal <span>{formatMoney(checkoutSubtotal, currency)}</span>
                               </p>
                             </div>
+                            {discountTotal > 0 && (
+                              <div className="all-product-total">
+                                <p>
+                                  Discount <span>−{formatMoney(discountTotal, currency)}</span>
+                                </p>
+                              </div>
+                            )}
                             <div className="all-product-total">
                               <p>
                                 Shipping <span>Free</span>
@@ -377,7 +418,7 @@ export function CheckoutPage() {
                             </div>
                             <div className="all-product-total">
                               <p>
-                                Total <span>{formatMoney(checkoutSubtotal, currency)}</span>
+                                Total <span>{formatMoney(payableTotal, currency)}</span>
                               </p>
                             </div>
                           </div>

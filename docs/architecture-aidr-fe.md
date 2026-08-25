@@ -108,6 +108,7 @@ aidr-fe/
 | `catalog` | product lists, filters, category tree | UC-09..11, 26, 27, 90 |
 | `shop` | public shop detail, seller rating, shop products | UC-62b, UC-64 |
 | `cart` | items, qty, unit price snapshot, subtotal; cleared on logout | UC-29..31 |
+| `voucher` | available vouchers + applied preview per shop; cleared on logout / cart clear | UC-32/33 |
 | `orders` | buyer order list/detail cache | UC-39..42 |
 | `sellerOrders` | seller shop order list/detail cache | UC-46/47 |
 | `wishlist` | product ids | UC-36..38 |
@@ -250,7 +251,7 @@ VITE_SIGNALR_HUB_URL=https://api.aidr.local/hubs
 | Admin moderation / categories | UC-18..25 |
 | Admin product moderation list / review | UC-18..21 |
 | Admin seller registration queue / review | UC-75, UC-76 |
-| Cart / Checkout | UC-29..31 (`/cart`, `cartApi`, add from product detail/card); UC-34 (`/checkout`, `orderApi`, order received); UC-35 (`paymentApi`, payOS redirect + `/order-received`) |
+| Cart / Checkout | UC-29..31 (`/cart`, `cartApi`); UC-32/33 (`voucherApi`, `voucherSlice`, apply on cart + checkout); UC-34 (`/checkout`, `orderApi` + `vouchers` on create); UC-35 (`paymentApi`, payOS + `/order-received`) |
 | My orders / detail | UC-39..42 (`/account/orders`, `/account/orders/:orderId`, `ordersSlice`, cancel + confirm received); `/orders` redirects here |
 | Wishlist | UC-36..38 |
 | Notifications | UC-44/45 |
