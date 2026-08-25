@@ -221,3 +221,73 @@ export type ProductModerationHistoryResult = {
   currentStatus: string;
   items: ProductModerationHistoryItem[];
 };
+
+export type AdminSystemVoucher = {
+  voucherId: string;
+  code: string;
+  name: string;
+  description?: string | null;
+  scope: string;
+  discountType: string;
+  discountValue: number;
+  maxDiscountAmount?: number | null;
+  minOrderAmount: number;
+  usageLimit?: number | null;
+  perUserLimit: number;
+  usedCount: number;
+  startsAt: string;
+  endsAt: string;
+  isActive: boolean;
+  createdBy: string;
+  createdByName?: string | null;
+  createdAt: string;
+  updatedAt: string;
+  canDelete: boolean;
+};
+
+export type AdminSystemVoucherListResult = {
+  items: AdminSystemVoucher[];
+  page: number;
+  pageSize: number;
+  totalCount: number;
+  totalPages: number;
+  activeCount: number;
+  inactiveCount: number;
+  expiredCount: number;
+};
+
+export type AdminSystemVoucherListQuery = {
+  q?: string;
+  isActive?: boolean | null;
+  page?: number;
+  pageSize?: number;
+};
+
+export type CreateSystemVoucherPayload = {
+  code: string;
+  name: string;
+  description?: string | null;
+  discountType: string;
+  discountValue: number;
+  maxDiscountAmount?: number | null;
+  minOrderAmount: number;
+  usageLimit?: number | null;
+  perUserLimit: number;
+  startsAt: string;
+  endsAt: string;
+  isActive: boolean;
+};
+
+export type UpdateSystemVoucherPayload = {
+  name: string;
+  description?: string | null;
+  discountType: string;
+  discountValue: number;
+  maxDiscountAmount?: number | null;
+  minOrderAmount: number;
+  usageLimit?: number | null;
+  perUserLimit: number;
+  startsAt: string;
+  endsAt: string;
+};
+
