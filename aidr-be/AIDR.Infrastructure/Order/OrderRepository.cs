@@ -86,6 +86,433 @@ public sealed class OrderRepository : IOrderRepository
         };
     }
 
+    public async Task<(IReadOnlyList<BuyerOrderListItemDto> Items, int TotalCount, int EffectivePage)> ListBuyerOrdersAsync(
+        Guid buyerUserId,
+        string? status,
+        int page,
+        int pageSize,
+        CancellationToken cancellationToken = default)
+    {
+        var query = _db.Orders.AsNoTracking()
+            .Where(o => o.BuyerUserId == buyerUserId);
+
+        if (!string.IsNullOrWhiteSpace(status))
+            query = query.Where(o => o.Status == status);
+
+        var totalCount = await query.CountAsync(cancellationToken);
+        var totalPages = pageSize <= 0 ? 0 : (int)Math.Ceiling(totalCount / (double)pageSize);
+        var effectivePage = totalPages == 0 ? 1 : Math.Min(page, totalPages);
+
+        var rows = await query
+            .OrderByDescending(o => o.CreatedAt)
+            .Skip((effectivePage - 1) * pageSize)
+            .Take(pageSize)
+            .Select(o => new
+            {
+                o.OrderId,
+                o.OrderCode,
+                o.ShopId,
+                ShopName = o.Shop.ShopName,
+                o.Status,
+                o.SubtotalAmount,
+                o.DiscountAmount,
+                o.ShippingFee,
+                o.TotalAmount,
+                o.Currency,
+                ItemCount = o.Items.Sum(i => i.Quantity),
+                ThumbnailUrl = o.Items
+                    .OrderBy(i => i.OrderItemId)
+                    .SelectMany(i => i.Product.Images
+                        .OrderByDescending(img => img.IsPrimary)
+                        .ThenBy(img => img.SortOrder)
+                        .Select(img => img.ImageUrl))
+                    .FirstOrDefault(),
+                o.TrackingCode,
+                o.CreatedAt,
+                o.PaidAt,
+                o.CancelledAt,
+                o.DeliveredAt,
+                o.CompletedAt
+            })
+            .ToListAsync(cancellationToken);
+
+        var items = rows.Select(o => new BuyerOrderListItemDto
+        {
+            OrderId = o.OrderId,
+            OrderCode = o.OrderCode,
+            ShopId = o.ShopId,
+            ShopName = o.ShopName,
+            Status = o.Status,
+            SubtotalAmount = o.SubtotalAmount,
+            DiscountAmount = o.DiscountAmount,
+            ShippingFee = o.ShippingFee,
+            TotalAmount = o.TotalAmount,
+            Currency = o.Currency,
+            ItemCount = o.ItemCount,
+            ThumbnailUrl = o.ThumbnailUrl,
+            TrackingCode = o.TrackingCode,
+            CreatedAt = o.CreatedAt,
+            PaidAt = o.PaidAt,
+            CancelledAt = o.CancelledAt,
+            DeliveredAt = o.DeliveredAt,
+            CompletedAt = o.CompletedAt
+        }).ToList();
+
+        return (items, totalCount, effectivePage);
+    }
+
+    public async Task<BuyerOrderDetailDto?> GetBuyerOrderAsync(
+        Guid buyerUserId,
+        Guid orderId,
+        CancellationToken cancellationToken = default)
+    {
+        var order = await _db.Orders.AsNoTracking()
+            .Include(o => o.Shop)
+            .Include(o => o.Items)
+                .ThenInclude(i => i.Product)
+                    .ThenInclude(p => p.Images)
+            .Include(o => o.Payments)
+            .Include(o => o.StatusHistories)
+            .FirstOrDefaultAsync(
+                o => o.OrderId == orderId && o.BuyerUserId == buyerUserId,
+                cancellationToken);
+
+        return order is null ? null : MapDetail(order);
+    }
+
+    public async Task<BuyerOrderDetailDto> CancelBuyerOrderAsync(
+        Guid buyerUserId,
+        Guid orderId,
+        string? reason,
+        CancellationToken cancellationToken = default)
+    {
+        await using var transaction = await _db.Database.BeginTransactionAsync(cancellationToken);
+
+        var order = await _db.Orders
+            .Include(o => o.Shop)
+            .Include(o => o.Items)
+                .ThenInclude(i => i.LotAllocations)
+                    .ThenInclude(a => a.Lot)
+            .Include(o => o.Items)
+                .ThenInclude(i => i.Product)
+                    .ThenInclude(p => p.Images)
+            .Include(o => o.Payments)
+            .Include(o => o.StatusHistories)
+            .FirstOrDefaultAsync(
+                o => o.OrderId == orderId && o.BuyerUserId == buyerUserId,
+                cancellationToken)
+            ?? throw new NotFoundException("Order not found.");
+
+        if (!string.Equals(order.Status, OrderConstants.StatusPendingPayment, StringComparison.OrdinalIgnoreCase))
+            throw new ConflictException("Only unpaid orders can be cancelled.");
+
+        var now = DateTime.UtcNow;
+        var fromStatus = order.Status;
+
+        await ReleaseReservedStockAsync(order, buyerUserId, now, cancellationToken);
+
+        order.Status = OrderConstants.StatusCancelled;
+        order.CancelledAt = now;
+        order.UpdatedAt = now;
+
+        foreach (var payment in order.Payments.Where(p =>
+                     string.Equals(p.Status, OrderConstants.PaymentStatusPending, StringComparison.OrdinalIgnoreCase)))
+        {
+            payment.Status = OrderConstants.PaymentStatusCancelled;
+            payment.UpdatedAt = now;
+        }
+
+        var cancelHistory = new OrderStatusHistory
+        {
+            OrderId = order.OrderId,
+            FromStatus = fromStatus,
+            ToStatus = OrderConstants.StatusCancelled,
+            ChangedBy = buyerUserId,
+            Note = reason ?? "Cancelled by buyer",
+            CreatedAt = now
+        };
+        order.StatusHistories.Add(cancelHistory);
+
+        await _db.SaveChangesAsync(cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
+
+        return MapDetail(order);
+    }
+
+    public async Task<BuyerOrderDetailDto> ConfirmReceivedAsync(
+        Guid buyerUserId,
+        Guid orderId,
+        CancellationToken cancellationToken = default)
+    {
+        await using var transaction = await _db.Database.BeginTransactionAsync(cancellationToken);
+
+        var order = await _db.Orders
+            .Include(o => o.Shop)
+            .Include(o => o.Items)
+                .ThenInclude(i => i.Product)
+                    .ThenInclude(p => p.Images)
+            .Include(o => o.Payments)
+            .Include(o => o.StatusHistories)
+            .FirstOrDefaultAsync(
+                o => o.OrderId == orderId && o.BuyerUserId == buyerUserId,
+                cancellationToken)
+            ?? throw new NotFoundException("Order not found.");
+
+        if (string.Equals(order.Status, OrderConstants.StatusCompleted, StringComparison.OrdinalIgnoreCase))
+        {
+            await transaction.CommitAsync(cancellationToken);
+            return MapDetail(order);
+        }
+
+        if (!string.Equals(order.Status, OrderConstants.StatusDelivered, StringComparison.OrdinalIgnoreCase))
+            throw new ConflictException("Only delivered orders can be confirmed as received.");
+
+        var now = DateTime.UtcNow;
+        var fromStatus = order.Status;
+
+        order.Status = OrderConstants.StatusCompleted;
+        order.CompletedAt = now;
+        order.UpdatedAt = now;
+
+        var completeHistory = new OrderStatusHistory
+        {
+            OrderId = order.OrderId,
+            FromStatus = fromStatus,
+            ToStatus = OrderConstants.StatusCompleted,
+            ChangedBy = buyerUserId,
+            Note = "Buyer confirmed received",
+            CreatedAt = now
+        };
+        order.StatusHistories.Add(completeHistory);
+
+        foreach (var item in order.Items)
+            item.Product.SoldCount += item.Quantity;
+
+        await CreditSellerWalletAsync(order, now, cancellationToken);
+
+        await _db.SaveChangesAsync(cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
+
+        return MapDetail(order);
+    }
+
+    private async Task ReleaseReservedStockAsync(
+        Order order,
+        Guid buyerUserId,
+        DateTime now,
+        CancellationToken cancellationToken)
+    {
+        var touchedProducts = new HashSet<Guid>();
+
+        foreach (var item in order.Items)
+        {
+            foreach (var allocation in item.LotAllocations)
+            {
+                var lot = allocation.Lot;
+                lot.QuantityRemaining += allocation.Quantity;
+                if (string.Equals(lot.Status, OrderConstants.LotStatusDepleted, StringComparison.OrdinalIgnoreCase)
+                    && lot.QuantityRemaining > 0)
+                {
+                    lot.Status = OrderConstants.LotStatusOpen;
+                }
+
+                _db.InventoryTransactions.Add(new InventoryTransaction
+                {
+                    ProductId = item.ProductId,
+                    LotId = lot.LotId,
+                    ChangeQty = allocation.Quantity,
+                    UnitCost = lot.UnitCost,
+                    Reason = OrderConstants.InventoryReasonOrderRelease,
+                    ReferenceType = OrderConstants.InventoryReferenceTypeOrder,
+                    ReferenceId = order.OrderId,
+                    Note = "Released on order cancel",
+                    CreatedBy = buyerUserId,
+                    CreatedAt = now
+                });
+            }
+
+            touchedProducts.Add(item.ProductId);
+        }
+
+        foreach (var productId in touchedProducts)
+        {
+            var product = order.Items
+                .Select(i => i.Product)
+                .FirstOrDefault(p => p.ProductId == productId)
+                ?? await _db.Products.FirstAsync(p => p.ProductId == productId, cancellationToken);
+
+            await RecalcStockAsync(product, cancellationToken);
+        }
+    }
+
+    private async Task CreditSellerWalletAsync(Order order, DateTime now, CancellationToken cancellationToken)
+    {
+        var alreadyCredited = await _db.WalletTransactions.AnyAsync(
+            t => t.ReferenceType == OrderConstants.WalletReferenceTypeOrder
+                 && t.ReferenceId == order.OrderId
+                 && t.TxType == OrderConstants.WalletTxTypeOrderCredit,
+            cancellationToken);
+
+        if (alreadyCredited)
+            return;
+
+        var wallet = await _db.Wallets
+            .FirstOrDefaultAsync(w => w.ShopId == order.ShopId, cancellationToken)
+            ?? throw new AppException("Seller wallet was not found for this shop.");
+
+        var creditAmount = decimal.Round(order.TotalAmount, 2, MidpointRounding.AwayFromZero);
+        wallet.AvailableBalance = decimal.Round(
+            wallet.AvailableBalance + creditAmount,
+            2,
+            MidpointRounding.AwayFromZero);
+        wallet.UpdatedAt = now;
+
+        _db.WalletTransactions.Add(new WalletTransaction
+        {
+            WalletId = wallet.WalletId,
+            TxType = OrderConstants.WalletTxTypeOrderCredit,
+            Amount = creditAmount,
+            BalanceAfter = wallet.AvailableBalance,
+            ReferenceType = OrderConstants.WalletReferenceTypeOrder,
+            ReferenceId = order.OrderId,
+            Note = $"Order credit for {order.OrderCode}",
+            CreatedAt = now
+        });
+    }
+
+    private static BuyerOrderDetailDto MapDetail(Order order)
+    {
+        var payment = order.Payments
+            .OrderByDescending(p => p.CreatedAt)
+            .FirstOrDefault();
+
+        var histories = order.StatusHistories
+            .OrderBy(h => h.CreatedAt)
+            .ThenBy(h => h.HistoryId)
+            .Select(h => new BuyerOrderStatusHistoryDto
+            {
+                FromStatus = h.FromStatus,
+                ToStatus = h.ToStatus,
+                Note = h.Note,
+                CreatedAt = h.CreatedAt
+            })
+            .ToList();
+
+        var items = order.Items
+            .OrderBy(i => i.OrderItemId)
+            .Select(i => new BuyerOrderItemDto
+            {
+                OrderItemId = i.OrderItemId,
+                ProductId = i.ProductId,
+                ProductName = i.ProductNameSnapshot,
+                Sku = i.SkuSnapshot,
+                ImageUrl = i.Product.Images
+                    .OrderByDescending(img => img.IsPrimary)
+                    .ThenBy(img => img.SortOrder)
+                    .Select(img => img.ImageUrl)
+                    .FirstOrDefault(),
+                Quantity = i.Quantity,
+                UnitPrice = i.UnitPrice,
+                LineTotal = i.LineTotal
+            })
+            .ToList();
+
+        return new BuyerOrderDetailDto
+        {
+            OrderId = order.OrderId,
+            OrderCode = order.OrderCode,
+            ShopId = order.ShopId,
+            ShopName = order.Shop.ShopName,
+            Status = order.Status,
+            SubtotalAmount = order.SubtotalAmount,
+            DiscountAmount = order.DiscountAmount,
+            ShippingFee = order.ShippingFee,
+            TotalAmount = order.TotalAmount,
+            Currency = order.Currency,
+            BuyerNote = order.BuyerNote,
+            SellerNote = order.SellerNote,
+            TrackingCode = order.TrackingCode,
+            Shipping = ParseShippingSnapshot(order.ShippingSnapshotJson, order.ShippingAddressId),
+            Items = items,
+            Payment = payment is null
+                ? null
+                : new BuyerOrderPaymentDto
+                {
+                    PaymentId = payment.PaymentId,
+                    Provider = payment.Provider,
+                    Status = payment.Status,
+                    Amount = payment.Amount,
+                    Currency = payment.Currency,
+                    CheckoutUrl = payment.CheckoutUrl,
+                    PaidAt = payment.PaidAt,
+                    CreatedAt = payment.CreatedAt
+                },
+            StatusHistory = histories,
+            CreatedAt = order.CreatedAt,
+            UpdatedAt = order.UpdatedAt,
+            PaidAt = order.PaidAt,
+            CancelledAt = order.CancelledAt,
+            DeliveredAt = order.DeliveredAt,
+            CompletedAt = order.CompletedAt,
+            CanCancel = string.Equals(
+                order.Status,
+                OrderConstants.StatusPendingPayment,
+                StringComparison.OrdinalIgnoreCase),
+            CanConfirmReceived = string.Equals(
+                order.Status,
+                OrderConstants.StatusDelivered,
+                StringComparison.OrdinalIgnoreCase)
+        };
+    }
+
+    private static BuyerOrderShippingDto ParseShippingSnapshot(string snapshotJson, Guid? shippingAddressId)
+    {
+        try
+        {
+            using var doc = JsonDocument.Parse(snapshotJson);
+            var root = doc.RootElement;
+            return new BuyerOrderShippingDto
+            {
+                AddressId = TryGetGuid(root, "addressId") ?? shippingAddressId,
+                ReceiverName = TryGetString(root, "receiverName") ?? string.Empty,
+                Phone = TryGetString(root, "phone") ?? string.Empty,
+                Province = TryGetString(root, "province") ?? string.Empty,
+                District = TryGetString(root, "district") ?? string.Empty,
+                Ward = TryGetString(root, "ward") ?? string.Empty,
+                StreetAddress = TryGetString(root, "streetAddress") ?? string.Empty
+            };
+        }
+        catch (JsonException)
+        {
+            return new BuyerOrderShippingDto
+            {
+                AddressId = shippingAddressId,
+                ReceiverName = string.Empty,
+                Phone = string.Empty,
+                Province = string.Empty,
+                District = string.Empty,
+                Ward = string.Empty,
+                StreetAddress = string.Empty
+            };
+        }
+    }
+
+    private static string? TryGetString(JsonElement root, string propertyName) =>
+        root.TryGetProperty(propertyName, out var value) && value.ValueKind == JsonValueKind.String
+            ? value.GetString()
+            : null;
+
+    private static Guid? TryGetGuid(JsonElement root, string propertyName)
+    {
+        if (!root.TryGetProperty(propertyName, out var value))
+            return null;
+
+        if (value.ValueKind == JsonValueKind.String && Guid.TryParse(value.GetString(), out var guid))
+            return guid;
+
+        return null;
+    }
+
     private async Task<CreatedOrderDto> CreateShopOrderAsync(
         Guid buyerUserId,
         Shop shop,

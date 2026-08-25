@@ -8,4 +8,27 @@ public interface IOrderService
         Guid buyerUserId,
         CreateOrderRequest request,
         CancellationToken cancellationToken = default);
+
+    Task<BuyerOrderListResultDto> ListBuyerOrdersAsync(
+        Guid buyerUserId,
+        string? status,
+        int page,
+        int pageSize,
+        CancellationToken cancellationToken = default);
+
+    Task<BuyerOrderDetailDto> GetBuyerOrderAsync(
+        Guid buyerUserId,
+        Guid orderId,
+        CancellationToken cancellationToken = default);
+
+    Task<BuyerOrderDetailDto> CancelBuyerOrderAsync(
+        Guid buyerUserId,
+        Guid orderId,
+        CancelOrderRequest request,
+        CancellationToken cancellationToken = default);
+
+    Task<BuyerOrderDetailDto> ConfirmReceivedAsync(
+        Guid buyerUserId,
+        Guid orderId,
+        CancellationToken cancellationToken = default);
 }

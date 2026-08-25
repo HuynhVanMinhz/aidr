@@ -10,4 +10,27 @@ public interface IOrderRepository
         IReadOnlyCollection<Guid>? cartItemIds,
         string? buyerNote,
         CancellationToken cancellationToken = default);
+
+    Task<(IReadOnlyList<BuyerOrderListItemDto> Items, int TotalCount, int EffectivePage)> ListBuyerOrdersAsync(
+        Guid buyerUserId,
+        string? status,
+        int page,
+        int pageSize,
+        CancellationToken cancellationToken = default);
+
+    Task<BuyerOrderDetailDto?> GetBuyerOrderAsync(
+        Guid buyerUserId,
+        Guid orderId,
+        CancellationToken cancellationToken = default);
+
+    Task<BuyerOrderDetailDto> CancelBuyerOrderAsync(
+        Guid buyerUserId,
+        Guid orderId,
+        string? reason,
+        CancellationToken cancellationToken = default);
+
+    Task<BuyerOrderDetailDto> ConfirmReceivedAsync(
+        Guid buyerUserId,
+        Guid orderId,
+        CancellationToken cancellationToken = default);
 }
