@@ -262,7 +262,7 @@ VITE_SIGNALR_HUB_URL=https://api.aidr.local/hubs
 | Recommend / Similar blocks | UC-53/54 |
 | AI chatbot | UC-56 |
 | Chat list / room | UC-57/58 |
-| Reviews / Seller profile / Follow | UC-59..67 |
+| Reviews / Seller profile / Follow | UC-59..63 (`reviewApi`, `reviewSlice`, product detail reviews tab; order detail review + seller rating when Completed) |
 | Seller dashboard / reports / wallet / shop vouchers | UC-69, 70, 85; UC-87..89 (`/seller/vouchers`, `voucherApi` seller + `sellerVoucherSlice`, create/edit/status/delete) |
 | Admin accounts / seller requests / system vouchers / insights | UC-71..81 (`/admin/vouchers`, `voucherApi` admin + `adminVoucherSlice`, create/edit/status/delete) |
 
