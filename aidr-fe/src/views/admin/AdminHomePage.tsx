@@ -106,6 +106,22 @@ export function AdminHomePage() {
             </div>
           </div>
         </div>
+        <div className="col-lg-4">
+          <div className="card card-height-100">
+            <div className="card-header d-flex align-items-center justify-content-between gap-2">
+              <h4 className="card-title flex-grow-1">Returns & Refunds</h4>
+              <Link to="/admin/return-requests" className="btn btn-sm btn-primary">
+                Open Queue
+              </Link>
+            </div>
+            <div className="card-body">
+              <p className="text-muted mb-0">
+                Review buyer return requests with Unboxing and Testing evidence. Approve, reject, then
+                advance Receiving → Refunded → Closed.
+              </p>
+            </div>
+          </div>
+        </div>
       </div>
     </>
   );
