@@ -43,9 +43,9 @@
 | UC-26 | Search Products | **Actor:** Guest/Buyer. Full-text / keyword trên name, brand, specs. **Business:** Giảm thời gian tìm SP. | Done | P0 |
 | UC-27 | Filter & Sort Products | **Actor:** Guest/Buyer. Lọc category, brand, giá, rating; sort price/newest/popular. **Business:** Thu hẹp lựa chọn khi catalog lớn. | Done | P0 |
 | UC-28 | AI Compare Products | **Actor:** Buyer. Chọn 2–N SP → Ollama tóm tắt so sánh theo specs. **Business:** Hỗ trợ quyết định mua điện tử phức tạp. | Todo | P2 |
-| UC-29 | View Cart | **Actor:** Buyer. Xem items, qty, giá snapshot, tổng. **Business:** Chuẩn bị checkout. | Todo | P0 |
-| UC-30 | Add Product to Cart | **Actor:** Buyer. Thêm SP Approved còn tồn; gộp qty nếu trùng. **Business:** Capture intent mua. | Todo | P0 |
-| UC-31 | Remove Product from Cart | **Actor:** Buyer. Xóa / giảm qty item. **Business:** Sửa giỏ trước thanh toán. | Todo | P0 |
+| UC-29 | View Cart | **Actor:** Buyer. Xem items, qty, giá snapshot, tổng. **Business:** Chuẩn bị checkout. | Done | P0 |
+| UC-30 | Add Product to Cart | **Actor:** Buyer. Thêm SP Approved còn tồn; gộp qty nếu trùng. **Business:** Capture intent mua. | Done | P0 |
+| UC-31 | Remove Product from Cart | **Actor:** Buyer. Xóa / giảm qty item. **Business:** Sửa giỏ trước thanh toán. | Done | P0 |
 | UC-32 | View Voucher | **Actor:** Buyer. List voucher System + Shop đang hiệu lực & đủ điều kiện. **Business:** Thúc đẩy conversion bằng KM. | Todo | P1 |
 | UC-33 | Apply Voucher | **Actor:** Buyer. Preview/apply giảm giá theo min order, limit, scope. **Business:** Áp dụng đúng policy KM. | Todo | P1 |
 | UC-34 | Create Order | **Actor:** Buyer. Split theo shop; snapshot địa chỉ & giá; reserve stock; tạo Payment pending. **Business:** Chốt đơn mua. | Todo | P0 |

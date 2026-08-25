@@ -24,6 +24,8 @@ public class AidrDbContext : DbContext
     public DbSet<ProductReview> ProductReviews => Set<ProductReview>();
     public DbSet<ViewedProductHistory> ViewedProductHistories => Set<ViewedProductHistory>();
     public DbSet<ProductModerationHistory> ProductModerationHistories => Set<ProductModerationHistory>();
+    public DbSet<Cart> Carts => Set<Cart>();
+    public DbSet<CartItem> CartItems => Set<CartItem>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -280,6 +282,33 @@ public class AidrDbContext : DbContext
                 .HasForeignKey(x => x.AdminUserId)
                 .OnDelete(DeleteBehavior.Restrict);
             e.HasIndex(x => x.ProductId);
+        });
+
+        modelBuilder.Entity<Cart>(e =>
+        {
+            e.ToTable("Carts");
+            e.HasKey(x => x.CartId);
+            e.HasOne(x => x.User)
+                .WithMany()
+                .HasForeignKey(x => x.UserId)
+                .OnDelete(DeleteBehavior.Restrict);
+            e.HasIndex(x => x.UserId).IsUnique();
+        });
+
+        modelBuilder.Entity<CartItem>(e =>
+        {
+            e.ToTable("CartItems");
+            e.HasKey(x => x.CartItemId);
+            e.Property(x => x.UnitPriceSnapshot).HasPrecision(18, 2);
+            e.HasOne(x => x.Cart)
+                .WithMany(x => x.Items)
+                .HasForeignKey(x => x.CartId)
+                .OnDelete(DeleteBehavior.Cascade);
+            e.HasOne(x => x.Product)
+                .WithMany()
+                .HasForeignKey(x => x.ProductId)
+                .OnDelete(DeleteBehavior.Restrict);
+            e.HasIndex(x => new { x.CartId, x.ProductId, x.VariantId }).IsUnique();
         });
     }
 }
