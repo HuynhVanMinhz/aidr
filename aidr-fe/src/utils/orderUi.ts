@@ -7,6 +7,8 @@ export const BUYER_ORDER_STATUS_FILTERS = [
   { value: 'Delivered', label: 'Delivered' },
   { value: 'Completed', label: 'Completed' },
   { value: 'Cancelled', label: 'Cancelled' },
+  { value: 'ReturnRequested', label: 'Return requested' },
+  { value: 'Returned', label: 'Returned' },
 ] as const;
 
 export function formatOrderStatus(status: string | null | undefined): string {
@@ -54,12 +56,16 @@ export function formatShippingLine(parts: {
 
 export function orderStatusClass(status: string | null | undefined): string {
   const key = (status ?? '').toLowerCase();
-  if (key === 'pendingpayment') return 'buyer-order-status buyer-order-status--pending';
+  if (key === 'pendingpayment' || key === 'returnrequested') {
+    return 'buyer-order-status buyer-order-status--pending';
+  }
   if (key === 'paid' || key === 'confirmed' || key === 'shipping') {
     return 'buyer-order-status buyer-order-status--progress';
   }
   if (key === 'delivered') return 'buyer-order-status buyer-order-status--delivered';
-  if (key === 'completed') return 'buyer-order-status buyer-order-status--completed';
+  if (key === 'completed' || key === 'returned') {
+    return 'buyer-order-status buyer-order-status--completed';
+  }
   if (key === 'cancelled') return 'buyer-order-status buyer-order-status--cancelled';
   return 'buyer-order-status';
 }
