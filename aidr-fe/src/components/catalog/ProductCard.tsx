@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { useCart } from '../../hooks/useCart';
 import { useToast } from '../../hooks/useToast';
+import { useWishlistProduct } from '../../hooks/useWishlist';
 import type { ProductListItem } from '../../types/catalog';
 import { discountPercent, formatMoney } from '../../utils/formatCatalog';
 
@@ -18,8 +19,15 @@ export function ProductCard({ product, variant = 'list' }: Props) {
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
   const { addItem, getErrorMessage } = useCart();
+  const {
+    inWishlist,
+    toggle,
+    mutating: wishlistBusy,
+    getErrorMessage: getWishlistError,
+  } = useWishlistProduct(product.productId);
   const toast = useToast();
   const [adding, setAdding] = useState(false);
+  const [wishlistPending, setWishlistPending] = useState(false);
 
   const off = discountPercent(product.basePrice, product.salePrice);
   const imageUrl = product.primaryImageUrl || PLACEHOLDER;
@@ -50,6 +58,26 @@ export function ProductCard({ product, variant = 'list' }: Props) {
     }
   }
 
+  async function handleWishlist(e: MouseEvent) {
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (!isAuthenticated) {
+      navigate(`/login?returnUrl=${encodeURIComponent(detailTo)}`);
+      return;
+    }
+
+    setWishlistPending(true);
+    try {
+      await toggle();
+      toast.success(inWishlist ? 'Removed from wishlist.' : 'Added to wishlist.');
+    } catch (err) {
+      toast.error(getWishlistError(err, 'Unable to update wishlist.'));
+    } finally {
+      setWishlistPending(false);
+    }
+  }
+
   const priceBlock = (
     <h3>
       {formatMoney(product.effectivePrice, product.currency)}
@@ -76,9 +104,17 @@ export function ProductCard({ product, variant = 'list' }: Props) {
       <div className="product-item-action">
         <ul>
           <li>
-            <Link to="/login" title="Wishlist" aria-label="Wishlist">
+            <button
+              type="button"
+              className={`product-card-cart-btn${inWishlist ? ' is-wishlisted' : ''}`}
+              title={inWishlist ? 'Remove from wishlist' : 'Add to wishlist'}
+              aria-label={inWishlist ? 'Remove from wishlist' : 'Add to wishlist'}
+              aria-pressed={inWishlist}
+              disabled={wishlistPending || wishlistBusy}
+              onClick={(e) => void handleWishlist(e)}
+            >
               <img src="/theme/images/icon-wishlist-primary.svg" alt="" />
-            </Link>
+            </button>
           </li>
           <li>
             <Link to={detailTo} title="Quick view" aria-label="Quick view">
