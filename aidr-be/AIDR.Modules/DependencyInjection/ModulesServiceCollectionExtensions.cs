@@ -44,6 +44,7 @@ public static class ModulesServiceCollectionExtensions
         services.AddScoped<ISellerRatingService, SellerRatingService>();
         services.AddScoped<IFollowService, FollowService>();
         services.AddScoped<INotificationService, NotificationService>();
+        services.AddScoped<IChatService, ChatService>();
         return services;
     }
 }
