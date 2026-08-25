@@ -3,6 +3,7 @@ import { adminSlice } from './adminSlice';
 import { appSlice } from './appSlice';
 import { authSlice } from './authSlice';
 import { cartSlice } from './cartSlice';
+import { checkoutSlice } from './checkoutSlice';
 import { catalogSlice } from './catalogSlice';
 import { sellerSlice } from './sellerSlice';
 import { shopSlice } from './shopSlice';
@@ -17,6 +18,7 @@ export const store = configureStore({
     catalog: catalogSlice.reducer,
     shop: shopSlice.reducer,
     cart: cartSlice.reducer,
+    checkout: checkoutSlice.reducer,
     theme: themeSlice.reducer,
     admin: adminSlice.reducer,
     seller: sellerSlice.reducer,
