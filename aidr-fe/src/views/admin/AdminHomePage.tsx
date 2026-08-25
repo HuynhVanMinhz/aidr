@@ -122,6 +122,38 @@ export function AdminHomePage() {
             </div>
           </div>
         </div>
+        <div className="col-lg-4">
+          <div className="card card-height-100">
+            <div className="card-header d-flex align-items-center justify-content-between gap-2">
+              <h4 className="card-title flex-grow-1">Accounts</h4>
+              <Link to="/admin/accounts" className="btn btn-sm btn-primary">
+                Manage Accounts
+              </Link>
+            </div>
+            <div className="card-body">
+              <p className="text-muted mb-0">
+                Browse users by role and status. Lock accounts for policy violations or unlock after
+                review.
+              </p>
+            </div>
+          </div>
+        </div>
+        <div className="col-lg-4">
+          <div className="card card-height-100">
+            <div className="card-header d-flex align-items-center justify-content-between gap-2">
+              <h4 className="card-title flex-grow-1">Customer Insights</h4>
+              <Link to="/admin/insights" className="btn btn-sm btn-primary">
+                View Insights
+              </Link>
+            </div>
+            <div className="card-body">
+              <p className="text-muted mb-0">
+                Platform KPIs, registration and order trends, top products, and a simple new vs
+                returning buyer cohort.
+              </p>
+            </div>
+          </div>
+        </div>
       </div>
     </>
   );
