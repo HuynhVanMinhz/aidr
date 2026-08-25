@@ -81,8 +81,8 @@
 | UC-65 | Follow Seller | **Actor:** Buyer. Follow shop để nhận update. **Business:** Retention & loyalty. | Done | P2 |
 | UC-66 | Unfollow Seller | **Actor:** Buyer. Bỏ follow. **Business:** Quản lý sở thích. | Done | P2 |
 | UC-67 | View List Follow | **Actor:** Buyer. Danh sách shop đang follow. **Business:** Quay lại shop yêu thích. | Done | P2 |
-| UC-69 | View Seller Dashboard | **Actor:** Seller. KPI: đơn, doanh thu, tồn thấp, pending. **Business:** Điều hành cửa hàng nhanh. | Todo | P1 |
-| UC-70 | View Sales Reports | **Actor:** Seller. Báo cáo theo ngày/tuần/tháng; kèm **margin** từ lot cost vs giá bán (BR-C06). **Business:** Ra quyết định nhập/giá. | Todo | P1 |
+| UC-69 | View Seller Dashboard | **Actor:** Seller. KPI: đơn, doanh thu, tồn thấp, pending. **Business:** Điều hành cửa hàng nhanh. | Done | P1 |
+| UC-70 | View Sales Reports | **Actor:** Seller. Báo cáo theo ngày/tuần/tháng; kèm **margin** từ lot cost vs giá bán (BR-C06). **Business:** Ra quyết định nhập/giá. | Done | P1 |
 | UC-71 | View Customer Insights | **Actor:** Admin. Thống kê hành vi / top SP / cohort đơn giản. **Business:** Quản trị sàn. | Todo | P2 |
 | UC-72 | View Account List | **Actor:** Admin. List user + role + status. **Business:** Quản trị tài khoản. | Todo | P1 |
 | UC-73 | Lock User Account | **Actor:** Admin. Status → Locked. **Business:** Xử lý vi phạm / gian lận. | Todo | P1 |
@@ -93,7 +93,7 @@
 | UC-79 | Update Voucher in System | **Actor:** Admin. Sửa điều kiện / thời hạn. **Business:** Điều chỉnh campaign. | Done | P2 |
 | UC-80 | Delete Voucher in System | **Actor:** Admin. Xóa / vô hiệu voucher chưa dùng nhiều. **Business:** Dọn KM hết hạn. | Done | P2 |
 | UC-81 | Activate / Disable Voucher | **Actor:** Admin. Bật/tắt voucher. **Business:** Kiểm soát hiển thị KM. | Done | P1 |
-| UC-85 | View Wallet | **Actor:** Seller. Số dư Available/Pending + lịch sử giao dịch. **Business:** Minh bạch tiền về shop. | Todo | P1 |
+| UC-85 | View Wallet | **Actor:** Seller. Số dư Available/Pending + lịch sử giao dịch. **Business:** Minh bạch tiền về shop. | Done | P1 |
 | UC-87 | Create Voucher for My Shop | **Actor:** Seller. Voucher Scope=Shop gắn ShopId. **Business:** KM riêng cửa hàng. | Done | P1 |
 | UC-88 | Update Voucher for My Shop | **Actor:** Seller. Sửa voucher của mình. **Business:** Linh hoạt chiến dịch shop. | Done | P2 |
 | UC-89 | Delete Voucher for My Shop | **Actor:** Seller. Xóa voucher shop. **Business:** Kết thúc KM. | Done | P2 |
