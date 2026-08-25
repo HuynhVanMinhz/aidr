@@ -94,9 +94,9 @@
 | UC-80 | Delete Voucher in System | **Actor:** Admin. Xóa / vô hiệu voucher chưa dùng nhiều. **Business:** Dọn KM hết hạn. | Done | P2 |
 | UC-81 | Activate / Disable Voucher | **Actor:** Admin. Bật/tắt voucher. **Business:** Kiểm soát hiển thị KM. | Done | P1 |
 | UC-85 | View Wallet | **Actor:** Seller. Số dư Available/Pending + lịch sử giao dịch. **Business:** Minh bạch tiền về shop. | Todo | P1 |
-| UC-87 | Create Voucher for My Shop | **Actor:** Seller. Voucher Scope=Shop gắn ShopId. **Business:** KM riêng cửa hàng. | Todo | P1 |
-| UC-88 | Update Voucher for My Shop | **Actor:** Seller. Sửa voucher của mình. **Business:** Linh hoạt chiến dịch shop. | Todo | P2 |
-| UC-89 | Delete Voucher for My Shop | **Actor:** Seller. Xóa voucher shop. **Business:** Kết thúc KM. | Todo | P2 |
+| UC-87 | Create Voucher for My Shop | **Actor:** Seller. Voucher Scope=Shop gắn ShopId. **Business:** KM riêng cửa hàng. | Done | P1 |
+| UC-88 | Update Voucher for My Shop | **Actor:** Seller. Sửa voucher của mình. **Business:** Linh hoạt chiến dịch shop. | Done | P2 |
+| UC-89 | Delete Voucher for My Shop | **Actor:** Seller. Xóa voucher shop. **Business:** Kết thúc KM. | Done | P2 |
 | UC-90 | AI NL → Filter | **Actor:** Guest/Buyer. Câu tự nhiên → JSON filter hợp lệ → apply search. **Business:** Tìm SP dễ hơn với người không rành filter. | Todo | P2 |
 | UC-91 | Import Stock Lot | **Actor:** Seller. Nhập lô: LotCode unique, qty > 0, UnitCost ≥ 0, supplier/invoice/date; tăng tồn; cập nhật Avg/LastCost; **không** sửa UnitCost lô cũ (BR-I01, BR-C02). **Business:** Theo dõi giá vốn & lãi gộp đúng khi giá nhập thay đổi. | Done | P0 |
 | UC-92 | Update Selling Price | **Actor:** Seller. Đổi BasePrice/SalePrice; ghi ProductPriceHistories; độc lập giá vốn lô. **Business:** Phản ứng thị trường mà không phá lịch sử cost/đơn. | Done | P0 |
