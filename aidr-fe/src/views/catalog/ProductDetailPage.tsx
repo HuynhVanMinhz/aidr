@@ -369,6 +369,16 @@ export function ProductDetailPage() {
                       <Link to={`/shops/${encodeURIComponent(product.shop.slug || product.shop.shopId)}`}>
                         Visit shop
                       </Link>
+                      {' · '}
+                      <Link
+                        to={
+                          isAuthenticated
+                            ? `/chat?shopId=${encodeURIComponent(product.shop.shopId)}&productId=${encodeURIComponent(product.productId)}`
+                            : `/login?returnUrl=${encodeURIComponent(`/chat?shopId=${product.shop.shopId}&productId=${product.productId}`)}`
+                        }
+                      >
+                        Chat with seller
+                      </Link>
                     </div>
                   </div>
                 </div>
