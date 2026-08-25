@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ThemeToggle } from '../ThemeToggle';
 import { useAuth } from '../../hooks/useAuth';
+import { useCart } from '../../hooks/useCart';
 import { useCategories } from '../../hooks/useCatalog';
 import type { CategoryTreeNode } from '../../types/catalog';
 
@@ -17,11 +18,13 @@ function flattenCategories(nodes: CategoryTreeNode[]): CategoryTreeNode[] {
 export function StoreHeader() {
   const navigate = useNavigate();
   const { isAuthenticated, roles } = useAuth();
+  const { totalQuantity } = useCart({ autoLoad: isAuthenticated });
   const { categories } = useCategories();
   const [q, setQ] = useState('');
   const [categoriesOpen, setCategoriesOpen] = useState(false);
   const isAdmin = roles.some((r) => r.toUpperCase() === 'ADMIN');
   const isSeller = roles.some((r) => r.toUpperCase() === 'SELLER');
+  const cartTo = isAuthenticated ? '/cart' : `/login?returnUrl=${encodeURIComponent('/cart')}`;
 
   function handleSearch(e: FormEvent) {
     e.preventDefault();
@@ -97,9 +100,14 @@ export function StoreHeader() {
                     </Link>
                   </li>
                   <li>
-                    <Link to="/login">
+                    <Link to={cartTo}>
                       <img src="/theme/images/icon-cart-primary.svg" alt="" />
                       My Cart
+                      {isAuthenticated && totalQuantity > 0 ? (
+                        <span className="store-header-cart-count" aria-label={`${totalQuantity} items in cart`}>
+                          {totalQuantity > 99 ? '99+' : totalQuantity}
+                        </span>
+                      ) : null}
                     </Link>
                   </li>
                   {isAuthenticated ? (

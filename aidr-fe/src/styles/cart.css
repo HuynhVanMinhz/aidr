@@ -1,0 +1,113 @@
+/* Cart page helpers — visuals from theme custom.css */
+
+.cart-empty-state {
+  padding: 48px 0 72px;
+  text-align: center;
+}
+
+.cart-empty-state h2 {
+  margin-bottom: 12px;
+}
+
+.cart-empty-state p {
+  margin-bottom: 24px;
+  color: var(--text-color, #707070);
+}
+
+.cart-item-title a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.cart-item-title a:hover {
+  text-decoration: underline;
+}
+
+.cart-item-shop {
+  margin-top: 4px;
+  font-size: 0.9em;
+  opacity: 0.8;
+}
+
+.cart-item-unavailable-note {
+  margin-top: 6px;
+  color: #c0392b;
+  font-size: 0.85em;
+}
+
+.cart-item-remove {
+  margin-top: 8px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--text-color, #707070);
+  text-decoration: underline;
+  cursor: pointer;
+  font: inherit;
+}
+
+.cart-item-remove:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.cart-item-current-price {
+  font-size: 0.85em;
+  opacity: 0.75;
+}
+
+.cart-item--unavailable {
+  opacity: 0.85;
+}
+
+.cart-item-buttons .btn-default.btn-clear {
+  border: 0;
+  cursor: pointer;
+}
+
+.cart-item-buttons .btn-default.btn-clear:disabled,
+.order-checkout-button .btn-default:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.order-checkout-button .btn-default {
+  width: 100%;
+  border: 0;
+}
+
+.store-header-cart-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.25rem;
+  height: 1.25rem;
+  margin-left: 0.35rem;
+  padding: 0 0.35rem;
+  border-radius: 999px;
+  background: var(--primary-color, #16181d);
+  color: #fff;
+  font-size: 0.75rem;
+  line-height: 1;
+  vertical-align: middle;
+}
+
+.product-card-cart-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+.product-card-cart-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.product-single-content-btn .btn-default:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
