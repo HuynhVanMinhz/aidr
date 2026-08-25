@@ -255,7 +255,7 @@ VITE_SIGNALR_HUB_URL=https://api.aidr.local/hubs
 | Admin seller registration queue / review | UC-75, UC-76 |
 | Cart / Checkout | UC-29..31 (`/cart`, `cartApi`); UC-32/33 (`voucherApi`, `voucherSlice`, apply on cart + checkout); UC-34 (`/checkout`, `orderApi` + `vouchers` on create); UC-35 (`paymentApi`, payOS + `/order-received`) |
 | My orders / detail | UC-39..42 (`/account/orders`, `/account/orders/:orderId`, `ordersSlice`, cancel + confirm received); `/orders` redirects here |
-| Wishlist | UC-36..38 |
+| Wishlist | UC-36..38 (`/wishlist` → `/account/wishlist`, `wishlistApi`, `wishlistSlice`, add/remove on catalog + detail) |
 | Notifications | UC-44/45 |
 | Seller orders | UC-46/47 (`/seller/orders`, `/seller/orders/:orderId`, `sellerOrdersSlice`, update status + tracking) |
 | Admin returns | UC-48..52 |
