@@ -1,15 +1,23 @@
-import { Link, Outlet, useLocation } from 'react-router-dom';
+import { Link, Outlet, useLocation, useParams } from 'react-router-dom';
 import { AccountSidebar } from './AccountSidebar';
 
 const PAGE_META: Record<string, { title: string; breadcrumb: string }> = {
   '/account/profile': { title: 'Account information', breadcrumb: 'Account information' },
   '/account/addresses': { title: 'Shipping addresses', breadcrumb: 'Addresses' },
   '/account/change-password': { title: 'Password', breadcrumb: 'Password' },
+  '/account/orders': { title: 'My orders', breadcrumb: 'Orders' },
 };
 
 export function AccountLayout() {
   const location = useLocation();
-  const meta = PAGE_META[location.pathname] ?? { title: 'Account', breadcrumb: 'Account' };
+  const { orderId } = useParams<{ orderId?: string }>();
+
+  const meta = (() => {
+    if (orderId && location.pathname.startsWith('/account/orders/')) {
+      return { title: 'Order details', breadcrumb: 'Order details' };
+    }
+    return PAGE_META[location.pathname] ?? { title: 'Account', breadcrumb: 'Account' };
+  })();
 
   return (
     <>
@@ -27,6 +35,11 @@ export function AccountLayout() {
                     <li className="breadcrumb-item">
                       <Link to="/account/profile">Account</Link>
                     </li>
+                    {orderId ? (
+                      <li className="breadcrumb-item">
+                        <Link to="/account/orders">Orders</Link>
+                      </li>
+                    ) : null}
                     <li className="breadcrumb-item active" aria-current="page">
                       {meta.breadcrumb}
                     </li>
@@ -38,7 +51,13 @@ export function AccountLayout() {
         </div>
       </div>
 
-      <div className="page-account-details">
+      <div
+        className={
+          location.pathname.startsWith('/account/orders')
+            ? 'page-account-order'
+            : 'page-account-details'
+        }
+      >
         <div className="container">
           <div className="row">
             <div className="col-lg-4">
