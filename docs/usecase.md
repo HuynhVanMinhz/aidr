@@ -53,10 +53,10 @@
 | UC-36 | View Wishlist | **Actor:** Buyer. Danh sách SP yêu thích. **Business:** Lưu SP quan tâm để mua sau. | Todo | P1 |
 | UC-37 | Add Product to Wishlist | **Actor:** Buyer. Thêm SP (unique user+product). **Business:** Retention & remarketing. | Todo | P1 |
 | UC-38 | Delete Product from Wishlist | **Actor:** Buyer. Gỡ SP khỏi wishlist. **Business:** Quản lý danh sách quan tâm. | Todo | P1 |
-| UC-39 | View Purchased Orders | **Actor:** Buyer. List đơn theo status + thời gian. **Business:** Theo dõi mua hàng. | Todo | P0 |
-| UC-40 | View Order Details | **Actor:** Buyer. Chi tiết dòng hàng, thanh toán, tracking. **Business:** Minh bạch fulfillment. | Todo | P0 |
-| UC-41 | Cancel Order | **Actor:** Buyer. Chỉ khi status cho phép (PendingPayment/Paid sớm); release stock. **Business:** Giảm đơn ảo / đổi ý. | Todo | P0 |
-| UC-42 | Confirm Received | **Actor:** Buyer. Delivered → Completed; trigger credit wallet seller (policy). **Business:** Đóng vòng đời đơn & đối soát. | Todo | P0 |
+| UC-39 | View Purchased Orders | **Actor:** Buyer. List đơn theo status + thời gian. **Business:** Theo dõi mua hàng. | Done | P0 |
+| UC-40 | View Order Details | **Actor:** Buyer. Chi tiết dòng hàng, thanh toán, tracking. **Business:** Minh bạch fulfillment. | Done | P0 |
+| UC-41 | Cancel Order | **Actor:** Buyer. Chỉ khi status cho phép (PendingPayment/Paid sớm); release stock. **Business:** Giảm đơn ảo / đổi ý. | Done | P0 |
+| UC-42 | Confirm Received | **Actor:** Buyer. Delivered → Completed; trigger credit wallet seller (policy). **Business:** Đóng vòng đời đơn & đối soát. | Done | P0 |
 | UC-43 | Request Return / Refund | **Actor:** Buyer. Yêu cầu **Trả hàng + Hoàn tiền** (không Đổi hàng — BR-R01). Lý do + bắt buộc video **Unboxing** (6 mặt kiện + mã vận đơn) và **Testing** (bật máy / chứng minh lỗi). Tạo ReturnRequest Pending + ReturnEvidences. **Business:** Bảo vệ buyer; MVP Admin xử lý thủ công. | Todo | P1 |
 | UC-44 | View Notifications | **Actor:** Buyer/Seller. Inbox thông báo (order, payment, chat, **product moderation**, return…); SignalR push. **Business:** Giữ user engagement realtime. | Todo | P1 |
 | UC-45 | Delete Notification | **Actor:** Buyer/Seller. Xóa / ẩn thông báo. **Business:** Dọn inbox. | Todo | P2 |

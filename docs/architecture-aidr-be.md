@@ -136,7 +136,11 @@ aidr-be/
 | UC-32/33 | Voucher list / apply preview | Order |
 | UC-34 | `POST /api/orders` | Order |
 | UC-35 | `POST /api/payments/payos/create` + webhook | Payment |
-| UC-39..43 | Buyer order + return request | Order |
+| UC-39 | `GET /api/orders?status=&page=&pageSize=` — buyer purchased orders (paged, newest first) | Order |
+| UC-40 | `GET /api/orders/{orderId}` — detail: items, payment, tracking, status history, shipping snapshot | Order |
+| UC-41 | `POST /api/orders/{orderId}/cancel` — only `PendingPayment` (BR-O01); release reserved stock; cancel pending payment | Order |
+| UC-42 | `POST /api/orders/{orderId}/confirm-received` — only `Delivered` → `Completed` (BR-O02); credit seller wallet `OrderCredit` (BR-W01) | Order |
+| UC-43 | Buyer return request | Order |
 
 ### 6.5 Admin
 | UC | Endpoint | Module |
