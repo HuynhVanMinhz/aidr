@@ -19,6 +19,7 @@ import { sellerVoucherSlice } from './sellerVoucherSlice';
 import { wishlistSlice } from './wishlistSlice';
 import { reviewSlice } from './reviewSlice';
 import { followSlice } from './followSlice';
+import { notificationSlice } from './notificationSlice';
 
 export const store = configureStore({
   reducer: {
@@ -29,6 +30,7 @@ export const store = configureStore({
     shop: shopSlice.reducer,
     cart: cartSlice.reducer,
     wishlist: wishlistSlice.reducer,
+    notifications: notificationSlice.reducer,
     follow: followSlice.reducer,
     review: reviewSlice.reducer,
     voucher: voucherSlice.reducer,

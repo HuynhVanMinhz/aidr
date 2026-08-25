@@ -257,7 +257,7 @@ VITE_SIGNALR_HUB_URL=https://api.aidr.local/hubs
 | My orders / detail | UC-39..43 (`/account/orders`, `/account/orders/:orderId`, `ordersSlice` + `returnsSlice` / `returnApi`, cancel + confirm received + request return with Unboxing/Testing evidence) |
 | Wishlist | UC-36..38 (`/wishlist` → `/account/wishlist`, `wishlistApi`, `wishlistSlice`, add/remove on catalog + detail) |
 | Following | UC-65..67 (`/following` → `/account/following`, `followApi`, `followSlice`, follow/unfollow on shop page + list) |
-| Notifications | UC-44/45 |
+| Notifications | UC-44/45 (`/account/notifications`, `/seller/notifications`, `notificationApi`, `notificationSlice`, SignalR `NotificationHub` → unread badge + prepend inbox) |
 | Seller orders | UC-46/47 (`/seller/orders`, `/seller/orders/:orderId`, `sellerOrdersSlice`, update status + tracking) |
 | Admin returns | UC-48..52 (`/admin/return-requests`, `/admin/return-requests/:id`, `returnApi`, `adminReturnsSlice`, approve/reject + Receiving→Refunded→Closed) |
 | Recommend / Similar blocks | UC-53/54 |

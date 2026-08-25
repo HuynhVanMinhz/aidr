@@ -6,6 +6,7 @@ const PAGE_META: Record<string, { title: string; breadcrumb: string }> = {
   '/account/addresses': { title: 'Shipping addresses', breadcrumb: 'Addresses' },
   '/account/change-password': { title: 'Password', breadcrumb: 'Password' },
   '/account/orders': { title: 'My orders', breadcrumb: 'Orders' },
+  '/account/notifications': { title: 'Notifications', breadcrumb: 'Notifications' },
   '/account/wishlist': { title: 'Wishlist', breadcrumb: 'Wishlist' },
   '/account/following': { title: 'Following', breadcrumb: 'Following' },
 };
@@ -57,11 +58,13 @@ export function AccountLayout() {
         className={
           location.pathname.startsWith('/account/orders')
             ? 'page-account-order'
-            : location.pathname.startsWith('/account/wishlist')
-              ? 'page-account-wishlist'
-              : location.pathname.startsWith('/account/following')
-                ? 'page-account-following'
-                : 'page-account-details'
+            : location.pathname.startsWith('/account/notifications')
+              ? 'page-account-notifications'
+              : location.pathname.startsWith('/account/wishlist')
+                ? 'page-account-wishlist'
+                : location.pathname.startsWith('/account/following')
+                  ? 'page-account-following'
+                  : 'page-account-details'
         }
       >
         <div className="container">
