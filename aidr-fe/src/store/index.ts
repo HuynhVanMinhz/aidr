@@ -1,11 +1,13 @@
 import { configureStore } from '@reduxjs/toolkit';
 import { adminSlice } from './adminSlice';
+import { adminReturnsSlice } from './adminReturnsSlice';
 import { appSlice } from './appSlice';
 import { authSlice } from './authSlice';
 import { cartSlice } from './cartSlice';
 import { checkoutSlice } from './checkoutSlice';
 import { catalogSlice } from './catalogSlice';
 import { ordersSlice } from './ordersSlice';
+import { returnsSlice } from './returnsSlice';
 import { sellerOrdersSlice } from './sellerOrdersSlice';
 import { sellerSlice } from './sellerSlice';
 import { shopSlice } from './shopSlice';
@@ -34,9 +36,11 @@ export const store = configureStore({
     sellerVoucher: sellerVoucherSlice.reducer,
     checkout: checkoutSlice.reducer,
     orders: ordersSlice.reducer,
+    returns: returnsSlice.reducer,
     sellerOrders: sellerOrdersSlice.reducer,
     theme: themeSlice.reducer,
     admin: adminSlice.reducer,
+    adminReturns: adminReturnsSlice.reducer,
     seller: sellerSlice.reducer,
   },
 });

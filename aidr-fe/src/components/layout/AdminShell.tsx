@@ -37,6 +37,8 @@ function pageTitle(pathname: string, variant: AdminShellVariant) {
   if (pathname.includes('/categories')) return 'Categories List';
   if (pathname.match(/\/seller-registrations\/[^/]+$/)) return 'Seller Registration Review';
   if (pathname.includes('/seller-registrations')) return 'Seller Registrations';
+  if (pathname.match(/\/return-requests\/[^/]+$/)) return 'Return Request Details';
+  if (pathname.includes('/return-requests')) return 'Return Requests';
   if (pathname.match(/\/orders\/[^/]+$/)) return 'Order Details';
   if (pathname.includes('/orders')) return 'Orders List';
   if (pathname.match(/\/products\/[^/]+\/inventory$/)) return 'Product Inventory';
@@ -58,6 +60,7 @@ export function AdminShell({ variant = 'admin', children }: AdminShellProps) {
   const [categoryOpen, setCategoryOpen] = useState(pathname.includes('/categories'));
   const [voucherOpen, setVoucherOpen] = useState(pathname.includes('/vouchers'));
   const [sellerRegOpen, setSellerRegOpen] = useState(pathname.includes('/seller-registrations'));
+  const [returnOpen, setReturnOpen] = useState(pathname.includes('/return-requests'));
   const [productOpen, setProductOpen] = useState(pathname.includes('/products'));
   const [moderationOpen, setModerationOpen] = useState(
     variant === 'admin' && pathname.includes('/products'),
@@ -68,6 +71,7 @@ export function AdminShell({ variant = 'admin', children }: AdminShellProps) {
     if (pathname.includes('/categories')) setCategoryOpen(true);
     if (pathname.includes('/vouchers')) setVoucherOpen(true);
     if (pathname.includes('/seller-registrations')) setSellerRegOpen(true);
+    if (pathname.includes('/return-requests')) setReturnOpen(true);
     if (pathname.includes('/products')) {
       setProductOpen(true);
       if (variant === 'admin') setModerationOpen(true);
@@ -293,6 +297,34 @@ export function AdminShell({ variant = 'admin', children }: AdminShellProps) {
                       <NavLink
                         className={({ isActive }) => `sub-nav-link${isActive ? ' active' : ''}`}
                         to="/admin/products"
+                        end
+                      >
+                        Queue
+                      </NavLink>
+                    </li>
+                  </ul>
+                </div>
+              </li>
+              <li className="nav-item">
+                <a
+                  className={`nav-link menu-arrow ${returnOpen ? '' : 'collapsed'}`}
+                  href="#sidebarReturnRequests"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setReturnOpen((v) => !v);
+                  }}
+                >
+                  <span className="nav-icon">
+                    <IconifyIcon icon="solar:restart-bold-duotone" />
+                  </span>
+                  <span className="nav-text">Returns & Refunds</span>
+                </a>
+                <div className={`collapse ${returnOpen ? 'show' : ''}`} id="sidebarReturnRequests">
+                  <ul className="nav sub-navbar-nav">
+                    <li className="sub-nav-item">
+                      <NavLink
+                        className={({ isActive }) => `sub-nav-link${isActive ? ' active' : ''}`}
+                        to="/admin/return-requests"
                         end
                       >
                         Queue
