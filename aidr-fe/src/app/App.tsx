@@ -1,4 +1,4 @@
-import { Navigate, Route, Routes } from 'react-router-dom';
+import { Navigate, Route, Routes, useParams } from 'react-router-dom';
 import { GuestRoute, ProtectedRoute } from './guards/AuthGuards';
 import { AppShell } from './AppShell';
 import { AccountLayout } from '../components/account/AccountLayout';
@@ -14,6 +14,8 @@ import { GoogleCallbackPage } from '../views/auth/GoogleCallbackPage';
 import { ProfilePage } from '../views/account/ProfilePage';
 import { AddressesPage } from '../views/account/AddressesPage';
 import { ChangePasswordPage } from '../views/account/ChangePasswordPage';
+import { OrdersPage } from '../views/account/OrdersPage';
+import { OrderDetailPage } from '../views/account/OrderDetailPage';
 import { ProductListPage } from '../views/catalog/ProductListPage';
 import { ProductDetailPage } from '../views/catalog/ProductDetailPage';
 import { CategoriesPage } from '../views/catalog/CategoriesPage';
@@ -39,6 +41,11 @@ import { ToastHost } from '../components/feedback/ToastHost';
 function AppThemeBridge() {
   useAidrShellTheme();
   return null;
+}
+
+function OrdersRedirect() {
+  const { orderId } = useParams<{ orderId: string }>();
+  return <Navigate to={orderId ? `/account/orders/${orderId}` : '/account/orders'} replace />;
 }
 
 export function App() {
@@ -97,9 +104,13 @@ export function App() {
             <Route path="account" element={<AccountLayout />}>
               <Route index element={<Navigate to="profile" replace />} />
               <Route path="profile" element={<ProfilePage />} />
+              <Route path="orders" element={<OrdersPage />} />
+              <Route path="orders/:orderId" element={<OrderDetailPage />} />
               <Route path="addresses" element={<AddressesPage />} />
               <Route path="change-password" element={<ChangePasswordPage />} />
             </Route>
+            <Route path="orders" element={<Navigate to="/account/orders" replace />} />
+            <Route path="orders/:orderId" element={<OrdersRedirect />} />
           </Route>
         </Route>
 
