@@ -80,6 +80,7 @@ public sealed class SellerInventoryRepository : ISellerInventoryRepository
         var items = rows.Select(p =>
         {
             var available = Math.Max(0, p.StockQuantity - p.ReservedQuantity);
+            var effectivePrice = EffectiveSellingPrice(p.BasePrice, p.SalePrice);
             return new SellerInventoryListItemDto
             {
                 ProductId = p.ProductId,
@@ -94,8 +95,10 @@ public sealed class SellerInventoryRepository : ISellerInventoryRepository
                 IsLowStock = available <= p.LowStockThreshold,
                 LastCostPrice = p.LastCostPrice,
                 AvgCostPrice = p.AvgCostPrice,
+                EstimatedMarginPerUnit = EstimatedMargin(effectivePrice, p.AvgCostPrice),
                 BasePrice = p.BasePrice,
                 SalePrice = p.SalePrice,
+                EffectivePrice = effectivePrice,
                 Currency = p.Currency,
                 UpdatedAt = p.UpdatedAt
             };
@@ -447,6 +450,8 @@ public sealed class SellerInventoryRepository : ISellerInventoryRepository
         int transactionLimit,
         CancellationToken cancellationToken)
     {
+        var effectivePrice = EffectiveSellingPrice(product.BasePrice, product.SalePrice);
+
         var lots = await _db.InventoryLots.AsNoTracking()
             .Where(l => l.ProductId == product.ProductId)
             .OrderByDescending(l => l.ReceivedAt)
@@ -458,6 +463,7 @@ public sealed class SellerInventoryRepository : ISellerInventoryRepository
                 QuantityReceived = l.QuantityReceived,
                 QuantityRemaining = l.QuantityRemaining,
                 UnitCost = l.UnitCost,
+                EstimatedMarginPerUnit = effectivePrice - l.UnitCost,
                 Currency = l.Currency,
                 SupplierName = l.SupplierName,
                 InvoiceNumber = l.InvoiceNumber,
@@ -501,11 +507,19 @@ public sealed class SellerInventoryRepository : ISellerInventoryRepository
             IsLowStock = available <= product.LowStockThreshold,
             LastCostPrice = product.LastCostPrice,
             AvgCostPrice = product.AvgCostPrice,
+            EstimatedMarginPerUnit = EstimatedMargin(effectivePrice, product.AvgCostPrice),
             BasePrice = product.BasePrice,
             SalePrice = product.SalePrice,
+            EffectivePrice = effectivePrice,
             Currency = product.Currency,
             Lots = lots,
             RecentTransactions = transactions
         };
     }
+
+    private static decimal EffectiveSellingPrice(decimal basePrice, decimal? salePrice) =>
+        salePrice is { } sale && sale > 0 && sale < basePrice ? sale : basePrice;
+
+    private static decimal? EstimatedMargin(decimal effectivePrice, decimal? avgCost) =>
+        avgCost is { } cost ? effectivePrice - cost : null;
 }

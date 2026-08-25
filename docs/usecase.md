@@ -28,13 +28,13 @@
 | UC-11 | View Product Categories | **Actor:** Guest/Buyer. Cây danh mục đang Active để điều hướng. **Business:** Tổ chức catalog theo ngành hàng điện tử. | Done | P0 |
 | UC-12 | Create Product | **Actor:** Seller. Tạo SP thuộc shop; status mặc định `Pending`; nhập mô tả, brand, model, giá bán… **Business:** Seller mở rộng catalog; cần Admin duyệt trước khi lên kệ. | Done | P0 |
 | UC-13 | Upload Image Product | **Actor:** Seller. Upload Cloudinary → lưu URL/publicId vào ProductImages. **Business:** Media chất lượng tăng trust & conversion. | Done | P0 |
-| UC-14 | Update Product | **Actor:** Seller (owner). Sửa thông tin SP thuộc shop; có thể đưa lại Pending nếu rule yêu cầu. **Business:** Giữ thông tin SP cập nhật. | Done | P0 |
+| UC-14 | Update Product | **Actor:** Seller (owner). Sửa thông tin SP thuộc shop; **reset status → Pending** để Admin duyệt lại (BR-P03). **Business:** Giữ thông tin SP cập nhật; không lên kệ lại khi chưa duyệt. | Done | P0 |
 | UC-15 | Delete Product | **Actor:** Seller. Soft-delete / Inactive; không xóa cứng nếu đã có order. **Business:** Dọn catalog; bảo toàn lịch sử đơn. | Done | P1 |
 | UC-16 | View My Products | **Actor:** Seller. List SP của shop theo status (Draft/Pending/Approved…). **Business:** Quản lý danh mục bán. | Done | P0 |
-| UC-17 | Manage Product Inventory | **Actor:** Seller. Xem tồn, reserved, low-stock; điều chỉnh thủ công có ghi InventoryTransactions. **Business:** Tránh oversell. | Done | P0 |
+| UC-17 | Manage Product Inventory | **Actor:** Seller. Xem tồn, reserved, low-stock; **so sánh giá bán vs giá nhập (AvgCost / UnitCost lô)** → Est. margin/unit; điều chỉnh thủ công có ghi InventoryTransactions. **Business:** Tránh oversell; biết lời lãi từng SP (BR-C06). | Done | P0 |
 | UC-18 | View Product List (Admin) | **Actor:** Admin. Queue toàn bộ SP (ưu tiên Pending). **Business:** Kiểm soát chất lượng catalog. | Done | P0 |
 | UC-19 | Approve Product | **Actor:** Admin. Pending → Approved; ghi moderation history. **Business:** SP đủ chuẩn mới hiện buyer. | Done | P0 |
-| UC-20 | Reject Product | **Actor:** Admin. Pending → Rejected + lý do. **Business:** Chặn SP sai/thiếu thông tin. | Done | P0 |
+| UC-20 | Reject Product | **Actor:** Admin. Pending → Rejected + lý do; Seller xem reason → sửa (UC-14) hoặc bỏ SP. **Business:** Chặn SP sai/thiếu thông tin; vòng duyệt lại. | Done | P0 |
 | UC-21 | View Moderation History | **Actor:** Admin. Timeline Approve/Reject theo product. **Business:** Audit & tranh chấp. | Done | P1 |
 | UC-22 | Create Category | **Actor:** Admin. Tạo category (parent/child, slug unique). **Business:** Cấu trúc ngành hàng. | Done | P0 |
 | UC-23 | Update Category | **Actor:** Admin. Sửa tên, mô tả, ảnh, sort, parent (không tạo vòng lặp). **Business:** Duy trì taxonomy. | Done | P1 |
@@ -57,15 +57,15 @@
 | UC-40 | View Order Details | **Actor:** Buyer. Chi tiết dòng hàng, thanh toán, tracking. **Business:** Minh bạch fulfillment. | Todo | P0 |
 | UC-41 | Cancel Order | **Actor:** Buyer. Chỉ khi status cho phép (PendingPayment/Paid sớm); release stock. **Business:** Giảm đơn ảo / đổi ý. | Todo | P0 |
 | UC-42 | Confirm Received | **Actor:** Buyer. Delivered → Completed; trigger credit wallet seller (policy). **Business:** Đóng vòng đời đơn & đối soát. | Todo | P0 |
-| UC-43 | Request Return / Refund | **Actor:** Buyer. Sau nhận hàng; lý do + evidence; tạo ReturnRequest Pending. **Business:** Bảo vệ quyền buyer; MVP Admin xử lý thủ công. | Todo | P1 |
-| UC-44 | View Notifications | **Actor:** Buyer/Seller. Inbox thông báo (order, payment, chat…); SignalR push. **Business:** Giữ user engagement realtime. | Todo | P1 |
+| UC-43 | Request Return / Refund | **Actor:** Buyer. Yêu cầu **Trả hàng + Hoàn tiền** (không Đổi hàng — BR-R01). Lý do + bắt buộc video **Unboxing** (6 mặt kiện + mã vận đơn) và **Testing** (bật máy / chứng minh lỗi). Tạo ReturnRequest Pending + ReturnEvidences. **Business:** Bảo vệ buyer; MVP Admin xử lý thủ công. | Todo | P1 |
+| UC-44 | View Notifications | **Actor:** Buyer/Seller. Inbox thông báo (order, payment, chat, **product moderation**, return…); SignalR push. **Business:** Giữ user engagement realtime. | Todo | P1 |
 | UC-45 | Delete Notification | **Actor:** Buyer/Seller. Xóa / ẩn thông báo. **Business:** Dọn inbox. | Todo | P2 |
 | UC-46 | View Order List | **Actor:** Seller. Đơn của shop; lọc status. **Business:** Vận hành fulfillment. | Todo | P0 |
 | UC-47 | Update Order Status | **Actor:** Seller. Paid→Confirmed→Shipping→Delivered; nhập tracking thủ công. **Business:** Cập nhật tiến độ giao (không API GHN). | Todo | P0 |
-| UC-48 | View Return Requests | **Actor:** Admin. Queue return toàn hệ thống. **Business:** Điều phối hoàn hàng. | Todo | P1 |
-| UC-49 | View Return Request Details | **Actor:** Admin. Chi tiết lý do, evidence, order lines. **Business:** Ra quyết định Approve/Reject. | Todo | P1 |
-| UC-50 | Approve / Reject Return Request | **Actor:** Admin. Duyệt hoặc từ chối + note. **Business:** Kiểm soát gian lận / policy. | Todo | P1 |
-| UC-52 | Update Return Request Status | **Actor:** Admin. Receiving → Refunded → Closed; ghi history. **Business:** Theo dõi pipeline hoàn. | Todo | P1 |
+| UC-48 | View Return Requests | **Actor:** Admin. Queue return/refund toàn hệ thống. **Business:** Điều phối hoàn hàng (không exchange). | Todo | P1 |
+| UC-49 | View Return Request Details | **Actor:** Admin. Chi tiết lý do, **video Unboxing/Testing**, order lines. **Business:** Ra quyết định Approve/Reject dựa bằng chứng. | Todo | P1 |
+| UC-50 | Approve / Reject Return Request | **Actor:** Admin. Duyệt hoặc từ chối + note bắt buộc khi reject (BR-R03). Approve → pipeline Receiving→Refund. **Business:** Kiểm soát gian lận / policy. | Todo | P1 |
+| UC-52 | Update Return Request Status | **Actor:** Admin. Receiving → Refunded → Closed; hoàn tiền buyer trước rồi `RefundDebit` wallet seller (BR-R04); ghi history. **Business:** Theo dõi pipeline hoàn. | Todo | P1 |
 | UC-53 | View Recommended Products | **Actor:** Buyer. SP gợi ý từ hành vi / hybrid strategy. **Business:** Tăng AOV & discovery. | Todo | P2 |
 | UC-54 | View Similar Products | **Actor:** Buyer. SP tương tự theo category/specs/content. **Business:** Cross-sell trên trang detail. | Todo | P2 |
 | UC-56 | Use AI Shopping Assistant | **Actor:** Buyer. Chatbot Ollama tư vấn SP / FAQ mua sắm. **Business:** Hỗ trợ 24/7, giảm tải CSKH. | Todo | P2 |
@@ -82,7 +82,7 @@
 | UC-66 | Unfollow Seller | **Actor:** Buyer. Bỏ follow. **Business:** Quản lý sở thích. | Todo | P2 |
 | UC-67 | View List Follow | **Actor:** Buyer. Danh sách shop đang follow. **Business:** Quay lại shop yêu thích. | Todo | P2 |
 | UC-69 | View Seller Dashboard | **Actor:** Seller. KPI: đơn, doanh thu, tồn thấp, pending. **Business:** Điều hành cửa hàng nhanh. | Todo | P1 |
-| UC-70 | View Sales Reports | **Actor:** Seller. Báo cáo theo ngày/tuần/tháng; có thể kèm margin từ lot cost. **Business:** Ra quyết định nhập/giá. | Todo | P1 |
+| UC-70 | View Sales Reports | **Actor:** Seller. Báo cáo theo ngày/tuần/tháng; kèm **margin** từ lot cost vs giá bán (BR-C06). **Business:** Ra quyết định nhập/giá. | Todo | P1 |
 | UC-71 | View Customer Insights | **Actor:** Admin. Thống kê hành vi / top SP / cohort đơn giản. **Business:** Quản trị sàn. | Todo | P2 |
 | UC-72 | View Account List | **Actor:** Admin. List user + role + status. **Business:** Quản trị tài khoản. | Todo | P1 |
 | UC-73 | Lock User Account | **Actor:** Admin. Status → Locked. **Business:** Xử lý vi phạm / gian lận. | Todo | P1 |
@@ -98,7 +98,7 @@
 | UC-88 | Update Voucher for My Shop | **Actor:** Seller. Sửa voucher của mình. **Business:** Linh hoạt chiến dịch shop. | Todo | P2 |
 | UC-89 | Delete Voucher for My Shop | **Actor:** Seller. Xóa voucher shop. **Business:** Kết thúc KM. | Todo | P2 |
 | UC-90 | AI NL → Filter | **Actor:** Guest/Buyer. Câu tự nhiên → JSON filter hợp lệ → apply search. **Business:** Tìm SP dễ hơn với người không rành filter. | Todo | P2 |
-| UC-91 | Import Stock Lot | **Actor:** Seller. Nhập lô: qty + UnitCost + supplier/invoice; tăng tồn; cập nhật Avg/LastCost; **không** sửa UnitCost lô cũ. **Business:** Theo dõi giá vốn & lãi gộp đúng khi giá nhập thay đổi. | Done | P0 |
+| UC-91 | Import Stock Lot | **Actor:** Seller. Nhập lô: LotCode unique, qty > 0, UnitCost ≥ 0, supplier/invoice/date; tăng tồn; cập nhật Avg/LastCost; **không** sửa UnitCost lô cũ (BR-I01, BR-C02). **Business:** Theo dõi giá vốn & lãi gộp đúng khi giá nhập thay đổi. | Done | P0 |
 | UC-92 | Update Selling Price | **Actor:** Seller. Đổi BasePrice/SalePrice; ghi ProductPriceHistories; độc lập giá vốn lô. **Business:** Phản ứng thị trường mà không phá lịch sử cost/đơn. | Done | P0 |
 
 ---

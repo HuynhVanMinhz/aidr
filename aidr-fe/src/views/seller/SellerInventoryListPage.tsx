@@ -130,6 +130,7 @@ export function SellerInventoryListPage() {
                     <th>Available</th>
                     <th>Cost</th>
                     <th>Selling price</th>
+                    <th>Est. margin / unit</th>
                     <th>Status</th>
                     <th>Action</th>
                   </tr>
@@ -137,14 +138,14 @@ export function SellerInventoryListPage() {
                 <tbody>
                   {listLoading && items.length === 0 ? (
                     <tr>
-                      <td colSpan={8} className="text-center py-4 text-muted">
+                      <td colSpan={9} className="text-center py-4 text-muted">
                         Loading...
                       </td>
                     </tr>
                   ) : null}
                   {!listLoading && items.length === 0 ? (
                     <tr>
-                      <td colSpan={8} className="text-center py-4 text-muted">
+                      <td colSpan={9} className="text-center py-4 text-muted">
                         No inventory records.{' '}
                         <Link to="/seller/products" className="alert-link">
                           Manage products
@@ -202,12 +203,27 @@ export function SellerInventoryListPage() {
                         )}
                       </td>
                       <td>
-                        <div>{formatVnd(item.salePrice ?? item.basePrice)}</div>
+                        <div>{formatVnd(item.effectivePrice ?? item.salePrice ?? item.basePrice)}</div>
                         {item.salePrice != null ? (
                           <small className="text-muted text-decoration-line-through">
                             {formatVnd(item.basePrice)}
                           </small>
                         ) : null}
+                      </td>
+                      <td>
+                        {item.estimatedMarginPerUnit != null ? (
+                          <span
+                            className={
+                              item.estimatedMarginPerUnit >= 0
+                                ? 'text-success fw-medium'
+                                : 'text-danger fw-medium'
+                            }
+                          >
+                            {formatVnd(item.estimatedMarginPerUnit)}
+                          </span>
+                        ) : (
+                          <span className="text-muted">—</span>
+                        )}
                       </td>
                       <td>
                         <span className={sellerProductStatusBadgeClass(item.status)}>{item.status}</span>
