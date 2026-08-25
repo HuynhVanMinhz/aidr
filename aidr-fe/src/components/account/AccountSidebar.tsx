@@ -14,6 +14,11 @@ export function AccountSidebar() {
       icon: '/theme/images/icon-user-primary.svg',
     },
     {
+      to: '/account/orders',
+      label: 'Orders',
+      icon: '/theme/images/icon-order-primary.svg',
+    },
+    {
       to: '/account/addresses',
       label: 'Shipping addresses',
       icon: '/theme/images/icon-location-primary.svg',
