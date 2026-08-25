@@ -1,8 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Link, useParams, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { CatalogBreadcrumb } from '../../components/catalog/CatalogBreadcrumb';
 import { ProductCard } from '../../components/catalog/ProductCard';
 import { SORT_OPTIONS } from '../../components/catalog/ProductFilters';
+import { useFollowShop } from '../../hooks/useFollow';
+import { useToast } from '../../hooks/useToast';
 import { useAppDispatch, useAppSelector } from '../../store/hooks';
 import {
   clearShop,
@@ -82,6 +84,8 @@ function parseOpeningHours(json?: string | null): { day: string; hours: string }
 
 export function ShopPublicPage() {
   const { shopKey = '' } = useParams<{ shopKey: string }>();
+  const navigate = useNavigate();
+  const toast = useToast();
   const dispatch = useAppDispatch();
   const [searchParams, setSearchParams] = useSearchParams();
   const shop = useAppSelector(selectShop);
@@ -93,6 +97,18 @@ export function ShopPublicPage() {
   const filters = useAppSelector(selectShopFilters);
   const [tab, setTab] = useState<ShopTab>('about');
   const [draftQ, setDraftQ] = useState('');
+  const [followerCountOverride, setFollowerCountOverride] = useState<number | null>(null);
+  const [followPending, setFollowPending] = useState(false);
+
+  const shopId = shop?.shopId;
+  const {
+    isFollowing,
+    mutating: followMutating,
+    isAuthenticated,
+    followShop: followShopAction,
+    unfollowShop: unfollowShopAction,
+    getErrorMessage: getFollowError,
+  } = useFollowShop(shopId);
 
   const searchKey = searchParams.toString();
   const urlFilters = useMemo(
@@ -120,6 +136,10 @@ export function ShopPublicPage() {
     };
   }, [dispatch]);
 
+  useEffect(() => {
+    setFollowerCountOverride(null);
+  }, [shopKey, shopId]);
+
   function syncUrl(next: ShopProductFilters) {
     setSearchParams(filtersToSearchParams(next), { replace: false });
   }
@@ -138,6 +158,32 @@ export function ShopPublicPage() {
   const addressText = shop ? formatAddress(shop.address) : null;
   const products = shop?.products.items ?? [];
   const paging = shop?.products;
+  const displayFollowerCount = followerCountOverride ?? shop?.followerCount ?? 0;
+  const followBusy = followPending || followMutating;
+
+  async function handleFollowToggle() {
+    if (!shopId) return;
+    if (!isAuthenticated) {
+      navigate(`/login?returnUrl=${encodeURIComponent(window.location.pathname)}`);
+      return;
+    }
+    setFollowPending(true);
+    try {
+      if (isFollowing) {
+        await unfollowShopAction();
+        setFollowerCountOverride(Math.max(0, displayFollowerCount - 1));
+        toast.success('Shop unfollowed.');
+      } else {
+        const followed = await followShopAction();
+        setFollowerCountOverride(followed.followerCount);
+        toast.success('Shop followed.');
+      }
+    } catch (err) {
+      toast.error(getFollowError(err, 'Unable to update follow status.'));
+    } finally {
+      setFollowPending(false);
+    }
+  }
 
   return (
     <>
@@ -224,9 +270,29 @@ export function ShopPublicPage() {
                         <span>Products</span>
                       </div>
                       <div className="shop-public-stat">
-                        <strong>{shop?.followerCount ?? 0}</strong>
+                        <strong>{displayFollowerCount}</strong>
                         <span>Followers</span>
                       </div>
+                    </div>
+
+                    <div className="shop-public-follow-row">
+                      <button
+                        type="button"
+                        className={`btn-default${isFollowing ? ' btn-border' : ''}`}
+                        disabled={followBusy || !shop}
+                        onClick={() => void handleFollowToggle()}
+                      >
+                        {followBusy
+                          ? 'Updating…'
+                          : isFollowing
+                            ? 'Following'
+                            : 'Follow shop'}
+                      </button>
+                      {isAuthenticated ? (
+                        <Link to="/account/following" className="shop-public-following-link">
+                          View followed shops
+                        </Link>
+                      ) : null}
                     </div>
 
                     {ratingError && (
