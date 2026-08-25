@@ -5,34 +5,42 @@ import 'flatpickr/dist/flatpickr.min.css';
 
 type AdminDatePickerProps = {
   id?: string;
+  /** Date-only: `yyyy-MM-dd`. With enableTime: `yyyy-MM-ddTHH:mm` (local). */
   value: string;
-  onChange: (isoDate: string) => void;
+  onChange: (value: string) => void;
   placeholder?: string;
   disabled?: boolean;
   minDate?: string;
   maxDate?: string;
   className?: string;
+  /** When true, Flatpickr shows hour/minute; value uses `yyyy-MM-ddTHH:mm`. */
+  enableTime?: boolean;
 };
 
 /**
- * Theme Flatpickr date picker.
+ * Theme Flatpickr date (optional time) picker.
  * Owns a single DOM input (not React-managed) so StrictMode / altInput cannot duplicate fields.
- * Parent still uses ISO `yyyy-MM-dd`; UI shows `dd-mm-yyyy`.
+ * Parent uses `yyyy-MM-dd` or `yyyy-MM-ddTHH:mm`; UI shows `dd-mm-yyyy` (+ `HH:mm`).
  */
 export function AdminDatePicker({
   id,
   value,
   onChange,
-  placeholder = 'dd-mm-yyyy',
+  placeholder,
   disabled = false,
   minDate,
   maxDate,
   className = 'form-control',
+  enableTime = false,
 }: AdminDatePickerProps) {
   const hostRef = useRef<HTMLDivElement>(null);
   const pickerRef = useRef<FlatpickrInstance | null>(null);
   const onChangeRef = useRef(onChange);
   onChangeRef.current = onChange;
+
+  const valueFormat = enableTime ? 'Y-m-d\\TH:i' : 'Y-m-d';
+  const displayFormat = enableTime ? 'd-m-Y H:i' : 'd-m-Y';
+  const resolvedPlaceholder = placeholder ?? (enableTime ? 'dd-mm-yyyy HH:mm' : 'dd-mm-yyyy');
 
   useEffect(() => {
     const host = hostRef.current;
@@ -42,15 +50,17 @@ export function AdminDatePicker({
 
     const input = document.createElement('input');
     input.type = 'text';
-    input.className = className;
-    input.placeholder = placeholder;
+    input.className = resolveInputClassName(className);
+    input.placeholder = resolvedPlaceholder;
     input.readOnly = true;
     if (id) input.id = id;
     if (disabled) input.disabled = true;
     host.appendChild(input);
 
     const picker = flatpickr(input, {
-      dateFormat: 'd-m-Y',
+      enableTime,
+      time_24hr: true,
+      dateFormat: displayFormat,
       allowInput: false,
       disableMobile: true,
       clickOpens: true,
@@ -59,7 +69,7 @@ export function AdminDatePicker({
       maxDate: maxDate || undefined,
       onChange: (dates) => {
         if (dates[0]) {
-          onChangeRef.current(flatpickr.formatDate(dates[0], 'Y-m-d'));
+          onChangeRef.current(flatpickr.formatDate(dates[0], valueFormat));
         } else {
           onChangeRef.current('');
         }
@@ -73,8 +83,9 @@ export function AdminDatePicker({
       pickerRef.current = null;
       host.replaceChildren();
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- mount once; props synced below
-  }, []);
+    // Remount when time mode changes; other props synced below.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [enableTime]);
 
   useEffect(() => {
     const picker = pickerRef.current;
@@ -84,12 +95,12 @@ export function AdminDatePicker({
       return;
     }
     const current = picker.selectedDates[0]
-      ? flatpickr.formatDate(picker.selectedDates[0], 'Y-m-d')
+      ? flatpickr.formatDate(picker.selectedDates[0], valueFormat)
       : '';
     if (current !== value) {
       picker.setDate(value, false);
     }
-  }, [value]);
+  }, [value, valueFormat]);
 
   useEffect(() => {
     pickerRef.current?.set('minDate', minDate || undefined);
@@ -105,5 +116,23 @@ export function AdminDatePicker({
     input.disabled = disabled;
   }, [disabled]);
 
+  useEffect(() => {
+    const input = pickerRef.current?.input;
+    if (!input) return;
+    input.className = resolveInputClassName(className);
+  }, [className]);
+
+  useEffect(() => {
+    const input = pickerRef.current?.input;
+    if (!input) return;
+    input.placeholder = resolvedPlaceholder;
+  }, [resolvedPlaceholder]);
+
   return <div ref={hostRef} className="aidr-datepicker" />;
+}
+
+function resolveInputClassName(className: string) {
+  const trimmed = className.trim();
+  if (!trimmed) return 'form-control';
+  return trimmed.split(/\s+/).includes('form-control') ? trimmed : `form-control ${trimmed}`;
 }

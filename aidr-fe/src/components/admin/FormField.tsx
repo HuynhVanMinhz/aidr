@@ -8,13 +8,19 @@ type FormFieldProps = {
 };
 
 export function FormField({ label, htmlFor, error, children }: FormFieldProps) {
-  const control = isValidElement(children)
-    ? cloneElement(children as ReactElement<{ className?: string }>, {
-        className: [((children as ReactElement<{ className?: string }>).props.className ?? ''), error ? 'is-invalid' : '']
-          .filter(Boolean)
-          .join(' '),
-      })
-    : children;
+  // Only merge className when adding is-invalid. Passing className="" would override
+  // child defaults (e.g. AdminDatePicker's form-control) and break Bootstrap styling.
+  const control =
+    isValidElement(children) && error
+      ? cloneElement(children as ReactElement<{ className?: string }>, {
+          className: [
+            (children as ReactElement<{ className?: string }>).props.className,
+            'is-invalid',
+          ]
+            .filter(Boolean)
+            .join(' '),
+        })
+      : children;
 
   return (
     <div className="mb-3">

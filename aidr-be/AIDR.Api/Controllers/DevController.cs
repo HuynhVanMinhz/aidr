@@ -93,6 +93,28 @@ public class DevController : ControllerBase
         });
     }
 
+    /// <summary>Seed Pending/Rejected products for Admin Product Moderation queue (dev only).</summary>
+    [HttpPost("seed-pending-products")]
+    public async Task<IActionResult> SeedPendingProducts(
+        [FromServices] AidrDbContext db,
+        [FromServices] IWebHostEnvironment env,
+        CancellationToken ct)
+    {
+        if (!env.IsDevelopment())
+            return NotFound();
+
+        await PendingProductsDemoSeeder.SeedAsync(db, env.ContentRootPath, ct);
+        var pending = await db.Products.CountAsync(p => p.Status == "Pending", ct);
+        var rejected = await db.Products.CountAsync(p => p.Status == "Rejected", ct);
+
+        return Ok(new
+        {
+            message = "Pending products demo seed completed.",
+            pendingCount = pending,
+            rejectedCount = rejected
+        });
+    }
+
     [HttpPost("seed-vouchers")]
     public async Task<IActionResult> SeedVouchers(
         [FromServices] AidrDbContext db,
@@ -134,6 +156,33 @@ public class DevController : ControllerBase
             message = "Governance insights demo seed completed.",
             insightBuyerCount = insightBuyers,
             insightOrderCount = insightOrders
+        });
+    }
+
+    /// <summary>Seed Delivered orders + return requests for Return & Refund flows (dev only).</summary>
+    [HttpPost("seed-returns")]
+    public async Task<IActionResult> SeedReturns(
+        [FromServices] AidrDbContext db,
+        [FromServices] IWebHostEnvironment env,
+        CancellationToken ct)
+    {
+        if (!env.IsDevelopment())
+            return NotFound();
+
+        await ReturnDemoSeeder.SeedAsync(db, env.ContentRootPath, ct);
+
+        var returnOrders = await db.Orders.CountAsync(
+            o => o.OrderCode.StartsWith("RET-"),
+            ct);
+        var returns = await db.ReturnRequests.CountAsync(ct);
+        var pending = await db.ReturnRequests.CountAsync(r => r.Status == "Pending", ct);
+
+        return Ok(new
+        {
+            message = "Return & Refund demo seed completed.",
+            returnOrderCount = returnOrders,
+            returnRequestCount = returns,
+            pendingCount = pending
         });
     }
 }
