@@ -30,8 +30,11 @@ public sealed class SellerInventoryListItemDto
     public bool IsLowStock { get; init; }
     public decimal? LastCostPrice { get; init; }
     public decimal? AvgCostPrice { get; init; }
+    /// <summary>Effective selling price minus AvgCostPrice (null if cost unknown).</summary>
+    public decimal? EstimatedMarginPerUnit { get; init; }
     public decimal BasePrice { get; init; }
     public decimal? SalePrice { get; init; }
+    public decimal EffectivePrice { get; init; }
     public string Currency { get; init; } = "VND";
     public DateTime UpdatedAt { get; init; }
 }
@@ -53,6 +56,8 @@ public sealed class SellerInventoryLotDto
     public int QuantityReceived { get; init; }
     public int QuantityRemaining { get; init; }
     public decimal UnitCost { get; init; }
+    /// <summary>Effective selling price minus this lot's UnitCost.</summary>
+    public decimal? EstimatedMarginPerUnit { get; init; }
     public string Currency { get; init; } = "VND";
     public string? SupplierName { get; init; }
     public string? InvoiceNumber { get; init; }
@@ -88,8 +93,11 @@ public sealed class SellerInventoryDetailDto
     public bool IsLowStock { get; init; }
     public decimal? LastCostPrice { get; init; }
     public decimal? AvgCostPrice { get; init; }
+    /// <summary>Effective selling price minus AvgCostPrice (null if cost unknown).</summary>
+    public decimal? EstimatedMarginPerUnit { get; init; }
     public decimal BasePrice { get; init; }
     public decimal? SalePrice { get; init; }
+    public decimal EffectivePrice { get; init; }
     public string Currency { get; init; } = "VND";
     public IReadOnlyList<SellerInventoryLotDto> Lots { get; init; } = Array.Empty<SellerInventoryLotDto>();
     public IReadOnlyList<SellerInventoryTransactionDto> RecentTransactions { get; init; } =

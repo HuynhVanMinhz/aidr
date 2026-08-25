@@ -40,7 +40,7 @@ Hệ thống giải quyết các pain point chính:
 | FE-02b | Pricing & Stock Lot | Nhập lô hàng (cost), cập nhật giá bán catalog độc lập |
 | FE-03 | Search & AI Filter | Tìm kiếm, lọc/sắp xếp, AI so sánh, NL → filter |
 | FE-04 | Cart / Order / Payment | Giỏ hàng, voucher, tạo đơn, thanh toán payOS, hủy/nhận hàng |
-| FE-05 | Return & Refund | Buyer yêu cầu; Admin duyệt/cập nhật trạng thái |
+| FE-05 | Return & Refund | Buyer yêu cầu Trả hàng/Hoàn tiền (+ video Unboxing & Testing); Admin duyệt; **không Đổi máy** |
 | FE-06 | Wishlist & Follow | Wishlist; follow/unfollow seller |
 | FE-07 | Review & Rating | Đánh giá SP; đánh giá seller |
 | FE-08 | AI & Recommendation | Gợi ý SP, SP tương tự, chatbot mua sắm |
@@ -48,10 +48,12 @@ Hệ thống giải quyết các pain point chính:
 | FE-10 | Seller Center | Dashboard, báo cáo bán hàng, ví, voucher shop |
 | FE-11 | Admin | Tài khoản, đăng ký seller, voucher hệ thống, insights |
 
-### Giới hạn (từ Report)
-- Không auto-moderation tranh chấp return phức tạp (Admin xử lý thủ công)
+### Giới hạn (từ Report + policy sàn)
+- **Không hỗ trợ Đổi hàng (Exchange)** — chỉ **Trả hàng + Hoàn tiền** (Return & Refund). Buyer nhận lại tiền rồi tự đặt đơn mới nếu muốn máy khác.
+- Không auto-moderation tranh chấp return phức tạp (Admin xử lý thủ công; bắt buộc video bằng chứng)
 - Không tích hợp API vận chuyển realtime (GHN/GHTK) — seller tự cập nhật tracking
 - Không live streaming
+- Phân loại màu / dung lượng (GB): dùng **ProductVariants** / SpecsJson — không CRUD master Color/GB riêng
 
 ---
 
@@ -223,20 +225,30 @@ Hệ thống giải quyết các pain point chính:
 2. Admin duyệt / từ chối (UC-75, UC-76).
 3. Khi duyệt → gán role Seller + tạo hồ sơ Shop + Wallet.
 
-### 5.3 Product publish
-1. Seller tạo SP + upload ảnh Cloudinary (UC-12, UC-13) → trạng thái `Pending`.
-2. Admin Approve / Reject + ghi Moderation History (UC-19–21).
-3. Chỉ SP `Approved` + Category `Active` mới hiện catalog.
+### 5.3 Product publish (duyệt SP)
+1. Seller nhập thông tin SP (thủ công) + upload ảnh Cloudinary (UC-12, UC-13) → System lưu status `Pending`.
+2. Admin xem queue Pending (UC-18); Approve hoặc Reject + lý do (UC-19, UC-20); ghi Moderation History (UC-21).
+3. **Approve:** SP `Approved` (+ `PublishedAt`) → hiện catalog khi Category Active; System nên gửi notification cho Seller (UC-44 khi module Notifications sẵn).
+4. **Reject:** SP `Rejected` + reason → Seller xem lý do, sửa SP (UC-14 → reset `Pending`) hoặc bỏ SP không hợp lệ → quay lại bước duyệt.
+5. Chỉ SP `Approved` + Category `Active` mới hiện Discovery.
 
 ### 5.4 Mua hàng
-1. Buyer thêm giỏ (UC-30) → áp voucher (UC-33) → Create Order (UC-34).
-2. Thanh toán qua **payOS** (UC-35) → cập nhật Payment + Order status.
-3. Seller cập nhật trạng thái đơn (UC-47); Buyer Confirm Received (UC-42) hoặc Cancel (UC-41) theo rule.
+1. Buyer tìm / lướt SP hot (UC-09, UC-26) → thêm giỏ (UC-30).
+2. System lưu Cart → Buyer thanh toán online payOS (UC-35) sau Create Order (UC-34).
+3. System ghi nhận Payment Succeeded → Seller nhận notification đơn mới (UC-44).
+4. Seller cập nhật fulfillment (UC-47); Buyer Confirm Received (UC-42) hoặc Cancel theo BR-O01.
 
-### 5.5 Return
-1. Buyer Request Return (UC-43).
-2. Admin xem / duyệt / cập nhật status (UC-48–52).
-3. Hoàn tiền theo policy (không auto-dispute AI).
+### 5.5 Return & Refund (không Đổi hàng)
+**Kết quả duy nhất:** Trả hàng thành công → Hoàn **100%** số tiền đã thanh toán. AIDR **không** có tính năng đổi máy mới cùng loại trên app.
+
+1. Buyer gặp lỗi thiết bị / vấn đề ship → **Yêu cầu Trả hàng/Hoàn tiền** (UC-43), kể cả khi chưa bấm Confirm Received (trong cửa sổ policy đơn đang giao / đã giao theo rule implement).
+2. Bắt buộc upload bằng chứng video:
+   - **Unboxing:** 6 mặt kiện hàng, mã vận đơn còn nguyên trước khi khui, quá trình mở hộp lấy thiết bị.
+   - **Testing:** cận cảnh máy, cắm sạc/bật nguồn, thao tác chứng minh lỗi kỹ thuật / nứt vỡ / móp méo do vận chuyển.
+3. System ghi `ReturnRequest` (`ResolutionType=ReturnRefund`) + `ReturnEvidences` → Admin xử lý (UC-48..52): xem video → Approve hoặc Reject kèm lý do rõ ràng.
+4. **Approve path:** Buyer gửi trả hàng → Admin/System xác nhận Receiving → **Refund** buyer trước → ghi `WalletTransactions.RefundDebit` trừ vào số dư seller (có thể âm / trừ dần khi seller bán đơn khác — BR-R04).
+5. **Reject path:** ghi AdminNote → notify Buyer.
+6. Muốn máy khác: Buyer **tự đặt đơn mới** sau khi đã hoàn tiền.
 
 ### 5.6 AI-assisted shopping
 1. **UC-90:** câu tiếng tự nhiên → bộ filter/search.
@@ -271,8 +283,17 @@ Hệ thống giải quyết các pain point chính:
 | BR-C03 | Trừ tồn bán hàng theo FIFO (mặc định) hoặc WeightedAverage theo Shop.CostingMethod |
 | BR-C04 | Đổi giá bán chỉ ghi ProductPriceHistories; không đụng lô / đơn đã bán |
 | BR-C05 | OrderItems snapshot UnitPrice; COGS snapshot qua OrderItemLotAllocations |
+| BR-C06 | Ước tính lãi/đơn vị = EffectiveSellingPrice − AvgCostPrice (hoặc UnitCost theo lô); hiển thị Seller Inventory |
+| BR-C07 | `Products.StockQuantity` là **denormalized** (= Σ Lot.QuantityRemaining) để query nhanh; nguồn chân lý tồn là InventoryLots |
 | BR-CA01 | Category bắt buộc có Description (≤ 500 ký tự) khi tạo hoặc cập nhật |
 | BR-CA02 | Category bắt buộc có ImageUrl (http/https hoặc đường dẫn tương đối, ≤ 512 ký tự) khi tạo hoặc cập nhật |
+| BR-R01 | **Không Exchange** — chỉ ResolutionType `ReturnRefund`; sau hoàn tiền buyer tự mua lại nếu cần |
+| BR-R02 | Return request bắt buộc ≥1 evidence `Unboxing` + ≥1 `Testing` (video URL Cloudinary) |
+| BR-R03 | Reject return phải có AdminNote / lý do rõ ràng gửi buyer |
+| BR-R04 | Hoàn tiền buyer trước; sau đó `RefundDebit` vào Wallet seller (có thể chờ đối soát / trừ dần) |
+| BR-R05 | Admin duyệt thủ công dựa trên video; không AI auto-approve return |
+| BR-P03 | Seller sửa SP đã Rejected/Approved → status về `Pending` để Admin duyệt lại |
+| BR-I01 | Phiếu nhập lô: LotCode unique theo product; Quantity > 0; UnitCost ≥ 0; validate đầy đủ field bắt buộc trên FE+BE |
 
 ---
 
@@ -284,8 +305,9 @@ Hệ thống giải quyết các pain point chính:
 |-----------|-----------|-------------|
 | Giá bán trên web | `Products.BasePrice` / `SalePrice` | Seller đổi tự do (UC-92) → `ProductPriceHistories` |
 | Giá nhập / giá vốn | `InventoryLots.UnitCost` theo từng lô | Chỉ khi **nhập lô mới** (UC-91); lô cũ giữ nguyên |
-| Tồn hiển thị | `Products.StockQuantity` = Σ `QuantityRemaining` | Cộng khi nhập lô; trừ khi bán (FIFO) |
-| Lãi ước tính | `AvgCostPrice`, view `vw_ProductStockByLot` | Recalc sau nhập/xuất |
+| Tồn hiển thị | `Products.StockQuantity` = Σ `QuantityRemaining` (denormalized) | Cộng khi nhập lô; trừ khi bán (FIFO) |
+| Lãi ước tính / đơn vị | EffectivePrice − AvgCostPrice (API) / `EstMarginPerUnit` theo lô (view) | Recalc sau nhập/xuất hoặc đổi giá bán |
+
 
 **Ví dụ:**
 1. Lô A: 10 sp @ 10.000.000 — bán 11.000.000.
@@ -311,7 +333,8 @@ Hệ thống giải quyết các pain point chính:
 | Cart / CartItem | Giỏ hàng |
 | Voucher / VoucherRedemption | Khuyến mãi |
 | Order / OrderItem / Payment | Đơn & thanh toán |
-| ReturnRequest | Hoàn hàng / hoàn tiền |
+| ReturnRequest | Yêu cầu **Trả hàng + Hoàn tiền** (`ResolutionType=ReturnRefund` only) |
+| ReturnEvidence | Video/ảnh bằng chứng: Unboxing, Testing, Other |
 | WishlistItem | Yêu thích |
 | ProductReview / SellerRating | Đánh giá |
 | SellerFollow | Theo dõi seller |

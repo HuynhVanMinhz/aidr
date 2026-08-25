@@ -681,7 +681,10 @@ CREATE TABLE dbo.ReturnRequests (
     BuyerUserId     UNIQUEIDENTIFIER NOT NULL,
     Reason          NVARCHAR(500)    NOT NULL,
     Description     NVARCHAR(2000)   NULL,
-    EvidenceUrls    NVARCHAR(MAX)    NULL,             -- JSON
+    -- Deprecated generic bag; prefer ReturnEvidences (Unboxing / Testing). Kept for optional extra media.
+    EvidenceUrls    NVARCHAR(MAX)    NULL,             -- JSON array of extra URLs (optional)
+    ResolutionType  NVARCHAR(20)     NOT NULL CONSTRAINT DF_ReturnRequests_Resolution DEFAULT (N'ReturnRefund'),
+        -- Chỉ hỗ trợ Trả hàng + Hoàn tiền. KHÔNG có Exchange / Đổi máy mới.
     Status          NVARCHAR(30)     NOT NULL CONSTRAINT DF_ReturnRequests_Status DEFAULT (N'Pending'),
         -- Pending | Approved | Rejected | Receiving | Refunded | Closed
     RefundAmount    DECIMAL(18,2)    NULL,
@@ -694,7 +697,8 @@ CREATE TABLE dbo.ReturnRequests (
     CONSTRAINT FK_ReturnRequests_Buyer FOREIGN KEY (BuyerUserId) REFERENCES dbo.Users (UserId),
     CONSTRAINT FK_ReturnRequests_Reviewer FOREIGN KEY (ReviewedBy) REFERENCES dbo.Users (UserId),
     CONSTRAINT CK_ReturnRequests_Status CHECK (Status IN (
-        N'Pending', N'Approved', N'Rejected', N'Receiving', N'Refunded', N'Closed'))
+        N'Pending', N'Approved', N'Rejected', N'Receiving', N'Refunded', N'Closed')),
+    CONSTRAINT CK_ReturnRequests_Resolution CHECK (ResolutionType IN (N'ReturnRefund'))
 );
 GO
 
@@ -708,6 +712,30 @@ CREATE TABLE dbo.ReturnRequestItems (
     CONSTRAINT FK_ReturnItems_OrderItem FOREIGN KEY (OrderItemId) REFERENCES dbo.OrderItems (OrderItemId),
     CONSTRAINT CK_ReturnItems_Qty CHECK (Quantity > 0)
 );
+GO
+
+/*
+  ReturnEvidences — video/ảnh bằng chứng bắt buộc theo policy kiểu Shopee:
+  - Unboxing: quay 6 mặt kiện + mã vận đơn còn nguyên trước khi khui + quá trình mở hộp
+  - Testing: cận cảnh thiết bị, cắm sạc/bật nguồn, chứng minh lỗi kỹ thuật / hư hỏng vận chuyển
+  UC-43 yêu cầu tối thiểu 1 Unboxing + 1 Testing khi tạo request.
+*/
+CREATE TABLE dbo.ReturnEvidences (
+    EvidenceId      UNIQUEIDENTIFIER NOT NULL CONSTRAINT PK_ReturnEvidences PRIMARY KEY
+                    CONSTRAINT DF_ReturnEvidences_Id DEFAULT (NEWSEQUENTIALID()),
+    ReturnRequestId UNIQUEIDENTIFIER NOT NULL,
+    EvidenceType    NVARCHAR(20)     NOT NULL,          -- Unboxing | Testing | Other
+    MediaUrl        NVARCHAR(512)    NOT NULL,          -- Cloudinary secure URL
+    PublicId        NVARCHAR(256)    NULL,
+    SortOrder       INT              NOT NULL CONSTRAINT DF_ReturnEvidences_Sort DEFAULT (0),
+    CreatedAt       DATETIME2(3)     NOT NULL CONSTRAINT DF_ReturnEvidences_CreatedAt DEFAULT (SYSUTCDATETIME()),
+    CONSTRAINT FK_ReturnEvidences_Request FOREIGN KEY (ReturnRequestId)
+        REFERENCES dbo.ReturnRequests (ReturnRequestId) ON DELETE CASCADE,
+    CONSTRAINT CK_ReturnEvidences_Type CHECK (EvidenceType IN (N'Unboxing', N'Testing', N'Other'))
+);
+GO
+
+CREATE INDEX IX_ReturnEvidences_Request_Type ON dbo.ReturnEvidences (ReturnRequestId, EvidenceType);
 GO
 
 CREATE TABLE dbo.ReturnStatusHistories (
@@ -1155,6 +1183,8 @@ erDiagram
     Products ||--o{ OrderItems : sold_as
     Orders ||--o{ Payments : paid_by
     Orders ||--o{ ReturnRequests : may_have
+    ReturnRequests ||--o{ ReturnEvidences : evidences
+    ReturnRequests ||--o{ ReturnRequestItems : lines
     Shops ||--o| Wallets : has
     Wallets ||--o{ WalletTransactions : ledger
     Products ||--o{ ProductReviews : reviewed

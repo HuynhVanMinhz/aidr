@@ -256,7 +256,7 @@ Pipeline: build image → push registry → deploy staging → smoke test `/heal
 | Discovery/Seller products | Categories, Products, ProductImages, ProductVariants, InventoryLots, ProductPriceHistories, InventoryTransactions, ProductModerationHistory |
 | Order | Carts, CartItems, Orders, OrderItems, OrderStatusHistories, Vouchers, VoucherRedemptions |
 | Payment | Payments |
-| Return | ReturnRequests, ReturnRequestItems, ReturnStatusHistories |
+| Return | ReturnRequests, ReturnRequestItems, ReturnEvidences, ReturnStatusHistories |
 | Engagement | WishlistItems, ProductReviews, SellerRatings, SellerFollows, Notifications, ChatThreads, ChatMessages |
 | Seller finance | Shops, Wallets, WalletTransactions |
 | Admin seller onboarding | SellerRegistrationRequests |
@@ -268,6 +268,7 @@ Pipeline: build image → push registry → deploy staging → smoke test `/heal
 
 - Không tích hợp GHN/GHTK tracking API (seller nhập tracking thủ công).
 - Không AI auto-resolve tranh chấp return phức tạp.
+- **Không Exchange / Đổi hàng** — chỉ Return & Refund; evidence Unboxing + Testing bắt buộc (xem `bussiness-system.md` BR-R01..R05).
 - Không tách microservices giai đoạn MVP (giữ modular monolith).
 
 ---
