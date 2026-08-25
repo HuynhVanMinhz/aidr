@@ -291,3 +291,99 @@ export type UpdateSystemVoucherPayload = {
   endsAt: string;
 };
 
+export type AdminAccountStatus = 'Active' | 'Locked' | 'PendingDeletion';
+export type AdminAccountStatusFilter = AdminAccountStatus | 'all';
+export type AdminAccountRoleFilter = 'BUYER' | 'SELLER' | 'ADMIN' | 'all';
+
+export type AdminAccount = {
+  userId: string;
+  email: string;
+  emailConfirmed: boolean;
+  fullName: string;
+  phone?: string | null;
+  avatarUrl?: string | null;
+  status: AdminAccountStatus | string;
+  roles: string[];
+  lastLoginAt?: string | null;
+  lockoutUntil?: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type AdminAccountListResult = {
+  items: AdminAccount[];
+  page: number;
+  pageSize: number;
+  totalCount: number;
+  totalPages: number;
+  activeCount: number;
+  lockedCount: number;
+  pendingDeletionCount: number;
+  buyerCount: number;
+  sellerCount: number;
+  adminCount: number;
+};
+
+export type AdminAccountListQuery = {
+  status?: AdminAccountStatusFilter;
+  role?: AdminAccountRoleFilter;
+  q?: string;
+  page?: number;
+  pageSize?: number;
+};
+
+export type AdminCustomerInsightsGranularity = 'day' | 'week' | 'month';
+
+export type AdminCustomerInsightsQuery = {
+  from?: string;
+  to?: string;
+  granularity?: AdminCustomerInsightsGranularity;
+};
+
+export type AdminCustomerInsightSummary = {
+  totalUsers: number;
+  activeUsers: number;
+  lockedUsers: number;
+  newUsersInPeriod: number;
+  buyersWithOrdersInPeriod: number;
+  orderCountInPeriod: number;
+  unitsSoldInPeriod: number;
+  gmvInPeriod: number;
+};
+
+export type AdminCustomerInsightCohort = {
+  newBuyersInPeriod: number;
+  returningBuyersInPeriod: number;
+};
+
+export type AdminCustomerInsightPeriod = {
+  periodKey: string;
+  periodStart: string;
+  periodEnd: string;
+  newUserCount: number;
+  orderCount: number;
+  unitsSold: number;
+  gmv: number;
+};
+
+export type AdminCustomerInsightTopProduct = {
+  productId: string;
+  productName: string;
+  unitsSold: number;
+  revenue: number;
+  orderCount: number;
+};
+
+export type AdminCustomerInsights = {
+  currency: string;
+  granularity: AdminCustomerInsightsGranularity | string;
+  from: string;
+  to: string;
+  summary: AdminCustomerInsightSummary;
+  cohort: AdminCustomerInsightCohort;
+  registrationSeries: AdminCustomerInsightPeriod[];
+  orderSeries: AdminCustomerInsightPeriod[];
+  topProducts: AdminCustomerInsightTopProduct[];
+  generatedAt: string;
+};
+

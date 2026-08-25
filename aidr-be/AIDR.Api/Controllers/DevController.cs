@@ -109,4 +109,31 @@ public class DevController : ControllerBase
             vouchers = result.Vouchers
         });
     }
+
+    /// <summary>Seed buyers + paid orders for Admin Customer Insights charts (dev only).</summary>
+    [HttpPost("seed-governance-insights")]
+    public async Task<IActionResult> SeedGovernanceInsights(
+        [FromServices] AidrDbContext db,
+        [FromServices] IWebHostEnvironment env,
+        CancellationToken ct)
+    {
+        if (!env.IsDevelopment())
+            return NotFound();
+
+        await GovernanceInsightsDemoSeeder.SeedAsync(db, env.ContentRootPath, ct);
+
+        var insightBuyers = await db.Users.CountAsync(
+            u => u.Email.StartsWith("insight-buyer-"),
+            ct);
+        var insightOrders = await db.Orders.CountAsync(
+            o => o.OrderCode.StartsWith("INS"),
+            ct);
+
+        return Ok(new
+        {
+            message = "Governance insights demo seed completed.",
+            insightBuyerCount = insightBuyers,
+            insightOrderCount = insightOrders
+        });
+    }
 }
