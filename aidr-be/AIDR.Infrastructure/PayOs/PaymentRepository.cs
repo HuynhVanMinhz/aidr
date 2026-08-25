@@ -79,6 +79,7 @@ public sealed class PaymentRepository : IPaymentRepository
 
         var payment = await _db.Payments
             .Include(p => p.Order)
+                .ThenInclude(o => o.Shop)
             .FirstOrDefaultAsync(
                 p => p.ProviderPaymentId == paymentLinkId,
                 cancellationToken);
@@ -100,6 +101,9 @@ public sealed class PaymentRepository : IPaymentRepository
                 Message = "Payment already marked as succeeded.",
                 PaymentId = payment.PaymentId,
                 OrderId = payment.OrderId,
+                OrderCode = payment.Order.OrderCode,
+                BuyerUserId = payment.Order.BuyerUserId,
+                ShopOwnerUserId = payment.Order.Shop.OwnerUserId,
                 PaymentStatus = payment.Status,
                 OrderStatus = payment.Order.Status
             };
@@ -149,6 +153,9 @@ public sealed class PaymentRepository : IPaymentRepository
             Message = "Payment marked as succeeded.",
             PaymentId = payment.PaymentId,
             OrderId = payment.OrderId,
+            OrderCode = payment.Order.OrderCode,
+            BuyerUserId = payment.Order.BuyerUserId,
+            ShopOwnerUserId = payment.Order.Shop.OwnerUserId,
             PaymentStatus = payment.Status,
             OrderStatus = payment.Order.Status
         };
@@ -161,6 +168,7 @@ public sealed class PaymentRepository : IPaymentRepository
         var needle = $"\"payOsOrderCode\":{payOsOrderCode}";
         var candidates = await _db.Payments
             .Include(p => p.Order)
+                .ThenInclude(o => o.Shop)
             .Where(p => p.RawResponseJson != null && p.RawResponseJson.Contains(needle))
             .OrderByDescending(p => p.CreatedAt)
             .Take(5)

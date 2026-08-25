@@ -1,8 +1,11 @@
 using AIDR.Modules.Admin.Abstractions;
+using AIDR.Modules.Engagement.Abstractions;
 using AIDR.Shared.Caching;
 using AIDR.Shared.Constants;
 using AIDR.Shared.Dtos.Admin;
+using AIDR.Shared.Dtos.Engagement;
 using AIDR.Shared.Exceptions;
+using Microsoft.Extensions.Logging;
 
 namespace AIDR.Modules.Admin.Services;
 
@@ -20,13 +23,19 @@ public sealed class AdminProductModerationService : IAdminProductModerationServi
 
     private readonly IAdminProductModerationRepository _repository;
     private readonly ICacheService _cache;
+    private readonly INotificationService _notifications;
+    private readonly ILogger<AdminProductModerationService> _logger;
 
     public AdminProductModerationService(
         IAdminProductModerationRepository repository,
-        ICacheService cache)
+        ICacheService cache,
+        INotificationService notifications,
+        ILogger<AdminProductModerationService> logger)
     {
         _repository = repository;
         _cache = cache;
+        _notifications = notifications;
+        _logger = logger;
     }
 
     public async Task<AdminProductListResultDto> ListAsync(
@@ -92,6 +101,11 @@ public sealed class AdminProductModerationService : IAdminProductModerationServi
 
         var record = await _repository.ApproveAsync(productId, adminUserId, cancellationToken);
         await InvalidateProductCacheAsync(productId, cancellationToken);
+        await NotifySellerModerationAsync(
+            record,
+            approved: true,
+            reason: null,
+            cancellationToken);
         return MapDetail(record);
     }
 
@@ -119,8 +133,54 @@ public sealed class AdminProductModerationService : IAdminProductModerationServi
 
         var record = await _repository.RejectAsync(productId, adminUserId, reason, cancellationToken);
         await InvalidateProductCacheAsync(productId, cancellationToken);
+        await NotifySellerModerationAsync(
+            record,
+            approved: false,
+            reason: reason,
+            cancellationToken);
         return MapDetail(record);
     }
+
+    private async Task NotifySellerModerationAsync(
+        AdminProductRecord record,
+        bool approved,
+        string? reason,
+        CancellationToken cancellationToken)
+    {
+        if (record.ShopOwnerUserId == Guid.Empty)
+            return;
+
+        var title = approved ? "Product approved" : "Product rejected";
+        var body = approved
+            ? $"Your product \"{record.Name}\" has been approved and is now visible in the catalog."
+            : $"Your product \"{record.Name}\" was rejected. Reason: {reason}";
+
+        try
+        {
+            await _notifications.CreateAsync(
+                new CreateNotificationRequest
+                {
+                    UserId = record.ShopOwnerUserId,
+                    Title = title,
+                    Body = Truncate(body, NotificationConstants.MaxBodyLength),
+                    Type = NotificationConstants.TypeModeration,
+                    ReferenceType = NotificationConstants.RefProduct,
+                    ReferenceId = record.ProductId
+                },
+                cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(
+                ex,
+                "Failed to notify seller {SellerId} about product moderation {ProductId}",
+                record.ShopOwnerUserId,
+                record.ProductId);
+        }
+    }
+
+    private static string Truncate(string value, int maxLength)
+        => value.Length <= maxLength ? value : value[..maxLength];
 
     public async Task<ProductModerationHistoryResultDto> GetModerationHistoryAsync(
         Guid productId,

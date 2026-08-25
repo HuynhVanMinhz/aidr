@@ -1,6 +1,8 @@
 using System.Text.Json;
+using AIDR.Modules.Engagement.Abstractions;
 using AIDR.Modules.Payment.Abstractions;
 using AIDR.Shared.Constants;
+using AIDR.Shared.Dtos.Engagement;
 using AIDR.Shared.Dtos.Payment;
 using AIDR.Shared.Exceptions;
 using Microsoft.Extensions.Logging;
@@ -35,17 +37,20 @@ public sealed class PaymentService : IPaymentService
     private readonly IPaymentRepository _payments;
     private readonly IPayOsClient _payOs;
     private readonly PayOsOptions _options;
+    private readonly INotificationService _notifications;
     private readonly ILogger<PaymentService> _logger;
 
     public PaymentService(
         IPaymentRepository payments,
         IPayOsClient payOs,
         IOptions<PayOsOptions> options,
+        INotificationService notifications,
         ILogger<PaymentService> logger)
     {
         _payments = payments;
         _payOs = payOs;
         _options = options.Value;
+        _notifications = notifications;
         _logger = logger;
     }
 
@@ -171,12 +176,49 @@ public sealed class PaymentService : IPaymentService
             throw new AppException("Webhook paymentLinkId is missing.");
 
         var raw = JsonSerializer.Serialize(request, JsonOptions);
-        return await _payments.MarkPaidFromWebhookAsync(
+        var result = await _payments.MarkPaidFromWebhookAsync(
             verified.PaymentLinkId,
             verified.OrderCode,
             verified.Amount,
             raw,
             cancellationToken);
+
+        if (result.Processed && !result.IdempotentReplay)
+            await NotifySellerNewPaidOrderAsync(result, cancellationToken);
+
+        return result;
+    }
+
+    private async Task NotifySellerNewPaidOrderAsync(
+        PayOsWebhookResult result,
+        CancellationToken cancellationToken)
+    {
+        if (result.ShopOwnerUserId is not { } sellerId || sellerId == Guid.Empty)
+            return;
+
+        var orderCode = string.IsNullOrWhiteSpace(result.OrderCode) ? "order" : result.OrderCode;
+        try
+        {
+            await _notifications.CreateAsync(
+                new CreateNotificationRequest
+                {
+                    UserId = sellerId,
+                    Title = "New paid order",
+                    Body = $"Order {orderCode} has been paid and is ready to fulfill.",
+                    Type = NotificationConstants.TypePayment,
+                    ReferenceType = NotificationConstants.RefOrder,
+                    ReferenceId = result.OrderId
+                },
+                cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(
+                ex,
+                "Failed to notify seller {SellerId} about paid order {OrderId}",
+                sellerId,
+                result.OrderId);
+        }
     }
 
     public async Task<ConfirmPayOsWebhookResponse> ConfirmPayOsWebhookAsync(
