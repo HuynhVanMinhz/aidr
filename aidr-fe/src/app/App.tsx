@@ -93,6 +93,7 @@ export function App() {
             <Route path="cart" element={<CartPage />} />
             <Route path="checkout" element={<CheckoutPage />} />
             <Route path="checkout/success" element={<OrderReceivedPage />} />
+            <Route path="order-received" element={<OrderReceivedPage />} />
             <Route path="account" element={<AccountLayout />}>
               <Route index element={<Navigate to="profile" replace />} />
               <Route path="profile" element={<ProfilePage />} />
