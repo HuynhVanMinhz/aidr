@@ -310,18 +310,18 @@ export function OrderReceivedPage() {
 
                 <div className="order-receive-actions">
                   <Link
+                    to="/account/orders"
+                    className="btn-default"
+                    onClick={() => dispatch(clearCheckoutSuccess())}
+                  >
+                    View my orders
+                  </Link>
+                  <Link
                     to="/products"
                     className="btn-default btn-accent"
                     onClick={() => dispatch(clearCheckoutSuccess())}
                   >
                     Continue Shopping
-                  </Link>
-                  <Link
-                    to="/cart"
-                    className="btn-default"
-                    onClick={() => dispatch(clearCheckoutSuccess())}
-                  >
-                    Back to cart
                   </Link>
                 </div>
               </div>
