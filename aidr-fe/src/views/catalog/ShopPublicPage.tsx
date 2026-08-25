@@ -288,6 +288,18 @@ export function ShopPublicPage() {
                             ? 'Following'
                             : 'Follow shop'}
                       </button>
+                      {shop ? (
+                        <Link
+                          to={
+                            isAuthenticated
+                              ? `/chat?shopId=${encodeURIComponent(shop.shopId)}`
+                              : `/login?returnUrl=${encodeURIComponent(`/chat?shopId=${shop.shopId}`)}`
+                          }
+                          className="btn-default btn-border"
+                        >
+                          Chat with shop
+                        </Link>
+                      ) : null}
                       {isAuthenticated ? (
                         <Link to="/account/following" className="shop-public-following-link">
                           View followed shops
