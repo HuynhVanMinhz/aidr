@@ -5,6 +5,7 @@ namespace AIDR.Modules.Discovery.Abstractions;
 public sealed class ProductListQuery
 {
     public string? Q { get; init; }
+    public Guid? ShopId { get; init; }
     public int? CategoryId { get; init; }
     public string? Brand { get; init; }
     public decimal? MinPrice { get; init; }
@@ -107,6 +108,37 @@ public sealed class CategoryRecord
     public int SortOrder { get; init; }
 }
 
+public sealed class ShopPublicRecord
+{
+    public Guid ShopId { get; init; }
+    public string ShopName { get; init; } = null!;
+    public string Slug { get; init; } = null!;
+    public string? Tagline { get; init; }
+    public string? ShortDescription { get; init; }
+    public string? Description { get; init; }
+    public string? LogoUrl { get; init; }
+    public string? BannerUrl { get; init; }
+    public bool IsVerified { get; init; }
+    public DateTime? VerifiedAt { get; init; }
+    public decimal AvgRating { get; init; }
+    public int RatingCount { get; init; }
+    public int FollowerCount { get; init; }
+    public int ProductCount { get; init; }
+    public string? ReturnPolicy { get; init; }
+    public string? ShippingPolicy { get; init; }
+    public string? OpeningHoursJson { get; init; }
+    public string? Email { get; init; }
+    public string? Phone { get; init; }
+    public string? Hotline { get; init; }
+    public string? WebsiteUrl { get; init; }
+    public string? FacebookUrl { get; init; }
+    public string? Province { get; init; }
+    public string? District { get; init; }
+    public string? Ward { get; init; }
+    public string? StreetAddress { get; init; }
+    public DateTime CreatedAt { get; init; }
+}
+
 public interface IDiscoveryRepository
 {
     Task<(IReadOnlyList<ProductListRecord> Items, int TotalCount)> QueryApprovedProductsAsync(
@@ -125,6 +157,10 @@ public interface IDiscoveryRepository
         CancellationToken cancellationToken = default);
 
     Task<IReadOnlyList<CategoryRecord>> GetActiveCategoriesAsync(
+        CancellationToken cancellationToken = default);
+
+    Task<ShopPublicRecord?> GetActiveShopByKeyAsync(
+        string shopKey,
         CancellationToken cancellationToken = default);
 }
 
@@ -145,5 +181,14 @@ public interface IDiscoveryService
         CancellationToken cancellationToken = default);
 
     Task<IReadOnlyList<CategoryTreeNodeDto>> GetCategoryTreeAsync(
+        CancellationToken cancellationToken = default);
+
+    Task<ShopPublicDetailDto> GetShopAsync(
+        string shopKey,
+        ShopProductsQueryRequest? productsQuery = null,
+        CancellationToken cancellationToken = default);
+
+    Task<ShopSellerRatingDto> GetShopRatingAsync(
+        string shopKey,
         CancellationToken cancellationToken = default);
 }

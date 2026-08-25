@@ -3,6 +3,7 @@ namespace AIDR.Shared.Dtos.Discovery;
 public sealed class ProductQueryRequest
 {
     public string? Q { get; set; }
+    public Guid? ShopId { get; set; }
     public int? CategoryId { get; set; }
     public string? Brand { get; set; }
     public decimal? MinPrice { get; set; }
