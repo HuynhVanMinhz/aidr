@@ -42,4 +42,89 @@ public sealed class OrderService : IOrderService
             string.IsNullOrWhiteSpace(buyerNote) ? null : buyerNote,
             cancellationToken);
     }
+
+    public async Task<BuyerOrderListResultDto> ListBuyerOrdersAsync(
+        Guid buyerUserId,
+        string? status,
+        int page,
+        int pageSize,
+        CancellationToken cancellationToken = default)
+    {
+        var normalizedStatus = NormalizeStatusFilter(status);
+        var (normalizedPage, normalizedPageSize) = OrderConstants.NormalizePaging(page, pageSize);
+
+        var (items, totalCount, effectivePage) = await _orders.ListBuyerOrdersAsync(
+            buyerUserId,
+            normalizedStatus,
+            normalizedPage,
+            normalizedPageSize,
+            cancellationToken);
+
+        return new BuyerOrderListResultDto
+        {
+            Items = items,
+            Page = effectivePage,
+            PageSize = normalizedPageSize,
+            TotalCount = totalCount
+        };
+    }
+
+    public async Task<BuyerOrderDetailDto> GetBuyerOrderAsync(
+        Guid buyerUserId,
+        Guid orderId,
+        CancellationToken cancellationToken = default)
+    {
+        EnsureOrderId(orderId);
+
+        return await _orders.GetBuyerOrderAsync(buyerUserId, orderId, cancellationToken)
+            ?? throw new NotFoundException("Order not found.");
+    }
+
+    public async Task<BuyerOrderDetailDto> CancelBuyerOrderAsync(
+        Guid buyerUserId,
+        Guid orderId,
+        CancelOrderRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        EnsureOrderId(orderId);
+
+        var reason = request.Reason?.Trim();
+        if (reason is { Length: > OrderConstants.MaxCancelReasonLength })
+            throw new AppException(
+                $"Cancel reason must not exceed {OrderConstants.MaxCancelReasonLength} characters.");
+
+        return await _orders.CancelBuyerOrderAsync(
+            buyerUserId,
+            orderId,
+            string.IsNullOrWhiteSpace(reason) ? null : reason,
+            cancellationToken);
+    }
+
+    public async Task<BuyerOrderDetailDto> ConfirmReceivedAsync(
+        Guid buyerUserId,
+        Guid orderId,
+        CancellationToken cancellationToken = default)
+    {
+        EnsureOrderId(orderId);
+        return await _orders.ConfirmReceivedAsync(buyerUserId, orderId, cancellationToken);
+    }
+
+    private static string? NormalizeStatusFilter(string? status)
+    {
+        if (string.IsNullOrWhiteSpace(status) ||
+            string.Equals(status.Trim(), "all", StringComparison.OrdinalIgnoreCase))
+            return null;
+
+        var normalized = status.Trim();
+        if (!OrderConstants.BuyerListStatuses.Contains(normalized))
+            throw new AppException("Order status filter is invalid.");
+
+        return normalized;
+    }
+
+    private static void EnsureOrderId(Guid orderId)
+    {
+        if (orderId == Guid.Empty)
+            throw new AppException("Order id is required.");
+    }
 }
