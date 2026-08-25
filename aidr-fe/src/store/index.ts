@@ -20,6 +20,7 @@ import { wishlistSlice } from './wishlistSlice';
 import { reviewSlice } from './reviewSlice';
 import { followSlice } from './followSlice';
 import { notificationSlice } from './notificationSlice';
+import { chatSlice } from './chatSlice';
 
 export const store = configureStore({
   reducer: {
@@ -31,6 +32,7 @@ export const store = configureStore({
     cart: cartSlice.reducer,
     wishlist: wishlistSlice.reducer,
     notifications: notificationSlice.reducer,
+    chat: chatSlice.reducer,
     follow: followSlice.reducer,
     review: reviewSlice.reducer,
     voucher: voucherSlice.reducer,

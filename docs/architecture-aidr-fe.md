@@ -87,7 +87,7 @@ aidr-fe/
 | Auth | `/login`, `/register`, `/forgot-password` | Guest |
 | Buyer account | `/account/*`, `/cart`, `/checkout`, `/wishlist`, `/orders` | Buyer (+Seller nếu dual-role) |
 | AI | `/ai/assistant`, compare modal/page | Buyer |
-| Chat | `/chat` | Buyer / Seller |
+| Chat | `/chat` (buyer), `/seller/chat` (seller) | Buyer / Seller |
 | Seller center | `/seller`, `/seller/products`, `/seller/products/new`, `/seller/products/:id`, `/seller/products/:id/edit`, `/seller/inventory`, `/seller/products/:id/inventory`, `/seller/orders`, `/seller/orders/:orderId` | Seller |
 | Admin | `/admin/*` | Admin |
 
@@ -262,7 +262,7 @@ VITE_SIGNALR_HUB_URL=https://api.aidr.local/hubs
 | Admin returns | UC-48..52 (`/admin/return-requests`, `/admin/return-requests/:id`, `returnApi`, `adminReturnsSlice`, approve/reject + Receiving→Refunded→Closed) |
 | Recommend / Similar blocks | UC-53/54 |
 | AI chatbot | UC-56 |
-| Chat list / room | UC-57/58 |
+| Chat list / room | UC-57/58 (`/chat`, `/seller/chat`, `chatApi`, `chatSlice`, SignalR `ChatHub` → append message; open via `?shopId=&productId=` / `?threadId=`) |
 | Reviews / Seller profile / Follow | UC-59..63 (`reviewApi`, `reviewSlice`, product detail reviews tab; order detail review + seller rating when Completed); UC-65..67 (`followApi`, `followSlice`, shop page follow + `/account/following`) |
 | Seller dashboard / reports / wallet / shop vouchers | UC-69, 70, 85; UC-87..89 (`/seller/vouchers`, `voucherApi` seller + `sellerVoucherSlice`, create/edit/status/delete) |
 | Admin accounts / seller requests / system vouchers / insights | UC-71..81 (`/admin/vouchers`, `voucherApi` admin + `adminVoucherSlice`, create/edit/status/delete) |

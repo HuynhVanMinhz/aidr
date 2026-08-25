@@ -45,6 +45,8 @@ import { SellerProductDetailPage } from '../views/seller/SellerProductDetailPage
 import { SellerShopVoucherListPage } from '../views/seller/SellerShopVoucherListPage';
 import { SellerShopVoucherFormPage } from '../views/seller/SellerShopVoucherFormPage';
 import { SellerNotificationsPage } from '../views/seller/SellerNotificationsPage';
+import { SellerChatPage } from '../views/seller/SellerChatPage';
+import { ChatPage } from '../views/chat/ChatPage';
 import { CartPage } from '../views/cart/CartPage';
 import { CheckoutPage } from '../views/checkout/CheckoutPage';
 import { OrderReceivedPage } from '../views/checkout/OrderReceivedPage';
@@ -105,6 +107,7 @@ export function App() {
             <Route path="orders" element={<SellerOrderListPage />} />
             <Route path="orders/:orderId" element={<SellerOrderDetailPage />} />
             <Route path="notifications" element={<SellerNotificationsPage />} />
+            <Route path="chat" element={<SellerChatPage />} />
             <Route path="vouchers" element={<SellerShopVoucherListPage />} />
             <Route path="vouchers/new" element={<SellerShopVoucherFormPage />} />
             <Route path="vouchers/:id/edit" element={<SellerShopVoucherFormPage />} />
@@ -120,6 +123,7 @@ export function App() {
           <Route path="health" element={<HealthPage />} />
 
           <Route element={<ProtectedRoute />}>
+            <Route path="chat" element={<ChatPage />} />
             <Route path="cart" element={<CartPage />} />
             <Route path="checkout" element={<CheckoutPage />} />
             <Route path="checkout/success" element={<OrderReceivedPage />} />

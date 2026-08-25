@@ -201,11 +201,18 @@ export function StoreHeader() {
                       </Link>
                     </li>
                     {isAuthenticated ? (
-                      <li className="nav-item">
-                        <Link className="nav-link" to="/account/profile">
-                          My Account
-                        </Link>
-                      </li>
+                      <>
+                        <li className="nav-item">
+                          <Link className="nav-link" to="/chat">
+                            Messages
+                          </Link>
+                        </li>
+                        <li className="nav-item">
+                          <Link className="nav-link" to="/account/profile">
+                            My Account
+                          </Link>
+                        </li>
+                      </>
                     ) : (
                       <li className="nav-item">
                         <Link className="nav-link" to="/login">
