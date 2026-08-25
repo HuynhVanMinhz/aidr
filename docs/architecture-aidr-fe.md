@@ -116,7 +116,8 @@ aidr-fe/
 | `chat` | threads + active messages window | UC-57/58 |
 | `sellerFinance` | dashboard KPIs, sales report, wallet ledger | UC-69, 70, 85 |
 | `seller` | my products, inventory & pricing | UC-16, 17, 91, 92 |
-| `admin` | moderation queues, accounts | UC-18..25, 72..76 |
+| `admin` | moderation queues | UC-18..25, 75..76 |
+| `adminGovernance` | accounts list/detail, lock/unlock, customer insights | UC-71..74 |
 | `adminVoucher` | system voucher list/detail cache | UC-78..81 |
 | `sellerVoucher` | seller shop voucher list/detail cache | UC-87..89 |
 
@@ -199,7 +200,7 @@ Kết nối sau khi auth thành công; reconnect với token mới khi refresh.
 ### 9.4 Admin
 - Queues: Pending products, Seller registrations, Return requests.
 - Category & System voucher management.
-- Account lock/unlock; Customer insights charts (data từ BE).
+- Account lock/unlock; Customer insights charts (ApexCharts) + Flatpickr date filters (data từ BE).
 
 ---
 
@@ -267,7 +268,7 @@ VITE_SIGNALR_HUB_URL=https://api.aidr.local/hubs
 | Chat list / room | UC-57/58 (`/chat`, `/seller/chat`, `chatApi`, `chatSlice`, SignalR `ChatHub` → append message; open via `?shopId=&productId=` / `?threadId=`) |
 | Reviews / Seller profile / Follow | UC-59..63 (`reviewApi`, `reviewSlice`, product detail reviews tab; order detail review + seller rating when Completed); UC-65..67 (`followApi`, `followSlice`, shop page follow + `/account/following`) |
 | Seller dashboard / reports / wallet / shop vouchers | UC-69, 70, 85; UC-87..89 (`/seller/vouchers`, `voucherApi` seller + `sellerVoucherSlice`, create/edit/status/delete) |
-| Admin accounts / seller requests / system vouchers / insights | UC-71..81 (`/admin/vouchers`, `voucherApi` admin + `adminVoucherSlice`, create/edit/status/delete) |
+| Admin accounts / seller requests / system vouchers / insights | UC-71..81 (`/admin/accounts`, `/admin/accounts/:id`, `/admin/insights`, `adminApi` accounts+insights + `adminGovernanceSlice`; `/admin/vouchers`, `voucherApi` admin + `adminVoucherSlice`) |
 
 ---
 
