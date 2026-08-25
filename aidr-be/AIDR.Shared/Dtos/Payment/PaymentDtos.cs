@@ -60,6 +60,9 @@ public sealed class PayOsWebhookResult
     public string Message { get; init; } = null!;
     public Guid? PaymentId { get; init; }
     public Guid? OrderId { get; init; }
+    public string? OrderCode { get; init; }
+    public Guid? BuyerUserId { get; init; }
+    public Guid? ShopOwnerUserId { get; init; }
     public string? PaymentStatus { get; init; }
     public string? OrderStatus { get; init; }
 }

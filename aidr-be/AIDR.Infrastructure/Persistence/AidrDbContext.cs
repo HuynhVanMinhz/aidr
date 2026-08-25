@@ -30,6 +30,7 @@ public class AidrDbContext : DbContext
     public DbSet<Cart> Carts => Set<Cart>();
     public DbSet<CartItem> CartItems => Set<CartItem>();
     public DbSet<WishlistItem> WishlistItems => Set<WishlistItem>();
+    public DbSet<Notification> Notifications => Set<Notification>();
     public DbSet<Voucher> Vouchers => Set<Voucher>();
     public DbSet<VoucherRedemption> VoucherRedemptions => Set<VoucherRedemption>();
     public DbSet<Order> Orders => Set<Order>();
@@ -402,6 +403,21 @@ public class AidrDbContext : DbContext
                 .HasForeignKey(x => x.ProductId)
                 .OnDelete(DeleteBehavior.Restrict);
             e.HasIndex(x => new { x.UserId, x.ProductId }).IsUnique();
+            e.HasIndex(x => new { x.UserId, x.CreatedAt });
+        });
+
+        modelBuilder.Entity<Notification>(e =>
+        {
+            e.ToTable("Notifications");
+            e.HasKey(x => x.NotificationId);
+            e.Property(x => x.Title).HasMaxLength(200).IsRequired();
+            e.Property(x => x.Body).HasMaxLength(1000).IsRequired();
+            e.Property(x => x.Type).HasMaxLength(40).IsRequired();
+            e.Property(x => x.ReferenceType).HasMaxLength(40);
+            e.HasOne(x => x.User)
+                .WithMany()
+                .HasForeignKey(x => x.UserId)
+                .OnDelete(DeleteBehavior.Restrict);
             e.HasIndex(x => new { x.UserId, x.CreatedAt });
         });
 
