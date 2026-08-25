@@ -3,7 +3,7 @@ using AIDR.Infrastructure.Admin;
 using AIDR.Infrastructure.Auth;
 using AIDR.Infrastructure.Caching;
 using AIDR.Infrastructure.Discovery;
-using AIDR.Infrastructure.Order;
+using AIDR.Infrastructure.Ordering;
 using AIDR.Infrastructure.Persistence;
 using AIDR.Infrastructure.Profile;
 using AIDR.Infrastructure.SellerCenter;
@@ -64,6 +64,7 @@ public static class InfrastructureServiceCollectionExtensions
         services.AddScoped<ISellerProductRepository, SellerProductRepository>();
         services.AddScoped<ISellerInventoryRepository, SellerInventoryRepository>();
         services.AddScoped<ICartRepository, CartRepository>();
+        services.AddScoped<IOrderRepository, OrderRepository>();
         services.AddScoped<IPasswordResetTokenStore, PasswordResetTokenStore>();
         services.AddScoped<ITokenService, JwtTokenService>();
         services.AddSingleton<IPasswordHasher, AspNetPasswordHasher>();
