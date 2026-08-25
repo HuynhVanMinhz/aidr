@@ -118,3 +118,17 @@
 .order-receive-actions .btn-default {
   border: 0;
 }
+
+.order-receive-pay-actions {
+  margin-top: 16px;
+}
+
+.order-receive-pay-actions .btn-default {
+  border: 0;
+  cursor: pointer;
+}
+
+.order-receive-pay-actions .btn-default:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}

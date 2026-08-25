@@ -22,7 +22,7 @@ public sealed class PayOsOptions
     public bool UseMock { get; set; }
 
     public string ReturnUrl { get; set; } = "http://localhost:5173/order-received";
-    public string CancelUrl { get; set; } = "http://localhost:5173/checkout";
+    public string CancelUrl { get; set; } = "http://localhost:5173/order-received?cancelled=1";
 }
 
 public sealed class PaymentService : IPaymentService

@@ -1,4 +1,5 @@
 import type { ApiResult } from './auth';
+import type { OrderPaymentLink } from './payment';
 
 export type CreateOrderRequest = {
   shippingAddressId: string;
@@ -42,7 +43,7 @@ export type CreateOrderResponse = {
 
 export type CreateOrderApiResult = ApiResult<CreateOrderResponse>;
 
-/** Snapshot kept for the order-received page (shipping display). */
+/** Snapshot kept for the order-received page (shipping display + payOS links). */
 export type CheckoutSuccessState = {
   orders: CreatedOrder[];
   grandTotal: number;
@@ -56,4 +57,5 @@ export type CheckoutSuccessState = {
     ward: string;
     streetAddress: string;
   };
+  payments?: OrderPaymentLink[];
 };
