@@ -15,6 +15,7 @@ import { themeSlice } from './themeSlice';
 import { userSlice } from './userSlice';
 import { voucherSlice } from './voucherSlice';
 import { adminVoucherSlice } from './adminVoucherSlice';
+import { sellerFinanceSlice } from './sellerFinanceSlice';
 import { sellerVoucherSlice } from './sellerVoucherSlice';
 import { wishlistSlice } from './wishlistSlice';
 import { reviewSlice } from './reviewSlice';
@@ -37,6 +38,7 @@ export const store = configureStore({
     review: reviewSlice.reducer,
     voucher: voucherSlice.reducer,
     adminVoucher: adminVoucherSlice.reducer,
+    sellerFinance: sellerFinanceSlice.reducer,
     sellerVoucher: sellerVoucherSlice.reducer,
     checkout: checkoutSlice.reducer,
     orders: ordersSlice.reducer,
