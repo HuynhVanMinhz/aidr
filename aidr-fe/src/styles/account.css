@@ -180,7 +180,8 @@
 
 .app-main--flush .page-header,
 .app-main--flush .page-account-details,
-.app-main--flush .page-account-order {
+.app-main--flush .page-account-order,
+.app-main--flush .page-account-wishlist {
   padding-left: 1.5rem;
   padding-right: 1.5rem;
 }
