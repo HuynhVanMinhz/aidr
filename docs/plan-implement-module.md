@@ -32,7 +32,7 @@ Cập nhật cột **status**: `Todo` · `In Progress` · `Done` · `Blocked`.
 | 19 | Engagement — Wishlist | Wishlist CRUD. | UC-36, UC-37, UC-38 | Done |
 | 20 | Engagement — Reviews & Ratings | Review SP + rate seller. | UC-59, UC-60, UC-61, UC-62a, UC-63 | Done |
 | 21 | Engagement — Follow | Follow / unfollow / list. | UC-65, UC-66, UC-67 | Done |
-| 22 | Return & Refund | Buyer request **Trả hàng+Hoàn tiền** (video Unboxing/Testing); Admin duyệt; **không Exchange**; refund buyer rồi debit seller wallet. | UC-43, UC-48, UC-49, UC-50, UC-52 | Todo |
+| 22 | Return & Refund | Buyer request **Trả hàng+Hoàn tiền** (video Unboxing/Testing); Admin duyệt; **không Exchange**; refund buyer rồi debit seller wallet. | UC-43, UC-48, UC-49, UC-50, UC-52 | Done |
 | 23 | Notifications | REST inbox + SignalR push (order/payment/moderation). | UC-44, UC-45 | Todo |
 | 24 | Chat | Thread list + gửi tin SignalR. | UC-57, UC-58 | Todo |
 | 25 | SellerCenter — Finance & Insights | Wallet, dashboard, sales reports (dùng cost lot → margin). | UC-69, UC-70, UC-85 | Todo |

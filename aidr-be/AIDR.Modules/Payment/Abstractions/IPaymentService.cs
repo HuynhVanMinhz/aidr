@@ -12,4 +12,8 @@ public interface IPaymentService
     Task<PayOsWebhookResult> HandlePayOsWebhookAsync(
         PayOsWebhookRequest request,
         CancellationToken cancellationToken = default);
+
+    Task<ConfirmPayOsWebhookResponse> ConfirmPayOsWebhookAsync(
+        ConfirmPayOsWebhookRequest request,
+        CancellationToken cancellationToken = default);
 }

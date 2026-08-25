@@ -138,12 +138,12 @@ aidr-be/
 | UC-32 | `GET /api/vouchers?cartItemIds=&scope=&shopId=&page=&pageSize=` — list System + Shop vouchers (active period) with eligibility vs cart | Order |
 | UC-33 | `POST /api/vouchers/preview` — preview discount (min order, limit, scope); apply at `POST /api/orders` via `vouchers: [{ shopId, voucherId }]` | Order |
 | UC-34 | `POST /api/orders` | Order |
-| UC-35 | `POST /api/payments/payos/create` + webhook | Payment |
+| UC-35 | `POST /api/payments/payos/create` + `POST /api/payments/payos/webhook`; `POST /api/payments/payos/confirm-webhook` (Admin) — register public webhook URL with payOS (needed for local/dev via ngrok) | Payment |
 | UC-39 | `GET /api/orders?status=&page=&pageSize=` — buyer purchased orders (paged, newest first) | Order |
 | UC-40 | `GET /api/orders/{orderId}` — detail: items, payment, tracking, status history, shipping snapshot | Order |
 | UC-41 | `POST /api/orders/{orderId}/cancel` — only `PendingPayment` (BR-O01); release reserved stock; cancel pending payment | Order |
 | UC-42 | `POST /api/orders/{orderId}/confirm-received` — only `Delivered` → `Completed` (BR-O02); credit seller wallet `OrderCredit` (BR-W01) | Order |
-| UC-43 | Buyer return request | Order |
+| UC-43 | `POST /api/orders/{orderId}/returns` — body `{ reason, description?, items?, evidences[] }` (≥1 Unboxing + ≥1 Testing); `GET /api/orders/{orderId}/returns`; ResolutionType=`ReturnRefund` only (BR-R01..R02); order → `ReturnRequested` | Order |
 
 ### 6.5 Admin
 | UC | Endpoint | Module |
@@ -153,7 +153,10 @@ aidr-be/
 | UC-20 | `POST /api/admin/products/{id}/reject` + `reason` → Pending→Rejected + history | Admin |
 | UC-21 | `GET /api/admin/products/{id}/moderation-history` — timeline Approve/Reject | Admin |
 | UC-22..25 | Categories: `GET /api/admin/categories?q=&page=&pageSize=` (paged + summary); `GET /api/admin/categories/options` (parent select); CRUD | Admin |
-| UC-48..52 | Return requests | Admin |
+| UC-48 | `GET /api/admin/return-requests?status=&q=&page=&pageSize=` (default `status=Pending`; `status=all`; paged + status summary) | Admin |
+| UC-49 | `GET /api/admin/return-requests/{id}` — reason, Unboxing/Testing evidences, order lines, status history | Admin |
+| UC-50 | `POST /api/admin/return-requests/{id}/approve`; `POST .../reject` + `adminNote` (required, BR-R03) | Admin |
+| UC-52 | `POST /api/admin/return-requests/{id}/status` — body `{ status, note?, refundToBin?, refundToAccountNumber? }`; transitions `Approved→Receiving→Refunded→Closed`; on `Refunded`: payOS **payout (chi hộ)** refund to buyer bank + mark payment Refunded + `WalletTransactions.RefundDebit` (BR-R04; wallet may go negative). Bank account from webhook counter account or request override. | Admin |
 | UC-71..74 | Insights, accounts lock/unlock | Admin |
 | UC-75 | `GET /api/admin/seller-registrations?status=&q=&page=&pageSize=` (default `status=Pending`; `status=all`; paged + status summary); `GET .../{id}` | Admin |
 | UC-76 | `POST /api/admin/seller-registrations/{id}/approve` → role Seller + Shop + Wallet; `POST .../reject` + `adminNote` | Admin |
