@@ -75,9 +75,9 @@
 | UC-60 | Add Product Review | **Actor:** Buyer. Chỉ sau mua hoàn tất; 1–5 sao + nội dung. **Business:** Feedback chất lượng SP. | Todo | P1 |
 | UC-61 | Update Product Review | **Actor:** Buyer (owner). Sửa review trong cửa sổ cho phép. **Business:** Cho phép chỉnh sau trải nghiệm. | Todo | P2 |
 | UC-62a | Delete Product Review | **Actor:** Buyer (owner). Xóa / ẩn review của mình. **Business:** Quyền kiểm soát nội dung cá nhân. | Todo | P2 |
-| UC-62b | Get Seller Detail | **Actor:** Buyer. Trang shop: mô tả, rating, SP, policy. **Business:** Đánh giá độ tin cậy seller. | Todo | P0 |
+| UC-62b | Get Seller Detail | **Actor:** Buyer. Trang shop: mô tả, rating, SP, policy. **Business:** Đánh giá độ tin cậy seller. | Done | P0 |
 | UC-63 | Rate Seller | **Actor:** Buyer. Chấm điểm shop sau đơn hoàn tất. **Business:** Uy tín seller trên sàn. | Todo | P1 |
-| UC-64 | View Seller Rating | **Actor:** Guest/Buyer. Xem điểm TB + số lượt. **Business:** Tín hiệu tin cậy công khai. | Todo | P1 |
+| UC-64 | View Seller Rating | **Actor:** Guest/Buyer. Xem điểm TB + số lượt. **Business:** Tín hiệu tin cậy công khai. | Done | P1 |
 | UC-65 | Follow Seller | **Actor:** Buyer. Follow shop để nhận update. **Business:** Retention & loyalty. | Todo | P2 |
 | UC-66 | Unfollow Seller | **Actor:** Buyer. Bỏ follow. **Business:** Quản lý sở thích. | Todo | P2 |
 | UC-67 | View List Follow | **Actor:** Buyer. Danh sách shop đang follow. **Business:** Quay lại shop yêu thích. | Todo | P2 |
