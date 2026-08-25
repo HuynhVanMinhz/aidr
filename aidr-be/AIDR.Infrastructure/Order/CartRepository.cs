@@ -6,7 +6,7 @@ using AIDR.Shared.Dtos.Order;
 using AIDR.Shared.Exceptions;
 using Microsoft.EntityFrameworkCore;
 
-namespace AIDR.Infrastructure.Order;
+namespace AIDR.Infrastructure.Ordering;
 
 public sealed class CartRepository : ICartRepository
 {

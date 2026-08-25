@@ -26,6 +26,11 @@ public class AidrDbContext : DbContext
     public DbSet<ProductModerationHistory> ProductModerationHistories => Set<ProductModerationHistory>();
     public DbSet<Cart> Carts => Set<Cart>();
     public DbSet<CartItem> CartItems => Set<CartItem>();
+    public DbSet<Order> Orders => Set<Order>();
+    public DbSet<OrderItem> OrderItems => Set<OrderItem>();
+    public DbSet<OrderItemLotAllocation> OrderItemLotAllocations => Set<OrderItemLotAllocation>();
+    public DbSet<OrderStatusHistory> OrderStatusHistories => Set<OrderStatusHistory>();
+    public DbSet<Payment> Payments => Set<Payment>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -309,6 +314,104 @@ public class AidrDbContext : DbContext
                 .HasForeignKey(x => x.ProductId)
                 .OnDelete(DeleteBehavior.Restrict);
             e.HasIndex(x => new { x.CartId, x.ProductId, x.VariantId }).IsUnique();
+        });
+
+        modelBuilder.Entity<Order>(e =>
+        {
+            e.ToTable("Orders");
+            e.HasKey(x => x.OrderId);
+            e.Property(x => x.OrderCode).HasMaxLength(30).IsRequired();
+            e.Property(x => x.ShippingSnapshotJson).IsRequired();
+            e.Property(x => x.Status).HasMaxLength(30).IsRequired();
+            e.Property(x => x.SubtotalAmount).HasPrecision(18, 2);
+            e.Property(x => x.DiscountAmount).HasPrecision(18, 2);
+            e.Property(x => x.ShippingFee).HasPrecision(18, 2);
+            e.Property(x => x.TotalAmount).HasPrecision(18, 2);
+            e.Property(x => x.Currency).HasMaxLength(3).IsRequired();
+            e.Property(x => x.BuyerNote).HasMaxLength(500);
+            e.Property(x => x.SellerNote).HasMaxLength(500);
+            e.Property(x => x.TrackingCode).HasMaxLength(100);
+            e.HasIndex(x => x.OrderCode).IsUnique();
+            e.HasIndex(x => new { x.BuyerUserId, x.CreatedAt });
+            e.HasIndex(x => new { x.ShopId, x.Status });
+            e.HasOne(x => x.Buyer)
+                .WithMany()
+                .HasForeignKey(x => x.BuyerUserId)
+                .OnDelete(DeleteBehavior.Restrict);
+            e.HasOne(x => x.Shop)
+                .WithMany()
+                .HasForeignKey(x => x.ShopId)
+                .OnDelete(DeleteBehavior.Restrict);
+            e.HasOne(x => x.ShippingAddress)
+                .WithMany()
+                .HasForeignKey(x => x.ShippingAddressId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<OrderItem>(e =>
+        {
+            e.ToTable("OrderItems");
+            e.HasKey(x => x.OrderItemId);
+            e.Property(x => x.ProductNameSnapshot).HasMaxLength(256).IsRequired();
+            e.Property(x => x.SkuSnapshot).HasMaxLength(64);
+            e.Property(x => x.UnitPrice).HasPrecision(18, 2);
+            e.Property(x => x.UnitCostAvg).HasPrecision(18, 2);
+            e.Property(x => x.LineTotal).HasPrecision(18, 2);
+            e.HasOne(x => x.Order)
+                .WithMany(x => x.Items)
+                .HasForeignKey(x => x.OrderId)
+                .OnDelete(DeleteBehavior.Cascade);
+            e.HasOne(x => x.Product)
+                .WithMany()
+                .HasForeignKey(x => x.ProductId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<OrderItemLotAllocation>(e =>
+        {
+            e.ToTable("OrderItemLotAllocations");
+            e.HasKey(x => x.AllocationId);
+            e.Property(x => x.UnitCostSnapshot).HasPrecision(18, 2);
+            e.HasOne(x => x.OrderItem)
+                .WithMany(x => x.LotAllocations)
+                .HasForeignKey(x => x.OrderItemId)
+                .OnDelete(DeleteBehavior.Cascade);
+            e.HasOne(x => x.Lot)
+                .WithMany()
+                .HasForeignKey(x => x.LotId)
+                .OnDelete(DeleteBehavior.Restrict);
+            e.HasIndex(x => x.OrderItemId);
+        });
+
+        modelBuilder.Entity<OrderStatusHistory>(e =>
+        {
+            e.ToTable("OrderStatusHistories");
+            e.HasKey(x => x.HistoryId);
+            e.Property(x => x.HistoryId).ValueGeneratedOnAdd();
+            e.Property(x => x.FromStatus).HasMaxLength(30);
+            e.Property(x => x.ToStatus).HasMaxLength(30).IsRequired();
+            e.Property(x => x.Note).HasMaxLength(300);
+            e.HasOne(x => x.Order)
+                .WithMany(x => x.StatusHistories)
+                .HasForeignKey(x => x.OrderId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<Payment>(e =>
+        {
+            e.ToTable("Payments");
+            e.HasKey(x => x.PaymentId);
+            e.Property(x => x.Provider).HasMaxLength(30).IsRequired();
+            e.Property(x => x.ProviderPaymentId).HasMaxLength(100);
+            e.Property(x => x.Amount).HasPrecision(18, 2);
+            e.Property(x => x.Currency).HasMaxLength(3).IsRequired();
+            e.Property(x => x.Status).HasMaxLength(20).IsRequired();
+            e.Property(x => x.CheckoutUrl).HasMaxLength(512);
+            e.HasOne(x => x.Order)
+                .WithMany(x => x.Payments)
+                .HasForeignKey(x => x.OrderId)
+                .OnDelete(DeleteBehavior.Restrict);
+            e.HasIndex(x => x.OrderId);
         });
     }
 }

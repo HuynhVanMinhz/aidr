@@ -22,7 +22,7 @@ Cập nhật cột **status**: `Todo` · `In Progress` · `Done` · `Blocked`.
 | 09 | Admin — Product Moderation | Queue duyệt/từ chối SP + history → SP lên kệ Discovery. **Khóa vertical slice bán hàng.** | UC-18, UC-19, UC-20, UC-21 | Done |
 | 10 | Shop Public Page | Trang chi tiết seller cho buyer (trust). | UC-62b, UC-64 | Done |
 | 11 | Order — Cart | Giỏ hàng add/view/remove. | UC-29, UC-30, UC-31 | Done |
-| 12 | Order — Checkout | Tạo đơn (split shop), snapshot địa chỉ/giá, reserve stock FIFO lot allocation. | UC-34 | Todo |
+| 12 | Order — Checkout | Tạo đơn (split shop), snapshot địa chỉ/giá, reserve stock FIFO lot allocation. | UC-34 | Done |
 | 13 | Payment | payOS create link + webhook → Paid; gắn UC-35. | UC-35 | Todo |
 | 14 | Order — Buyer Lifecycle | List/detail đơn, hủy, xác nhận nhận hàng. | UC-39, UC-40, UC-41, UC-42 | Todo |
 | 15 | SellerCenter — Orders | Seller xem đơn & cập nhật status + tracking. | UC-46, UC-47 | Todo |
