@@ -38,6 +38,8 @@ public static class ModulesServiceCollectionExtensions
         services.AddScoped<IVoucherService, VoucherService>();
         services.AddScoped<IPaymentService, PaymentService>();
         services.AddScoped<IWishlistService, WishlistService>();
+        services.AddScoped<IProductReviewService, ProductReviewService>();
+        services.AddScoped<ISellerRatingService, SellerRatingService>();
         return services;
     }
 }
