@@ -312,6 +312,16 @@ public class SellerRating
     public Order? Order { get; set; }
 }
 
+public class SellerFollow
+{
+    public Guid BuyerUserId { get; set; }
+    public Guid ShopId { get; set; }
+    public DateTime FollowedAt { get; set; }
+
+    public User Buyer { get; set; } = null!;
+    public Shop Shop { get; set; } = null!;
+}
+
 public class ViewedProductHistory
 {
     public long ViewId { get; set; }
