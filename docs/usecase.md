@@ -50,9 +50,9 @@
 | UC-33 | Apply Voucher | **Actor:** Buyer. Preview/apply giảm giá theo min order, limit, scope. **Business:** Áp dụng đúng policy KM. | Done | P1 |
 | UC-34 | Create Order | **Actor:** Buyer. Split theo shop; snapshot địa chỉ & giá; reserve stock; tạo Payment pending. **Business:** Chốt đơn mua. | Done | P0 |
 | UC-35 | Make Payment | **Actor:** Buyer. Tạo link payOS; webhook cập nhật Paid. **Business:** Thu tiền online an toàn. | Done | P0 |
-| UC-36 | View Wishlist | **Actor:** Buyer. Danh sách SP yêu thích. **Business:** Lưu SP quan tâm để mua sau. | Todo | P1 |
-| UC-37 | Add Product to Wishlist | **Actor:** Buyer. Thêm SP (unique user+product). **Business:** Retention & remarketing. | Todo | P1 |
-| UC-38 | Delete Product from Wishlist | **Actor:** Buyer. Gỡ SP khỏi wishlist. **Business:** Quản lý danh sách quan tâm. | Todo | P1 |
+| UC-36 | View Wishlist | **Actor:** Buyer. Danh sách SP yêu thích. **Business:** Lưu SP quan tâm để mua sau. | Done | P1 |
+| UC-37 | Add Product to Wishlist | **Actor:** Buyer. Thêm SP (unique user+product). **Business:** Retention & remarketing. | Done | P1 |
+| UC-38 | Delete Product from Wishlist | **Actor:** Buyer. Gỡ SP khỏi wishlist. **Business:** Quản lý danh sách quan tâm. | Done | P1 |
 | UC-39 | View Purchased Orders | **Actor:** Buyer. List đơn theo status + thời gian. **Business:** Theo dõi mua hàng. | Done | P0 |
 | UC-40 | View Order Details | **Actor:** Buyer. Chi tiết dòng hàng, thanh toán, tracking. **Business:** Minh bạch fulfillment. | Done | P0 |
 | UC-41 | Cancel Order | **Actor:** Buyer. Chỉ khi status cho phép (PendingPayment/Paid sớm); release stock. **Business:** Giảm đơn ảo / đổi ý. | Done | P0 |
