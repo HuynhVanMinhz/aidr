@@ -4,6 +4,7 @@ using AIDR.Infrastructure.Auth;
 using AIDR.Infrastructure.Caching;
 using AIDR.Infrastructure.Discovery;
 using AIDR.Infrastructure.Ordering;
+using AIDR.Infrastructure.PayOs;
 using AIDR.Infrastructure.Persistence;
 using AIDR.Infrastructure.Profile;
 using AIDR.Infrastructure.SellerCenter;
@@ -12,6 +13,8 @@ using AIDR.Modules.Auth.Abstractions;
 using AIDR.Modules.Auth.Services;
 using AIDR.Modules.Discovery.Abstractions;
 using AIDR.Modules.Order.Abstractions;
+using AIDR.Modules.Payment.Abstractions;
+using AIDR.Modules.Payment.Services;
 using AIDR.Modules.Profile.Abstractions;
 using AIDR.Modules.SellerCenter.Abstractions;
 using AIDR.Shared.Caching;
@@ -54,6 +57,7 @@ public static class InfrastructureServiceCollectionExtensions
         services.Configure<KeycloakOptions>(configuration.GetSection(KeycloakOptions.SectionName));
         services.Configure<AuthOptions>(configuration.GetSection(AuthOptions.SectionName));
         services.Configure<SmtpOptions>(configuration.GetSection(SmtpOptions.SectionName));
+        services.Configure<PayOsOptions>(configuration.GetSection(PayOsOptions.SectionName));
 
         services.AddScoped<IAuthUserRepository, AuthUserRepository>();
         services.AddScoped<IProfileRepository, ProfileRepository>();
@@ -65,6 +69,8 @@ public static class InfrastructureServiceCollectionExtensions
         services.AddScoped<ISellerInventoryRepository, SellerInventoryRepository>();
         services.AddScoped<ICartRepository, CartRepository>();
         services.AddScoped<IOrderRepository, OrderRepository>();
+        services.AddScoped<IPaymentRepository, PaymentRepository>();
+        services.AddSingleton<IPayOsClient, PayOsClient>();
         services.AddScoped<IPasswordResetTokenStore, PasswordResetTokenStore>();
         services.AddScoped<ITokenService, JwtTokenService>();
         services.AddSingleton<IPasswordHasher, AspNetPasswordHasher>();
