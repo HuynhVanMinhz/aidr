@@ -7,6 +7,13 @@ import type {
   UpdateSystemVoucherPayload,
 } from '../types/admin';
 import type {
+  CreateShopVoucherPayload,
+  SellerShopVoucher,
+  SellerShopVoucherListQuery,
+  SellerShopVoucherListResult,
+  UpdateShopVoucherPayload,
+} from '../types/seller';
+import type {
   ApplyVoucherPreviewRequest,
   VoucherListApiResult,
   VoucherListQuery,
@@ -72,5 +79,45 @@ export async function updateAdminSystemVoucherStatus(id: string, isActive: boole
 
 export async function deleteAdminSystemVoucher(id: string) {
   const { data } = await apiClient.delete<ApiResult<object>>(`/admin/vouchers/${id}`);
+  return data;
+}
+
+export async function listSellerShopVouchers(query: SellerShopVoucherListQuery = {}) {
+  const { data } = await apiClient.get<ApiResult<SellerShopVoucherListResult>>('/seller/vouchers', {
+    params: {
+      q: query.q || undefined,
+      isActive: query.isActive === null || query.isActive === undefined ? undefined : query.isActive,
+      page: query.page ?? 1,
+      pageSize: query.pageSize ?? 10,
+    },
+  });
+  return data;
+}
+
+export async function getSellerShopVoucher(id: string) {
+  const { data } = await apiClient.get<ApiResult<SellerShopVoucher>>(`/seller/vouchers/${id}`);
+  return data;
+}
+
+export async function createSellerShopVoucher(payload: CreateShopVoucherPayload) {
+  const { data } = await apiClient.post<ApiResult<SellerShopVoucher>>('/seller/vouchers', payload);
+  return data;
+}
+
+export async function updateSellerShopVoucher(id: string, payload: UpdateShopVoucherPayload) {
+  const { data } = await apiClient.put<ApiResult<SellerShopVoucher>>(`/seller/vouchers/${id}`, payload);
+  return data;
+}
+
+export async function updateSellerShopVoucherStatus(id: string, isActive: boolean) {
+  const { data } = await apiClient.patch<ApiResult<SellerShopVoucher>>(
+    `/seller/vouchers/${id}/status`,
+    { isActive },
+  );
+  return data;
+}
+
+export async function deleteSellerShopVoucher(id: string) {
+  const { data } = await apiClient.delete<ApiResult<object>>(`/seller/vouchers/${id}`);
   return data;
 }
