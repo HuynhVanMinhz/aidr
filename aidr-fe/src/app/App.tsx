@@ -37,6 +37,8 @@ import { SellerInventoryListPage } from '../views/seller/SellerInventoryListPage
 import { SellerOrderDetailPage } from '../views/seller/SellerOrderDetailPage';
 import { SellerOrderListPage } from '../views/seller/SellerOrderListPage';
 import { SellerProductDetailPage } from '../views/seller/SellerProductDetailPage';
+import { SellerShopVoucherListPage } from '../views/seller/SellerShopVoucherListPage';
+import { SellerShopVoucherFormPage } from '../views/seller/SellerShopVoucherFormPage';
 import { CartPage } from '../views/cart/CartPage';
 import { CheckoutPage } from '../views/checkout/CheckoutPage';
 import { OrderReceivedPage } from '../views/checkout/OrderReceivedPage';
@@ -94,6 +96,9 @@ export function App() {
             <Route path="inventory" element={<SellerInventoryListPage />} />
             <Route path="orders" element={<SellerOrderListPage />} />
             <Route path="orders/:orderId" element={<SellerOrderDetailPage />} />
+            <Route path="vouchers" element={<SellerShopVoucherListPage />} />
+            <Route path="vouchers/new" element={<SellerShopVoucherFormPage />} />
+            <Route path="vouchers/:id/edit" element={<SellerShopVoucherFormPage />} />
           </Route>
         </Route>
 
