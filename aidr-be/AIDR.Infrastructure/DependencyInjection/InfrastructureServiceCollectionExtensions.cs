@@ -77,6 +77,8 @@ public static class InfrastructureServiceCollectionExtensions
         services.AddScoped<IVoucherRepository, VoucherRepository>();
         services.AddScoped<IPaymentRepository, PaymentRepository>();
         services.AddScoped<IWishlistRepository, WishlistRepository>();
+        services.AddScoped<IProductReviewRepository, ProductReviewRepository>();
+        services.AddScoped<ISellerRatingRepository, SellerRatingRepository>();
         services.AddSingleton<IPayOsClient, PayOsClient>();
         services.AddScoped<IPasswordResetTokenStore, PasswordResetTokenStore>();
         services.AddScoped<ITokenService, JwtTokenService>();

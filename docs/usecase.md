@@ -71,12 +71,12 @@
 | UC-56 | Use AI Shopping Assistant | **Actor:** Buyer. Chatbot Ollama tư vấn SP / FAQ mua sắm. **Business:** Hỗ trợ 24/7, giảm tải CSKH. | Todo | P2 |
 | UC-57 | View Chat List | **Actor:** Buyer/Seller. Danh sách thread buyer↔shop. **Business:** Kênh thương lượng / hỗ trợ trước-sau bán. | Todo | P1 |
 | UC-58 | Send Message | **Actor:** Buyer/Seller. Gửi tin nhắn realtime SignalR; optional attachment. **Business:** Tăng trust & chốt sale. | Todo | P1 |
-| UC-59 | View Product Reviews | **Actor:** Guest/Buyer. List review + rating; có thể hiện sentiment AI. **Business:** Social proof. | Todo | P1 |
-| UC-60 | Add Product Review | **Actor:** Buyer. Chỉ sau mua hoàn tất; 1–5 sao + nội dung. **Business:** Feedback chất lượng SP. | Todo | P1 |
-| UC-61 | Update Product Review | **Actor:** Buyer (owner). Sửa review trong cửa sổ cho phép. **Business:** Cho phép chỉnh sau trải nghiệm. | Todo | P2 |
-| UC-62a | Delete Product Review | **Actor:** Buyer (owner). Xóa / ẩn review của mình. **Business:** Quyền kiểm soát nội dung cá nhân. | Todo | P2 |
+| UC-59 | View Product Reviews | **Actor:** Guest/Buyer. List review + rating; có thể hiện sentiment AI. **Business:** Social proof. | Done | P1 |
+| UC-60 | Add Product Review | **Actor:** Buyer. Chỉ sau mua hoàn tất; 1–5 sao + nội dung. **Business:** Feedback chất lượng SP. | Done | P1 |
+| UC-61 | Update Product Review | **Actor:** Buyer (owner). Sửa review trong cửa sổ cho phép. **Business:** Cho phép chỉnh sau trải nghiệm. | Done | P2 |
+| UC-62a | Delete Product Review | **Actor:** Buyer (owner). Xóa / ẩn review của mình. **Business:** Quyền kiểm soát nội dung cá nhân. | Done | P2 |
 | UC-62b | Get Seller Detail | **Actor:** Buyer. Trang shop: mô tả, rating, SP, policy. **Business:** Đánh giá độ tin cậy seller. | Done | P0 |
-| UC-63 | Rate Seller | **Actor:** Buyer. Chấm điểm shop sau đơn hoàn tất. **Business:** Uy tín seller trên sàn. | Todo | P1 |
+| UC-63 | Rate Seller | **Actor:** Buyer. Chấm điểm shop sau đơn hoàn tất. **Business:** Uy tín seller trên sàn. | Done | P1 |
 | UC-64 | View Seller Rating | **Actor:** Guest/Buyer. Xem điểm TB + số lượt. **Business:** Tín hiệu tin cậy công khai. | Done | P1 |
 | UC-65 | Follow Seller | **Actor:** Buyer. Follow shop để nhận update. **Business:** Retention & loyalty. | Todo | P2 |
 | UC-66 | Unfollow Seller | **Actor:** Buyer. Bỏ follow. **Business:** Quản lý sở thích. | Todo | P2 |

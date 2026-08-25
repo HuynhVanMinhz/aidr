@@ -168,9 +168,13 @@ aidr-be/
 | UC-36 | `GET /api/wishlist?page=&pageSize=` — buyer wishlist (paged, newest first); includes price, availability, shop | Engagement |
 | UC-37 | `POST /api/wishlist/items` — body `{ productId }`; unique user+product; only Approved + active shop/category | Engagement |
 | UC-38 | `DELETE /api/wishlist/items/{wishlistItemId}`; `DELETE /api/wishlist/products/{productId}` | Engagement |
+| UC-59 | `GET /api/products/{productId}/reviews?page=&pageSize=&rating=` — visible reviews (paged); includes avg/count + optional sentiment fields | Engagement |
+| UC-60 | `POST /api/products/{productId}/reviews` — body `{ orderId, rating, title?, content }`; Completed order containing product; unique buyer+product+order | Engagement |
+| UC-61 | `PUT /api/reviews/{reviewId}` — owner update within 30 days | Engagement |
+| UC-62a | `DELETE /api/reviews/{reviewId}` — owner soft-hide (`IsVisible=false`); recalc product AvgRating/ReviewCount | Engagement |
+| UC-63 | `POST /api/seller-ratings` — body `{ shopId, orderId, score, comment? }`; Completed order of shop; unique buyer+shop+order; updates Shop.AvgRating/RatingCount | Engagement |
 | UC-44/45 | Notifications REST (+ SignalR push) | Engagement |
 | UC-57/58 | Chat REST + `ChatHub` | Engagement |
-| UC-59..63 | Reviews & rate seller | Engagement |
 | UC-65..67 | Follows | Engagement |
 
 ### 6.7 AI

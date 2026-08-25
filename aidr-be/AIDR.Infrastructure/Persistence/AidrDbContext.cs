@@ -23,6 +23,7 @@ public class AidrDbContext : DbContext
     public DbSet<ProductPriceHistory> ProductPriceHistories => Set<ProductPriceHistory>();
     public DbSet<InventoryTransaction> InventoryTransactions => Set<InventoryTransaction>();
     public DbSet<ProductReview> ProductReviews => Set<ProductReview>();
+    public DbSet<SellerRating> SellerRatings => Set<SellerRating>();
     public DbSet<ViewedProductHistory> ViewedProductHistories => Set<ViewedProductHistory>();
     public DbSet<ProductModerationHistory> ProductModerationHistories => Set<ProductModerationHistory>();
     public DbSet<Cart> Carts => Set<Cart>();
@@ -269,13 +270,43 @@ public class AidrDbContext : DbContext
             e.HasKey(x => x.ReviewId);
             e.Property(x => x.Title).HasMaxLength(150);
             e.Property(x => x.Content).HasMaxLength(2000);
+            e.Property(x => x.SentimentLabel).HasMaxLength(20);
+            e.Property(x => x.SentimentScore).HasPrecision(5, 4);
             e.HasOne(x => x.Product)
                 .WithMany(x => x.Reviews)
-                .HasForeignKey(x => x.ProductId);
+                .HasForeignKey(x => x.ProductId)
+                .OnDelete(DeleteBehavior.Restrict);
             e.HasOne(x => x.Buyer)
                 .WithMany()
-                .HasForeignKey(x => x.BuyerUserId);
+                .HasForeignKey(x => x.BuyerUserId)
+                .OnDelete(DeleteBehavior.Restrict);
+            e.HasOne(x => x.Order)
+                .WithMany()
+                .HasForeignKey(x => x.OrderId)
+                .OnDelete(DeleteBehavior.Restrict);
             e.HasIndex(x => x.ProductId);
+            e.HasIndex(x => new { x.BuyerUserId, x.ProductId, x.OrderId }).IsUnique();
+        });
+
+        modelBuilder.Entity<SellerRating>(e =>
+        {
+            e.ToTable("SellerRatings");
+            e.HasKey(x => x.SellerRatingId);
+            e.Property(x => x.Comment).HasMaxLength(1000);
+            e.HasOne(x => x.Shop)
+                .WithMany()
+                .HasForeignKey(x => x.ShopId)
+                .OnDelete(DeleteBehavior.Restrict);
+            e.HasOne(x => x.Buyer)
+                .WithMany()
+                .HasForeignKey(x => x.BuyerUserId)
+                .OnDelete(DeleteBehavior.Restrict);
+            e.HasOne(x => x.Order)
+                .WithMany()
+                .HasForeignKey(x => x.OrderId)
+                .OnDelete(DeleteBehavior.Restrict);
+            e.HasIndex(x => x.ShopId);
+            e.HasIndex(x => new { x.BuyerUserId, x.ShopId, x.OrderId }).IsUnique();
         });
 
         modelBuilder.Entity<ViewedProductHistory>(e =>
