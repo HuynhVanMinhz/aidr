@@ -78,9 +78,9 @@
 | UC-62b | Get Seller Detail | **Actor:** Buyer. Trang shop: mô tả, rating, SP, policy. **Business:** Đánh giá độ tin cậy seller. | Done | P0 |
 | UC-63 | Rate Seller | **Actor:** Buyer. Chấm điểm shop sau đơn hoàn tất. **Business:** Uy tín seller trên sàn. | Done | P1 |
 | UC-64 | View Seller Rating | **Actor:** Guest/Buyer. Xem điểm TB + số lượt. **Business:** Tín hiệu tin cậy công khai. | Done | P1 |
-| UC-65 | Follow Seller | **Actor:** Buyer. Follow shop để nhận update. **Business:** Retention & loyalty. | Todo | P2 |
-| UC-66 | Unfollow Seller | **Actor:** Buyer. Bỏ follow. **Business:** Quản lý sở thích. | Todo | P2 |
-| UC-67 | View List Follow | **Actor:** Buyer. Danh sách shop đang follow. **Business:** Quay lại shop yêu thích. | Todo | P2 |
+| UC-65 | Follow Seller | **Actor:** Buyer. Follow shop để nhận update. **Business:** Retention & loyalty. | Done | P2 |
+| UC-66 | Unfollow Seller | **Actor:** Buyer. Bỏ follow. **Business:** Quản lý sở thích. | Done | P2 |
+| UC-67 | View List Follow | **Actor:** Buyer. Danh sách shop đang follow. **Business:** Quay lại shop yêu thích. | Done | P2 |
 | UC-69 | View Seller Dashboard | **Actor:** Seller. KPI: đơn, doanh thu, tồn thấp, pending. **Business:** Điều hành cửa hàng nhanh. | Todo | P1 |
 | UC-70 | View Sales Reports | **Actor:** Seller. Báo cáo theo ngày/tuần/tháng; kèm **margin** từ lot cost vs giá bán (BR-C06). **Business:** Ra quyết định nhập/giá. | Todo | P1 |
 | UC-71 | View Customer Insights | **Actor:** Admin. Thống kê hành vi / top SP / cohort đơn giản. **Business:** Quản trị sàn. | Todo | P2 |
