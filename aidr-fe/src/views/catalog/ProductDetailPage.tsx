@@ -1,6 +1,7 @@
 import { useMemo, useState, type ReactNode } from 'react';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { CatalogBreadcrumb } from '../../components/catalog/CatalogBreadcrumb';
+import { ProductReviewsPanel } from '../../components/reviews/ProductReviewsPanel';
 import { useAuth } from '../../hooks/useAuth';
 import { useProductDetail } from '../../hooks/useCatalog';
 import { useCart } from '../../hooks/useCart';
@@ -491,38 +492,11 @@ export function ProductDetailPage() {
 
                   {tab === 'reviews' && (
                     <div className="product-tab-item-box tab-pane fade show active">
-                      <div className="product-review-form-content">
-                        <div className="catalog-detail-review-summary">
-                          <StarRow rating={product.avgRating} showValue />
-                          <p>
-                            {product.reviewCount} reviews · {product.soldCount} sold
-                          </p>
-                        </div>
-                        <div className="customer-review-list">
-                          {product.recentReviews.length === 0 ? (
-                            <p>No reviews yet.</p>
-                          ) : (
-                            product.recentReviews.map((review) => (
-                              <div key={review.reviewId} className="customer-review-item">
-                                <div className="icon-box catalog-review-avatar">
-                                  <span>{review.buyerName.charAt(0).toUpperCase()}</span>
-                                </div>
-                                <div className="customer-review-item-body">
-                                  <div className="customer-review-item-content">
-                                    <p>
-                                      <span>{review.buyerName}</span> —{' '}
-                                      {formatDateVi(review.createdAt)}
-                                    </p>
-                                    {review.title && <p><strong>{review.title}</strong></p>}
-                                    {review.content && <p>{review.content}</p>}
-                                  </div>
-                                  <StarRow rating={review.rating} />
-                                </div>
-                              </div>
-                            ))
-                          )}
-                        </div>
-                      </div>
+                      <ProductReviewsPanel
+                        productId={product.productId}
+                        soldCount={product.soldCount}
+                        active={tab === 'reviews'}
+                      />
                     </div>
                   )}
                 </div>

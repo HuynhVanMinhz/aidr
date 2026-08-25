@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from 'react';
 import { Link, useParams } from 'react-router-dom';
+import { OrderReviewSection } from '../../components/reviews/OrderReviewSection';
 import { useBuyerOrderDetail } from '../../hooks/useBuyerOrders';
 import { useToast } from '../../hooks/useToast';
 import { formatMoney } from '../../utils/formatCatalog';
@@ -234,6 +235,15 @@ export function OrderDetailPage() {
             ))}
           </ul>
         </div>
+      ) : null}
+
+      {detail.status === 'Completed' ? (
+        <OrderReviewSection
+          orderId={detail.orderId}
+          shopId={detail.shopId}
+          shopName={detail.shopName}
+          items={detail.items}
+        />
       ) : null}
 
       <div className="buyer-order-detail-actions">

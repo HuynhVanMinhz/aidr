@@ -249,6 +249,107 @@ a.btn-default:hover {
   color: #f5a623;
 }
 
+.review-list-toolbar {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin: 1rem 0;
+}
+
+.review-list-filter {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  min-width: 180px;
+}
+
+.review-list-filter label {
+  margin: 0;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.review-order-hint {
+  margin-bottom: 1rem;
+}
+
+.review-star-input {
+  display: inline-flex;
+  gap: 0.25rem;
+}
+
+.review-star-input__btn {
+  border: 0;
+  background: transparent;
+  color: #ccc;
+  font-size: 1.35rem;
+  line-height: 1;
+  padding: 0;
+  cursor: pointer;
+}
+
+.review-star-input__btn.is-active {
+  color: #f5a623;
+}
+
+.review-star-input__btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.review-item-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-top: 0.75rem;
+}
+
+.review-sentiment-label {
+  font-size: 0.85rem;
+  color: var(--text-color);
+  opacity: 0.85;
+}
+
+.customer-review-item--editing {
+  border: 1px solid var(--divider-color);
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+}
+
+.order-review-section {
+  margin: 2rem 0;
+}
+
+.order-review-section h2 {
+  margin-bottom: 0.5rem;
+}
+
+.order-product-review-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.order-review-card {
+  border: 1px solid var(--divider-color);
+  border-radius: 8px;
+  padding: 1.25rem;
+  margin-bottom: 1rem;
+}
+
+.order-review-card h3 {
+  margin-bottom: 1rem;
+}
+
+.order-review-card--done {
+  background: rgba(26, 127, 55, 0.06);
+  border-color: rgba(26, 127, 55, 0.25);
+}
+
 .catalog-review-avatar {
   width: 60px;
   height: 60px;
