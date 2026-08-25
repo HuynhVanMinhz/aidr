@@ -40,6 +40,7 @@ public static class ModulesServiceCollectionExtensions
         services.AddScoped<IWishlistService, WishlistService>();
         services.AddScoped<IProductReviewService, ProductReviewService>();
         services.AddScoped<ISellerRatingService, SellerRatingService>();
+        services.AddScoped<IFollowService, FollowService>();
         return services;
     }
 }
