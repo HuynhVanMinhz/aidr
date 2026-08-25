@@ -20,7 +20,7 @@ Cập nhật cột **status**: `Todo` · `In Progress` · `Done` · `Blocked`.
 | 07 | SellerCenter — Product | CRUD SP seller, upload ảnh, my products; SP vào `Pending`. | UC-12, UC-13, UC-14, UC-15, UC-16 | Done |
 | 08 | SellerCenter — Inventory & Pricing | Nhập lô (UnitCost), quản lý tồn, đổi giá bán + price history. | UC-17, UC-91, UC-92 | Done |
 | 09 | Admin — Product Moderation | Queue duyệt/từ chối SP + history → SP lên kệ Discovery. **Khóa vertical slice bán hàng.** | UC-18, UC-19, UC-20, UC-21 | Done |
-| 10 | Shop Public Page | Trang chi tiết seller cho buyer (trust). | UC-62b, UC-64 | Todo |
+| 10 | Shop Public Page | Trang chi tiết seller cho buyer (trust). | UC-62b, UC-64 | Done |
 | 11 | Order — Cart | Giỏ hàng add/view/remove. | UC-29, UC-30, UC-31 | Todo |
 | 12 | Order — Checkout | Tạo đơn (split shop), snapshot địa chỉ/giá, reserve stock FIFO lot allocation. | UC-34 | Todo |
 | 13 | Payment | payOS create link + webhook → Paid; gắn UC-35. | UC-35 | Todo |

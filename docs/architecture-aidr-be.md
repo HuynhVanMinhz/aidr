@@ -50,7 +50,7 @@ aidr-be/
 ├── AIDR.Modules             # Domain application services (use-case oriented)
 │   ├── Auth
 │   ├── Profile
-│   ├── Discovery            # search, filter, category, product public read
+│   ├── Discovery            # search, filter, category, product/shop public read
 │   ├── SellerCenter         # products, inventory, shop orders, vouchers, wallet, dashboard
 │   ├── Order                # cart, checkout, buyer orders, returns (buyer side)
 │   ├── Payment              # payOS integration
@@ -107,6 +107,8 @@ aidr-be/
 |----|----------|--------|
 | UC-09/10/11 | `GET /api/products`, `GET /api/products/{id}`, `GET /api/categories` | Discovery |
 | UC-26/27 | `GET /api/products/search?q=&filters=&sort=` | Discovery |
+| UC-62b | `GET /api/shops/{shopKey}` — shop profile, policies, rating, approved products (paged; `shopKey` = ShopId hoặc Slug) | Discovery |
+| UC-64 | `GET /api/shops/{shopKey}/rating` — AvgRating + RatingCount | Discovery |
 | UC-53/54 | `GET /api/recommendations`, `GET /api/products/{id}/similar` | AI + Discovery |
 
 ### 6.3 Seller Center
@@ -154,7 +156,7 @@ aidr-be/
 | UC-36..38 | Wishlist | Engagement |
 | UC-44/45 | Notifications REST (+ SignalR push) | Engagement |
 | UC-57/58 | Chat REST + `ChatHub` | Engagement |
-| UC-59..64 | Reviews & seller ratings | Engagement |
+| UC-59..63 | Reviews & rate seller | Engagement |
 | UC-65..67 | Follows | Engagement |
 
 ### 6.7 AI
@@ -179,6 +181,8 @@ aidr-be/
 | `catalog:products:{page}:{hash}` | ngắn (1–5 phút) | UC-09 list |
 | `product:{id}` | ngắn | UC-10 |
 | `categories:tree` | dài hơn | UC-11 |
+| `shop:detail:{hash}` | ngắn | UC-62b |
+| `shop:rating:{key}` | ngắn | UC-64 |
 | `user:{id}:cart` | optional | tăng tốc UC-29 |
 
 Invalidate khi Seller/Admin mutate product/category.
