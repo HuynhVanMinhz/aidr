@@ -24,6 +24,7 @@ public class AidrDbContext : DbContext
     public DbSet<InventoryTransaction> InventoryTransactions => Set<InventoryTransaction>();
     public DbSet<ProductReview> ProductReviews => Set<ProductReview>();
     public DbSet<SellerRating> SellerRatings => Set<SellerRating>();
+    public DbSet<SellerFollow> SellerFollows => Set<SellerFollow>();
     public DbSet<ViewedProductHistory> ViewedProductHistories => Set<ViewedProductHistory>();
     public DbSet<ProductModerationHistory> ProductModerationHistories => Set<ProductModerationHistory>();
     public DbSet<Cart> Carts => Set<Cart>();
@@ -307,6 +308,22 @@ public class AidrDbContext : DbContext
                 .OnDelete(DeleteBehavior.Restrict);
             e.HasIndex(x => x.ShopId);
             e.HasIndex(x => new { x.BuyerUserId, x.ShopId, x.OrderId }).IsUnique();
+        });
+
+        modelBuilder.Entity<SellerFollow>(e =>
+        {
+            e.ToTable("SellerFollows");
+            e.HasKey(x => new { x.BuyerUserId, x.ShopId });
+            e.HasOne(x => x.Buyer)
+                .WithMany()
+                .HasForeignKey(x => x.BuyerUserId)
+                .OnDelete(DeleteBehavior.Restrict);
+            e.HasOne(x => x.Shop)
+                .WithMany()
+                .HasForeignKey(x => x.ShopId)
+                .OnDelete(DeleteBehavior.Restrict);
+            e.HasIndex(x => new { x.ShopId, x.FollowedAt });
+            e.HasIndex(x => new { x.BuyerUserId, x.FollowedAt });
         });
 
         modelBuilder.Entity<ViewedProductHistory>(e =>

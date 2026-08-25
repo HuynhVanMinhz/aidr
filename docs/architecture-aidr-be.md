@@ -173,9 +173,11 @@ aidr-be/
 | UC-61 | `PUT /api/reviews/{reviewId}` — owner update within 30 days | Engagement |
 | UC-62a | `DELETE /api/reviews/{reviewId}` — owner soft-hide (`IsVisible=false`); recalc product AvgRating/ReviewCount | Engagement |
 | UC-63 | `POST /api/seller-ratings` — body `{ shopId, orderId, score, comment? }`; Completed order of shop; unique buyer+shop+order; updates Shop.AvgRating/RatingCount | Engagement |
+| UC-65 | `POST /api/follows/shops` — body `{ shopId }`; unique buyer+shop; only Active shop; cannot follow own shop; updates Shop.FollowerCount | Engagement |
+| UC-66 | `DELETE /api/follows/shops/{shopId}` — unfollow; recalc Shop.FollowerCount | Engagement |
+| UC-67 | `GET /api/follows?page=&pageSize=` — buyer followed shops (paged, newest first) | Engagement |
 | UC-44/45 | Notifications REST (+ SignalR push) | Engagement |
 | UC-57/58 | Chat REST + `ChatHub` | Engagement |
-| UC-65..67 | Follows | Engagement |
 
 ### 6.7 AI
 | UC | Endpoint | Module |
