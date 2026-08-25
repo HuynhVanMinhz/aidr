@@ -11,6 +11,7 @@ import { getOrCreateSessionId } from '../utils/sessionId';
 function toParams(query: ProductQuery): Record<string, string | number> {
   const params: Record<string, string | number> = {};
   if (query.q?.trim()) params.q = query.q.trim();
+  if (query.shopId?.trim()) params.shopId = query.shopId.trim();
   if (query.categoryId != null) params.categoryId = query.categoryId;
   if (query.brand?.trim()) params.brand = query.brand.trim();
   if (query.minPrice != null) params.minPrice = query.minPrice;

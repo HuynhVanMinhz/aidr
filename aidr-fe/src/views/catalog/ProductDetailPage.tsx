@@ -257,7 +257,10 @@ export function ProductDetailPage() {
                           </li>
                         )}
                         <li>
-                          <span>Shop:</span> {product.shop.shopName}
+                          <span>Shop:</span>{' '}
+                          <Link to={`/shops/${encodeURIComponent(product.shop.slug || product.shop.shopId)}`}>
+                            {product.shop.shopName}
+                          </Link>
                           {product.shop.isVerified ? ' ✓ Verified' : ''}
                         </li>
                       </ul>
@@ -288,8 +291,8 @@ export function ProductDetailPage() {
                         ratings)
                         {product.shop.isVerified ? ' · Verified seller' : ''}
                       </p>
-                      <Link to={`/products?q=${encodeURIComponent(product.shop.shopName)}`}>
-                        More products from this shop
+                      <Link to={`/shops/${encodeURIComponent(product.shop.slug || product.shop.shopId)}`}>
+                        Visit shop
                       </Link>
                     </div>
                   </div>
