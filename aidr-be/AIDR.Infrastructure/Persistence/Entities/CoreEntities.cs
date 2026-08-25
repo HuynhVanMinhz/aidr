@@ -329,3 +329,97 @@ public class CartItem
     public Cart Cart { get; set; } = null!;
     public Product Product { get; set; } = null!;
 }
+
+public class Order
+{
+    public Guid OrderId { get; set; }
+    public string OrderCode { get; set; } = null!;
+    public Guid BuyerUserId { get; set; }
+    public Guid ShopId { get; set; }
+    public Guid? ShippingAddressId { get; set; }
+    public string ShippingSnapshotJson { get; set; } = null!;
+    public string Status { get; set; } = "PendingPayment";
+    public decimal SubtotalAmount { get; set; }
+    public decimal DiscountAmount { get; set; }
+    public decimal ShippingFee { get; set; }
+    public decimal TotalAmount { get; set; }
+    public string Currency { get; set; } = "VND";
+    public Guid? VoucherId { get; set; }
+    public string? BuyerNote { get; set; }
+    public string? SellerNote { get; set; }
+    public string? TrackingCode { get; set; }
+    public DateTime? PaidAt { get; set; }
+    public DateTime? CancelledAt { get; set; }
+    public DateTime? DeliveredAt { get; set; }
+    public DateTime? CompletedAt { get; set; }
+    public DateTime CreatedAt { get; set; }
+    public DateTime UpdatedAt { get; set; }
+
+    public User Buyer { get; set; } = null!;
+    public Shop Shop { get; set; } = null!;
+    public Address? ShippingAddress { get; set; }
+    public ICollection<OrderItem> Items { get; set; } = new List<OrderItem>();
+    public ICollection<OrderStatusHistory> StatusHistories { get; set; } = new List<OrderStatusHistory>();
+    public ICollection<Payment> Payments { get; set; } = new List<Payment>();
+}
+
+public class OrderItem
+{
+    public Guid OrderItemId { get; set; }
+    public Guid OrderId { get; set; }
+    public Guid ProductId { get; set; }
+    public Guid? VariantId { get; set; }
+    public string ProductNameSnapshot { get; set; } = null!;
+    public string? SkuSnapshot { get; set; }
+    public decimal UnitPrice { get; set; }
+    public decimal? UnitCostAvg { get; set; }
+    public int Quantity { get; set; }
+    public decimal LineTotal { get; set; }
+
+    public Order Order { get; set; } = null!;
+    public Product Product { get; set; } = null!;
+    public ICollection<OrderItemLotAllocation> LotAllocations { get; set; } = new List<OrderItemLotAllocation>();
+}
+
+public class OrderItemLotAllocation
+{
+    public Guid AllocationId { get; set; }
+    public Guid OrderItemId { get; set; }
+    public Guid LotId { get; set; }
+    public int Quantity { get; set; }
+    public decimal UnitCostSnapshot { get; set; }
+
+    public OrderItem OrderItem { get; set; } = null!;
+    public InventoryLot Lot { get; set; } = null!;
+}
+
+public class OrderStatusHistory
+{
+    public long HistoryId { get; set; }
+    public Guid OrderId { get; set; }
+    public string? FromStatus { get; set; }
+    public string ToStatus { get; set; } = null!;
+    public Guid? ChangedBy { get; set; }
+    public string? Note { get; set; }
+    public DateTime CreatedAt { get; set; }
+
+    public Order Order { get; set; } = null!;
+}
+
+public class Payment
+{
+    public Guid PaymentId { get; set; }
+    public Guid OrderId { get; set; }
+    public string Provider { get; set; } = "payOS";
+    public string? ProviderPaymentId { get; set; }
+    public decimal Amount { get; set; }
+    public string Currency { get; set; } = "VND";
+    public string Status { get; set; } = "Pending";
+    public string? CheckoutUrl { get; set; }
+    public DateTime? PaidAt { get; set; }
+    public string? RawResponseJson { get; set; }
+    public DateTime CreatedAt { get; set; }
+    public DateTime UpdatedAt { get; set; }
+
+    public Order Order { get; set; } = null!;
+}
