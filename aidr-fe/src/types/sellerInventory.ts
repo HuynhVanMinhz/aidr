@@ -4,6 +4,7 @@ export type SellerInventoryLot = {
   quantityReceived: number;
   quantityRemaining: number;
   unitCost: number;
+  estimatedMarginPerUnit?: number | null;
   currency: string;
   supplierName?: string | null;
   invoiceNumber?: string | null;
@@ -46,8 +47,11 @@ export type SellerInventoryListItem = {
   isLowStock: boolean;
   lastCostPrice?: number | null;
   avgCostPrice?: number | null;
+  /** Effective selling price minus avg cost (null if no cost). */
+  estimatedMarginPerUnit?: number | null;
   basePrice: number;
   salePrice?: number | null;
+  effectivePrice: number;
   currency: string;
   updatedAt: string;
 };
@@ -72,8 +76,10 @@ export type SellerInventoryDetail = {
   isLowStock: boolean;
   lastCostPrice?: number | null;
   avgCostPrice?: number | null;
+  estimatedMarginPerUnit?: number | null;
   basePrice: number;
   salePrice?: number | null;
+  effectivePrice: number;
   currency: string;
   lots: SellerInventoryLot[];
   recentTransactions: SellerInventoryTransaction[];

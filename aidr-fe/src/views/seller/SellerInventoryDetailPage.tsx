@@ -125,6 +125,25 @@ export function SellerInventoryDetailPage() {
             tone="primary"
           />
         </div>
+        <div className="col-md-6 col-xl-3">
+          <AdminStatCard
+            title="Est. margin / unit"
+            value={
+              detail.estimatedMarginPerUnit != null
+                ? formatVnd(detail.estimatedMarginPerUnit)
+                : '—'
+            }
+            unit="Sell − avg cost"
+            icon="solar:chart-2-bold-duotone"
+            tone={
+              detail.estimatedMarginPerUnit == null
+                ? 'primary'
+                : detail.estimatedMarginPerUnit >= 0
+                  ? 'success'
+                  : 'danger'
+            }
+          />
+        </div>
       </div>
 
       {isDeleted ? (
@@ -663,6 +682,7 @@ function LotsTable({ lots }: { lots: SellerInventoryLot[] }) {
               <th>Received</th>
               <th>Remaining</th>
               <th>Unit cost</th>
+              <th>Est. margin / unit</th>
               <th>Supplier</th>
               <th>Received at</th>
               <th>Status</th>
@@ -671,7 +691,7 @@ function LotsTable({ lots }: { lots: SellerInventoryLot[] }) {
           <tbody>
             {lots.length === 0 ? (
               <tr>
-                <td colSpan={7} className="text-center py-4 text-muted">
+                <td colSpan={8} className="text-center py-4 text-muted">
                   No lots yet. Import a stock lot to add inventory.
                 </td>
               </tr>
@@ -687,6 +707,21 @@ function LotsTable({ lots }: { lots: SellerInventoryLot[] }) {
                   <td>{lot.quantityReceived}</td>
                   <td>{lot.quantityRemaining}</td>
                   <td>{formatVnd(lot.unitCost)}</td>
+                  <td>
+                    {lot.estimatedMarginPerUnit != null ? (
+                      <span
+                        className={
+                          lot.estimatedMarginPerUnit >= 0
+                            ? 'text-success fw-medium'
+                            : 'text-danger fw-medium'
+                        }
+                      >
+                        {formatVnd(lot.estimatedMarginPerUnit)}
+                      </span>
+                    ) : (
+                      '—'
+                    )}
+                  </td>
                   <td>{lot.supplierName || '—'}</td>
                   <td>{formatDateTime(lot.receivedAt)}</td>
                   <td>
