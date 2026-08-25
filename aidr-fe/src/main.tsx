@@ -11,6 +11,7 @@ import './styles/global.css';
 import './styles/auth.css';
 import './styles/account.css';
 import './styles/catalog.css';
+import './styles/cart.css';
 
 attachStore(store);
 applyThemeToDocument(getInitialTheme());
