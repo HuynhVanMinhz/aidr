@@ -28,6 +28,7 @@ public static class ModulesServiceCollectionExtensions
         services.AddScoped<IAdminProductModerationService, AdminProductModerationService>();
         services.AddScoped<ISellerProductService, SellerProductService>();
         services.AddScoped<ISellerInventoryService, SellerInventoryService>();
+        services.AddScoped<ISellerOrderService, SellerOrderService>();
         services.AddScoped<ICartService, CartService>();
         services.AddScoped<IOrderService, OrderService>();
         services.AddScoped<IPaymentService, PaymentService>();
