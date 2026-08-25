@@ -83,10 +83,10 @@
 | UC-67 | View List Follow | **Actor:** Buyer. Danh sách shop đang follow. **Business:** Quay lại shop yêu thích. | Done | P2 |
 | UC-69 | View Seller Dashboard | **Actor:** Seller. KPI: đơn, doanh thu, tồn thấp, pending. **Business:** Điều hành cửa hàng nhanh. | Done | P1 |
 | UC-70 | View Sales Reports | **Actor:** Seller. Báo cáo theo ngày/tuần/tháng; kèm **margin** từ lot cost vs giá bán (BR-C06). **Business:** Ra quyết định nhập/giá. | Done | P1 |
-| UC-71 | View Customer Insights | **Actor:** Admin. Thống kê hành vi / top SP / cohort đơn giản. **Business:** Quản trị sàn. | Todo | P2 |
-| UC-72 | View Account List | **Actor:** Admin. List user + role + status. **Business:** Quản trị tài khoản. | Todo | P1 |
-| UC-73 | Lock User Account | **Actor:** Admin. Status → Locked. **Business:** Xử lý vi phạm / gian lận. | Todo | P1 |
-| UC-74 | Unlock User Account | **Actor:** Admin. Mở khóa tài khoản. **Business:** Khôi phục sau xử lý. | Todo | P1 |
+| UC-71 | View Customer Insights | **Actor:** Admin. Thống kê hành vi / top SP / cohort đơn giản. **Business:** Quản trị sàn. | Done | P2 |
+| UC-72 | View Account List | **Actor:** Admin. List user + role + status. **Business:** Quản trị tài khoản. | Done | P1 |
+| UC-73 | Lock User Account | **Actor:** Admin. Status → Locked. **Business:** Xử lý vi phạm / gian lận. | Done | P1 |
+| UC-74 | Unlock User Account | **Actor:** Admin. Mở khóa tài khoản. **Business:** Khôi phục sau xử lý. | Done | P1 |
 | UC-75 | View Seller Registration Requests | **Actor:** Admin. Queue Pending đăng ký seller. **Business:** Kiểm soát ai được bán. | Done | P0 |
 | UC-76 | Approve / Reject Seller Registration | **Actor:** Admin. Approve → gán role Seller + tạo Shop + Wallet; Reject + note. **Business:** Onboarding seller an toàn. | Done | P0 |
 | UC-78 | Create Voucher in System | **Actor:** Admin. Tạo voucher Scope=System. **Business:** Campaign toàn sàn. | Done | P1 |

@@ -69,6 +69,8 @@ public static class InfrastructureServiceCollectionExtensions
         services.AddScoped<IAdminProductModerationRepository, AdminProductModerationRepository>();
         services.AddScoped<IAdminSystemVoucherRepository, AdminSystemVoucherRepository>();
         services.AddScoped<IAdminReturnRepository, AdminReturnRepository>();
+        services.AddScoped<IAdminAccountRepository, AdminAccountRepository>();
+        services.AddScoped<IAdminCustomerInsightRepository, AdminCustomerInsightRepository>();
         services.AddScoped<ISellerProductRepository, SellerProductRepository>();
         services.AddScoped<ISellerInventoryRepository, SellerInventoryRepository>();
         services.AddScoped<ISellerOrderRepository, SellerOrderRepository>();
