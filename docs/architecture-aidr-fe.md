@@ -254,12 +254,12 @@ VITE_SIGNALR_HUB_URL=https://api.aidr.local/hubs
 | Admin product moderation list / review | UC-18..21 |
 | Admin seller registration queue / review | UC-75, UC-76 |
 | Cart / Checkout | UC-29..31 (`/cart`, `cartApi`); UC-32/33 (`voucherApi`, `voucherSlice`, apply on cart + checkout); UC-34 (`/checkout`, `orderApi` + `vouchers` on create); UC-35 (`paymentApi`, payOS + `/order-received`) |
-| My orders / detail | UC-39..42 (`/account/orders`, `/account/orders/:orderId`, `ordersSlice`, cancel + confirm received); `/orders` redirects here |
+| My orders / detail | UC-39..43 (`/account/orders`, `/account/orders/:orderId`, `ordersSlice` + `returnsSlice` / `returnApi`, cancel + confirm received + request return with Unboxing/Testing evidence) |
 | Wishlist | UC-36..38 (`/wishlist` → `/account/wishlist`, `wishlistApi`, `wishlistSlice`, add/remove on catalog + detail) |
 | Following | UC-65..67 (`/following` → `/account/following`, `followApi`, `followSlice`, follow/unfollow on shop page + list) |
 | Notifications | UC-44/45 |
 | Seller orders | UC-46/47 (`/seller/orders`, `/seller/orders/:orderId`, `sellerOrdersSlice`, update status + tracking) |
-| Admin returns | UC-48..52 |
+| Admin returns | UC-48..52 (`/admin/return-requests`, `/admin/return-requests/:id`, `returnApi`, `adminReturnsSlice`, approve/reject + Receiving→Refunded→Closed) |
 | Recommend / Similar blocks | UC-53/54 |
 | AI chatbot | UC-56 |
 | Chat list / room | UC-57/58 |
