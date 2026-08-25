@@ -35,7 +35,10 @@ public static class OrderConstants
     public const string ActiveShopStatus = "Active";
 
     public const int MaxBuyerNoteLength = 500;
+    public const int MaxSellerNoteLength = 500;
     public const int MaxCancelReasonLength = 300;
+    public const int MaxStatusNoteLength = 300;
+    public const int MaxTrackingCodeLength = 100;
     public const int MaxOrderCodeLength = 30;
 
     public const int DefaultListPage = 1;
@@ -57,6 +60,29 @@ public static class OrderConstants
         StatusReturnRequested,
         StatusReturned
     };
+
+    /// <summary>Statuses sellers can filter on in the shop order list.</summary>
+    public static readonly HashSet<string> SellerListStatuses = new(StringComparer.OrdinalIgnoreCase)
+    {
+        StatusPendingPayment,
+        StatusPaid,
+        StatusConfirmed,
+        StatusShipping,
+        StatusDelivered,
+        StatusCompleted,
+        StatusCancelled,
+        StatusReturnRequested,
+        StatusReturned
+    };
+
+    /// <summary>Allowed seller fulfillment transitions: Paid→Confirmed→Shipping→Delivered.</summary>
+    public static readonly IReadOnlyDictionary<string, string> SellerStatusTransitions =
+        new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        {
+            [StatusPaid] = StatusConfirmed,
+            [StatusConfirmed] = StatusShipping,
+            [StatusShipping] = StatusDelivered
+        };
 
     public static (int Page, int PageSize) NormalizePaging(int page, int pageSize)
     {
