@@ -1,5 +1,9 @@
 import type {
   ApiResult,
+  AiChatRequest,
+  AiChatResult,
+  AiConversationDetail,
+  AiConversationSummary,
   CompareProductsRequest,
   CompareProductsResult,
   NlFilterRequest,
@@ -40,5 +44,24 @@ export async function parseNlFilter(body: NlFilterRequest) {
 
 export async function compareProducts(body: CompareProductsRequest) {
   const { data } = await apiClient.post<ApiResult<CompareProductsResult>>('/ai/compare', body);
+  return data;
+}
+
+export async function sendAiChat(body: AiChatRequest) {
+  const { data } = await apiClient.post<ApiResult<AiChatResult>>('/ai/chat', body);
+  return data;
+}
+
+export async function listAiConversations(page = 1, pageSize = 20) {
+  const { data } = await apiClient.get<ApiResult<PagedResult<AiConversationSummary>>>('/ai/conversations', {
+    params: { page, pageSize },
+  });
+  return data;
+}
+
+export async function getAiConversation(conversationId: string) {
+  const { data } = await apiClient.get<ApiResult<AiConversationDetail>>(
+    `/ai/conversations/${conversationId}`,
+  );
   return data;
 }

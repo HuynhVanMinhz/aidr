@@ -86,7 +86,7 @@ aidr-fe/
 | Public catalog | `/`, `/products`, `/products/:id`, `/shops/:shopKey`, `/categories` | Guest+ |
 | Auth | `/login`, `/register`, `/forgot-password` | Guest |
 | Buyer account | `/account/*`, `/cart`, `/checkout`, `/wishlist`, `/orders` | Buyer (+Seller nếu dual-role) |
-| AI | `/ai/assistant`, compare modal/page | Buyer |
+| AI | Floating shopping assistant widget (all storefront pages) + compare page | Buyer |
 | Chat | `/chat` (buyer), `/seller/chat` (seller) | Buyer / Seller |
 | Seller center | `/seller`, `/seller/reports`, `/seller/wallet`, `/seller/products`, … | Seller |
 | Admin | `/admin/*` | Admin |
@@ -212,7 +212,7 @@ Kết nối sau khi auth thành công; reconnect với token mới khi refresh.
 |----|-----|
 | UC-90 | Ô “Tìm bằng ngôn ngữ tự nhiên” → BE trả filter JSON → bind vào filter panel |
 | UC-28 | Chọn 2–N sản phẩm → panel kết quả so sánh (bảng + tóm tắt AI) |
-| UC-56 | Chat UI; message streaming nếu BE hỗ trợ; deep-link tới product cards trong reply |
+| UC-56 | Floating chatbot (bottom-right) on storefront; deep-link product cards in reply |
 | UC-53/54 | Section “Dành cho bạn” / “Sản phẩm tương tự” trên home & detail |
 
 Loading & empty states bắt buộc; không block toàn app khi LLM chậm (timeout + fallback message).
@@ -267,7 +267,7 @@ VITE_SIGNALR_HUB_URL=https://api.aidr.local/hubs
 | Admin returns | UC-48..52 (`/admin/return-requests`, `/admin/return-requests/:id`, `returnApi`, `adminReturnsSlice`, approve/reject + Receiving→Refunded→Closed) |
 | Recommend / Similar blocks | UC-53/54 (`RecommendedProductsSection` on home; `SimilarProductsSection` on product detail; `aiApi` + `recommendationSlice`) |
 | NL filter + Compare | UC-90 (`NlSearchBar` on `/products` → `POST /ai/nl-filter` → bind catalog filters); UC-28 (compare icon on card/detail → tray → `/compare` + `POST /ai/compare`, Buyer) |
-| AI chatbot | UC-56 |
+| AI chatbot | UC-56 (`ShoppingAssistantWidget` in `AppShell`, `aiApi` chat + conversations) |
 | Chat list / room | UC-57/58 (`/chat`, `/seller/chat`, `chatApi`, `chatSlice`, SignalR `ChatHub` → append message; open via `?shopId=&productId=` / `?threadId=`) |
 | Reviews / Seller profile / Follow | UC-59..63 (`reviewApi`, `reviewSlice`, product detail reviews tab; order detail review + seller rating when Completed); UC-65..67 (`followApi`, `followSlice`, shop page follow + `/account/following`) |
 | Seller dashboard / reports / wallet / shop vouchers | UC-69, 70, 85; UC-87..89 (`/seller/vouchers`, `voucherApi` seller + `sellerVoucherSlice`, create/edit/status/delete) |
