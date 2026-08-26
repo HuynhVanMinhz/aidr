@@ -1,11 +1,26 @@
 import { useCallback } from 'react';
 import {
+  AI_CHAT_MAX_LENGTH,
   COMPARE_MAX,
+  clearAiAssistantState,
   clearCompareResult,
   clearCompareSelection,
+  loadAiConversation,
+  loadAiConversations,
   parseNlFilter,
   removeCompareSelection,
   runCompare,
+  selectActiveAiConversationId,
+  selectActiveAiTitle,
+  selectAiChatError,
+  selectAiChatSending,
+  selectAiConversations,
+  selectAiConversationsError,
+  selectAiConversationsLoading,
+  selectAiLastChatSource,
+  selectAiMessages,
+  selectAiMessagesError,
+  selectAiMessagesLoading,
   selectCompareError,
   selectCompareLoading,
   selectCompareResult,
@@ -14,10 +29,13 @@ import {
   selectLastNlResult,
   selectNlError,
   selectNlLoading,
+  sendAiChat,
+  startNewAiConversation,
   toggleCompareSelection,
 } from '../store/aiSlice';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 import type { CompareSelectionItem } from '../types/ai';
+import { getApiErrorMessage } from '../utils/apiError';
 
 export function useNlFilter() {
   const dispatch = useAppDispatch();
@@ -108,4 +126,106 @@ export function useCompare() {
 
 export function useCompareSelected(productId: string) {
   return useAppSelector(selectIsInCompare(productId));
+}
+
+export function useShoppingAssistant() {
+  const dispatch = useAppDispatch();
+  const conversations = useAppSelector(selectAiConversations);
+  const conversationsLoading = useAppSelector(selectAiConversationsLoading);
+  const conversationsError = useAppSelector(selectAiConversationsError);
+  const activeConversationId = useAppSelector(selectActiveAiConversationId);
+  const activeTitle = useAppSelector(selectActiveAiTitle);
+  const messages = useAppSelector(selectAiMessages);
+  const messagesLoading = useAppSelector(selectAiMessagesLoading);
+  const messagesError = useAppSelector(selectAiMessagesError);
+  const sending = useAppSelector(selectAiChatSending);
+  const chatError = useAppSelector(selectAiChatError);
+  const lastSource = useAppSelector(selectAiLastChatSource);
+
+  const loadConversations = useCallback(
+    async (page = 1) => {
+      const action = await dispatch(loadAiConversations({ page }));
+      if (loadAiConversations.fulfilled.match(action)) {
+        return action.payload.data;
+      }
+      throw new Error(
+        (action.payload as string) || action.error.message || 'Unable to load conversations.',
+      );
+    },
+    [dispatch],
+  );
+
+  const openConversation = useCallback(
+    async (conversationId: string) => {
+      const action = await dispatch(loadAiConversation(conversationId));
+      if (loadAiConversation.fulfilled.match(action)) {
+        return action.payload;
+      }
+      throw new Error(
+        (action.payload as string) || action.error.message || 'Unable to open conversation.',
+      );
+    },
+    [dispatch],
+  );
+
+  const startNew = useCallback(() => {
+    dispatch(startNewAiConversation());
+  }, [dispatch]);
+
+  const clearAll = useCallback(() => {
+    dispatch(clearAiAssistantState());
+  }, [dispatch]);
+
+  const send = useCallback(
+    async (message: string, conversationId?: string | null) => {
+      const trimmed = message.trim();
+      if (!trimmed) {
+        throw new Error('Message is required.');
+      }
+      if (trimmed.length > AI_CHAT_MAX_LENGTH) {
+        throw new Error(`Message must be at most ${AI_CHAT_MAX_LENGTH} characters.`);
+      }
+      const action = await dispatch(
+        sendAiChat({
+          message: trimmed,
+          conversationId: conversationId ?? activeConversationId,
+        }),
+      );
+      if (sendAiChat.fulfilled.match(action)) {
+        return action.payload;
+      }
+      throw new Error(
+        (action.payload as string) ||
+          action.error.message ||
+          'Unable to send message to the shopping assistant.',
+      );
+    },
+    [activeConversationId, dispatch],
+  );
+
+  const getErrorMessage = useCallback(
+    (error: unknown, fallback: string) => getApiErrorMessage(error, fallback),
+    [],
+  );
+
+  return {
+    conversations,
+    conversationsLoading,
+    conversationsError,
+    activeConversationId,
+    activeTitle,
+    messages,
+    messagesLoading,
+    messagesError,
+    sending,
+    chatError,
+    lastSource,
+    maxLength: AI_CHAT_MAX_LENGTH,
+    loadConversations,
+    openConversation,
+    startNew,
+    clearAll,
+    send,
+    getErrorMessage,
+  };
 }
