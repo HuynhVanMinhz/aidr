@@ -280,4 +280,38 @@ public class DevController : ControllerBase
             recommendationCount = recCount
         });
     }
+
+    /// <summary>Enrich SpecsJson on demo products for NL filter / compare testing (dev only).</summary>
+    [HttpPost("seed-nl-compare")]
+    public async Task<IActionResult> SeedNlCompare(
+        [FromServices] AidrDbContext db,
+        [FromServices] IWebHostEnvironment env,
+        CancellationToken ct)
+    {
+        if (!env.IsDevelopment())
+            return NotFound();
+
+        await NlCompareDemoSeeder.SeedAsync(db, env.ContentRootPath, ct);
+
+        var enriched = await db.Products.CountAsync(
+            p => p.TagsJson != null && p.TagsJson.Contains("NL-COMPARE-SEED"), ct);
+
+        return Ok(new
+        {
+            message = "NL filter / compare demo seed completed.",
+            enrichedProductCount = enriched,
+            sampleCompareProductIds = new[]
+            {
+                "EEEEEEEE-EEEE-EEEE-EEEE-EEEEEEEEEEEE",
+                "11111111-1111-1111-1111-111111111101",
+                "11111111-1111-1111-1111-111111111102"
+            },
+            sampleNlQueries = new[]
+            {
+                "Điện thoại Samsung dưới 15 triệu, sắp xếp giá tăng dần",
+                "Laptop Apple từ 20 triệu, rating từ 4 sao",
+                "Find Xiaomi phones under 20m sorted by popular"
+            }
+        });
+    }
 }
