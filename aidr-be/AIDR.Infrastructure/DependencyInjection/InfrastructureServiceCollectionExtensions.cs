@@ -67,6 +67,7 @@ public static class InfrastructureServiceCollectionExtensions
 
         services.AddScoped<IAuthUserRepository, AuthUserRepository>();
         services.AddScoped<IProfileRepository, ProfileRepository>();
+        services.AddScoped<ISellerRegistrationRepository, SellerRegistrationRepository>();
         services.AddScoped<IDiscoveryRepository, DiscoveryRepository>();
         services.AddScoped<IRecommendationRepository, RecommendationRepository>();
         services.AddScoped<IAiCatalogRepository, AiCatalogRepository>();
@@ -78,11 +79,14 @@ public static class InfrastructureServiceCollectionExtensions
         services.AddScoped<IAdminReturnRepository, AdminReturnRepository>();
         services.AddScoped<IAdminAccountRepository, AdminAccountRepository>();
         services.AddScoped<IAdminCustomerInsightRepository, AdminCustomerInsightRepository>();
+        services.AddScoped<IAdminDashboardRepository, AdminDashboardRepository>();
+        services.AddScoped<IAdminOrderRepository, AdminOrderRepository>();
         services.AddScoped<ISellerProductRepository, SellerProductRepository>();
         services.AddScoped<ISellerInventoryRepository, SellerInventoryRepository>();
         services.AddScoped<ISellerOrderRepository, SellerOrderRepository>();
         services.AddScoped<ISellerShopVoucherRepository, SellerShopVoucherRepository>();
         services.AddScoped<ISellerFinanceRepository, SellerFinanceRepository>();
+        services.AddScoped<ISellerShopRepository, SellerShopRepository>();
         services.AddScoped<ICartRepository, CartRepository>();
         services.AddScoped<IOrderRepository, OrderRepository>();
         services.AddScoped<IReturnRepository, ReturnRepository>();

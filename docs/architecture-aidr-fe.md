@@ -258,13 +258,17 @@ VITE_SIGNALR_HUB_URL=https://api.aidr.local/hubs
 | Admin moderation / categories | UC-18..25 |
 | Admin product moderation list / review | UC-18..21 |
 | Admin seller registration queue / review | UC-75, UC-76 |
-| Cart / Checkout | UC-29..31 (`/cart`, `cartApi`); UC-32/33 (`voucherApi`, `voucherSlice`, apply on cart + checkout); UC-34 (`/checkout`, `orderApi` + `vouchers` on create); UC-35 (`paymentApi`, payOS + `/order-received`) |
+| Become a seller (buyer apply) | UC-77 (`/account/become-seller`, `sellerRegistrationApi`) |
+| Cart / Checkout | UC-29..31 (`/cart`, `cartApi`); UC-32/33 (`voucherApi`, `voucherSlice`, apply on cart + checkout + `/account/vouchers`); UC-34 (`/checkout`, `orderApi` + `vouchers` on create); UC-35 (`paymentApi`, payOS + `/order-received`) |
 | My orders / detail | UC-39..43 (`/account/orders`, `/account/orders/:orderId`, `ordersSlice` + `returnsSlice` / `returnApi`, cancel + confirm received + request return with Unboxing/Testing evidence) |
+| My returns | UC-43 (`/account/returns`, `/account/returns/:returnId`, `GET /api/returns`) |
 | Wishlist | UC-36..38 (`/wishlist` → `/account/wishlist`, `wishlistApi`, `wishlistSlice`, add/remove on catalog + detail) |
 | Following | UC-65..67 (`/following` → `/account/following`, `followApi`, `followSlice`, follow/unfollow on shop page + list) |
 | Notifications | UC-44/45 (`/account/notifications`, `/seller/notifications`, `notificationApi`, `notificationSlice`, SignalR `NotificationHub` → unread badge + prepend inbox) |
 | Seller orders | UC-46/47 (`/seller/orders`, `/seller/orders/:orderId`, `sellerOrdersSlice`, update status + tracking) |
+| Seller shop settings / alerts | `/seller/shop-settings`, `/seller/alerts` (`sellerApi` shop GET/PUT; inventory low-stock) |
 | Admin returns | UC-48..52 (`/admin/return-requests`, `/admin/return-requests/:id`, `returnApi`, `adminReturnsSlice`, approve/reject + Receiving→Refunded→Closed) |
+| Admin orders / dashboard | `/admin/orders`, `/admin/dashboard` KPI (`adminApi`) |
 | Recommend / Similar blocks | UC-53/54 (`RecommendedProductsSection` on home; `SimilarProductsSection` on product detail; `aiApi` + `recommendationSlice`) |
 | NL filter + Compare | UC-90 (`NlSearchBar` on `/products` → `POST /ai/nl-filter` → bind catalog filters); UC-28 (compare icon on card/detail → tray → `/compare` + `POST /ai/compare`, Buyer) |
 | AI chatbot | UC-56 (`ShoppingAssistantWidget` in `AppShell`, `aiApi` chat + conversations) |
@@ -272,7 +276,7 @@ VITE_SIGNALR_HUB_URL=https://api.aidr.local/hubs
 | Reviews / Seller profile / Follow | UC-59..63 (`reviewApi`, `reviewSlice`, product detail reviews tab; order detail review + seller rating when Completed); UC-65..67 (`followApi`, `followSlice`, shop page follow + `/account/following`) |
 | Seller dashboard / reports / wallet / shop vouchers | UC-69, 70, 85; UC-87..89 (`/seller/vouchers`, `voucherApi` seller + `sellerVoucherSlice`, create/edit/status/delete) |
 | Admin accounts / seller requests / system vouchers / insights | UC-71..81 (`/admin/accounts`, `/admin/accounts/:id`, `/admin/insights`, `adminApi` accounts+insights + `adminGovernanceSlice`; `/admin/vouchers`, `voucherApi` admin + `adminVoucherSlice`) |
-
+| Help / FAQ / Terms / 404 / 403 | Static storefront + error pages |
 ---
 
 ## 14. Tài liệu liên quan

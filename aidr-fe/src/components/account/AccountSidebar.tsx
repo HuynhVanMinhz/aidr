@@ -3,9 +3,10 @@ import { useAuth } from '../../hooks/useAuth';
 import { useProfile } from '../../hooks/useProfile';
 
 export function AccountSidebar() {
-  const { logout } = useAuth();
+  const { logout, roles } = useAuth();
   const { profile } = useProfile();
   const hasPassword = profile?.hasPassword ?? true;
+  const isSeller = roles.some((role) => role.toUpperCase() === 'SELLER');
 
   const navItems = [
     {
@@ -17,6 +18,30 @@ export function AccountSidebar() {
       to: '/account/orders',
       label: 'Orders',
       icon: '/theme/images/icon-order-primary.svg',
+    },
+    {
+      to: '/account/returns',
+      label: 'Returns',
+      icon: '/theme/images/icon-order-primary.svg',
+    },
+    {
+      to: '/account/vouchers',
+      label: 'Vouchers',
+      icon: '/theme/images/icon-wishlist-primary.svg',
+    },
+    ...(!isSeller
+      ? [
+          {
+            to: '/account/become-seller',
+            label: 'Become a seller',
+            icon: '/theme/images/icon-dashboard-primary.svg',
+          } as const,
+        ]
+      : []),
+    {
+      to: '/account/security',
+      label: 'Security',
+      icon: '/theme/images/icon-security-primary.svg',
     },
     {
       to: '/account/notifications',

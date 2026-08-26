@@ -144,6 +144,58 @@ public sealed class ReturnRepository : IReturnRepository
         return await LoadBuyerDtoAsync(returnId.Value, cancellationToken);
     }
 
+    public async Task<(IReadOnlyList<BuyerReturnRequestDto> Items, int TotalCount, int EffectivePage)>
+        ListForBuyerAsync(
+            Guid buyerUserId,
+            string? status,
+            int page,
+            int pageSize,
+            CancellationToken cancellationToken = default)
+    {
+        var query = _db.ReturnRequests.AsNoTracking()
+            .Where(r => r.BuyerUserId == buyerUserId);
+
+        if (!string.IsNullOrWhiteSpace(status))
+            query = query.Where(r => r.Status == status);
+
+        var totalCount = await query.CountAsync(cancellationToken);
+        var totalPages = pageSize <= 0 ? 0 : (int)Math.Ceiling(totalCount / (double)pageSize);
+        var effectivePage = totalPages == 0 ? 1 : Math.Min(page, totalPages);
+
+        var ids = await query
+            .OrderByDescending(r => r.CreatedAt)
+            .Skip((effectivePage - 1) * pageSize)
+            .Take(pageSize)
+            .Select(r => r.ReturnRequestId)
+            .ToListAsync(cancellationToken);
+
+        if (ids.Count == 0)
+            return (Array.Empty<BuyerReturnRequestDto>(), totalCount, effectivePage);
+
+        var entities = await _db.ReturnRequests.AsNoTracking()
+            .Include(r => r.Order)
+            .Include(r => r.Items)
+                .ThenInclude(i => i.OrderItem)
+            .Include(r => r.Evidences)
+            .Include(r => r.StatusHistories)
+            .Where(r => ids.Contains(r.ReturnRequestId))
+            .ToListAsync(cancellationToken);
+
+        var byId = entities.ToDictionary(e => e.ReturnRequestId);
+        var items = ids
+            .Where(id => byId.ContainsKey(id))
+            .Select(id => MapBuyer(byId[id]))
+            .ToList();
+
+        return (items, totalCount, effectivePage);
+    }
+
+    public Task<BuyerReturnRequestDto?> GetByIdForBuyerAsync(
+        Guid buyerUserId,
+        Guid returnRequestId,
+        CancellationToken cancellationToken = default) =>
+        LoadBuyerDtoForOwnerAsync(returnRequestId, buyerUserId, cancellationToken);
+
     private static List<(OrderItem OrderItem, int Quantity)> ResolveReturnItems(
         Order order,
         IReadOnlyList<(Guid OrderItemId, int Quantity)> items)
@@ -184,6 +236,24 @@ public sealed class ReturnRepository : IReturnRepository
             .Include(r => r.Evidences)
             .Include(r => r.StatusHistories)
             .FirstOrDefaultAsync(r => r.ReturnRequestId == returnRequestId, cancellationToken);
+
+        return entity is null ? null : MapBuyer(entity);
+    }
+
+    private async Task<BuyerReturnRequestDto?> LoadBuyerDtoForOwnerAsync(
+        Guid returnRequestId,
+        Guid buyerUserId,
+        CancellationToken cancellationToken)
+    {
+        var entity = await _db.ReturnRequests.AsNoTracking()
+            .Include(r => r.Order)
+            .Include(r => r.Items)
+                .ThenInclude(i => i.OrderItem)
+            .Include(r => r.Evidences)
+            .Include(r => r.StatusHistories)
+            .FirstOrDefaultAsync(
+                r => r.ReturnRequestId == returnRequestId && r.BuyerUserId == buyerUserId,
+                cancellationToken);
 
         return entity is null ? null : MapBuyer(entity);
     }

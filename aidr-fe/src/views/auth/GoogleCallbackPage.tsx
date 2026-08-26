@@ -43,7 +43,7 @@ export function GoogleCallbackPage() {
 
     (async () => {
       try {
-        await completeGoogleLogin(code, '/');
+        await completeGoogleLogin(code);
       } catch (err) {
         sessionStorage.removeItem(codeKey);
         if (!cancelled) {

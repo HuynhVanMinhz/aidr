@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { ProductCard } from '../components/catalog/ProductCard';
 import { RecommendedProductsSection } from '../components/catalog/RecommendedProductsSection';
@@ -12,33 +12,19 @@ import {
   selectCatalogProducts,
 } from '../store/catalogSlice';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
+import type { CategoryTreeNode } from '../types/catalog';
+import { resolveCategoryImageUrl } from '../utils/catalogImage';
 
-const CATEGORY_IMAGES = [
-  '/theme/images/category-item-image-1.png',
-  '/theme/images/category-item-image-2.png',
-  '/theme/images/category-item-image-3.png',
-  '/theme/images/category-item-image-4.png',
-  '/theme/images/category-item-image-5.png',
-  '/theme/images/category-item-image-6.png',
-];
-
-const PROMO_BANNERS = [
-  {
-    title: 'Essential Smart Appliances',
-    image: '/theme/images/essential-appliances-item-image-1.png',
-    to: '/products?sort=popular',
-  },
-  {
-    title: 'Smart Business Gadgets',
-    image: '/theme/images/essential-appliances-item-image-2.png',
-    to: '/products?categoryId=2',
-  },
-  {
-    title: 'Premium Audio Collection',
-    image: '/theme/images/essential-appliances-item-image-3.png',
-    to: '/products?categoryId=3',
-  },
-];
+function flattenCategories(nodes: CategoryTreeNode[]): CategoryTreeNode[] {
+  const out: CategoryTreeNode[] = [];
+  for (const node of nodes) {
+    out.push(node);
+    if (node.children?.length) {
+      out.push(...flattenCategories(node.children));
+    }
+  }
+  return out;
+}
 
 export function HomePage() {
   const dispatch = useAppDispatch();
@@ -46,6 +32,10 @@ export function HomePage() {
   const loading = useAppSelector(selectCatalogListLoading);
   const error = useAppSelector(selectCatalogListError);
   const { categories, loading: categoriesLoading } = useCategories();
+
+  const flatCategories = useMemo(() => flattenCategories(categories), [categories]);
+  const promoCategories = flatCategories.slice(0, 3);
+  const sliderCategories = (flatCategories.length > 0 ? flatCategories : categories).slice(0, 6);
 
   useEffect(() => {
     void dispatch(
@@ -91,44 +81,52 @@ export function HomePage() {
         </div>
       </div>
 
-      <div className="essential-appliances">
-        <div className="container-fluid">
-          <div className="row no-gutters">
-            <div className="col-lg-12">
-              <div className="essential-appliances-item-list">
-                {PROMO_BANNERS.map((banner) => (
-                  <div key={banner.title} className="essential-appliances-item">
-                    <div className="essential-appliances-item-body">
-                      <div className="essential-appliances-item-content-box">
-                        <div className="essential-appliances-item-tags">
-                          <ul>
-                            <li>Home Tech</li>
-                            <li>Digital Home</li>
-                          </ul>
+      {promoCategories.length > 0 && (
+        <div className="essential-appliances">
+          <div className="container-fluid">
+            <div className="row no-gutters">
+              <div className="col-lg-12">
+                <div className="essential-appliances-item-list">
+                  {promoCategories.map((cat, index) => (
+                    <div key={cat.categoryId} className="essential-appliances-item">
+                      <div className="essential-appliances-item-body">
+                        <div className="essential-appliances-item-content-box">
+                          <div className="essential-appliances-item-tags">
+                            <ul>
+                              <li>{cat.name}</li>
+                              {cat.children?.[0] && <li>{cat.children[0].name}</li>}
+                            </ul>
+                          </div>
+                          <div className="essential-appliances-item-content">
+                            <span>Shop by category</span>
+                            <h2>{cat.name}</h2>
+                          </div>
                         </div>
-                        <div className="essential-appliances-item-content">
-                          <span>Up To 20% Discount</span>
-                          <h2>{banner.title}</h2>
+                        <div className="essential-appliances-item-btn">
+                          <Link
+                            to={`/products?categoryId=${cat.categoryId}`}
+                            className="btn-default btn-border"
+                          >
+                            Shop Now
+                          </Link>
                         </div>
                       </div>
-                      <div className="essential-appliances-item-btn">
-                        <Link to={banner.to} className="btn-default btn-border">
-                          Shop Now
-                        </Link>
+                      <div className="essential-appliances-item-image">
+                        <figure>
+                          <img
+                            src={resolveCategoryImageUrl(cat.imageUrl, index)}
+                            alt={cat.name}
+                          />
+                        </figure>
                       </div>
                     </div>
-                    <div className="essential-appliances-item-image">
-                      <figure>
-                        <img src={banner.image} alt="" />
-                      </figure>
-                    </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
+      )}
 
       <div className="our-category">
         <div className="container">
@@ -145,15 +143,18 @@ export function HomePage() {
             <div className="col-lg-12">
               <div className="category-slider">
                 {categoriesLoading && <p>Loading categories…</p>}
+                {!categoriesLoading && sliderCategories.length === 0 && (
+                  <p className="text-muted">No categories available yet.</p>
+                )}
                 <div className="category-slider-track">
-                  {(categories.length > 0 ? categories : []).slice(0, 6).map((cat, index) => (
+                  {sliderCategories.map((cat, index) => (
                     <div key={cat.categoryId} className="category-slider-slide">
                       <div className="category-item">
                         <div className="category-item-image">
                           <Link to={`/products?categoryId=${cat.categoryId}`}>
                             <figure>
                               <img
-                                src={cat.imageUrl || CATEGORY_IMAGES[index % CATEGORY_IMAGES.length]}
+                                src={resolveCategoryImageUrl(cat.imageUrl, index)}
                                 alt={cat.name}
                               />
                             </figure>
@@ -197,6 +198,9 @@ export function HomePage() {
             <div className="alert alert-danger" role="alert">
               {error}
             </div>
+          )}
+          {!loading && !error && products.length === 0 && (
+            <p className="text-muted">No products available yet.</p>
           )}
 
           <div className="row">

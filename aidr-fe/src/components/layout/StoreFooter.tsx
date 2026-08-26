@@ -96,6 +96,15 @@ export function StoreFooter() {
                     <Link to="/categories">Categories</Link>
                   </li>
                   <li>
+                    <Link to="/help">Help</Link>
+                  </li>
+                  <li>
+                    <Link to="/faq">FAQ</Link>
+                  </li>
+                  <li>
+                    <Link to="/terms">Terms</Link>
+                  </li>
+                  <li>
                     <Link to="/login">Login</Link>
                   </li>
                 </ul>

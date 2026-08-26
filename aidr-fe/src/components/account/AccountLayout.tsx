@@ -6,6 +6,10 @@ const PAGE_META: Record<string, { title: string; breadcrumb: string }> = {
   '/account/addresses': { title: 'Shipping addresses', breadcrumb: 'Addresses' },
   '/account/change-password': { title: 'Password', breadcrumb: 'Password' },
   '/account/orders': { title: 'My orders', breadcrumb: 'Orders' },
+  '/account/returns': { title: 'Return requests', breadcrumb: 'Returns' },
+  '/account/vouchers': { title: 'Vouchers', breadcrumb: 'Vouchers' },
+  '/account/become-seller': { title: 'Become a seller', breadcrumb: 'Become a seller' },
+  '/account/security': { title: 'Account security', breadcrumb: 'Security' },
   '/account/notifications': { title: 'Notifications', breadcrumb: 'Notifications' },
   '/account/wishlist': { title: 'Wishlist', breadcrumb: 'Wishlist' },
   '/account/following': { title: 'Following', breadcrumb: 'Following' },
@@ -13,11 +17,14 @@ const PAGE_META: Record<string, { title: string; breadcrumb: string }> = {
 
 export function AccountLayout() {
   const location = useLocation();
-  const { orderId } = useParams<{ orderId?: string }>();
+  const { orderId, returnId } = useParams<{ orderId?: string; returnId?: string }>();
 
   const meta = (() => {
     if (orderId && location.pathname.startsWith('/account/orders/')) {
       return { title: 'Order details', breadcrumb: 'Order details' };
+    }
+    if (returnId && location.pathname.startsWith('/account/returns/')) {
+      return { title: 'Return details', breadcrumb: 'Return details' };
     }
     return PAGE_META[location.pathname] ?? { title: 'Account', breadcrumb: 'Account' };
   })();
@@ -43,6 +50,11 @@ export function AccountLayout() {
                         <Link to="/account/orders">Orders</Link>
                       </li>
                     ) : null}
+                    {returnId ? (
+                      <li className="breadcrumb-item">
+                        <Link to="/account/returns">Returns</Link>
+                      </li>
+                    ) : null}
                     <li className="breadcrumb-item active" aria-current="page">
                       {meta.breadcrumb}
                     </li>
@@ -56,7 +68,8 @@ export function AccountLayout() {
 
       <div
         className={
-          location.pathname.startsWith('/account/orders')
+          location.pathname.startsWith('/account/orders') ||
+            location.pathname.startsWith('/account/returns')
             ? 'page-account-order'
             : location.pathname.startsWith('/account/notifications')
               ? 'page-account-notifications'

@@ -10,6 +10,7 @@ import type {
   RejectReturnPayload,
   UpdateReturnStatusPayload,
 } from '../types/return';
+import type { ApiResult } from '../types/auth';
 import { apiClient } from './apiClient';
 import axios from 'axios';
 
@@ -31,6 +32,32 @@ export async function getBuyerReturn(orderId: string): Promise<BuyerReturnApiRes
     }
     throw error;
   }
+}
+
+export async function listBuyerReturns(query?: {
+  status?: string | null;
+  page?: number;
+  pageSize?: number;
+}) {
+  const { data } = await apiClient.get<ApiResult<{
+    items: BuyerReturnRequest[];
+    page: number;
+    pageSize: number;
+    totalCount: number;
+    totalPages: number;
+  }>>('/returns', {
+    params: {
+      status: query?.status || undefined,
+      page: query?.page ?? 1,
+      pageSize: query?.pageSize ?? 10,
+    },
+  });
+  return data;
+}
+
+export async function getBuyerReturnById(id: string) {
+  const { data } = await apiClient.get<BuyerReturnApiResult>(`/returns/${id}`);
+  return data;
 }
 
 export async function listAdminReturns(query: AdminReturnListQuery = {}) {
