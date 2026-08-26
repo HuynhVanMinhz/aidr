@@ -29,12 +29,12 @@ export function AdminStatCard({
   const colors = toneClass[tone];
 
   return (
-    <div className="card">
+    <div className="card aidr-stat-card">
       <div className="card-body">
-        <div className="d-flex align-items-center justify-content-between gap-3">
-          <div className="overflow-hidden">
-            <p className="text-muted mb-1 fw-semibold text-truncate">{title}</p>
-            <h3 className="mb-0 text-dark">
+        <div className="d-flex align-items-center justify-content-between gap-3 w-100">
+          <div className="aidr-stat-card__content min-w-0 flex-grow-1">
+            <p className="text-muted mb-1 fw-semibold">{title}</p>
+            <h3 className="mb-0 text-dark aidr-stat-card__value">
               {value}
               {unit ? (
                 <span className="fs-14 fw-normal text-muted ms-1">({unit})</span>

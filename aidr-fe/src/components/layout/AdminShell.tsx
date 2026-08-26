@@ -1,11 +1,13 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
+import SimpleBar from 'simplebar-react';
 import { IconifyIcon } from '../admin/IconifyIcon';
 import { AdminNotificationDropdown } from '../notifications/AdminNotificationDropdown';
 import { useAuth } from '../../hooks/useAuth';
 import { useNotificationHub } from '../../hooks/useNotificationHub';
 import { useTheme } from '../../hooks/useTheme';
 import '../../styles/admin.css';
+// Theme `app.min.css` already includes SimpleBar styles (Larkon).
 
 export type AdminShellVariant = 'admin' | 'seller';
 
@@ -182,7 +184,7 @@ export function AdminShell({ variant = 'admin', children }: AdminShellProps) {
           <IconifyIcon icon="solar:double-alt-arrow-right-bold-duotone" className="button-sm-hover-icon" />
         </button>
 
-        <div className="scrollbar">
+        <SimpleBar className="scrollbar">
           <ul className="navbar-nav" id="navbar-nav">
             <li className="menu-title">General</li>
             <li className="nav-item">
@@ -394,18 +396,6 @@ export function AdminShell({ variant = 'admin', children }: AdminShellProps) {
               <li className="nav-item">
                 <NavLink
                   className={({ isActive }) => `nav-link${isActive ? ' active' : ''}`}
-                  to="/seller"
-                  end
-                >
-                  <span className="nav-icon">
-                    <IconifyIcon icon="solar:chart-square-bold-duotone" />
-                  </span>
-                  <span className="nav-text">Dashboard</span>
-                </NavLink>
-              </li>
-              <li className="nav-item">
-                <NavLink
-                  className={({ isActive }) => `nav-link${isActive ? ' active' : ''}`}
                   to="/seller/reports"
                 >
                   <span className="nav-icon">
@@ -545,7 +535,7 @@ export function AdminShell({ variant = 'admin', children }: AdminShellProps) {
               </>
             )}
           </ul>
-        </div>
+        </SimpleBar>
       </div>
 
       <div className="page-content">

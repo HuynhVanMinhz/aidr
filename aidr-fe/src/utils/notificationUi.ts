@@ -64,7 +64,14 @@ export function getNotificationHref(
   }
 
   if (refType === 'product' || item.type.toLowerCase() === 'moderation') {
-    return audience === 'seller' ? `/seller/products/${refId}` : `/products/${refId}`;
+    if (audience === 'seller') {
+      // System low-stock alerts deep-link to inventory; moderation stays on product detail.
+      if (item.type.toLowerCase() === 'system') {
+        return `/seller/products/${refId}/inventory`;
+      }
+      return `/seller/products/${refId}`;
+    }
+    return `/products/${refId}`;
   }
 
   if (refType === 'returnrequest' || item.type.toLowerCase() === 'return') {

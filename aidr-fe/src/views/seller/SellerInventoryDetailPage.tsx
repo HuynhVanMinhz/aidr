@@ -89,8 +89,8 @@ export function SellerInventoryDetailPage() {
         </div>
       </div>
 
-      <div className="row">
-        <div className="col-md-6 col-xl-3">
+      <div className="row row-cols-1 row-cols-md-2 row-cols-xl-5">
+        <div className="col d-flex">
           <AdminStatCard
             title="On hand"
             value={detail.stockQuantity}
@@ -99,7 +99,7 @@ export function SellerInventoryDetailPage() {
             tone="primary"
           />
         </div>
-        <div className="col-md-6 col-xl-3">
+        <div className="col d-flex">
           <AdminStatCard
             title="Reserved"
             value={detail.reservedQuantity}
@@ -108,7 +108,7 @@ export function SellerInventoryDetailPage() {
             tone="info"
           />
         </div>
-        <div className="col-md-6 col-xl-3">
+        <div className="col d-flex">
           <AdminStatCard
             title="Available"
             value={detail.availableQuantity}
@@ -117,23 +117,25 @@ export function SellerInventoryDetailPage() {
             tone={detail.isLowStock ? 'warning' : 'success'}
           />
         </div>
-        <div className="col-md-6 col-xl-3">
+        <div className="col d-flex">
           <AdminStatCard
             title="Avg cost"
-            value={detail.avgCostPrice != null ? formatVnd(detail.avgCostPrice) : '—'}
+            value={
+              detail.avgCostPrice != null ? formatVnd(detail.avgCostPrice) : 'No cost yet'
+            }
             icon="solar:wad-of-money-broken"
             tone="primary"
           />
         </div>
-        <div className="col-md-6 col-xl-3">
+        <div className="col d-flex">
           <AdminStatCard
             title="Est. margin / unit"
             value={
               detail.estimatedMarginPerUnit != null
                 ? formatVnd(detail.estimatedMarginPerUnit)
-                : '—'
+                : 'Needs cost to estimate'
             }
-            unit="Sell − avg cost"
+            unit={detail.estimatedMarginPerUnit != null ? 'Sell − avg cost' : undefined}
             icon="solar:chart-2-bold-duotone"
             tone={
               detail.estimatedMarginPerUnit == null
@@ -719,10 +721,14 @@ function LotsTable({ lots }: { lots: SellerInventoryLot[] }) {
                         {formatVnd(lot.estimatedMarginPerUnit)}
                       </span>
                     ) : (
-                      '—'
+                      <span className="text-muted">Needs cost to estimate</span>
                     )}
                   </td>
-                  <td>{lot.supplierName || '—'}</td>
+                  <td>
+                    <span className={!lot.supplierName ? 'text-muted' : undefined}>
+                      {lot.supplierName?.trim() || 'No supplier listed'}
+                    </span>
+                  </td>
                   <td>{formatDateTime(lot.receivedAt)}</td>
                   <td>
                     <span className={sellerLotStatusBadgeClass(lot.status)}>{lot.status}</span>
@@ -769,14 +775,26 @@ function TransactionsTable({
             ) : (
               transactions.map((tx) => (
                 <tr key={tx.inventoryTxId}>
-                  <td>{formatDateTime(tx.createdAt)}</td>
+                  <td>{formatDateTime(tx.createdAt, 'Date unavailable')}</td>
                   <td>{tx.reason}</td>
                   <td className={tx.changeQty < 0 ? 'text-danger' : 'text-success'}>
                     {tx.changeQty > 0 ? `+${tx.changeQty}` : tx.changeQty}
                   </td>
-                  <td>{tx.lotCode || '—'}</td>
-                  <td>{tx.unitCost != null ? formatVnd(tx.unitCost) : '—'}</td>
-                  <td>{tx.note || '—'}</td>
+                  <td>
+                    <span className={!tx.lotCode ? 'text-muted' : undefined}>
+                      {tx.lotCode?.trim() || 'No lot linked'}
+                    </span>
+                  </td>
+                  <td>
+                    <span className={tx.unitCost == null ? 'text-muted' : undefined}>
+                      {tx.unitCost != null ? formatVnd(tx.unitCost) : 'No unit cost'}
+                    </span>
+                  </td>
+                  <td>
+                    <span className={!tx.note ? 'text-muted' : undefined}>
+                      {tx.note?.trim() || 'No note'}
+                    </span>
+                  </td>
                 </tr>
               ))
             )}
