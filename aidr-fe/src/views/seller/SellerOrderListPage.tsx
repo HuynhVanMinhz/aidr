@@ -111,7 +111,11 @@ export function SellerOrderListPage() {
                       </td>
                       <td>{formatVnd(order.totalAmount)}</td>
                       <td>{order.itemCount}</td>
-                      <td>{order.trackingCode || '—'}</td>
+                      <td>
+                        <span className={!order.trackingCode ? 'text-muted' : undefined}>
+                          {order.trackingCode?.trim() || 'No tracking yet'}
+                        </span>
+                      </td>
                       <td>
                         <span className={sellerOrderStatusBadgeClass(order.status)}>
                           {formatOrderStatus(order.status)}

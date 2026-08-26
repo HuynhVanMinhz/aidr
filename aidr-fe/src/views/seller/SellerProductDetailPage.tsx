@@ -4,6 +4,12 @@ import { AdminConfirmModal } from '../../components/admin/AdminConfirmModal';
 import { IconifyIcon } from '../../components/admin/IconifyIcon';
 import { useSellerProducts } from '../../hooks/useSellerProducts';
 import { useToast } from '../../hooks/useToast';
+import { adminBadgeClass } from '../../utils/adminBadge';
+import {
+  displayOptionalNumber,
+  displayText,
+  isBlank,
+} from '../../utils/displayValue';
 import {
   formatDateTime,
   formatVnd,
@@ -336,7 +342,7 @@ export function SellerProductDetailPage() {
                     </div>
                     <div>
                       <p className="text-dark fw-medium fs-16 mb-1">Updated</p>
-                      <p className="mb-0">{formatDateTime(product.updatedAt)}</p>
+                      <p className="mb-0">{formatDateTime(product.updatedAt, 'Not updated yet')}</p>
                     </div>
                   </div>
                 </div>
@@ -354,10 +360,12 @@ export function SellerProductDetailPage() {
             </div>
             <div className="card-body">
               <ul className="d-flex flex-column gap-2 list-unstyled fs-14 text-muted mb-0">
-                <li>
+                <li className="d-flex flex-wrap align-items-center gap-1">
                   <span className="fw-medium text-dark">Product ID</span>
-                  <span className="mx-2">:</span>
-                  <code>{product.productId}</code>
+                  <span className="mx-1">:</span>
+                  <span className={`${adminBadgeClass.solidLight} font-monospace text-break`}>
+                    {product.productId}
+                  </span>
                 </li>
                 <li>
                   <span className="fw-medium text-dark">Slug</span>
@@ -372,12 +380,16 @@ export function SellerProductDetailPage() {
                 <li>
                   <span className="fw-medium text-dark">Brand</span>
                   <span className="mx-2">:</span>
-                  {product.brand || '—'}
+                  <span className={isBlank(product.brand) ? 'text-muted' : undefined}>
+                    {displayText(product.brand, 'No brand provided')}
+                  </span>
                 </li>
                 <li>
                   <span className="fw-medium text-dark">Item model number</span>
                   <span className="mx-2">:</span>
-                  {product.modelNumber || '—'}
+                  <span className={isBlank(product.modelNumber) ? 'text-muted' : undefined}>
+                    {displayText(product.modelNumber, 'No model number')}
+                  </span>
                 </li>
                 <li>
                   <span className="fw-medium text-dark">Condition</span>
@@ -387,12 +399,20 @@ export function SellerProductDetailPage() {
                 <li>
                   <span className="fw-medium text-dark">Country of Origin</span>
                   <span className="mx-2">:</span>
-                  {product.originCountry || '—'}
+                  <span className={isBlank(product.originCountry) ? 'text-muted' : undefined}>
+                    {displayText(product.originCountry, 'Origin not specified')}
+                  </span>
                 </li>
                 <li>
                   <span className="fw-medium text-dark">Warranty</span>
                   <span className="mx-2">:</span>
-                  {product.warrantyMonths != null ? `${product.warrantyMonths} months` : '—'}
+                  <span className={product.warrantyMonths == null ? 'text-muted' : undefined}>
+                    {displayOptionalNumber(
+                      product.warrantyMonths,
+                      (n) => `${n} months`,
+                      'No warranty listed',
+                    )}
+                  </span>
                 </li>
                 <li>
                   <span className="fw-medium text-dark">Base price</span>
@@ -402,17 +422,23 @@ export function SellerProductDetailPage() {
                 <li>
                   <span className="fw-medium text-dark">Sale price</span>
                   <span className="mx-2">:</span>
-                  {product.salePrice != null ? formatVnd(product.salePrice) : '—'}
+                  <span className={product.salePrice == null ? 'text-muted' : undefined}>
+                    {product.salePrice != null
+                      ? formatVnd(product.salePrice)
+                      : 'No sale price set'}
+                  </span>
                 </li>
                 <li>
                   <span className="fw-medium text-dark">Created</span>
                   <span className="mx-2">:</span>
-                  {formatDateTime(product.createdAt)}
+                  {formatDateTime(product.createdAt, 'Created date unavailable')}
                 </li>
                 <li>
                   <span className="fw-medium text-dark">Published</span>
                   <span className="mx-2">:</span>
-                  {formatDateTime(product.publishedAt)}
+                  <span className={!product.publishedAt ? 'text-muted' : undefined}>
+                    {formatDateTime(product.publishedAt, 'Not published yet')}
+                  </span>
                 </li>
               </ul>
               {!isDeleted ? (

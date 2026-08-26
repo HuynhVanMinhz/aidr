@@ -31,7 +31,7 @@
 | UC-14 | Update Product | **Actor:** Seller (owner). Sửa thông tin SP thuộc shop; **reset status → Pending** để Admin duyệt lại (BR-P03). **Business:** Giữ thông tin SP cập nhật; không lên kệ lại khi chưa duyệt. | Done | P0 |
 | UC-15 | Delete Product | **Actor:** Seller. Soft-delete / Inactive; không xóa cứng nếu đã có order. **Business:** Dọn catalog; bảo toàn lịch sử đơn. | Done | P1 |
 | UC-16 | View My Products | **Actor:** Seller. List SP của shop theo status (Draft/Pending/Approved…). **Business:** Quản lý danh mục bán. | Done | P0 |
-| UC-17 | Manage Product Inventory | **Actor:** Seller. Xem tồn, reserved, low-stock; **so sánh giá bán vs giá nhập (AvgCost / UnitCost lô)** → Est. margin/unit; điều chỉnh thủ công có ghi InventoryTransactions. **Business:** Tránh oversell; biết lời lãi từng SP (BR-C06). | Done | P0 |
+| UC-17 | Manage Product Inventory | **Actor:** Seller. Xem tồn, reserved, low-stock; **so sánh giá bán vs giá nhập (AvgCost / UnitCost lô)** → Est. margin/unit; điều chỉnh thủ công có ghi InventoryTransactions; khi vừa chuyển sang low-stock → System notification (SignalR). **Business:** Tránh oversell; biết lời lãi từng SP (BR-C06). | Done | P0 |
 | UC-18 | View Product List (Admin) | **Actor:** Admin. Queue toàn bộ SP (ưu tiên Pending). **Business:** Kiểm soát chất lượng catalog. | Done | P0 |
 | UC-19 | Approve Product | **Actor:** Admin. Pending → Approved; ghi moderation history. **Business:** SP đủ chuẩn mới hiện buyer. | Done | P0 |
 | UC-20 | Reject Product | **Actor:** Admin. Pending → Rejected + lý do; Seller xem reason → sửa (UC-14) hoặc bỏ SP. **Business:** Chặn SP sai/thiếu thông tin; vòng duyệt lại. | Done | P0 |
@@ -58,7 +58,7 @@
 | UC-41 | Cancel Order | **Actor:** Buyer. Chỉ khi status cho phép (PendingPayment/Paid sớm); release stock. **Business:** Giảm đơn ảo / đổi ý. | Done | P0 |
 | UC-42 | Confirm Received | **Actor:** Buyer. Delivered → Completed; trigger credit wallet seller (policy). **Business:** Đóng vòng đời đơn & đối soát. | Done | P0 |
 | UC-43 | Request Return / Refund | **Actor:** Buyer. Yêu cầu **Trả hàng + Hoàn tiền** (không Đổi hàng — BR-R01). Lý do + bắt buộc video **Unboxing** (6 mặt kiện + mã vận đơn) và **Testing** (bật máy / chứng minh lỗi). Tạo ReturnRequest Pending + ReturnEvidences. **Business:** Bảo vệ buyer; MVP Admin xử lý thủ công. | Done | P1 |
-| UC-44 | View Notifications | **Actor:** Buyer/Seller. Inbox thông báo (order, payment, chat, **product moderation**, return…); SignalR push. **Business:** Giữ user engagement realtime. | Done | P1 |
+| UC-44 | View Notifications | **Actor:** Buyer/Seller. Inbox thông báo (order, payment, chat, **product moderation**, return, **low-stock**…); SignalR push. **Business:** Giữ user engagement realtime. | Done | P1 |
 | UC-45 | Delete Notification | **Actor:** Buyer/Seller. Xóa / ẩn thông báo. **Business:** Dọn inbox. | Done | P2 |
 | UC-46 | View Order List | **Actor:** Seller. Đơn của shop; lọc status. **Business:** Vận hành fulfillment. | Done | P0 |
 | UC-47 | Update Order Status | **Actor:** Seller. Paid→Confirmed→Shipping→Delivered; nhập tracking thủ công. **Business:** Cập nhật tiến độ giao (không API GHN). | Done | P0 |

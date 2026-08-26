@@ -291,7 +291,9 @@ export function AdminReturnRequestDetailPage() {
 
             <div className="mb-3">
               <p className="text-muted mb-1">Description</p>
-              <p className="mb-0">{item.description?.trim() || '—'}</p>
+              <p className={`mb-0${!item.description?.trim() ? ' text-muted' : ''}`}>
+                {item.description?.trim() || 'No description provided'}
+              </p>
             </div>
 
             {item.adminNote ? (

@@ -103,6 +103,22 @@ public sealed class NotificationRepository : INotificationRepository
         return Map(entity);
     }
 
+    public Task<bool> HasRecentUnreadAsync(
+        Guid userId,
+        string type,
+        string referenceType,
+        Guid referenceId,
+        DateTime createdAfterUtc,
+        CancellationToken cancellationToken = default)
+        => _db.Notifications.AsNoTracking().AnyAsync(
+            n => n.UserId == userId
+                 && !n.IsRead
+                 && n.Type == type
+                 && n.ReferenceType == referenceType
+                 && n.ReferenceId == referenceId
+                 && n.CreatedAt >= createdAfterUtc,
+            cancellationToken);
+
     public async Task<NotificationDto?> MarkReadAsync(
         Guid userId,
         Guid notificationId,
