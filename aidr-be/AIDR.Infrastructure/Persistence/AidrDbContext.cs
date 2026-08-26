@@ -45,6 +45,8 @@ public class AidrDbContext : DbContext
     public DbSet<ReturnStatusHistory> ReturnStatusHistories => Set<ReturnStatusHistory>();
     public DbSet<ChatThread> ChatThreads => Set<ChatThread>();
     public DbSet<ChatMessage> ChatMessages => Set<ChatMessage>();
+    public DbSet<AiConversation> AiConversations => Set<AiConversation>();
+    public DbSet<AiMessage> AiMessages => Set<AiMessage>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -695,6 +697,33 @@ public class AidrDbContext : DbContext
                 .HasForeignKey(x => x.SenderUserId)
                 .OnDelete(DeleteBehavior.Restrict);
             e.HasIndex(x => new { x.ThreadId, x.CreatedAt });
+        });
+
+        modelBuilder.Entity<AiConversation>(e =>
+        {
+            e.ToTable("AiConversations");
+            e.HasKey(x => x.ConversationId);
+            e.Property(x => x.Channel).HasMaxLength(30).IsRequired();
+            e.Property(x => x.Title).HasMaxLength(200);
+            e.HasOne(x => x.User)
+                .WithMany()
+                .HasForeignKey(x => x.UserId)
+                .OnDelete(DeleteBehavior.Restrict);
+            e.HasIndex(x => new { x.UserId, x.UpdatedAt });
+        });
+
+        modelBuilder.Entity<AiMessage>(e =>
+        {
+            e.ToTable("AiMessages");
+            e.HasKey(x => x.AiMessageId);
+            e.Property(x => x.AiMessageId).ValueGeneratedOnAdd();
+            e.Property(x => x.Role).HasMaxLength(20).IsRequired();
+            e.Property(x => x.Content).IsRequired();
+            e.HasOne(x => x.Conversation)
+                .WithMany(x => x.Messages)
+                .HasForeignKey(x => x.ConversationId)
+                .OnDelete(DeleteBehavior.Cascade);
+            e.HasIndex(x => new { x.ConversationId, x.CreatedAt });
         });
     }
 }

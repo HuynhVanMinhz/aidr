@@ -314,4 +314,38 @@ public class DevController : ControllerBase
             }
         });
     }
+
+    /// <summary>Seed sample AiConversations / AiMessages for shopping assistant testing (dev only).</summary>
+    [HttpPost("seed-ai-assistant")]
+    public async Task<IActionResult> SeedAiAssistant(
+        [FromServices] AidrDbContext db,
+        [FromServices] IWebHostEnvironment env,
+        CancellationToken ct)
+    {
+        if (!env.IsDevelopment())
+            return NotFound();
+
+        await AiAssistantDemoSeeder.SeedAsync(db, env.ContentRootPath, ct);
+
+        var buyerId = DemoAccountsSeeder.BuyerId;
+        var conversationId = Guid.Parse("AAAAAAAA-AAAA-AAAA-AAAA-AAAAAAAAAA56");
+        var conversationCount = await db.AiConversations.CountAsync(
+            c => c.UserId == buyerId && c.Channel == "ShoppingAssistant", ct);
+        var messageCount = await db.AiMessages.CountAsync(m => m.ConversationId == conversationId, ct);
+
+        return Ok(new
+        {
+            message = "Shopping assistant demo seed completed.",
+            buyerId,
+            conversationId,
+            conversationCount,
+            messageCount,
+            sampleChatMessages = new[]
+            {
+                "How do returns and refunds work?",
+                "Recommend a Samsung phone for me",
+                "What vouchers can I use at checkout?"
+            }
+        });
+    }
 }

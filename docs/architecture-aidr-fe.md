@@ -107,7 +107,7 @@ aidr-fe/
 | `user` | profile, addresses | UC-07/08 |
 | `catalog` | product lists, filters, category tree | UC-09..11, 26, 27, 90 |
 | `recommendation` | home recommendations + similar-by-product cache | UC-53, UC-54 |
-| `ai` | NL filter last result; compare selection tray (localStorage) + compare result | UC-90, UC-28 |
+| `ai` | NL filter last result; compare selection tray (localStorage) + compare result; shopping-assistant conversations/messages | UC-90, UC-28, UC-56 |
 | `shop` | public shop detail, seller rating, shop products | UC-62b, UC-64 |
 | `cart` | items, qty, unit price snapshot, subtotal; cleared on logout | UC-29..31 |
 | `voucher` | available vouchers + applied preview per shop; cleared on logout / cart clear | UC-32/33 |

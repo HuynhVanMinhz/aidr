@@ -926,6 +926,12 @@ CREATE TABLE dbo.AiMessages (
 );
 GO
 
+CREATE INDEX IX_AiConversations_User_UpdatedAt ON dbo.AiConversations (UserId, UpdatedAt DESC);
+GO
+
+CREATE INDEX IX_AiMessages_Conversation_CreatedAt ON dbo.AiMessages (ConversationId, CreatedAt);
+GO
+
 /* -------------------------------------------------------------------------- */
 /* 12. Seed — roles + sample data (dev)                                       */
 /* -------------------------------------------------------------------------- */
