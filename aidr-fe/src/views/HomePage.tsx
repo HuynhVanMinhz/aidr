@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { ProductCard } from '../components/catalog/ProductCard';
+import { RecommendedProductsSection } from '../components/catalog/RecommendedProductsSection';
 import { HomeExtraSections } from '../components/home/HomeExtraSections';
 import { useCategories } from '../hooks/useCatalog';
 import {
@@ -209,6 +210,8 @@ export function HomePage() {
           </div>
         </div>
       </div>
+
+      <RecommendedProductsSection pageSize={6} />
 
       <HomeExtraSections />
     </>
