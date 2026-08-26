@@ -70,6 +70,7 @@ public static class InfrastructureServiceCollectionExtensions
         services.AddScoped<IDiscoveryRepository, DiscoveryRepository>();
         services.AddScoped<IRecommendationRepository, RecommendationRepository>();
         services.AddScoped<IAiCatalogRepository, AiCatalogRepository>();
+        services.AddScoped<IAiConversationRepository, AiConversationRepository>();
         services.AddScoped<IAdminCategoryRepository, AdminCategoryRepository>();
         services.AddScoped<IAdminSellerRegistrationRepository, AdminSellerRegistrationRepository>();
         services.AddScoped<IAdminProductModerationRepository, AdminProductModerationRepository>();

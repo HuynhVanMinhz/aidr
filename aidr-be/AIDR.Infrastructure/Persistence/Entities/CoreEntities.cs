@@ -640,3 +640,28 @@ public class ChatMessage
     public ChatThread Thread { get; set; } = null!;
     public User Sender { get; set; } = null!;
 }
+
+public class AiConversation
+{
+    public Guid ConversationId { get; set; }
+    public Guid UserId { get; set; }
+    public string Channel { get; set; } = "ShoppingAssistant";
+    public string? Title { get; set; }
+    public DateTime CreatedAt { get; set; }
+    public DateTime UpdatedAt { get; set; }
+
+    public User User { get; set; } = null!;
+    public ICollection<AiMessage> Messages { get; set; } = new List<AiMessage>();
+}
+
+public class AiMessage
+{
+    public long AiMessageId { get; set; }
+    public Guid ConversationId { get; set; }
+    public string Role { get; set; } = null!;
+    public string Content { get; set; } = null!;
+    public string? MetaJson { get; set; }
+    public DateTime CreatedAt { get; set; }
+
+    public AiConversation Conversation { get; set; } = null!;
+}
