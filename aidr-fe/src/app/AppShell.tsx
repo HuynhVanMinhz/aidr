@@ -1,8 +1,9 @@
-import { Outlet, useLocation } from 'react-router-dom';
 import { CompareTray } from '../components/catalog/CompareTray';
+import { ShoppingAssistantWidget } from '../components/ai/ShoppingAssistantWidget';
 import { StoreFooter } from '../components/layout/StoreFooter';
 import { StoreHeader } from '../components/layout/StoreHeader';
 import { useNotificationHub } from '../hooks/useNotificationHub';
+import { Outlet, useLocation } from 'react-router-dom';
 
 /** Catalog shell — theme topbar + header + footer (AIDR). */
 export function AppShell() {
@@ -18,6 +19,7 @@ export function AppShell() {
         <Outlet />
       </main>
       {!hideCompareTray && <CompareTray />}
+      <ShoppingAssistantWidget />
       <StoreFooter />
     </div>
   );

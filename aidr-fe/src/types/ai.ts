@@ -80,13 +80,73 @@ export type CompareProductsResult = {
   source: AiSource;
 };
 
-/** Lightweight card kept in the compare tray / localStorage. */
 export type CompareSelectionItem = {
   productId: string;
   name: string;
   primaryImageUrl?: string | null;
   effectivePrice: number;
   currency: string;
+};
+
+export type AiChatRequest = {
+  conversationId?: string | null;
+  message: string;
+};
+
+export type AiMessage = {
+  aiMessageId: number;
+  role: 'user' | 'assistant' | 'system' | string;
+  content: string;
+  metaJson?: string | null;
+  createdAt: string;
+  /** Populated from the latest chat turn; may be empty for historical messages. */
+  suggestedProducts?: AiSuggestedProduct[];
+};
+
+export type AiSuggestedProduct = {
+  productId: string;
+  name: string;
+  slug: string;
+  brand?: string | null;
+  basePrice: number;
+  salePrice?: number | null;
+  effectivePrice: number;
+  currency: string;
+  avgRating: number;
+  reviewCount: number;
+  primaryImageUrl?: string | null;
+  categoryId: number;
+  categoryName: string;
+  shopId: string;
+  shopName: string;
+};
+
+export type AiChatResult = {
+  conversationId: string;
+  title?: string | null;
+  userMessage: AiMessage;
+  assistantMessage: AiMessage;
+  suggestedProducts: AiSuggestedProduct[];
+  source: AiSource;
+};
+
+export type AiConversationSummary = {
+  conversationId: string;
+  channel: string;
+  title?: string | null;
+  createdAt: string;
+  updatedAt: string;
+  lastMessagePreview?: string | null;
+  messageCount: number;
+};
+
+export type AiConversationDetail = {
+  conversationId: string;
+  channel: string;
+  title?: string | null;
+  createdAt: string;
+  updatedAt: string;
+  messages: AiMessage[];
 };
 
 /** Strip recommendation metadata so cards can reuse catalog ProductCard. */
