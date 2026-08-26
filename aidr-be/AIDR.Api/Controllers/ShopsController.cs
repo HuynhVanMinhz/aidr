@@ -15,6 +15,18 @@ public sealed class ShopsController : ControllerBase
 
     public ShopsController(IDiscoveryService discovery) => _discovery = discovery;
 
+    /// <summary>List Active shops for public catalog (default sort: rating high → low).</summary>
+    [HttpGet]
+    public async Task<ActionResult<ApiResult<PagedResult<ShopListItemDto>>>> List(
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 8,
+        [FromQuery] string? sort = "rating",
+        CancellationToken cancellationToken = default)
+    {
+        var result = await _discovery.ListShopsAsync(page, pageSize, sort, cancellationToken);
+        return Ok(ApiResult<PagedResult<ShopListItemDto>>.Ok(result));
+    }
+
     /// <summary>Get public shop detail: profile, policies, rating summary, and approved products.</summary>
     [HttpGet("{shopKey}")]
     public async Task<ActionResult<ApiResult<ShopPublicDetailDto>>> GetByKey(

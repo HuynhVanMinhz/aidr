@@ -40,6 +40,21 @@ public sealed class ShopSellerRatingDto
     public int RatingCount { get; init; }
 }
 
+/// <summary>Compact public shop card for listings (home / directory).</summary>
+public sealed class ShopListItemDto
+{
+    public Guid ShopId { get; init; }
+    public string ShopName { get; init; } = null!;
+    public string Slug { get; init; } = null!;
+    public string? Tagline { get; init; }
+    public string? LogoUrl { get; init; }
+    public bool IsVerified { get; init; }
+    public decimal AvgRating { get; init; }
+    public int RatingCount { get; init; }
+    public int FollowerCount { get; init; }
+    public int ProductCount { get; init; }
+}
+
 public sealed class ShopPublicDetailDto
 {
     public Guid ShopId { get; init; }

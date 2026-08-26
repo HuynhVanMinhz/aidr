@@ -15,12 +15,17 @@ public sealed class AiCompareProductRecord
     public string? ShortDescription { get; init; }
     public string? Brand { get; init; }
     public string? ModelNumber { get; init; }
+    public string ConditionType { get; init; } = "New";
     public decimal BasePrice { get; init; }
     public decimal? SalePrice { get; init; }
     public string Currency { get; init; } = "VND";
     public decimal AvgRating { get; init; }
     public int ReviewCount { get; init; }
     public int? WarrantyMonths { get; init; }
+    public string? OriginCountry { get; init; }
+    public int StockQuantity { get; init; }
+    public int ReservedQuantity { get; init; }
+    public int SoldCount { get; init; }
     public string? SpecsJson { get; init; }
     public string? TagsJson { get; init; }
     public string? PrimaryImageUrl { get; init; }
