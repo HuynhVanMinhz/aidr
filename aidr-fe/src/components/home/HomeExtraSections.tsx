@@ -1,10 +1,28 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, type MouseEvent } from 'react';
 import { Link } from 'react-router-dom';
 import { useCategories } from '../../hooks/useCatalog';
 import * as productApi from '../../services/productApi';
 import * as reviewApi from '../../services/reviewApi';
+import * as sellerApi from '../../services/sellerApi';
 import type { CategoryTreeNode, ProductListItem } from '../../types/catalog';
+import type { ShopListItem } from '../../types/shop';
 import { formatMoney } from '../../utils/formatCatalog';
+
+/** Hosted locally (downloaded from nevixra theme CDN). */
+const INTRO_VIDEO_SRC = '/theme/videos/AIDR-intro-video.mp4';
+const INTRO_VIDEO_POSTER = '/theme/images/intro-video-poster.jpg';
+const INTRO_YOUTUBE_ID = 'Y-x0efG1seA';
+
+const SHOP_FALLBACK_IMAGES = [
+  '/theme/images/our-brands-image-1.svg',
+  '/theme/images/our-brands-image-2.svg',
+  '/theme/images/our-brands-image-3.svg',
+  '/theme/images/our-brands-image-4.svg',
+  '/theme/images/our-brands-image-5.svg',
+  '/theme/images/our-brands-image-6.svg',
+  '/theme/images/our-brands-image-7.svg',
+  '/theme/images/our-brands-image-8.svg',
+];
 
 const BEST_SELLING_IMAGES = [
   '/theme/images/best-selling-product-item-image-1.png',
@@ -90,20 +108,6 @@ function flattenCategories(nodes: CategoryTreeNode[]): CategoryTreeNode[] {
   return out;
 }
 
-function uniqueBrands(products: ProductListItem[]): string[] {
-  const seen = new Set<string>();
-  const brands: string[] = [];
-  for (const product of products) {
-    const brand = product.brand?.trim();
-    if (!brand) continue;
-    const key = brand.toLowerCase();
-    if (seen.has(key)) continue;
-    seen.add(key);
-    brands.push(brand);
-  }
-  return brands;
-}
-
 function buildTrendingBoxes(
   categories: CategoryTreeNode[],
   productsByCategory: Map<number, ProductListItem[]>,
@@ -176,10 +180,135 @@ function FaqAccordion() {
   );
 }
 
+function IntroVideoSection({ tickerItems }: { tickerItems: string[] }) {
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [videoFailed, setVideoFailed] = useState(false);
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video || videoFailed) return;
+    video.muted = true;
+    const playPromise = video.play();
+    if (playPromise && typeof playPromise.catch === 'function') {
+      playPromise.catch(() => {
+        // Autoplay can be blocked; poster/CSS background still shows.
+      });
+    }
+  }, [videoFailed]);
+
+  useEffect(() => {
+    if (!lightboxOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setLightboxOpen(false);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [lightboxOpen]);
+
+  function openLightbox(e: MouseEvent) {
+    e.preventDefault();
+    setLightboxOpen(true);
+  }
+
+  return (
+    <>
+      <div className="intro-video dark-section">
+        <div className="container-fluid">
+          <div className="row">
+            <div className="col-lg-12">
+              <div className="intro-video-box">
+                <div
+                  className={`intro-bg-video${videoFailed ? ' is-poster-only' : ''}`}
+                  style={{ backgroundImage: `url(${INTRO_VIDEO_POSTER})` }}
+                >
+                  {!videoFailed ? (
+                    <video
+                      ref={videoRef}
+                      autoPlay
+                      muted
+                      playsInline
+                      loop
+                      preload="auto"
+                      poster={INTRO_VIDEO_POSTER}
+                      id="introvideo"
+                      onError={() => setVideoFailed(true)}
+                    >
+                      <source src={INTRO_VIDEO_SRC} type="video/mp4" />
+                    </video>
+                  ) : null}
+                </div>
+                <div className="video-play-button">
+                  <a
+                    href={`https://www.youtube.com/watch?v=${INTRO_YOUTUBE_ID}`}
+                    className="popup-video"
+                    data-cursor-text="Play"
+                    aria-label="Play video"
+                    onClick={openLightbox}
+                  >
+                    <span className="bg-effect">
+                      <i className="fa-solid fa-play" />
+                    </span>
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="our-scrolling-ticker">
+          <div className="scrolling-ticker-box">
+            {[0, 1].map((copy) => (
+              <div key={copy} className="scrolling-content">
+                {tickerItems.map((item) => (
+                  <span key={`${copy}-${item}`}>
+                    <img src="/theme/images/icon-asterisk-white.svg" alt="" />
+                    {item}
+                  </span>
+                ))}
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {lightboxOpen ? (
+        <div
+          className="aidr-video-lightbox"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Intro video"
+          onClick={() => setLightboxOpen(false)}
+        >
+          <button
+            type="button"
+            className="aidr-video-lightbox__close"
+            aria-label="Close video"
+            onClick={() => setLightboxOpen(false)}
+          >
+            ×
+          </button>
+          <div
+            className="aidr-video-lightbox__frame"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <iframe
+              title="AIDR intro video"
+              src={`https://www.youtube.com/embed/${INTRO_YOUTUBE_ID}?autoplay=1&rel=0`}
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+            />
+          </div>
+        </div>
+      ) : null}
+    </>
+  );
+}
+
 export function HomeExtraSections() {
   const { categories } = useCategories();
   const [popular, setPopular] = useState<ProductListItem[]>([]);
-  const [topRated, setTopRated] = useState<ProductListItem[]>([]);
+  const [popularShops, setPopularShops] = useState<ShopListItem[]>([]);
   const [productsByCategory, setProductsByCategory] = useState<Map<number, ProductListItem[]>>(
     () => new Map(),
   );
@@ -202,9 +331,9 @@ export function HomeExtraSections() {
           ? trendingCategoryIds.split(',').map((id) => Number(id)).filter((id) => id > 0)
           : [];
 
-        const [popularRes, ratedRes, ...categoryResults] = await Promise.all([
+        const [popularRes, shopsRes, ...categoryResults] = await Promise.all([
           productApi.listProducts({ sort: 'popular', page: 1, pageSize: 12 }),
-          productApi.listProducts({ sort: 'rating', page: 1, pageSize: 8 }),
+          sellerApi.listShops({ page: 1, pageSize: 8, sort: 'rating' }),
           ...categoryIds.map((categoryId) =>
             productApi.listProducts({
               categoryId,
@@ -219,9 +348,9 @@ export function HomeExtraSections() {
 
         const popularItems =
           popularRes.success && popularRes.data ? popularRes.data.items : [];
-        const ratedItems = ratedRes.success && ratedRes.data ? ratedRes.data.items : [];
+        const shopItems = shopsRes.success && shopsRes.data ? shopsRes.data.items : [];
         setPopular(popularItems);
-        setTopRated(ratedItems);
+        setPopularShops(shopItems);
 
         const byCategory = new Map<number, ProductListItem[]>();
         categoryIds.forEach((categoryId, index) => {
@@ -231,10 +360,8 @@ export function HomeExtraSections() {
         });
         setProductsByCategory(byCategory);
 
-        const reviewCandidates = [
-          ...popularItems.filter((p) => p.reviewCount > 0),
-          ...ratedItems.filter((p) => p.reviewCount > 0),
-        ]
+        const reviewCandidates = popularItems
+          .filter((p) => p.reviewCount > 0)
           .filter(
             (product, index, list) =>
               list.findIndex((p) => p.productId === product.productId) === index,
@@ -294,10 +421,6 @@ export function HomeExtraSections() {
   const offerA = popular[0];
   const offerB = popular[1];
   const bestSelling = popular.slice(0, 4);
-  const brands = useMemo(
-    () => uniqueBrands([...popular, ...topRated]).slice(0, 8),
-    [popular, topRated],
-  );
   const trendingBoxes = useMemo(
     () => buildTrendingBoxes(flatCategories, productsByCategory),
     [flatCategories, productsByCategory],
@@ -413,51 +536,7 @@ export function HomeExtraSections() {
         </div>
       )}
 
-      <div className="intro-video dark-section">
-        <div className="container-fluid">
-          <div className="row">
-            <div className="col-lg-12">
-              <div className="intro-video-box">
-                <div className="intro-bg-video">
-                  <video autoPlay muted playsInline loop id="introvideo">
-                    <source
-                      src="https://demo.awaikenthemes.com/assets/videos/AIDR-intro-video.mp4"
-                      type="video/mp4"
-                    />
-                  </video>
-                </div>
-                <div className="video-play-button">
-                  <a
-                    href="https://www.youtube.com/watch?v=Y-x0efG1seA"
-                    target="_blank"
-                    rel="noreferrer"
-                    aria-label="Play video"
-                  >
-                    <span className="bg-effect">
-                      <i className="fa-solid fa-play" />
-                    </span>
-                  </a>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="our-scrolling-ticker">
-          <div className="scrolling-ticker-box">
-            {[0, 1].map((copy) => (
-              <div key={copy} className="scrolling-content">
-                {TICKER_ITEMS.map((item) => (
-                  <span key={`${copy}-${item}`}>
-                    <img src="/theme/images/icon-asterisk-white.svg" alt="" />
-                    {item}
-                  </span>
-                ))}
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
+      <IntroVideoSection tickerItems={TICKER_ITEMS} />
 
       {(bestSelling.length > 0 || loading) && (
         <div className="best-selling-products">
@@ -527,14 +606,14 @@ export function HomeExtraSections() {
         </div>
       )}
 
-      {brands.length > 0 && (
+      {popularShops.length > 0 && (
         <div className="our-brands">
           <div className="container">
             <div className="row section-row">
               <div className="col-xl-12">
                 <div className="section-title section-title-center">
-                  <span className="section-sub-title">Our Brands</span>
-                  <h2 className="text-anime-style-3">Explore Popular Brand Collections</h2>
+                  <span className="section-sub-title">Our Shops</span>
+                  <h2 className="text-anime-style-3">Explore Popular Shop Collections</h2>
                 </div>
               </div>
             </div>
@@ -542,9 +621,27 @@ export function HomeExtraSections() {
               <div className="col-lg-12">
                 <div className="our-brand-list">
                   <ul>
-                    {brands.map((brand) => (
-                      <li key={brand}>
-                        <Link to={`/products?brand=${encodeURIComponent(brand)}`}>{brand}</Link>
+                    {popularShops.map((shop, index) => (
+                      <li key={shop.shopId}>
+                        <Link
+                          to={`/shops/${shop.slug || shop.shopId}`}
+                          className="our-shop-card"
+                          title={shop.shopName}
+                        >
+                          <img
+                            src={
+                              shop.logoUrl ||
+                              SHOP_FALLBACK_IMAGES[index % SHOP_FALLBACK_IMAGES.length]
+                            }
+                            alt={shop.shopName}
+                          />
+                          <span className="our-shop-card__name">{shop.shopName}</span>
+                          <span className="our-shop-card__rating">
+                            {shop.avgRating > 0
+                              ? `${shop.avgRating.toFixed(1)} ★ (${shop.ratingCount})`
+                              : 'New shop'}
+                          </span>
+                        </Link>
                       </li>
                     ))}
                   </ul>

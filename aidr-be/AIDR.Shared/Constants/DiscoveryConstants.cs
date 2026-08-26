@@ -24,6 +24,16 @@ public static class DiscoveryConstants
     public static readonly TimeSpan CategoryTreeCacheTtl = TimeSpan.FromMinutes(30);
     public static readonly TimeSpan ShopDetailCacheTtl = TimeSpan.FromMinutes(3);
     public static readonly TimeSpan ShopRatingCacheTtl = TimeSpan.FromMinutes(5);
+    public static readonly TimeSpan ShopListCacheTtl = TimeSpan.FromMinutes(3);
 
     public const string CacheKeyCategoriesTree = "categories:tree";
+
+    public static (int Page, int PageSize) NormalizePaging(int page, int pageSize)
+    {
+        var normalizedPage = page < 1 ? DefaultPage : page;
+        var normalizedSize = pageSize < 1
+            ? DefaultPageSize
+            : Math.Min(pageSize, MaxPageSize);
+        return (normalizedPage, normalizedSize);
+    }
 }

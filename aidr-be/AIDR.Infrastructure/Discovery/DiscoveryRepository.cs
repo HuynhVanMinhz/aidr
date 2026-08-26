@@ -341,11 +341,84 @@ public sealed class DiscoveryRepository : IDiscoveryRepository
         };
     }
 
+    public async Task<(IReadOnlyList<ShopListRecord> Items, int TotalCount)> ListActiveShopsAsync(
+        int page,
+        int pageSize,
+        string sort,
+        CancellationToken cancellationToken = default)
+    {
+        var query = _db.Shops.AsNoTracking()
+            .Where(s => s.Status == ActiveShopStatus);
+
+        var total = await query.CountAsync(cancellationToken);
+
+        query = sort.ToLowerInvariant() switch
+        {
+            "followers" => query
+                .OrderByDescending(s => s.FollowerCount)
+                .ThenByDescending(s => s.AvgRating)
+                .ThenBy(s => s.ShopName),
+            "newest" => query
+                .OrderByDescending(s => s.CreatedAt)
+                .ThenBy(s => s.ShopName),
+            _ => query
+                .OrderByDescending(s => s.AvgRating)
+                .ThenByDescending(s => s.RatingCount)
+                .ThenByDescending(s => s.FollowerCount)
+                .ThenBy(s => s.ShopName)
+        };
+
+        var pageRows = await query
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .Select(s => new
+            {
+                s.ShopId,
+                s.ShopName,
+                s.Slug,
+                s.Tagline,
+                s.LogoUrl,
+                s.IsVerified,
+                s.AvgRating,
+                s.RatingCount,
+                s.FollowerCount
+            })
+            .ToListAsync(cancellationToken);
+
+        var shopIds = pageRows.Select(s => s.ShopId).ToList();
+        var productCounts = await _db.Products.AsNoTracking()
+            .Where(p => shopIds.Contains(p.ShopId)
+                        && p.Status == ApprovedStatus
+                        && p.Category.IsActive)
+            .GroupBy(p => p.ShopId)
+            .Select(g => new { ShopId = g.Key, Count = g.Count() })
+            .ToDictionaryAsync(x => x.ShopId, x => x.Count, cancellationToken);
+
+        var items = pageRows
+            .Select(s => new ShopListRecord
+            {
+                ShopId = s.ShopId,
+                ShopName = s.ShopName,
+                Slug = s.Slug,
+                Tagline = s.Tagline,
+                LogoUrl = s.LogoUrl,
+                IsVerified = s.IsVerified,
+                AvgRating = s.AvgRating,
+                RatingCount = s.RatingCount,
+                FollowerCount = s.FollowerCount,
+                ProductCount = productCounts.GetValueOrDefault(s.ShopId)
+            })
+            .ToList();
+
+        return (items, total);
+    }
+
     private IQueryable<Product> BuildApprovedQuery()
         => _db.Products.AsNoTracking()
             .Where(p => p.Status == ApprovedStatus
                         && p.Category.IsActive
                         && p.Shop.Status == ActiveShopStatus);
+
 
     private static IQueryable<Product> ApplySort(IQueryable<Product> query, string sort)
         => sort.ToLowerInvariant() switch
