@@ -21,6 +21,7 @@ import { FollowingPage } from '../views/account/FollowingPage';
 import { NotificationsPage } from '../views/account/NotificationsPage';
 import { ProductListPage } from '../views/catalog/ProductListPage';
 import { ProductDetailPage } from '../views/catalog/ProductDetailPage';
+import { ComparePage } from '../views/catalog/ComparePage';
 import { CategoriesPage } from '../views/catalog/CategoriesPage';
 import { ShopPublicPage } from '../views/catalog/ShopPublicPage';
 import { AdminHomePage } from '../views/admin/AdminHomePage';
@@ -133,6 +134,7 @@ export function App() {
           <Route path="health" element={<HealthPage />} />
 
           <Route element={<ProtectedRoute />}>
+            <Route path="compare" element={<ComparePage />} />
             <Route path="chat" element={<ChatPage />} />
             <Route path="cart" element={<CartPage />} />
             <Route path="checkout" element={<CheckoutPage />} />
