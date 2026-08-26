@@ -107,6 +107,7 @@ aidr-fe/
 | `user` | profile, addresses | UC-07/08 |
 | `catalog` | product lists, filters, category tree | UC-09..11, 26, 27, 90 |
 | `recommendation` | home recommendations + similar-by-product cache | UC-53, UC-54 |
+| `ai` | NL filter last result; compare selection tray (localStorage) + compare result | UC-90, UC-28 |
 | `shop` | public shop detail, seller rating, shop products | UC-62b, UC-64 |
 | `cart` | items, qty, unit price snapshot, subtotal; cleared on logout | UC-29..31 |
 | `voucher` | available vouchers + applied preview per shop; cleared on logout / cart clear | UC-32/33 |
@@ -214,7 +215,7 @@ Kết nối sau khi auth thành công; reconnect với token mới khi refresh.
 | UC-56 | Chat UI; message streaming nếu BE hỗ trợ; deep-link tới product cards trong reply |
 | UC-53/54 | Section “Dành cho bạn” / “Sản phẩm tương tự” trên home & detail |
 
-Loading & empty states bắt buộc; không block toàn app khi Ollama chậm (timeout + fallback message).
+Loading & empty states bắt buộc; không block toàn app khi LLM chậm (timeout + fallback message).
 
 ---
 
@@ -265,6 +266,7 @@ VITE_SIGNALR_HUB_URL=https://api.aidr.local/hubs
 | Seller orders | UC-46/47 (`/seller/orders`, `/seller/orders/:orderId`, `sellerOrdersSlice`, update status + tracking) |
 | Admin returns | UC-48..52 (`/admin/return-requests`, `/admin/return-requests/:id`, `returnApi`, `adminReturnsSlice`, approve/reject + Receiving→Refunded→Closed) |
 | Recommend / Similar blocks | UC-53/54 (`RecommendedProductsSection` on home; `SimilarProductsSection` on product detail; `aiApi` + `recommendationSlice`) |
+| NL filter + Compare | UC-90 (`NlSearchBar` on `/products` → `POST /ai/nl-filter` → bind catalog filters); UC-28 (compare icon on card/detail → tray → `/compare` + `POST /ai/compare`, Buyer) |
 | AI chatbot | UC-56 |
 | Chat list / room | UC-57/58 (`/chat`, `/seller/chat`, `chatApi`, `chatSlice`, SignalR `ChatHub` → append message; open via `?shopId=&productId=` / `?threadId=`) |
 | Reviews / Seller profile / Follow | UC-59..63 (`reviewApi`, `reviewSlice`, product detail reviews tab; order detail review + seller rating when Completed); UC-65..67 (`followApi`, `followSlice`, shop page follow + `/account/following`) |
