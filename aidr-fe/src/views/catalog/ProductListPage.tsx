@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { CatalogBreadcrumb } from '../../components/catalog/CatalogBreadcrumb';
+import { NlSearchBar } from '../../components/catalog/NlSearchBar';
 import { ProductCard } from '../../components/catalog/ProductCard';
 import { ProductFilters, SORT_OPTIONS } from '../../components/catalog/ProductFilters';
 import { useCategories } from '../../hooks/useCatalog';
@@ -133,6 +134,7 @@ export function ProductListPage() {
             </div>
 
             <div className="col-xl-9 col-lg-8">
+              <NlSearchBar onApplyFilters={(filters) => syncUrl(filters)} />
               <div className="product-item-list-box">
                 <div className="product-category-filter-header">
                   <div className="product-category-filter-title">
