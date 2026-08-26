@@ -51,6 +51,7 @@ export type CompareProductCard = {
   slug: string;
   brand?: string | null;
   modelNumber?: string | null;
+  conditionType?: string;
   basePrice: number;
   salePrice?: number | null;
   effectivePrice: number;
@@ -58,11 +59,15 @@ export type CompareProductCard = {
   avgRating: number;
   reviewCount: number;
   warrantyMonths?: number | null;
+  originCountry?: string | null;
+  availableQuantity?: number;
+  soldCount?: number;
   primaryImageUrl?: string | null;
   categoryId: number;
   categoryName: string;
   shopId: string;
   shopName: string;
+  tags?: string[];
   specs: Record<string, string>;
 };
 

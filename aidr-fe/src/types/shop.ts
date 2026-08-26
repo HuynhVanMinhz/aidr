@@ -35,6 +35,26 @@ export type ShopSellerRating = {
   ratingCount: number;
 };
 
+export type ShopListItem = {
+  shopId: string;
+  shopName: string;
+  slug: string;
+  tagline?: string | null;
+  logoUrl?: string | null;
+  isVerified: boolean;
+  avgRating: number;
+  ratingCount: number;
+  followerCount: number;
+  productCount: number;
+};
+
+export type ShopListQuery = {
+  page?: number;
+  pageSize?: number;
+  /** rating | followers | newest */
+  sort?: 'rating' | 'followers' | 'newest' | string;
+};
+
 export type ShopPublicDetail = {
   shopId: string;
   shopName: string;

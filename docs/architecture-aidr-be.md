@@ -107,7 +107,7 @@ aidr-be/
 |----|----------|--------|
 | UC-09/10/11 | `GET /api/products`, `GET /api/products/{id}`, `GET /api/categories` | Discovery |
 | UC-26/27 | `GET /api/products/search?q=&filters=&sort=` | Discovery |
-| UC-62b | `GET /api/shops/{shopKey}` — shop profile, policies, rating, approved products (paged; `shopKey` = ShopId hoặc Slug) | Discovery |
+| UC-62b | `GET /api/shops/{shopKey}` — shop profile, policies, rating, approved products (paged; `shopKey` = ShopId hoặc Slug). Also `GET /api/shops?page=&pageSize=&sort=rating\|followers\|newest` — Active shops list (default rating desc) | Discovery |
 | UC-64 | `GET /api/shops/{shopKey}/rating` — AvgRating + RatingCount | Discovery |
 | UC-53/54 | `GET /api/recommendations`, `GET /api/products/{id}/similar` | AI + Discovery |
 

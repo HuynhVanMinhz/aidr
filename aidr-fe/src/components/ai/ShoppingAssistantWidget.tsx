@@ -394,9 +394,9 @@ export function ShoppingAssistantWidget() {
         className={`aidr-assistant-widget__fab${open ? ' is-open' : ''}`}
         onClick={handleToggle}
         aria-expanded={open}
-        aria-label={open ? 'Close shopping assistant' : 'Open shopping assistant'}
+        aria-label={open ? 'Close shopping assistant' : 'Ask AI — shopping assistant'}
       >
-        {open ? '×' : 'AI'}
+        {open ? '×' : '✨ Ask AI'}
       </button>
     </div>
   );

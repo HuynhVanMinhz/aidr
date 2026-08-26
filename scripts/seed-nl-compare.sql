@@ -3,10 +3,10 @@
   Prerequisites:
     - POST /api/dev/seed-catalog (Approved products with fixed GUIDs)
 
-  Idempotent: skips when NL-COMPARE-SEED marker tag already present on S24.
+  Idempotent content: always refreshes SpecsJson / TagsJson on demo phones + MacBook.
   Seeds / enriches:
     - Richer SpecsJson on flagship phones + MacBook for AI compare demos
-    - TagsJson marker so re-runs are no-ops
+    - TagsJson marker for NL filter demos
 */
 
 SET NOCOUNT ON;
@@ -38,34 +38,26 @@ BEGIN
     RETURN;
 END;
 
-IF EXISTS (
-    SELECT 1
-    FROM dbo.Products
-    WHERE ProductId = @S24
-      AND TagsJson LIKE N'%NL-COMPARE-SEED%'
-)
-BEGIN
-    PRINT N'NL filter / compare demo seed already present — skipped.';
-    RETURN;
-END;
-
 UPDATE dbo.Products
-SET SpecsJson = N'{"ram":"8GB","storage":"256GB","screen":"6.2\"","battery":"4000mAh","chip":"Snapdragon 8 Gen 3","camera":"50MP","os":"Android 14"}',
+SET SpecsJson = N'{"ram":"8GB","storage":"256GB","screen":"6.2","refresh_rate":"120Hz","battery":"4000mAh","charging":"25W","chip":"Snapdragon 8 Gen 3","gpu":"Adreno 750","camera":"50MP","front_camera":"12MP","os":"Android 14","sim":"Dual SIM","connectivity":"5G, Wi-Fi 6E, BT 5.3","weight":"167g","color":"Onyx Black"}',
     TagsJson = N'["flagship","samsung","5g","NL-COMPARE-SEED"]',
+    OriginCountry = COALESCE(OriginCountry, N'Vietnam'),
     UpdatedAt = SYSUTCDATETIME()
 WHERE ProductId = @S24;
 
 UPDATE dbo.Products
-SET SpecsJson = N'{"ram":"6GB","storage":"128GB","screen":"6.1\"","battery":"3349mAh","chip":"A16 Bionic","camera":"48MP","os":"iOS 17"}',
+SET SpecsJson = N'{"ram":"6GB","storage":"128GB","screen":"6.1","refresh_rate":"60Hz","battery":"3349mAh","charging":"20W","chip":"A16 Bionic","gpu":"5-core GPU","camera":"48MP","front_camera":"12MP","os":"iOS 17","sim":"eSIM","connectivity":"5G, Wi-Fi 6, BT 5.3","weight":"171g","color":"Blue"}',
     TagsJson = N'["apple","iphone","5g","NL-COMPARE-SEED"]',
+    OriginCountry = COALESCE(OriginCountry, N'Vietnam'),
     UpdatedAt = SYSUTCDATETIME()
 WHERE ProductId = @IP15;
 
 IF @X14 IS NOT NULL
 BEGIN
     UPDATE dbo.Products
-    SET SpecsJson = N'{"ram":"12GB","storage":"256GB","screen":"6.36\"","battery":"4610mAh","chip":"Snapdragon 8 Gen 3","camera":"50MP Leica","os":"HyperOS"}',
+    SET SpecsJson = N'{"ram":"12GB","storage":"256GB","screen":"6.36","refresh_rate":"120Hz","battery":"4610mAh","charging":"90W","chip":"Snapdragon 8 Gen 3","gpu":"Adreno 750","camera":"50MP Leica","front_camera":"32MP","os":"HyperOS","sim":"Dual SIM","connectivity":"5G, Wi-Fi 7, BT 5.4","weight":"193g","color":"Black"}',
         TagsJson = N'["xiaomi","leica","5g","NL-COMPARE-SEED"]',
+        OriginCountry = COALESCE(OriginCountry, N'Vietnam'),
         UpdatedAt = SYSUTCDATETIME()
     WHERE ProductId = @X14;
 END;
@@ -73,10 +65,11 @@ END;
 IF @MBA IS NOT NULL
 BEGIN
     UPDATE dbo.Products
-    SET SpecsJson = N'{"ram":"16GB","storage":"512GB","screen":"13.6\"","battery":"18h","chip":"Apple M3","gpu":"10-core","os":"macOS Sonoma","weight":"1.24kg"}',
+    SET SpecsJson = N'{"ram":"16GB","storage":"512GB","screen":"13.6","refresh_rate":"60Hz","battery":"18h","charging":"MagSafe 30W","chip":"Apple M3","gpu":"10-core","os":"macOS Sonoma","ports":"2x Thunderbolt / USB4","connectivity":"Wi-Fi 6E, BT 5.3","weight":"1.24kg","color":"Midnight","material":"Aluminum"}',
         TagsJson = N'["apple","laptop","m3","NL-COMPARE-SEED"]',
+        OriginCountry = COALESCE(OriginCountry, N'Vietnam'),
         UpdatedAt = SYSUTCDATETIME()
     WHERE ProductId = @MBA;
 END;
 
-PRINT N'NL filter / compare demo seed completed.';
+PRINT N'NL filter / compare demo seed completed (specs refreshed).';

@@ -139,6 +139,20 @@ public sealed class ShopPublicRecord
     public DateTime CreatedAt { get; init; }
 }
 
+public sealed class ShopListRecord
+{
+    public Guid ShopId { get; init; }
+    public string ShopName { get; init; } = null!;
+    public string Slug { get; init; } = null!;
+    public string? Tagline { get; init; }
+    public string? LogoUrl { get; init; }
+    public bool IsVerified { get; init; }
+    public decimal AvgRating { get; init; }
+    public int RatingCount { get; init; }
+    public int FollowerCount { get; init; }
+    public int ProductCount { get; init; }
+}
+
 public interface IDiscoveryRepository
 {
     Task<(IReadOnlyList<ProductListRecord> Items, int TotalCount)> QueryApprovedProductsAsync(
@@ -162,6 +176,12 @@ public interface IDiscoveryRepository
     Task<ShopPublicRecord?> GetActiveShopByKeyAsync(
         string shopKey,
         CancellationToken cancellationToken = default);
+
+    Task<(IReadOnlyList<ShopListRecord> Items, int TotalCount)> ListActiveShopsAsync(
+        int page,
+        int pageSize,
+        string sort,
+        CancellationToken cancellationToken = default);
 }
 
 public interface IDiscoveryService
@@ -181,6 +201,12 @@ public interface IDiscoveryService
         CancellationToken cancellationToken = default);
 
     Task<IReadOnlyList<CategoryTreeNodeDto>> GetCategoryTreeAsync(
+        CancellationToken cancellationToken = default);
+
+    Task<PagedResult<ShopListItemDto>> ListShopsAsync(
+        int page,
+        int pageSize,
+        string? sort = null,
         CancellationToken cancellationToken = default);
 
     Task<ShopPublicDetailDto> GetShopAsync(

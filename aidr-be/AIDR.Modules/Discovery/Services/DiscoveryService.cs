@@ -111,6 +111,55 @@ public sealed class DiscoveryService : IDiscoveryService
         return tree;
     }
 
+    public async Task<PagedResult<ShopListItemDto>> ListShopsAsync(
+        int page,
+        int pageSize,
+        string? sort = null,
+        CancellationToken cancellationToken = default)
+    {
+        var (normalizedPage, normalizedSize) = DiscoveryConstants.NormalizePaging(page, pageSize);
+        var normalizedSort = string.IsNullOrWhiteSpace(sort)
+            ? DiscoveryConstants.SortRating
+            : sort.Trim().ToLowerInvariant();
+
+        if (normalizedSort is not ("rating" or "followers" or "newest"))
+            normalizedSort = DiscoveryConstants.SortRating;
+
+        var cacheKey = $"shops:list:{normalizedPage}:{normalizedSize}:{normalizedSort}";
+        var cached = await _cache.GetAsync<PagedResult<ShopListItemDto>>(cacheKey, cancellationToken);
+        if (cached is not null)
+            return cached;
+
+        var (items, total) = await _repository.ListActiveShopsAsync(
+            normalizedPage,
+            normalizedSize,
+            normalizedSort,
+            cancellationToken);
+
+        var result = new PagedResult<ShopListItemDto>
+        {
+            Items = items.Select(s => new ShopListItemDto
+            {
+                ShopId = s.ShopId,
+                ShopName = s.ShopName,
+                Slug = s.Slug,
+                Tagline = s.Tagline,
+                LogoUrl = s.LogoUrl,
+                IsVerified = s.IsVerified,
+                AvgRating = s.AvgRating,
+                RatingCount = s.RatingCount,
+                FollowerCount = s.FollowerCount,
+                ProductCount = s.ProductCount
+            }).ToList(),
+            Page = normalizedPage,
+            PageSize = normalizedSize,
+            TotalCount = total
+        };
+
+        await _cache.SetAsync(cacheKey, result, DiscoveryConstants.ShopListCacheTtl, cancellationToken);
+        return result;
+    }
+
     public async Task<ShopPublicDetailDto> GetShopAsync(
         string shopKey,
         ShopProductsQueryRequest? productsQuery = null,
