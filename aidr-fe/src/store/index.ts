@@ -23,6 +23,7 @@ import { reviewSlice } from './reviewSlice';
 import { followSlice } from './followSlice';
 import { notificationSlice } from './notificationSlice';
 import { chatSlice } from './chatSlice';
+import { recommendationSlice } from './recommendationSlice';
 
 export const store = configureStore({
   reducer: {
@@ -30,6 +31,7 @@ export const store = configureStore({
     auth: authSlice.reducer,
     user: userSlice.reducer,
     catalog: catalogSlice.reducer,
+    recommendation: recommendationSlice.reducer,
     shop: shopSlice.reducer,
     cart: cartSlice.reducer,
     wishlist: wishlistSlice.reducer,
