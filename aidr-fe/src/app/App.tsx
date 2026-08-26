@@ -136,6 +136,7 @@ export function App() {
           <Route element={<ProtectedRoute />}>
             <Route path="compare" element={<ComparePage />} />
             <Route path="chat" element={<ChatPage />} />
+            <Route path="ai/assistant" element={<Navigate to="/" replace />} />
             <Route path="cart" element={<CartPage />} />
             <Route path="checkout" element={<CheckoutPage />} />
             <Route path="checkout/success" element={<OrderReceivedPage />} />
