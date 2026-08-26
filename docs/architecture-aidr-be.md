@@ -7,7 +7,7 @@
 
 ## 1. Mục tiêu kiến trúc
 
-Backend là **hub xử lý nghiệp vụ** của AIDR: nhận request từ FE qua NGINX, xác thực/ủy quyền với Keycloak, thực thi domain logic, ghi SQL Server, cache Redis, phát event realtime qua SignalR, và gọi các dịch vụ ngoài (payOS, Google, Ollama, SMTP, Cloudinary metadata).
+Backend là **hub xử lý nghiệp vụ** của AIDR: nhận request từ FE qua NGINX, xác thực/ủy quyền với Keycloak, thực thi domain logic, ghi SQL Server, cache Redis, phát event realtime qua SignalR, và gọi các dịch vụ ngoài (payOS, Google, Groq, SMTP, Cloudinary metadata).
 
 ---
 
@@ -22,7 +22,7 @@ React (aidr-fe) ──HTTPS──► NGINX ──Authen/Author──► Keycloak
                     ┌─────────┼─────────┐
                     ▼         ▼         ▼
                SignalR    SQL Server   External
-               (Pub/Sub)   (Aiven)     payOS / Google / Ollama
+               (Pub/Sub)   (Aiven)     payOS / Google / Groq
                               │
                          Docker + Grafana
 ```
@@ -36,7 +36,7 @@ React (aidr-fe) ──HTTPS──► NGINX ──Authen/Author──► Keycloak
 | Realtime | **SignalR** | Chat, notifications, order status push |
 | Data | **SQL Server @ Aiven** | Source of truth (xem `database.sql`) |
 | Ops | **Docker**, **Grafana** | Deploy nhất quán + giám sát |
-| External | **payOS**, **Google**, **Ollama** | Payment, social login, AI |
+| External | **payOS**, **Google**, **Groq** | Payment, social login, AI |
 
 ---
 
@@ -57,7 +57,7 @@ aidr-be/
 │   ├── Engagement           # reviews, wishlist, follow, ratings, chat, notifications
 │   ├── AI                   # chatbot, compare, NL→filter, recommendations
 │   └── Admin                # moderation, categories, users, seller requests, system vouchers, insights
-├── AIDR.Infrastructure      # EF Core, Redis, Keycloak, payOS, Ollama, SMTP, Cloudinary clients
+├── AIDR.Infrastructure      # EF Core, Redis, Keycloak, payOS, Groq, SMTP, Cloudinary clients
 └── AIDR.Shared              # DTOs, Result types, constants, exceptions
 ```
 
@@ -71,7 +71,7 @@ aidr-be/
 2. **NGINX** terminate HTTPS, forward tới container .NET; có thể validate JWT với Keycloak (auth_request) hoặc để .NET validate JWT.
 3. **AIDR.Api** middleware: correlation-id, exception handler, auth (`[Authorize]` + role policies).
 4. Module thực thi use case → đọc/ghi **SQL Server**; invalidate / set **Redis** khi cần.
-5. Side-effects: publish SignalR group, gọi payOS/Ollama/SMTP.
+5. Side-effects: publish SignalR group, gọi payOS/Groq/SMTP.
 
 ---
 
@@ -193,9 +193,9 @@ aidr-be/
 |----|----------|--------|
 | UC-53 | `GET /api/recommendations?page=&pageSize=` — hybrid recommendations (stored + collaborative + content affinity + popular); personalized when authenticated, popular fallback for guests | AI |
 | UC-54 | `GET /api/products/{id}/similar?limit=` — content-similar Approved products (category/brand/tags/price) | AI |
-| UC-28 | `POST /api/ai/compare` | AI |
+| UC-28 | `POST /api/ai/compare` — body `{ productIds: Guid[] }` (2–5); Buyer auth; returns product cards + dimensions table + summary/highlights (Groq or heuristic) | AI |
 | UC-56 | `POST /api/ai/chat` hoặc stream hub | AI |
-| UC-90 | `POST /api/ai/nl-filter` → JSON filter DSL | AI |
+| UC-90 | `POST /api/ai/nl-filter` — body `{ query }`; Guest/Buyer; returns validated filter DSL (`q`, `categoryId`, `brand`, `minPrice`, `maxPrice`, `minRating`, `sort`, …) | AI |
 
 ---
 
@@ -229,10 +229,12 @@ Hubs đề xuất:
 2. Webhook `POST /api/payments/payos/webhook` verify signature → `Payments.Status=Succeeded`, `Orders.Status=Paid`.
 3. Idempotent theo `ProviderPaymentId`.
 
-### 7.5 Ollama
-- HTTP client tới Ollama host trong Docker network.
+### 7.5 Groq (LLM)
+- HTTP client tới Groq OpenAI-compatible API (`https://api.groq.com/openai/v1`).
+- Auth: `Authorization: Bearer {Groq:ApiKey}` (user-secrets / env, không commit key).
 - Prompt templates: compare products (UC-28), shopping assistant (UC-56), NL→filter JSON schema (UC-90).
 - Không tin LLM output mù quáng: validate filter schema trước khi query SQL.
+- `UseMock=true` → heuristic deterministic (dev không cần key).
 
 ### 7.6 Cloudinary
 - FE upload trực tiếp; BE nhận URL/publicId khi Create/Update Product (UC-13).
@@ -265,7 +267,6 @@ Services gợi ý trong compose:
 - `nginx`
 - `keycloak`
 - `redis`
-- `ollama` (+ model volume)
 - SQL Server trên **Aiven** (managed, ngoài compose) hoặc container local cho dev
 - `grafana` (+ prometheus nếu có)
 
