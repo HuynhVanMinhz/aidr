@@ -1,5 +1,6 @@
 using System.Text;
 using AIDR.Infrastructure.Admin;
+using AIDR.Infrastructure.AI;
 using AIDR.Infrastructure.Auth;
 using AIDR.Infrastructure.Caching;
 using AIDR.Infrastructure.Discovery;
@@ -10,6 +11,7 @@ using AIDR.Infrastructure.Persistence;
 using AIDR.Infrastructure.Profile;
 using AIDR.Infrastructure.SellerCenter;
 using AIDR.Modules.Admin.Abstractions;
+using AIDR.Modules.AI.Abstractions;
 using AIDR.Modules.Auth.Abstractions;
 using AIDR.Modules.Auth.Services;
 using AIDR.Modules.Discovery.Abstractions;
@@ -64,6 +66,7 @@ public static class InfrastructureServiceCollectionExtensions
         services.AddScoped<IAuthUserRepository, AuthUserRepository>();
         services.AddScoped<IProfileRepository, ProfileRepository>();
         services.AddScoped<IDiscoveryRepository, DiscoveryRepository>();
+        services.AddScoped<IRecommendationRepository, RecommendationRepository>();
         services.AddScoped<IAdminCategoryRepository, AdminCategoryRepository>();
         services.AddScoped<IAdminSellerRegistrationRepository, AdminSellerRegistrationRepository>();
         services.AddScoped<IAdminProductModerationRepository, AdminProductModerationRepository>();

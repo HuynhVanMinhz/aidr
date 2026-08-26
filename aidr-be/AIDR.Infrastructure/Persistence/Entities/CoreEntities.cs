@@ -334,6 +334,19 @@ public class ViewedProductHistory
     public User? User { get; set; }
 }
 
+public class ProductRecommendation
+{
+    public long RecommendationId { get; set; }
+    public Guid UserId { get; set; }
+    public Guid ProductId { get; set; }
+    public decimal Score { get; set; }
+    public string Strategy { get; set; } = null!;
+    public DateTime GeneratedAt { get; set; }
+
+    public User User { get; set; } = null!;
+    public Product Product { get; set; } = null!;
+}
+
 public class ProductModerationHistory
 {
     public long ModerationId { get; set; }

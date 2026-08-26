@@ -254,4 +254,30 @@ public class DevController : ControllerBase
             unreadCount = unread
         });
     }
+
+    /// <summary>Seed view history + ProductRecommendations for recommend/similar testing (dev only).</summary>
+    [HttpPost("seed-recommendations")]
+    public async Task<IActionResult> SeedRecommendations(
+        [FromServices] AidrDbContext db,
+        [FromServices] IWebHostEnvironment env,
+        CancellationToken ct)
+    {
+        if (!env.IsDevelopment())
+            return NotFound();
+
+        await RecommendationDemoSeeder.SeedAsync(db, env.ContentRootPath, ct);
+
+        var buyerId = DemoAccountsSeeder.BuyerId;
+        var viewCount = await db.ViewedProductHistories.CountAsync(
+            v => v.UserId == buyerId && v.SessionId == "REC-SEED", ct);
+        var recCount = await db.ProductRecommendations.CountAsync(r => r.UserId == buyerId, ct);
+
+        return Ok(new
+        {
+            message = "Recommendation demo seed completed.",
+            buyerId,
+            seededViewCount = viewCount,
+            recommendationCount = recCount
+        });
+    }
 }
