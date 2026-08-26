@@ -27,6 +27,9 @@ public static class NotificationConstants
     public const string HubUserGroupPrefix = "user:";
     public const string HubReceiveMethod = "ReceiveNotification";
 
+    /// <summary>Skip creating another low-stock System/Product notification within this window.</summary>
+    public const int LowStockDedupeHours = 24;
+
     public static readonly HashSet<string> AllowedTypes = new(StringComparer.OrdinalIgnoreCase)
     {
         TypeOrder,

@@ -25,6 +25,17 @@ public interface INotificationRepository
         CreateNotificationRequest request,
         CancellationToken cancellationToken = default);
 
+    /// <summary>
+    /// True if an unread System notification for this product exists within the lookback window.
+    /// </summary>
+    Task<bool> HasRecentUnreadAsync(
+        Guid userId,
+        string type,
+        string referenceType,
+        Guid referenceId,
+        DateTime createdAfterUtc,
+        CancellationToken cancellationToken = default);
+
     Task<NotificationDto?> MarkReadAsync(
         Guid userId,
         Guid notificationId,
