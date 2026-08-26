@@ -144,11 +144,15 @@ export function SellerWalletPage() {
                           Order
                         </Link>
                       ) : (
-                        tx.referenceType || '—'
+                        <span className={!tx.referenceType ? 'text-muted' : undefined}>
+                          {tx.referenceType || 'No reference'}
+                        </span>
                       )}
                     </td>
                     <td className="text-truncate" style={{ maxWidth: 220 }}>
-                      {tx.note || '—'}
+                      <span className={!tx.note ? 'text-muted' : undefined}>
+                        {tx.note?.trim() || 'No note'}
+                      </span>
                     </td>
                   </tr>
                 ))}
