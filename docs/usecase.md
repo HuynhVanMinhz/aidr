@@ -42,7 +42,7 @@
 | UC-25 | Activate / Disable Category | **Actor:** Admin. Bật/tắt hiển thị category. **Business:** Ẩn nhóm hàng tạm thời. | Done | P1 |
 | UC-26 | Search Products | **Actor:** Guest/Buyer. Full-text / keyword trên name, brand, specs. **Business:** Giảm thời gian tìm SP. | Done | P0 |
 | UC-27 | Filter & Sort Products | **Actor:** Guest/Buyer. Lọc category, brand, giá, rating; sort price/newest/popular. **Business:** Thu hẹp lựa chọn khi catalog lớn. | Done | P0 |
-| UC-28 | AI Compare Products | **Actor:** Buyer. Chọn 2–N SP → Ollama tóm tắt so sánh theo specs. **Business:** Hỗ trợ quyết định mua điện tử phức tạp. | Todo | P2 |
+| UC-28 | AI Compare Products | **Actor:** Buyer. Chọn 2–N SP → Ollama tóm tắt so sánh theo specs. **Business:** Hỗ trợ quyết định mua điện tử phức tạp. | Done | P2 |
 | UC-29 | View Cart | **Actor:** Buyer. Xem items, qty, giá snapshot, tổng. **Business:** Chuẩn bị checkout. | Done | P0 |
 | UC-30 | Add Product to Cart | **Actor:** Buyer. Thêm SP Approved còn tồn; gộp qty nếu trùng. **Business:** Capture intent mua. | Done | P0 |
 | UC-31 | Remove Product from Cart | **Actor:** Buyer. Xóa / giảm qty item. **Business:** Sửa giỏ trước thanh toán. | Done | P0 |
@@ -97,7 +97,7 @@
 | UC-87 | Create Voucher for My Shop | **Actor:** Seller. Voucher Scope=Shop gắn ShopId. **Business:** KM riêng cửa hàng. | Done | P1 |
 | UC-88 | Update Voucher for My Shop | **Actor:** Seller. Sửa voucher của mình. **Business:** Linh hoạt chiến dịch shop. | Done | P2 |
 | UC-89 | Delete Voucher for My Shop | **Actor:** Seller. Xóa voucher shop. **Business:** Kết thúc KM. | Done | P2 |
-| UC-90 | AI NL → Filter | **Actor:** Guest/Buyer. Câu tự nhiên → JSON filter hợp lệ → apply search. **Business:** Tìm SP dễ hơn với người không rành filter. | Todo | P2 |
+| UC-90 | AI NL → Filter | **Actor:** Guest/Buyer. Câu tự nhiên → JSON filter hợp lệ → apply search. **Business:** Tìm SP dễ hơn với người không rành filter. | Done | P2 |
 | UC-91 | Import Stock Lot | **Actor:** Seller. Nhập lô: LotCode unique, qty > 0, UnitCost ≥ 0, supplier/invoice/date; tăng tồn; cập nhật Avg/LastCost; **không** sửa UnitCost lô cũ (BR-I01, BR-C02). **Business:** Theo dõi giá vốn & lãi gộp đúng khi giá nhập thay đổi. | Done | P0 |
 | UC-92 | Update Selling Price | **Actor:** Seller. Đổi BasePrice/SalePrice; ghi ProductPriceHistories; độc lập giá vốn lô. **Business:** Phản ứng thị trường mà không phá lịch sử cost/đơn. | Done | P0 |
 
