@@ -76,4 +76,62 @@ public sealed class AiCatalogRepository : IAiCatalogRepository
             .Select(id => byId[id])
             .ToList();
     }
+
+    public async Task<IReadOnlyList<AiCompareProductRecord>> SearchApprovedProductsAsync(
+        string? query,
+        int take,
+        CancellationToken cancellationToken = default)
+    {
+        take = Math.Clamp(take, 1, 24);
+        var q = (query ?? string.Empty).Trim();
+
+        var baseQuery = _db.Products.AsNoTracking()
+            .Where(p => p.Status == RecommendationConstants.ApprovedStatus
+                        && p.Category.IsActive
+                        && p.Shop.Status == RecommendationConstants.ActiveShopStatus);
+
+        if (!string.IsNullOrWhiteSpace(q))
+        {
+            var like = $"%{q}%";
+            baseQuery = baseQuery.Where(p =>
+                EF.Functions.Like(p.Name, like)
+                || (p.Brand != null && EF.Functions.Like(p.Brand, like))
+                || (p.ShortDescription != null && EF.Functions.Like(p.ShortDescription, like))
+                || (p.TagsJson != null && EF.Functions.Like(p.TagsJson, like))
+                || EF.Functions.Like(p.Category.Name, like));
+        }
+
+        return await baseQuery
+            .OrderByDescending(p => p.SoldCount)
+            .ThenByDescending(p => p.AvgRating)
+            .ThenBy(p => p.Name)
+            .Take(take)
+            .Select(p => new AiCompareProductRecord
+            {
+                ProductId = p.ProductId,
+                Name = p.Name,
+                Slug = p.Slug,
+                ShortDescription = p.ShortDescription,
+                Brand = p.Brand,
+                ModelNumber = p.ModelNumber,
+                BasePrice = p.BasePrice,
+                SalePrice = p.SalePrice,
+                Currency = p.Currency,
+                AvgRating = p.AvgRating,
+                ReviewCount = p.ReviewCount,
+                WarrantyMonths = p.WarrantyMonths,
+                SpecsJson = p.SpecsJson,
+                TagsJson = p.TagsJson,
+                PrimaryImageUrl = p.Images
+                    .OrderByDescending(i => i.IsPrimary)
+                    .ThenBy(i => i.SortOrder)
+                    .Select(i => i.ImageUrl)
+                    .FirstOrDefault(),
+                CategoryId = p.CategoryId,
+                CategoryName = p.Category.Name,
+                ShopId = p.ShopId,
+                ShopName = p.Shop.ShopName
+            })
+            .ToListAsync(cancellationToken);
+    }
 }
