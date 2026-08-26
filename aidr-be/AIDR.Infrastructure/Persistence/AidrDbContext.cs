@@ -26,6 +26,7 @@ public class AidrDbContext : DbContext
     public DbSet<SellerRating> SellerRatings => Set<SellerRating>();
     public DbSet<SellerFollow> SellerFollows => Set<SellerFollow>();
     public DbSet<ViewedProductHistory> ViewedProductHistories => Set<ViewedProductHistory>();
+    public DbSet<ProductRecommendation> ProductRecommendations => Set<ProductRecommendation>();
     public DbSet<ProductModerationHistory> ProductModerationHistories => Set<ProductModerationHistory>();
     public DbSet<Cart> Carts => Set<Cart>();
     public DbSet<CartItem> CartItems => Set<CartItem>();
@@ -343,6 +344,24 @@ public class AidrDbContext : DbContext
             e.HasOne(x => x.User).WithMany().HasForeignKey(x => x.UserId);
             e.HasIndex(x => new { x.UserId, x.ViewedAt });
             e.HasIndex(x => new { x.ProductId, x.ViewedAt });
+        });
+
+        modelBuilder.Entity<ProductRecommendation>(e =>
+        {
+            e.ToTable("ProductRecommendations");
+            e.HasKey(x => x.RecommendationId);
+            e.Property(x => x.RecommendationId).ValueGeneratedOnAdd();
+            e.Property(x => x.Score).HasPrecision(9, 6);
+            e.Property(x => x.Strategy).HasMaxLength(40).IsRequired();
+            e.HasOne(x => x.User)
+                .WithMany()
+                .HasForeignKey(x => x.UserId)
+                .OnDelete(DeleteBehavior.Restrict);
+            e.HasOne(x => x.Product)
+                .WithMany()
+                .HasForeignKey(x => x.ProductId)
+                .OnDelete(DeleteBehavior.Restrict);
+            e.HasIndex(x => new { x.UserId, x.Score });
         });
 
         modelBuilder.Entity<ProductModerationHistory>(e =>
