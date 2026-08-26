@@ -41,9 +41,20 @@ public sealed class GroqClient : ILlmClient
 
     public bool UseMock => _options.UseMock;
 
-    public async Task<string?> ChatAsync(
+    public Task<string?> ChatAsync(
         string systemPrompt,
         string userPrompt,
+        bool jsonFormat,
+        CancellationToken cancellationToken = default)
+        => ChatAsync(
+            systemPrompt,
+            [new LlmChatMessage { Role = "user", Content = userPrompt }],
+            jsonFormat,
+            cancellationToken);
+
+    public async Task<string?> ChatAsync(
+        string systemPrompt,
+        IReadOnlyList<LlmChatMessage> messages,
         bool jsonFormat,
         CancellationToken cancellationToken = default)
     {
@@ -56,15 +67,31 @@ public sealed class GroqClient : ILlmClient
         if (string.IsNullOrWhiteSpace(_options.Model))
             throw new AppException("Groq model is not configured.", 503);
 
+        if (messages.Count == 0)
+            throw new AppException("At least one chat message is required.");
+
+        var payloadMessages = new List<GroqChatMessage>
+        {
+            new() { Role = "system", Content = systemPrompt }
+        };
+        foreach (var m in messages)
+        {
+            if (string.IsNullOrWhiteSpace(m.Content))
+                continue;
+            var role = m.Role?.Trim().ToLowerInvariant();
+            if (role is not ("user" or "assistant" or "system"))
+                continue;
+            payloadMessages.Add(new GroqChatMessage { Role = role, Content = m.Content });
+        }
+
+        if (payloadMessages.Count < 2)
+            throw new AppException("At least one user/assistant message is required.");
+
         var payload = new GroqChatRequest
         {
             Model = _options.Model,
-            Temperature = 0.2,
-            Messages =
-            [
-                new GroqChatMessage { Role = "system", Content = systemPrompt },
-                new GroqChatMessage { Role = "user", Content = userPrompt }
-            ],
+            Temperature = 0.3,
+            Messages = payloadMessages,
             ResponseFormat = jsonFormat
                 ? new GroqResponseFormat { Type = "json_object" }
                 : null
