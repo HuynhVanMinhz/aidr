@@ -191,6 +191,8 @@ aidr-be/
 ### 6.7 AI
 | UC | Endpoint | Module |
 |----|----------|--------|
+| UC-53 | `GET /api/recommendations?page=&pageSize=` — hybrid recommendations (stored + collaborative + content affinity + popular); personalized when authenticated, popular fallback for guests | AI |
+| UC-54 | `GET /api/products/{id}/similar?limit=` — content-similar Approved products (category/brand/tags/price) | AI |
 | UC-28 | `POST /api/ai/compare` | AI |
 | UC-56 | `POST /api/ai/chat` hoặc stream hub | AI |
 | UC-90 | `POST /api/ai/nl-filter` → JSON filter DSL | AI |

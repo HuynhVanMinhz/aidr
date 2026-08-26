@@ -1,5 +1,7 @@
 using AIDR.Api.Extensions;
+using AIDR.Modules.AI.Abstractions;
 using AIDR.Modules.Discovery.Abstractions;
+using AIDR.Shared.Dtos.AI;
 using AIDR.Shared.Dtos.Discovery;
 using AIDR.Shared.Results;
 using Microsoft.AspNetCore.Authorization;
@@ -13,8 +15,13 @@ namespace AIDR.Api.Controllers;
 public sealed class ProductsController : ControllerBase
 {
     private readonly IDiscoveryService _discovery;
+    private readonly IRecommendationService _recommendations;
 
-    public ProductsController(IDiscoveryService discovery) => _discovery = discovery;
+    public ProductsController(IDiscoveryService discovery, IRecommendationService recommendations)
+    {
+        _discovery = discovery;
+        _recommendations = recommendations;
+    }
 
     /// <summary>List approved catalog products with optional filters and sort.</summary>
     [HttpGet]
@@ -49,5 +56,16 @@ public sealed class ProductsController : ControllerBase
 
         var result = await _discovery.GetProductAsync(id, viewerUserId, sessionId, cancellationToken);
         return Ok(ApiResult<ProductDetailDto>.Ok(result));
+    }
+
+    /// <summary>List similar approved products for cross-sell on product detail.</summary>
+    [HttpGet("{id:guid}/similar")]
+    public async Task<ActionResult<ApiResult<IReadOnlyList<SimilarProductDto>>>> Similar(
+        Guid id,
+        [FromQuery] SimilarProductsQueryRequest request,
+        CancellationToken cancellationToken)
+    {
+        var result = await _recommendations.GetSimilarProductsAsync(id, request, cancellationToken);
+        return Ok(ApiResult<IReadOnlyList<SimilarProductDto>>.Ok(result));
     }
 }
