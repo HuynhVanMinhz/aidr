@@ -1,4 +1,4 @@
-import type { ApiResult, PagedResult, ProductListItem } from './catalog';
+import type { ApiResult, PagedResult, ProductListItem, ProductSort } from './catalog';
 
 export type RecommendationStrategy = 'Collaborative' | 'Content' | 'Hybrid' | 'Popular' | string;
 
@@ -18,6 +18,75 @@ export type RecommendationQuery = {
 
 export type SimilarProductsQuery = {
   limit?: number;
+};
+
+export type AiSource = 'groq' | 'heuristic' | string;
+
+export type NlFilterRequest = {
+  query: string;
+};
+
+export type NlFilterResult = {
+  q?: string | null;
+  shopId?: string | null;
+  categoryId?: number | null;
+  categoryName?: string | null;
+  brand?: string | null;
+  minPrice?: number | null;
+  maxPrice?: number | null;
+  minRating?: number | null;
+  sort?: ProductSort | string | null;
+  interpretedQuery: string;
+  confidence: number;
+  source: AiSource;
+};
+
+export type CompareProductsRequest = {
+  productIds: string[];
+};
+
+export type CompareProductCard = {
+  productId: string;
+  name: string;
+  slug: string;
+  brand?: string | null;
+  modelNumber?: string | null;
+  basePrice: number;
+  salePrice?: number | null;
+  effectivePrice: number;
+  currency: string;
+  avgRating: number;
+  reviewCount: number;
+  warrantyMonths?: number | null;
+  primaryImageUrl?: string | null;
+  categoryId: number;
+  categoryName: string;
+  shopId: string;
+  shopName: string;
+  specs: Record<string, string>;
+};
+
+export type CompareDimension = {
+  key: string;
+  label: string;
+  values: Record<string, string>;
+};
+
+export type CompareProductsResult = {
+  products: CompareProductCard[];
+  dimensions: CompareDimension[];
+  summary: string;
+  highlights: string[];
+  source: AiSource;
+};
+
+/** Lightweight card kept in the compare tray / localStorage. */
+export type CompareSelectionItem = {
+  productId: string;
+  name: string;
+  primaryImageUrl?: string | null;
+  effectivePrice: number;
+  currency: string;
 };
 
 /** Strip recommendation metadata so cards can reuse catalog ProductCard. */
