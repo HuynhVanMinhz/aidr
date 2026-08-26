@@ -2,6 +2,7 @@ import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import { useAppSelector } from '../../store/hooks';
 import { selectIsAuthenticated } from '../../store/authSlice';
 import type { RootState } from '../../store';
+import { resolvePostLoginPath } from '../../utils/postLoginRedirect';
 
 type GuestRouteProps = {
   redirectTo?: string;
@@ -9,14 +10,14 @@ type GuestRouteProps = {
 
 /** Guest-only routes (login, register, forgot password). */
 export function GuestRoute({ redirectTo = '/' }: GuestRouteProps) {
+  const auth = useAppSelector((s: RootState) => s.auth);
   const isAuthenticated = useAppSelector(selectIsAuthenticated);
   const location = useLocation();
   const params = new URLSearchParams(location.search);
   const returnUrl = params.get('returnUrl');
-  const target = returnUrl && returnUrl.startsWith('/') ? returnUrl : redirectTo;
 
   if (isAuthenticated) {
-    return <Navigate to={target} replace />;
+    return <Navigate to={resolvePostLoginPath(auth.roles, returnUrl ?? redirectTo)} replace />;
   }
 
   return <Outlet />;
@@ -40,7 +41,7 @@ export function ProtectedRoute({ roles }: ProtectedRouteProps) {
       auth.roles.some((r: string) => r.toUpperCase() === role.toUpperCase()),
     );
     if (!hasRole) {
-      return <Navigate to="/" replace />;
+      return <Navigate to="/403" replace />;
     }
   }
 

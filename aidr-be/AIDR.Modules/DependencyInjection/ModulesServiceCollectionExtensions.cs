@@ -26,6 +26,7 @@ public static class ModulesServiceCollectionExtensions
     {
         services.AddScoped<IAuthService, AuthService>();
         services.AddScoped<IProfileService, ProfileService>();
+        services.AddScoped<ISellerRegistrationService, SellerRegistrationService>();
         services.AddScoped<IDiscoveryService, DiscoveryService>();
         services.AddScoped<IRecommendationService, RecommendationService>();
         services.AddScoped<IAiNlFilterService, AiNlFilterService>();
@@ -38,11 +39,14 @@ public static class ModulesServiceCollectionExtensions
         services.AddScoped<IAdminReturnService, AdminReturnService>();
         services.AddScoped<IAdminAccountService, AdminAccountService>();
         services.AddScoped<IAdminCustomerInsightService, AdminCustomerInsightService>();
+        services.AddScoped<IAdminDashboardService, AdminDashboardService>();
+        services.AddScoped<IAdminOrderService, AdminOrderService>();
         services.AddScoped<ISellerProductService, SellerProductService>();
         services.AddScoped<ISellerInventoryService, SellerInventoryService>();
         services.AddScoped<ISellerOrderService, SellerOrderService>();
         services.AddScoped<ISellerShopVoucherService, SellerShopVoucherService>();
         services.AddScoped<ISellerFinanceService, SellerFinanceService>();
+        services.AddScoped<ISellerShopService, SellerShopService>();
         services.AddScoped<ICartService, CartService>();
         services.AddScoped<IOrderService, OrderService>();
         services.AddScoped<IReturnService, ReturnService>();

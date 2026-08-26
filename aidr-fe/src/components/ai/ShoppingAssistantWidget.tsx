@@ -15,7 +15,7 @@ const OPEN_STORAGE_KEY = 'aidr.assistant.open';
 
 const QUICK_PROMPTS = [
   'How do returns and refunds work?',
-  'Recommend a Samsung phone for me',
+  'Recommend a phone under my budget',
   'What vouchers can I use at checkout?',
   'How does shipping and delivery work?',
 ];

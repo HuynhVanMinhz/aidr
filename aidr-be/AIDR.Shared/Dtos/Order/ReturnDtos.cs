@@ -74,3 +74,13 @@ public sealed class BuyerReturnStatusHistoryDto
     public string? Note { get; init; }
     public DateTime CreatedAt { get; init; }
 }
+
+public sealed class BuyerReturnListResultDto
+{
+    public IReadOnlyList<BuyerReturnRequestDto> Items { get; init; } =
+        Array.Empty<BuyerReturnRequestDto>();
+    public int Page { get; init; }
+    public int PageSize { get; init; }
+    public int TotalCount { get; init; }
+    public int TotalPages => PageSize <= 0 ? 0 : (int)Math.Ceiling(TotalCount / (double)PageSize);
+}

@@ -6,9 +6,8 @@ import { useCart } from '../../hooks/useCart';
 import { useToast } from '../../hooks/useToast';
 import { useWishlistProduct } from '../../hooks/useWishlist';
 import type { ProductListItem } from '../../types/catalog';
+import { resolveProductImageUrl } from '../../utils/catalogImage';
 import { discountPercent, formatMoney } from '../../utils/formatCatalog';
-
-const PLACEHOLDER = '/theme/images/product-image-1.png';
 
 type Props = {
   product: ProductListItem;
@@ -33,7 +32,7 @@ export function ProductCard({ product, variant = 'list' }: Props) {
   const [wishlistPending, setWishlistPending] = useState(false);
 
   const off = discountPercent(product.basePrice, product.salePrice);
-  const imageUrl = product.primaryImageUrl || PLACEHOLDER;
+  const imageUrl = resolveProductImageUrl(product.primaryImageUrl, product.name?.length ?? 0);
   const detailTo = `/products/${product.productId}`;
   const outOfStock = product.availableQuantity < 1;
 
@@ -117,7 +116,15 @@ export function ProductCard({ product, variant = 'list' }: Props) {
       <div className="product-item-image">
         <Link to={detailTo}>
           <figure>
-            <img src={imageUrl} alt={product.name} loading="lazy" />
+            <img
+              src={imageUrl}
+              alt={product.name}
+              loading="lazy"
+              onError={(e) => {
+                e.currentTarget.onerror = null;
+                e.currentTarget.src = resolveProductImageUrl(null, 0);
+              }}
+            />
           </figure>
         </Link>
       </div>
