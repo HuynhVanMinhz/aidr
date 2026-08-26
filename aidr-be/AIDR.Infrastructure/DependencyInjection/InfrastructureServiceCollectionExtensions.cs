@@ -12,6 +12,7 @@ using AIDR.Infrastructure.Profile;
 using AIDR.Infrastructure.SellerCenter;
 using AIDR.Modules.Admin.Abstractions;
 using AIDR.Modules.AI.Abstractions;
+using AIDR.Modules.AI.Services;
 using AIDR.Modules.Auth.Abstractions;
 using AIDR.Modules.Auth.Services;
 using AIDR.Modules.Discovery.Abstractions;
@@ -62,11 +63,13 @@ public static class InfrastructureServiceCollectionExtensions
         services.Configure<AuthOptions>(configuration.GetSection(AuthOptions.SectionName));
         services.Configure<SmtpOptions>(configuration.GetSection(SmtpOptions.SectionName));
         services.Configure<PayOsOptions>(configuration.GetSection(PayOsOptions.SectionName));
+        services.Configure<GroqOptions>(configuration.GetSection(GroqOptions.SectionName));
 
         services.AddScoped<IAuthUserRepository, AuthUserRepository>();
         services.AddScoped<IProfileRepository, ProfileRepository>();
         services.AddScoped<IDiscoveryRepository, DiscoveryRepository>();
         services.AddScoped<IRecommendationRepository, RecommendationRepository>();
+        services.AddScoped<IAiCatalogRepository, AiCatalogRepository>();
         services.AddScoped<IAdminCategoryRepository, AdminCategoryRepository>();
         services.AddScoped<IAdminSellerRegistrationRepository, AdminSellerRegistrationRepository>();
         services.AddScoped<IAdminProductModerationRepository, AdminProductModerationRepository>();
@@ -97,6 +100,7 @@ public static class InfrastructureServiceCollectionExtensions
         services.AddSingleton<IPasswordHasher, AspNetPasswordHasher>();
         services.AddSingleton<IEmailSender, LoggingEmailSender>();
         services.AddHttpClient<IKeycloakOidcClient, KeycloakOidcClient>();
+        services.AddHttpClient<ILlmClient, GroqClient>();
 
         return services;
     }
