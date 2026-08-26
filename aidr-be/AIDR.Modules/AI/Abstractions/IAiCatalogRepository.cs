@@ -38,4 +38,10 @@ public interface IAiCatalogRepository
     Task<IReadOnlyList<AiCompareProductRecord>> GetApprovedProductsByIdsAsync(
         IReadOnlyList<Guid> productIds,
         CancellationToken cancellationToken = default);
+
+    /// <summary>Keyword search over Approved products for shopping-assistant context.</summary>
+    Task<IReadOnlyList<AiCompareProductRecord>> SearchApprovedProductsAsync(
+        string? query,
+        int take,
+        CancellationToken cancellationToken = default);
 }

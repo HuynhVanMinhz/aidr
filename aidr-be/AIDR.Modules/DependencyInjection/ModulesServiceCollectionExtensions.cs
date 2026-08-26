@@ -30,6 +30,7 @@ public static class ModulesServiceCollectionExtensions
         services.AddScoped<IRecommendationService, RecommendationService>();
         services.AddScoped<IAiNlFilterService, AiNlFilterService>();
         services.AddScoped<IAiCompareService, AiCompareService>();
+        services.AddScoped<IAiShoppingAssistantService, AiShoppingAssistantService>();
         services.AddScoped<IAdminCategoryService, AdminCategoryService>();
         services.AddScoped<IAdminSellerRegistrationService, AdminSellerRegistrationService>();
         services.AddScoped<IAdminProductModerationService, AdminProductModerationService>();
