@@ -1,6 +1,7 @@
 import { useState, type MouseEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
+import { useCompare } from '../../hooks/useAi';
 import { useCart } from '../../hooks/useCart';
 import { useToast } from '../../hooks/useToast';
 import { useWishlistProduct } from '../../hooks/useWishlist';
@@ -19,6 +20,8 @@ export function ProductCard({ product, variant = 'list' }: Props) {
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
   const { addItem, getErrorMessage } = useCart();
+  const { toggle: toggleCompare, isSelected } = useCompare();
+  const inCompare = isSelected(product.productId);
   const {
     inWishlist,
     toggle,
@@ -78,6 +81,23 @@ export function ProductCard({ product, variant = 'list' }: Props) {
     }
   }
 
+  function handleCompare(e: MouseEvent) {
+    e.preventDefault();
+    e.stopPropagation();
+    const result = toggleCompare({
+      productId: product.productId,
+      name: product.name,
+      primaryImageUrl: product.primaryImageUrl,
+      effectivePrice: product.effectivePrice,
+      currency: product.currency,
+    });
+    if (!result.ok && result.reason === 'full') {
+      toast.error('You can compare at most 5 products.');
+      return;
+    }
+    toast.success(inCompare ? 'Removed from compare.' : 'Added to compare.');
+  }
+
   const priceBlock = (
     <h3>
       {formatMoney(product.effectivePrice, product.currency)}
@@ -117,9 +137,16 @@ export function ProductCard({ product, variant = 'list' }: Props) {
             </button>
           </li>
           <li>
-            <Link to={detailTo} title="Quick view" aria-label="Quick view">
-              <img src="/theme/images/icon-preview-primary.svg" alt="" />
-            </Link>
+            <button
+              type="button"
+              className={`product-card-cart-btn${inCompare ? ' is-compare-selected' : ''}`}
+              title={inCompare ? 'Remove from compare' : 'Add to compare'}
+              aria-label={inCompare ? 'Remove from compare' : 'Add to compare'}
+              aria-pressed={inCompare}
+              onClick={handleCompare}
+            >
+              <img src="/theme/images/icon-compare-primary.svg" alt="" />
+            </button>
           </li>
           <li>
             <button

@@ -4,6 +4,7 @@ import { CatalogBreadcrumb } from '../../components/catalog/CatalogBreadcrumb';
 import { SimilarProductsSection } from '../../components/catalog/SimilarProductsSection';
 import { ProductReviewsPanel } from '../../components/reviews/ProductReviewsPanel';
 import { useAuth } from '../../hooks/useAuth';
+import { useCompare } from '../../hooks/useAi';
 import { useProductDetail } from '../../hooks/useCatalog';
 import { useCart } from '../../hooks/useCart';
 import { useToast } from '../../hooks/useToast';
@@ -62,6 +63,8 @@ export function ProductDetailPage() {
     mutating: wishlistBusy,
     getErrorMessage: getWishlistError,
   } = useWishlistProduct(id);
+  const { toggle: toggleCompare, isSelected } = useCompare();
+  const inCompare = Boolean(id && isSelected(id));
   const toast = useToast();
   const [activeImage, setActiveImage] = useState(0);
   const [tab, setTab] = useState<'description' | 'specs' | 'reviews'>('description');
@@ -103,13 +106,14 @@ export function ProductDetailPage() {
     );
   }
 
+  const detail = product;
   const mainImage = images[Math.min(activeImage, images.length - 1)]?.imageUrl ?? PLACEHOLDER;
-  const off = discountPercent(product.basePrice, product.salePrice);
-  const maxQty = Math.min(MAX_QTY, Math.max(1, product.availableQuantity));
+  const off = discountPercent(detail.basePrice, detail.salePrice);
+  const maxQty = Math.min(MAX_QTY, Math.max(1, detail.availableQuantity));
   const safeQty = Math.min(Math.max(1, qty), maxQty);
-  const outOfStock = product.availableQuantity < 1;
+  const outOfStock = detail.availableQuantity < 1;
   const addBusy = adding || mutating;
-  const productId = product.productId;
+  const productId = detail.productId;
 
   async function handleAddToCart() {
     if (!isAuthenticated) {
@@ -149,6 +153,21 @@ export function ProductDetailPage() {
     } finally {
       setWishlistPending(false);
     }
+  }
+
+  function handleCompareToggle() {
+    const result = toggleCompare({
+      productId,
+      name: detail.name,
+      primaryImageUrl: detail.images.find((i) => i.isPrimary)?.imageUrl ?? detail.images[0]?.imageUrl,
+      effectivePrice: detail.effectivePrice,
+      currency: detail.currency,
+    });
+    if (!result.ok && result.reason === 'full') {
+      toast.error('You can compare at most 5 products.');
+      return;
+    }
+    toast.success(inCompare ? 'Removed from compare.' : 'Added to compare.');
   }
 
   return (
@@ -287,9 +306,16 @@ export function ProductDetailPage() {
                           </button>
                         </li>
                         <li>
-                          <a href="#compare" onClick={(e) => e.preventDefault()} aria-label="Compare">
+                          <button
+                            type="button"
+                            className={`product-card-cart-btn${inCompare ? ' is-compare-selected' : ''}`}
+                            aria-label={inCompare ? 'Remove from compare' : 'Add to compare'}
+                            aria-pressed={inCompare}
+                            title={inCompare ? 'Remove from compare' : 'Add to compare'}
+                            onClick={handleCompareToggle}
+                          >
                             <img src="/theme/images/icon-compare-primary.svg" alt="" />
-                          </a>
+                          </button>
                         </li>
                       </ul>
                     </div>

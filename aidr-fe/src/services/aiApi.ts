@@ -1,5 +1,9 @@
 import type {
   ApiResult,
+  CompareProductsRequest,
+  CompareProductsResult,
+  NlFilterRequest,
+  NlFilterResult,
   PagedResult,
   RecommendationQuery,
   RecommendedProduct,
@@ -26,5 +30,15 @@ export async function getSimilarProducts(productId: string, query: SimilarProduc
   const { data } = await apiClient.get<ApiResult<SimilarProduct[]>>(`/products/${productId}/similar`, {
     params,
   });
+  return data;
+}
+
+export async function parseNlFilter(body: NlFilterRequest) {
+  const { data } = await apiClient.post<ApiResult<NlFilterResult>>('/ai/nl-filter', body);
+  return data;
+}
+
+export async function compareProducts(body: CompareProductsRequest) {
+  const { data } = await apiClient.post<ApiResult<CompareProductsResult>>('/ai/compare', body);
   return data;
 }
