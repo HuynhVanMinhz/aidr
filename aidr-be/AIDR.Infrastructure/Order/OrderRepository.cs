@@ -1,6 +1,7 @@
 using System.Text.Json;
 using AIDR.Infrastructure.Persistence;
 using AIDR.Infrastructure.Persistence.Entities;
+using AIDR.Modules.Engagement.Abstractions;
 using AIDR.Modules.Order.Abstractions;
 using AIDR.Shared.Constants;
 using AIDR.Shared.Dtos.Order;
@@ -17,8 +18,13 @@ public sealed class OrderRepository : IOrderRepository
     };
 
     private readonly AidrDbContext _db;
+    private readonly ILowStockNotifier _lowStockNotifier;
 
-    public OrderRepository(AidrDbContext db) => _db = db;
+    public OrderRepository(AidrDbContext db, ILowStockNotifier lowStockNotifier)
+    {
+        _db = db;
+        _lowStockNotifier = lowStockNotifier;
+    }
 
     public async Task<CreateOrderResponse> CreateOrdersFromCartAsync(
         Guid buyerUserId,
@@ -66,6 +72,7 @@ public sealed class OrderRepository : IOrderRepository
         var now = DateTime.UtcNow;
         var createdOrders = new List<CreatedOrderDto>();
         var voucherUsageInCheckout = new Dictionary<Guid, int>();
+        var lowStockCrossedProductIds = new HashSet<Guid>();
 
         foreach (var shopGroup in selectedItems.GroupBy(i => i.Product.ShopId))
         {
@@ -87,6 +94,7 @@ public sealed class OrderRepository : IOrderRepository
                 voucherId,
                 voucherUsageInCheckout,
                 now,
+                lowStockCrossedProductIds,
                 cancellationToken);
 
             createdOrders.Add(order);
@@ -96,6 +104,9 @@ public sealed class OrderRepository : IOrderRepository
         cart.UpdatedAt = now;
         await _db.SaveChangesAsync(cancellationToken);
         await transaction.CommitAsync(cancellationToken);
+
+        foreach (var productId in lowStockCrossedProductIds)
+            await _lowStockNotifier.TryNotifyIfBecameLowAsync(productId, wasLowStock: false, cancellationToken);
 
         var currency = createdOrders.FirstOrDefault()?.Currency ?? "VND";
         return new CreateOrderResponse
@@ -570,6 +581,7 @@ public sealed class OrderRepository : IOrderRepository
         Guid? voucherId,
         Dictionary<Guid, int> voucherUsageInCheckout,
         DateTime now,
+        HashSet<Guid> lowStockCrossedProductIds,
         CancellationToken cancellationToken)
     {
         var orderId = Guid.NewGuid();
@@ -591,6 +603,8 @@ public sealed class OrderRepository : IOrderRepository
             if (cartItem.Quantity > available)
                 throw new ConflictException(
                     $"Only {available} unit(s) available for '{product.Name}'.");
+
+            var wasLowStock = available <= product.LowStockThreshold;
 
             var unitPrice = decimal.Round(
                 product.SalePrice ?? product.BasePrice,
@@ -640,6 +654,10 @@ public sealed class OrderRepository : IOrderRepository
 
             subtotal += lineTotal;
             await RecalcStockAsync(product, cancellationToken);
+
+            var availableAfter = Math.Max(0, product.StockQuantity - product.ReservedQuantity);
+            if (!wasLowStock && availableAfter <= product.LowStockThreshold)
+                lowStockCrossedProductIds.Add(product.ProductId);
         }
 
         subtotal = decimal.Round(subtotal, 2, MidpointRounding.AwayFromZero);

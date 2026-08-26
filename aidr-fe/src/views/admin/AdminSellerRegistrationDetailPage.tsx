@@ -179,7 +179,9 @@ export function AdminSellerRegistrationDetailPage() {
 
             <div className="mb-3">
               <p className="text-muted mb-1">Business information</p>
-              <p className="mb-0">{item.businessInfo?.trim() || '—'}</p>
+              <p className={`mb-0${!item.businessInfo?.trim() ? ' text-muted' : ''}`}>
+                {item.businessInfo?.trim() || 'No business information provided'}
+              </p>
             </div>
 
             <div className="mb-3">

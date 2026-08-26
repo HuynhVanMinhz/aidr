@@ -229,7 +229,11 @@ export function SellerOrderDetailPage() {
                           <span className="text-dark fw-medium fs-15">{item.productName}</span>
                         </div>
                       </td>
-                      <td>{item.sku || '—'}</td>
+                      <td>
+                        <span className={!item.sku ? 'text-muted' : undefined}>
+                          {item.sku?.trim() || 'No SKU'}
+                        </span>
+                      </td>
                       <td>{item.quantity}</td>
                       <td>{formatVnd(item.unitPrice)}</td>
                       <td>{formatVnd(item.lineTotal)}</td>

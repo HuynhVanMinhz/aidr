@@ -185,4 +185,73 @@ public class DevController : ControllerBase
             pendingCount = pending
         });
     }
+
+    /// <summary>Seed wallet ledger rows for demo seller shop (dev only).</summary>
+    [HttpPost("seed-wallet")]
+    public async Task<IActionResult> SeedWallet(
+        [FromServices] AidrDbContext db,
+        [FromServices] IWebHostEnvironment env,
+        CancellationToken ct)
+    {
+        if (!env.IsDevelopment())
+            return NotFound();
+
+        await WalletDemoSeeder.SeedAsync(db, env.ContentRootPath, ct);
+
+        var shopId = DemoAccountsSeeder.ShopId;
+        var wallet = await db.Wallets.AsNoTracking()
+            .FirstOrDefaultAsync(w => w.ShopId == shopId, ct);
+        var txCount = wallet == null
+            ? 0
+            : await db.WalletTransactions.CountAsync(t => t.WalletId == wallet.WalletId, ct);
+        var seedCount = wallet == null
+            ? 0
+            : await db.WalletTransactions.CountAsync(
+                t => t.WalletId == wallet.WalletId && t.Note != null && t.Note.StartsWith("WAL-SEED-"),
+                ct);
+
+        return Ok(new
+        {
+            message = "Wallet demo seed completed.",
+            shopId,
+            walletId = wallet?.WalletId,
+            availableBalance = wallet?.AvailableBalance,
+            transactionCount = txCount,
+            seedTransactionCount = seedCount
+        });
+    }
+
+    /// <summary>Seed System/Product low-stock notifications for demo seller (dev only).</summary>
+    [HttpPost("seed-low-stock-notifications")]
+    public async Task<IActionResult> SeedLowStockNotifications(
+        [FromServices] AidrDbContext db,
+        [FromServices] IWebHostEnvironment env,
+        CancellationToken ct)
+    {
+        if (!env.IsDevelopment())
+            return NotFound();
+
+        await LowStockNotificationDemoSeeder.SeedAsync(db, env.ContentRootPath, ct);
+
+        var sellerId = DemoAccountsSeeder.SellerId;
+        var total = await db.Notifications.CountAsync(
+            n => n.UserId == sellerId
+                 && n.Type == "System"
+                 && n.ReferenceType == "Product",
+            ct);
+        var unread = await db.Notifications.CountAsync(
+            n => n.UserId == sellerId
+                 && n.Type == "System"
+                 && n.ReferenceType == "Product"
+                 && !n.IsRead,
+            ct);
+
+        return Ok(new
+        {
+            message = "Low-stock notification demo seed completed.",
+            sellerId,
+            systemProductNotificationCount = total,
+            unreadCount = unread
+        });
+    }
 }

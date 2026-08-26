@@ -191,11 +191,15 @@ export function SellerInventoryListPage() {
                           <>
                             <div>
                               Avg{' '}
-                              {item.avgCostPrice != null ? formatVnd(item.avgCostPrice) : '—'}
+                              {item.avgCostPrice != null
+                                ? formatVnd(item.avgCostPrice)
+                                : 'No average cost'}
                             </div>
                             <small className="text-muted">
                               Last import{' '}
-                              {item.lastCostPrice != null ? formatVnd(item.lastCostPrice) : '—'}
+                              {item.lastCostPrice != null
+                                ? formatVnd(item.lastCostPrice)
+                                : 'No import cost yet'}
                             </small>
                           </>
                         ) : (
@@ -222,7 +226,7 @@ export function SellerInventoryListPage() {
                             {formatVnd(item.estimatedMarginPerUnit)}
                           </span>
                         ) : (
-                          <span className="text-muted">—</span>
+                          <span className="text-muted">Needs cost to estimate</span>
                         )}
                       </td>
                       <td>
