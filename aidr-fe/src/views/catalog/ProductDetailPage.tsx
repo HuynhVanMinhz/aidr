@@ -1,6 +1,7 @@
 import { useMemo, useState, type ReactNode } from 'react';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { CatalogBreadcrumb } from '../../components/catalog/CatalogBreadcrumb';
+import { SimilarProductsSection } from '../../components/catalog/SimilarProductsSection';
 import { ProductReviewsPanel } from '../../components/reviews/ProductReviewsPanel';
 import { useAuth } from '../../hooks/useAuth';
 import { useProductDetail } from '../../hooks/useCatalog';
@@ -151,20 +152,21 @@ export function ProductDetailPage() {
   }
 
   return (
-    <div className="page-product-single">
-      <div className="container">
-        <div className="row">
-          <div className="col-lg-12">
-            <div className="page-product-single-content">
-              <div className="product-single-breadcrumb-list">
-                <CatalogBreadcrumb
-                  items={[
-                    { label: 'Home', to: '/' },
-                    { label: 'Products', to: '/products' },
-                    { label: product.name },
-                  ]}
-                />
-              </div>
+    <>
+      <div className="page-product-single">
+        <div className="container">
+          <div className="row">
+            <div className="col-lg-12">
+              <div className="page-product-single-content">
+                <div className="product-single-breadcrumb-list">
+                  <CatalogBreadcrumb
+                    items={[
+                      { label: 'Home', to: '/' },
+                      { label: 'Products', to: '/products' },
+                      { label: product.name },
+                    ]}
+                  />
+                </div>
 
               <div className="product-single-info-box">
                 <div className="product-single-image-box">
@@ -515,6 +517,13 @@ export function ProductDetailPage() {
           </div>
         </div>
       </div>
-    </div>
+      </div>
+
+      <SimilarProductsSection
+        productId={product.productId}
+        categoryId={product.category.categoryId}
+        limit={8}
+      />
+    </>
   );
 }
