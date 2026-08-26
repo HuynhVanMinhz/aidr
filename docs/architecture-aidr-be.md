@@ -194,7 +194,7 @@ aidr-be/
 | UC-53 | `GET /api/recommendations?page=&pageSize=` — hybrid recommendations (stored + collaborative + content affinity + popular); personalized when authenticated, popular fallback for guests | AI |
 | UC-54 | `GET /api/products/{id}/similar?limit=` — content-similar Approved products (category/brand/tags/price) | AI |
 | UC-28 | `POST /api/ai/compare` — body `{ productIds: Guid[] }` (2–5); Buyer auth; returns product cards + dimensions table + summary/highlights (Groq or heuristic) | AI |
-| UC-56 | `POST /api/ai/chat` hoặc stream hub | AI |
+| UC-56 | `POST /api/ai/chat` — body `{ conversationId?, message }`; Buyer auth; persists `AiConversations`/`AiMessages`; returns assistant reply + suggested product cards (Groq or heuristic). Also `GET /api/ai/conversations`, `GET /api/ai/conversations/{id}` | AI |
 | UC-90 | `POST /api/ai/nl-filter` — body `{ query }`; Guest/Buyer; returns validated filter DSL (`q`, `categoryId`, `brand`, `minPrice`, `maxPrice`, `minRating`, `sort`, …) | AI |
 
 ---

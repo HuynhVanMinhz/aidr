@@ -39,7 +39,7 @@ Cập nhật cột **status**: `Todo` · `In Progress` · `Done` · `Blocked`.
 | 26 | Admin — Governance | Account list, lock/unlock, customer insights. | UC-71, UC-72, UC-73, UC-74 | Done |
 | 27 | AI — Recommendation & Similar | Recommend + similar (rule/hybrid trước, LLM sau nếu cần). | UC-53, UC-54 | Done |
 | 28 | AI — NL Filter & Compare | Natural language → filter; so sánh SP. | UC-90, UC-28 | Done |
-| 29 | AI — Shopping Assistant | Chatbot mua sắm Ollama + lưu AiConversations. | UC-56 | Todo |
+| 29 | AI — Shopping Assistant | Chatbot mua sắm Ollama + lưu AiConversations. | UC-56 | Done |
 | 30 | Hardening & Observability | Grafana dashboards, rate-limit AI/login, E2E smoke, perf cache, docs API. | — (NFR) | Todo |
 
 ---
