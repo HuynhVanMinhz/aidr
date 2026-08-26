@@ -41,9 +41,18 @@ function pageTitle(pathname: string, variant: AdminShellVariant) {
   if (pathname.includes('/vouchers/') && pathname.endsWith('/edit')) {
     return variant === 'seller' ? 'Edit Shop Voucher' : 'Edit System Voucher';
   }
+  if (
+    variant === 'admin' &&
+    pathname.match(/\/vouchers\/[^/]+$/) &&
+    !pathname.endsWith('/new')
+  ) {
+    return 'System Voucher Details';
+  }
   if (pathname.includes('/vouchers')) {
     return variant === 'seller' ? 'Shop Vouchers' : 'System Vouchers';
   }
+  if (variant === 'seller' && pathname.includes('/shop-settings')) return 'Shop Settings';
+  if (variant === 'seller' && pathname.includes('/alerts')) return 'Low Stock Alerts';
   if (pathname.includes('/categories/new')) return 'Create Category';
   if (pathname.includes('/categories/') && pathname.endsWith('/edit')) return 'Edit Category';
   if (pathname.includes('/categories')) return 'Categories List';
@@ -355,6 +364,17 @@ export function AdminShell({ variant = 'admin', children }: AdminShellProps) {
                 </div>
               </li>
               <li className="nav-item">
+                <NavLink
+                  className={({ isActive }) => `nav-link${isActive ? ' active' : ''}`}
+                  to="/admin/orders"
+                >
+                  <span className="nav-icon">
+                    <IconifyIcon icon="solar:bag-check-bold-duotone" />
+                  </span>
+                  <span className="nav-text">Orders</span>
+                </NavLink>
+              </li>
+              <li className="nav-item">
                 <a
                   className={`nav-link menu-arrow ${governanceOpen ? '' : 'collapsed'}`}
                   href="#sidebarGovernance"
@@ -461,6 +481,28 @@ export function AdminShell({ variant = 'admin', children }: AdminShellProps) {
                     <IconifyIcon icon="solar:box-minimalistic-bold-duotone" />
                   </span>
                   <span className="nav-text">Inventory</span>
+                </NavLink>
+              </li>
+              <li className="nav-item">
+                <NavLink
+                  className={({ isActive }) => `nav-link${isActive ? ' active' : ''}`}
+                  to="/seller/alerts"
+                >
+                  <span className="nav-icon">
+                    <IconifyIcon icon="solar:danger-triangle-bold-duotone" />
+                  </span>
+                  <span className="nav-text">Alerts</span>
+                </NavLink>
+              </li>
+              <li className="nav-item">
+                <NavLink
+                  className={({ isActive }) => `nav-link${isActive ? ' active' : ''}`}
+                  to="/seller/shop-settings"
+                >
+                  <span className="nav-icon">
+                    <IconifyIcon icon="solar:shop-bold-duotone" />
+                  </span>
+                  <span className="nav-text">Shop settings</span>
                 </NavLink>
               </li>
               <li className="nav-item">

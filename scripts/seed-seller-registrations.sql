@@ -26,28 +26,28 @@ END;
 IF NOT EXISTS (SELECT 1 FROM dbo.Users WHERE UserId = @BuyerId)
 BEGIN
     INSERT INTO dbo.Users (UserId, Email, EmailConfirmed, FullName, Phone, Status)
-    VALUES (@BuyerId, N'buyer@aidr.local', 1, N'Tran Thi Buyer', N'0900000003', N'Active');
+    VALUES (@BuyerId, N'buyer@aidr.local', 1, N'Jamie Buyer', N'0900000003', N'Active');
     INSERT INTO dbo.UserRoles (UserId, RoleId) VALUES (@BuyerId, @RoleBuyer);
 END;
 
 IF NOT EXISTS (SELECT 1 FROM dbo.Users WHERE UserId = @Applicant1Id)
 BEGIN
     INSERT INTO dbo.Users (UserId, Email, EmailConfirmed, FullName, Phone, Status)
-    VALUES (@Applicant1Id, N'applicant1@aidr.local', 1, N'Le Van Applicant', N'0911000001', N'Active');
+    VALUES (@Applicant1Id, N'applicant1@aidr.local', 1, N'Lee Applicant', N'0911000001', N'Active');
     INSERT INTO dbo.UserRoles (UserId, RoleId) VALUES (@Applicant1Id, @RoleBuyer);
 END;
 
 IF NOT EXISTS (SELECT 1 FROM dbo.Users WHERE UserId = @Applicant2Id)
 BEGIN
     INSERT INTO dbo.Users (UserId, Email, EmailConfirmed, FullName, Phone, Status)
-    VALUES (@Applicant2Id, N'applicant2@aidr.local', 1, N'Pham Thi Applicant', N'0911000002', N'Active');
+    VALUES (@Applicant2Id, N'applicant2@aidr.local', 1, N'Pat Applicant', N'0911000002', N'Active');
     INSERT INTO dbo.UserRoles (UserId, RoleId) VALUES (@Applicant2Id, @RoleBuyer);
 END;
 
 IF NOT EXISTS (SELECT 1 FROM dbo.Users WHERE UserId = @Applicant3Id)
 BEGIN
     INSERT INTO dbo.Users (UserId, Email, EmailConfirmed, FullName, Phone, Status)
-    VALUES (@Applicant3Id, N'applicant3@aidr.local', 1, N'Hoang Rejected Applicant', N'0911000003', N'Active');
+    VALUES (@Applicant3Id, N'applicant3@aidr.local', 1, N'Chris Rejected Applicant', N'0911000003', N'Active');
     INSERT INTO dbo.UserRoles (UserId, RoleId) VALUES (@Applicant3Id, @RoleBuyer);
 END;
 
@@ -57,8 +57,8 @@ BEGIN
         RequestId, UserId, ShopName, BusinessInfo, DocumentUrls, Status, CreatedAt
     )
     VALUES (
-        @ReqPending1, @BuyerId, N'Green Mart Home',
-        N'Household goods and kitchenware. Warehouse in District 7, HCMC.',
+        @ReqPending1, @BuyerId, N'GreenCircuit Home Tech',
+        N'Smart home sensors, plugs and compact kitchen electronics. Warehouse in District 7, HCMC.',
         N'["https://res.cloudinary.com/demo/image/upload/sample.jpg"]',
         N'Pending', DATEADD(DAY, -2, SYSUTCDATETIME())
     );
@@ -70,8 +70,8 @@ BEGIN
         RequestId, UserId, ShopName, BusinessInfo, DocumentUrls, Status, CreatedAt
     )
     VALUES (
-        @ReqPending2, @Applicant1Id, N'Sportify Gear',
-        N'Sports apparel and fitness accessories. Looking to sell nationwide.',
+        @ReqPending2, @Applicant1Id, N'AudioPulse Store',
+        N'Premium headphones, earbuds, Bluetooth speakers and fitness wearables. Nationwide shipping.',
         N'["https://res.cloudinary.com/demo/image/upload/docs/license-sample.pdf","https://res.cloudinary.com/demo/image/upload/sample.jpg"]',
         N'Pending', DATEADD(HOUR, -8, SYSUTCDATETIME())
     );
@@ -106,8 +106,8 @@ BEGIN
     )
     VALUES (
         'A4444444-4444-4444-4444-444444444444',
-        @Applicant2Id, N'Book Corner VN',
-        N'New and used books, educational materials for students.',
+        @Applicant2Id, N'PixelNest Gadgets',
+        N'Tablets, GaN chargers, smart plugs and home cameras for everyday electronics buyers.',
         NULL, N'Pending', DATEADD(HOUR, -1, SYSUTCDATETIME())
     );
 END;
@@ -181,7 +181,7 @@ BEGIN
         AdminNote, ReviewedBy, ReviewedAt, CreatedAt
     )
     VALUES (
-        @ApprovedReqId, @ApprovedUserId, N'Approved Craft House',
+        @ApprovedReqId, @ApprovedUserId, N'Crafted Circuit House',
         N'Handmade crafts — approved for filter testing.',
         N'["https://res.cloudinary.com/demo/image/upload/sample.jpg"]',
         N'Approved',
@@ -201,3 +201,4 @@ SELECT
 FROM dbo.SellerRegistrationRequests r
 INNER JOIN dbo.Users u ON u.UserId = r.UserId
 ORDER BY r.CreatedAt DESC;
+

@@ -401,6 +401,8 @@ public class AidrDbContext : DbContext
         {
             e.ToTable("CartItems");
             e.HasKey(x => x.CartItemId);
+            // Client-generated Guid (DB default NEWSEQUENTIALID exists but is unused by EF).
+            e.Property(x => x.CartItemId).ValueGeneratedNever();
             e.Property(x => x.UnitPriceSnapshot).HasPrecision(18, 2);
             e.HasOne(x => x.Cart)
                 .WithMany(x => x.Items)

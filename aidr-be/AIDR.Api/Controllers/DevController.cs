@@ -49,6 +49,72 @@ public class DevController : ControllerBase
         });
     }
 
+    /// <summary>Normalize shops/categories/products for electronics storefront + mock image URLs (dev only).</summary>
+    [HttpPost("seed-electronics-refresh")]
+    public async Task<IActionResult> SeedElectronicsRefresh(
+        [FromServices] AidrDbContext db,
+        [FromServices] IWebHostEnvironment env,
+        CancellationToken ct)
+    {
+        if (!env.IsDevelopment())
+            return NotFound();
+
+        await ElectronicsCatalogRefreshSeeder.SeedAsync(db, env.ContentRootPath, ct);
+
+        var activeCategories = await db.Categories.CountAsync(c => c.IsActive, ct);
+        var approvedProducts = await db.Products.CountAsync(p => p.Status == "Approved", ct);
+        var shops = await db.Shops.CountAsync(s => s.Status == "Active", ct);
+
+        return Ok(new
+        {
+            message = "Electronics catalog refresh completed. Prefer POST /api/dev/seed-catalog-images for theme image URLs.",
+            activeCategoryCount = activeCategories,
+            approvedProductCount = approvedProducts,
+            activeShopCount = shops
+        });
+    }
+
+    /// <summary>Map category/product images to local /theme/images assets (dev only).</summary>
+    [HttpPost("seed-catalog-images")]
+    public async Task<IActionResult> SeedCatalogImages(
+        [FromServices] AidrDbContext db,
+        [FromServices] IWebHostEnvironment env,
+        CancellationToken ct)
+    {
+        if (!env.IsDevelopment())
+            return NotFound();
+
+        await CatalogImagesSeeder.SeedAsync(db, env.ContentRootPath, ct);
+
+        var categories = await db.Categories.CountAsync(c => c.ImageUrl != null && c.ImageUrl.StartsWith("/theme/"), ct);
+        var productImages = await db.ProductImages.CountAsync(i => i.ImageUrl.StartsWith("/theme/"), ct);
+
+        return Ok(new
+        {
+            message = "Catalog images mapped to /theme/images assets.",
+            categoryImageCount = categories,
+            productImageCount = productImages
+        });
+    }
+
+    /// <summary>Normalize users/shops/categories/products/reviews/registrations text to English (dev only).</summary>
+    [HttpPost("seed-english-refresh")]
+    public async Task<IActionResult> SeedEnglishRefresh(
+        [FromServices] AidrDbContext db,
+        [FromServices] IWebHostEnvironment env,
+        CancellationToken ct)
+    {
+        if (!env.IsDevelopment())
+            return NotFound();
+
+        await EnglishDbRefreshSeeder.SeedAsync(db, env.ContentRootPath, ct);
+
+        return Ok(new
+        {
+            message = "English DB refresh completed."
+        });
+    }
+
     [HttpPost("seed-categories")]
     public async Task<IActionResult> SeedCategories(
         [FromServices] AidrDbContext db,

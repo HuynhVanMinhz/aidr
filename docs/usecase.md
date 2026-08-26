@@ -89,6 +89,7 @@
 | UC-74 | Unlock User Account | **Actor:** Admin. Mở khóa tài khoản. **Business:** Khôi phục sau xử lý. | Done | P1 |
 | UC-75 | View Seller Registration Requests | **Actor:** Admin. Queue Pending đăng ký seller. **Business:** Kiểm soát ai được bán. | Done | P0 |
 | UC-76 | Approve / Reject Seller Registration | **Actor:** Admin. Approve → gán role Seller + tạo Shop + Wallet; Reject + note. **Business:** Onboarding seller an toàn. | Done | P0 |
+| UC-77 | Apply to Become Seller | **Actor:** Buyer. Gửi Seller Registration (shop name, business info, documents); xem trạng thái Pending/Approved/Rejected. **Business:** Khép vòng onboarding seller từ phía buyer. | Done | P0 |
 | UC-78 | Create Voucher in System | **Actor:** Admin. Tạo voucher Scope=System. **Business:** Campaign toàn sàn. | Done | P1 |
 | UC-79 | Update Voucher in System | **Actor:** Admin. Sửa điều kiện / thời hạn. **Business:** Điều chỉnh campaign. | Done | P2 |
 | UC-80 | Delete Voucher in System | **Actor:** Admin. Xóa / vô hiệu voucher chưa dùng nhiều. **Business:** Dọn KM hết hạn. | Done | P2 |
@@ -112,4 +113,4 @@
 | P2 | ~15 | AI / social / polish |
 | P3 | 0 (hiện tại) | Dự phòng |
 
-**ID trống (reserved / out of scope MVP):** UC-51, UC-55, UC-68, UC-77, UC-82–84, UC-86.
+**ID trống (reserved / out of scope MVP):** UC-51, UC-55, UC-68, UC-82–84, UC-86.

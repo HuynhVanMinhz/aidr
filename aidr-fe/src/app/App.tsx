@@ -6,6 +6,11 @@ import { AdminShell } from '../components/layout/AdminShell';
 import { useAidrShellTheme } from '../hooks/useAidrShellTheme';
 import { HomePage } from '../views/HomePage';
 import { HealthPage } from '../views/HealthPage';
+import { HelpPage } from '../views/HelpPage';
+import { FaqPage } from '../views/FaqPage';
+import { TermsPage } from '../views/TermsPage';
+import { NotFoundPage } from '../views/NotFoundPage';
+import { ForbiddenPage } from '../views/ForbiddenPage';
 import { LoginPage } from '../views/auth/LoginPage';
 import { RegisterPage } from '../views/auth/RegisterPage';
 import { ForgotPasswordPage } from '../views/auth/ForgotPasswordPage';
@@ -19,6 +24,11 @@ import { OrderDetailPage } from '../views/account/OrderDetailPage';
 import { WishlistPage } from '../views/account/WishlistPage';
 import { FollowingPage } from '../views/account/FollowingPage';
 import { NotificationsPage } from '../views/account/NotificationsPage';
+import { BecomeSellerPage } from '../views/account/BecomeSellerPage';
+import { BuyerReturnsPage } from '../views/account/BuyerReturnsPage';
+import { BuyerReturnDetailPage } from '../views/account/BuyerReturnDetailPage';
+import { BuyerVouchersPage } from '../views/account/BuyerVouchersPage';
+import { AccountSecurityPage } from '../views/account/AccountSecurityPage';
 import { ProductListPage } from '../views/catalog/ProductListPage';
 import { ProductDetailPage } from '../views/catalog/ProductDetailPage';
 import { ComparePage } from '../views/catalog/ComparePage';
@@ -33,11 +43,14 @@ import { AdminProductListPage } from '../views/admin/AdminProductListPage';
 import { AdminProductDetailPage } from '../views/admin/AdminProductDetailPage';
 import { AdminSystemVoucherListPage } from '../views/admin/AdminSystemVoucherListPage';
 import { AdminSystemVoucherFormPage } from '../views/admin/AdminSystemVoucherFormPage';
+import { AdminSystemVoucherDetailPage } from '../views/admin/AdminSystemVoucherDetailPage';
 import { AdminReturnRequestListPage } from '../views/admin/AdminReturnRequestListPage';
 import { AdminReturnRequestDetailPage } from '../views/admin/AdminReturnRequestDetailPage';
 import { AdminAccountListPage } from '../views/admin/AdminAccountListPage';
 import { AdminAccountDetailPage } from '../views/admin/AdminAccountDetailPage';
 import { AdminCustomerInsightsPage } from '../views/admin/AdminCustomerInsightsPage';
+import { AdminOrderListPage } from '../views/admin/AdminOrderListPage';
+import { AdminOrderDetailPage } from '../views/admin/AdminOrderDetailPage';
 import { SellerHomePage } from '../views/seller/SellerHomePage';
 import { SellerProductListPage } from '../views/seller/SellerProductListPage';
 import { SellerProductFormPage } from '../views/seller/SellerProductFormPage';
@@ -52,6 +65,8 @@ import { SellerNotificationsPage } from '../views/seller/SellerNotificationsPage
 import { SellerReportsPage } from '../views/seller/SellerReportsPage';
 import { SellerWalletPage } from '../views/seller/SellerWalletPage';
 import { SellerChatPage } from '../views/seller/SellerChatPage';
+import { SellerShopSettingsPage } from '../views/seller/SellerShopSettingsPage';
+import { SellerAlertsPage } from '../views/seller/SellerAlertsPage';
 import { ChatPage } from '../views/chat/ChatPage';
 import { CartPage } from '../views/cart/CartPage';
 import { CheckoutPage } from '../views/checkout/CheckoutPage';
@@ -82,6 +97,7 @@ export function App() {
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
         <Route path="/reset-password" element={<ResetPasswordPage />} />
         <Route path="/auth/callback" element={<GoogleCallbackPage />} />
+        <Route path="/403" element={<ForbiddenPage />} />
 
         <Route element={<ProtectedRoute roles={['ADMIN']} />}>
           <Route path="/admin" element={<AdminShell variant="admin" />}>
@@ -95,9 +111,12 @@ export function App() {
             <Route path="products/:id" element={<AdminProductDetailPage />} />
             <Route path="return-requests" element={<AdminReturnRequestListPage />} />
             <Route path="return-requests/:id" element={<AdminReturnRequestDetailPage />} />
+            <Route path="orders" element={<AdminOrderListPage />} />
+            <Route path="orders/:orderId" element={<AdminOrderDetailPage />} />
             <Route path="vouchers" element={<AdminSystemVoucherListPage />} />
             <Route path="vouchers/new" element={<AdminSystemVoucherFormPage />} />
             <Route path="vouchers/:id/edit" element={<AdminSystemVoucherFormPage />} />
+            <Route path="vouchers/:id" element={<AdminSystemVoucherDetailPage />} />
             <Route path="accounts" element={<AdminAccountListPage />} />
             <Route path="accounts/:id" element={<AdminAccountDetailPage />} />
             <Route path="insights" element={<AdminCustomerInsightsPage />} />
@@ -107,6 +126,8 @@ export function App() {
         <Route element={<ProtectedRoute roles={['SELLER']} />}>
           <Route path="/seller" element={<AdminShell variant="seller" />}>
             <Route index element={<SellerHomePage />} />
+            <Route path="shop-settings" element={<SellerShopSettingsPage />} />
+            <Route path="alerts" element={<SellerAlertsPage />} />
             <Route path="products" element={<SellerProductListPage />} />
             <Route path="products/new" element={<SellerProductFormPage />} />
             <Route path="products/:id/inventory" element={<SellerInventoryDetailPage />} />
@@ -131,6 +152,9 @@ export function App() {
           <Route path="products/:id" element={<ProductDetailPage />} />
           <Route path="shops/:shopKey" element={<ShopPublicPage />} />
           <Route path="categories" element={<CategoriesPage />} />
+          <Route path="help" element={<HelpPage />} />
+          <Route path="faq" element={<FaqPage />} />
+          <Route path="terms" element={<TermsPage />} />
           <Route path="health" element={<HealthPage />} />
 
           <Route element={<ProtectedRoute />}>
@@ -146,10 +170,15 @@ export function App() {
               <Route path="profile" element={<ProfilePage />} />
               <Route path="orders" element={<OrdersPage />} />
               <Route path="orders/:orderId" element={<OrderDetailPage />} />
+              <Route path="returns" element={<BuyerReturnsPage />} />
+              <Route path="returns/:returnId" element={<BuyerReturnDetailPage />} />
+              <Route path="vouchers" element={<BuyerVouchersPage />} />
               <Route path="notifications" element={<NotificationsPage />} />
               <Route path="wishlist" element={<WishlistPage />} />
               <Route path="following" element={<FollowingPage />} />
               <Route path="addresses" element={<AddressesPage />} />
+              <Route path="become-seller" element={<BecomeSellerPage />} />
+              <Route path="security" element={<AccountSecurityPage />} />
               <Route path="change-password" element={<ChangePasswordPage />} />
             </Route>
             <Route path="wishlist" element={<Navigate to="/account/wishlist" replace />} />
@@ -158,9 +187,11 @@ export function App() {
             <Route path="orders" element={<Navigate to="/account/orders" replace />} />
             <Route path="orders/:orderId" element={<OrdersRedirect />} />
           </Route>
+
+          <Route path="*" element={<NotFoundPage />} />
         </Route>
 
-        <Route path="*" element={<Navigate to="/" replace />} />
+        <Route path="*" element={<NotFoundPage />} />
       </Routes>
     </>
   );

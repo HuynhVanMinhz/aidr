@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ThemeToggle } from '../ThemeToggle';
 import { useAuth } from '../../hooks/useAuth';
@@ -6,7 +6,12 @@ import { useCart } from '../../hooks/useCart';
 import { useCategories } from '../../hooks/useCatalog';
 import { useUnreadNotifications } from '../../hooks/useNotifications';
 import { useWishlistMembership } from '../../hooks/useWishlist';
+import * as voucherApi from '../../services/voucherApi';
 import type { CategoryTreeNode } from '../../types/catalog';
+import { formatMoney } from '../../utils/formatCatalog';
+
+const DEFAULT_TOPBAR =
+  'Shop genuine electronics — secure checkout and fast delivery';
 
 function flattenCategories(nodes: CategoryTreeNode[]): CategoryTreeNode[] {
   const result: CategoryTreeNode[] = [];
@@ -15,6 +20,19 @@ function flattenCategories(nodes: CategoryTreeNode[]): CategoryTreeNode[] {
     if (node.children?.length) result.push(...flattenCategories(node.children));
   }
   return result;
+}
+
+function formatVoucherPromo(item: {
+  code: string;
+  name: string;
+  discountType: string;
+  discountValue: number;
+}): string {
+  const discount =
+    item.discountType.toLowerCase() === 'percent'
+      ? `${item.discountValue}% off`
+      : `${formatMoney(item.discountValue)} off`;
+  return `${item.name}: ${discount} with code ${item.code}`;
 }
 
 export function StoreHeader() {
@@ -26,6 +44,7 @@ export function StoreHeader() {
   const { categories } = useCategories();
   const [q, setQ] = useState('');
   const [categoriesOpen, setCategoriesOpen] = useState(false);
+  const [topbarText, setTopbarText] = useState(DEFAULT_TOPBAR);
   const isAdmin = roles.some((r) => r.toUpperCase() === 'ADMIN');
   const isSeller = roles.some((r) => r.toUpperCase() === 'SELLER');
   const cartTo = isAuthenticated ? '/cart' : `/login?returnUrl=${encodeURIComponent('/cart')}`;
@@ -35,6 +54,32 @@ export function StoreHeader() {
   const notificationsTo = isAuthenticated
     ? '/account/notifications'
     : `/login?returnUrl=${encodeURIComponent('/account/notifications')}`;
+
+  useEffect(() => {
+    if (!isAuthenticated) {
+      setTopbarText(DEFAULT_TOPBAR);
+      return;
+    }
+
+    let cancelled = false;
+    void voucherApi
+      .listVouchers({ scope: 'System', page: 1, pageSize: 5 })
+      .then((res) => {
+        if (cancelled || !res.success || !res.data?.items?.length) {
+          if (!cancelled) setTopbarText(DEFAULT_TOPBAR);
+          return;
+        }
+        const best = res.data.items.find((v) => v.isEligible) ?? res.data.items[0];
+        setTopbarText(formatVoucherPromo(best));
+      })
+      .catch(() => {
+        if (!cancelled) setTopbarText(DEFAULT_TOPBAR);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isAuthenticated]);
 
   function handleSearch(e: FormEvent) {
     e.preventDefault();
@@ -52,7 +97,7 @@ export function StoreHeader() {
             <div className="col-lg-12">
               <div className="topbar-content-box">
                 <div className="topbar-content-info">
-                  <p>Get a Flat 10% Off on All Products — Limited Time Only</p>
+                  <p>{topbarText}</p>
                 </div>
                 <div className="topbar-menu">
                   <ul>

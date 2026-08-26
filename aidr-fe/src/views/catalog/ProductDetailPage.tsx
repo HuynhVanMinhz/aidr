@@ -16,8 +16,9 @@ import {
   parseSpecsJson,
   parseTagsJson,
 } from '../../utils/formatCatalog';
+import { PRODUCT_IMAGE_PLACEHOLDER, resolveProductImageUrl } from '../../utils/catalogImage';
 
-const PLACEHOLDER = '/theme/images/product-image-1.png';
+const PLACEHOLDER = PRODUCT_IMAGE_PLACEHOLDER;
 const MAX_QTY = 99;
 
 function StarRow({ rating, showValue }: { rating: number; showValue?: boolean }) {
@@ -74,7 +75,12 @@ export function ProductDetailPage() {
 
   const images = useMemo(() => {
     if (!product) return [];
-    if (product.images.length > 0) return product.images;
+    if (product.images.length > 0) {
+      return product.images.map((img, index) => ({
+        ...img,
+        imageUrl: resolveProductImageUrl(img.imageUrl, index),
+      }));
+    }
     return [{ productImageId: 'placeholder', imageUrl: PLACEHOLDER, sortOrder: 0, isPrimary: true }];
   }, [product]);
 

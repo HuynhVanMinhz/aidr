@@ -1,5 +1,6 @@
 import type { ApiResult } from '../types/auth';
 import type { ShopProductsQuery, ShopPublicDetail, ShopSellerRating } from '../types/shop';
+import type { SellerShop, SellerShopApiResult, UpdateSellerShopPayload } from '../types/sellerShop';
 import { apiClient } from './apiClient';
 
 function toParams(query: ShopProductsQuery = {}): Record<string, string | number> {
@@ -29,4 +30,21 @@ export async function getShopRating(shopKey: string) {
     `/shops/${encodeURIComponent(shopKey)}/rating`,
   );
   return data;
+}
+
+export async function getMyShop() {
+  const { data } = await apiClient.get<SellerShopApiResult>('/seller/shop');
+  return data;
+}
+
+export async function updateMyShop(payload: UpdateSellerShopPayload) {
+  const { data } = await apiClient.put<SellerShopApiResult>('/seller/shop', payload);
+  return data;
+}
+
+export function requireSellerShop(result: SellerShopApiResult): SellerShop {
+  if (!result.success || !result.data) {
+    throw new Error(result.message || 'Unable to load shop settings.');
+  }
+  return result.data;
 }
