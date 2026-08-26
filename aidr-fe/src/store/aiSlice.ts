@@ -1,10 +1,19 @@
 import { createAsyncThunk, createSlice, type PayloadAction } from '@reduxjs/toolkit';
 import * as aiApi from '../services/aiApi';
-import type { CompareProductsResult, CompareSelectionItem, NlFilterResult } from '../types/ai';
+import type {
+  AiChatResult,
+  AiConversationSummary,
+  AiMessage,
+  AiSuggestedProduct,
+  CompareProductsResult,
+  CompareSelectionItem,
+  NlFilterResult,
+} from '../types/ai';
 import { getApiErrorMessage } from '../utils/apiError';
 
 export const COMPARE_MIN = 2;
 export const COMPARE_MAX = 5;
+export const AI_CHAT_MAX_LENGTH = 2000;
 const COMPARE_STORAGE_KEY = 'aidr.compare.selection';
 
 export type AiState = {
@@ -15,6 +24,19 @@ export type AiState = {
   compareLoading: boolean;
   compareError: string | null;
   compareResult: CompareProductsResult | null;
+  conversations: AiConversationSummary[];
+  conversationsPage: number;
+  conversationsTotal: number;
+  conversationsLoading: boolean;
+  conversationsError: string | null;
+  activeConversationId: string | null;
+  activeTitle: string | null;
+  messages: AiMessage[];
+  messagesLoading: boolean;
+  messagesError: string | null;
+  chatSending: boolean;
+  chatError: string | null;
+  lastChatSource: string | null;
 };
 
 type AiRoot = { ai: AiState };
@@ -51,6 +73,32 @@ function requireData<T>(
   return result.data;
 }
 
+function upsertConversationSummary(
+  list: AiConversationSummary[],
+  result: AiChatResult,
+): AiConversationSummary[] {
+  const preview = result.assistantMessage.content;
+  const next: AiConversationSummary = {
+    conversationId: result.conversationId,
+    channel: 'ShoppingAssistant',
+    title: result.title ?? null,
+    createdAt: result.userMessage.createdAt,
+    updatedAt: result.assistantMessage.createdAt,
+    lastMessagePreview: preview.length > 120 ? `${preview.slice(0, 120)}…` : preview,
+    messageCount: 0,
+  };
+
+  const without = list.filter((c) => c.conversationId !== result.conversationId);
+  const existing = list.find((c) => c.conversationId === result.conversationId);
+  if (existing) {
+    next.createdAt = existing.createdAt;
+    next.messageCount = existing.messageCount + 2;
+  } else {
+    next.messageCount = 2;
+  }
+  return [next, ...without];
+}
+
 const initialState: AiState = {
   nlLoading: false,
   nlError: null,
@@ -59,6 +107,19 @@ const initialState: AiState = {
   compareLoading: false,
   compareError: null,
   compareResult: null,
+  conversations: [],
+  conversationsPage: 1,
+  conversationsTotal: 0,
+  conversationsLoading: false,
+  conversationsError: null,
+  activeConversationId: null,
+  activeTitle: null,
+  messages: [],
+  messagesLoading: false,
+  messagesError: null,
+  chatSending: false,
+  chatError: null,
+  lastChatSource: null,
 };
 
 export const parseNlFilter = createAsyncThunk(
@@ -81,6 +142,50 @@ export const runCompare = createAsyncThunk(
       return requireData(result, 'Unable to compare products.');
     } catch (error) {
       return rejectWithValue(getApiErrorMessage(error, 'Unable to compare products.'));
+    }
+  },
+);
+
+export const loadAiConversations = createAsyncThunk(
+  'ai/loadConversations',
+  async (args: { page?: number; pageSize?: number } | undefined, { rejectWithValue }) => {
+    try {
+      const page = args?.page ?? 1;
+      const pageSize = args?.pageSize ?? 20;
+      const result = await aiApi.listAiConversations(page, pageSize);
+      const data = requireData(result, 'Unable to load conversations.');
+      return { page, data };
+    } catch (error) {
+      return rejectWithValue(getApiErrorMessage(error, 'Unable to load conversations.'));
+    }
+  },
+);
+
+export const loadAiConversation = createAsyncThunk(
+  'ai/loadConversation',
+  async (conversationId: string, { rejectWithValue }) => {
+    try {
+      const result = await aiApi.getAiConversation(conversationId);
+      return requireData(result, 'Unable to open conversation.');
+    } catch (error) {
+      return rejectWithValue(getApiErrorMessage(error, 'Unable to open conversation.'));
+    }
+  },
+);
+
+export const sendAiChat = createAsyncThunk(
+  'ai/sendChat',
+  async (args: { message: string; conversationId?: string | null }, { rejectWithValue }) => {
+    try {
+      const result = await aiApi.sendAiChat({
+        message: args.message,
+        conversationId: args.conversationId ?? null,
+      });
+      return requireData(result, 'Unable to send message to the shopping assistant.');
+    } catch (error) {
+      return rejectWithValue(
+        getApiErrorMessage(error, 'Unable to send message to the shopping assistant.'),
+      );
     }
   },
 );
@@ -121,6 +226,26 @@ export const aiSlice = createSlice({
       state.compareResult = null;
       state.compareError = null;
     },
+    startNewAiConversation(state) {
+      state.activeConversationId = null;
+      state.activeTitle = null;
+      state.messages = [];
+      state.messagesError = null;
+      state.chatError = null;
+      state.lastChatSource = null;
+    },
+    clearAiAssistantState(state) {
+      state.conversations = [];
+      state.conversationsPage = 1;
+      state.conversationsTotal = 0;
+      state.conversationsError = null;
+      state.activeConversationId = null;
+      state.activeTitle = null;
+      state.messages = [];
+      state.messagesError = null;
+      state.chatError = null;
+      state.lastChatSource = null;
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -151,6 +276,65 @@ export const aiSlice = createSlice({
         state.compareLoading = false;
         state.compareError =
           (action.payload as string) || action.error.message || 'Unable to compare products.';
+      })
+      .addCase(loadAiConversations.pending, (state) => {
+        state.conversationsLoading = true;
+        state.conversationsError = null;
+      })
+      .addCase(loadAiConversations.fulfilled, (state, action) => {
+        state.conversationsLoading = false;
+        state.conversations = action.payload.data.items;
+        state.conversationsPage = action.payload.data.page;
+        state.conversationsTotal = action.payload.data.totalCount;
+      })
+      .addCase(loadAiConversations.rejected, (state, action) => {
+        state.conversationsLoading = false;
+        state.conversationsError =
+          (action.payload as string) || action.error.message || 'Unable to load conversations.';
+      })
+      .addCase(loadAiConversation.pending, (state) => {
+        state.messagesLoading = true;
+        state.messagesError = null;
+      })
+      .addCase(loadAiConversation.fulfilled, (state, action) => {
+        state.messagesLoading = false;
+        state.activeConversationId = action.payload.conversationId;
+        state.activeTitle = action.payload.title ?? null;
+        state.messages = action.payload.messages.map((m) => ({
+          ...m,
+          suggestedProducts: undefined,
+        }));
+        state.chatError = null;
+      })
+      .addCase(loadAiConversation.rejected, (state, action) => {
+        state.messagesLoading = false;
+        state.messagesError =
+          (action.payload as string) || action.error.message || 'Unable to open conversation.';
+      })
+      .addCase(sendAiChat.pending, (state) => {
+        state.chatSending = true;
+        state.chatError = null;
+      })
+      .addCase(sendAiChat.fulfilled, (state, action) => {
+        state.chatSending = false;
+        const result = action.payload;
+        const products: AiSuggestedProduct[] = result.suggestedProducts ?? [];
+        const assistant: AiMessage = {
+          ...result.assistantMessage,
+          suggestedProducts: products,
+        };
+        state.activeConversationId = result.conversationId;
+        state.activeTitle = result.title ?? state.activeTitle;
+        state.messages = [...state.messages, result.userMessage, assistant];
+        state.lastChatSource = result.source;
+        state.conversations = upsertConversationSummary(state.conversations, result);
+      })
+      .addCase(sendAiChat.rejected, (state, action) => {
+        state.chatSending = false;
+        state.chatError =
+          (action.payload as string) ||
+          action.error.message ||
+          'Unable to send message to the shopping assistant.';
       });
   },
 });
@@ -161,6 +345,8 @@ export const {
   removeCompareSelection,
   clearCompareSelection,
   clearCompareResult,
+  startNewAiConversation,
+  clearAiAssistantState,
 } = aiSlice.actions;
 
 export const selectNlLoading = (state: AiRoot) => state.ai.nlLoading;
@@ -173,3 +359,15 @@ export const selectIsInCompare = (productId: string) => (state: AiRoot) =>
 export const selectCompareLoading = (state: AiRoot) => state.ai.compareLoading;
 export const selectCompareError = (state: AiRoot) => state.ai.compareError;
 export const selectCompareResult = (state: AiRoot) => state.ai.compareResult;
+
+export const selectAiConversations = (state: AiRoot) => state.ai.conversations;
+export const selectAiConversationsLoading = (state: AiRoot) => state.ai.conversationsLoading;
+export const selectAiConversationsError = (state: AiRoot) => state.ai.conversationsError;
+export const selectActiveAiConversationId = (state: AiRoot) => state.ai.activeConversationId;
+export const selectActiveAiTitle = (state: AiRoot) => state.ai.activeTitle;
+export const selectAiMessages = (state: AiRoot) => state.ai.messages;
+export const selectAiMessagesLoading = (state: AiRoot) => state.ai.messagesLoading;
+export const selectAiMessagesError = (state: AiRoot) => state.ai.messagesError;
+export const selectAiChatSending = (state: AiRoot) => state.ai.chatSending;
+export const selectAiChatError = (state: AiRoot) => state.ai.chatError;
+export const selectAiLastChatSource = (state: AiRoot) => state.ai.lastChatSource;
