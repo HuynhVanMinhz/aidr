@@ -6,9 +6,12 @@ import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { startNotificationHub, stopNotificationHub } from '../realtime/signalr';
 import type { NotificationItem } from '../types/notification';
 
+const RETRY_MS = 4000;
+
 /**
  * Keeps SignalR NotificationHub connected while the user is authenticated.
  * Incoming events prepend the inbox and bump unread count.
+ * Retries when the API/proxy is temporarily unavailable (ECONNREFUSED).
  */
 export function useNotificationHub() {
   const dispatch = useAppDispatch();
@@ -24,8 +27,10 @@ export function useNotificationHub() {
     }
 
     let cancelled = false;
+    let retryTimer: ReturnType<typeof setTimeout> | null = null;
 
-    void (async () => {
+    const connect = async () => {
+      if (cancelled) return;
       try {
         await startNotificationHub(
           () => tokenRef.current,
@@ -38,12 +43,20 @@ export function useNotificationHub() {
           },
         );
       } catch {
-        // Hub is best-effort; REST inbox still works offline.
+        // Hub is best-effort; REST inbox still works. Retry when API comes back.
+        if (!cancelled) {
+          retryTimer = setTimeout(() => {
+            void connect();
+          }, RETRY_MS);
+        }
       }
-    })();
+    };
+
+    void connect();
 
     return () => {
       cancelled = true;
+      if (retryTimer) clearTimeout(retryTimer);
       void stopNotificationHub();
     };
   }, [accessToken, dispatch, isAuthenticated]);

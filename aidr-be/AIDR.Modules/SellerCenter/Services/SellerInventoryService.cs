@@ -1,3 +1,4 @@
+using AIDR.Modules.Engagement.Abstractions;
 using AIDR.Modules.SellerCenter.Abstractions;
 using AIDR.Shared.Caching;
 using AIDR.Shared.Constants;
@@ -10,15 +11,18 @@ public sealed class SellerInventoryService : ISellerInventoryService
 {
     private readonly ISellerProductRepository _products;
     private readonly ISellerInventoryRepository _inventory;
+    private readonly ILowStockNotifier _lowStockNotifier;
     private readonly ICacheService _cache;
 
     public SellerInventoryService(
         ISellerProductRepository products,
         ISellerInventoryRepository inventory,
+        ILowStockNotifier lowStockNotifier,
         ICacheService cache)
     {
         _products = products;
         _inventory = inventory;
+        _lowStockNotifier = lowStockNotifier;
         _cache = cache;
     }
 
@@ -79,6 +83,13 @@ public sealed class SellerInventoryService : ISellerInventoryService
         if (request.LowStockThreshold < 0 || request.LowStockThreshold > SellerInventoryConstants.MaxLowStockThreshold)
             throw new AppException($"Low stock threshold must be between 0 and {SellerInventoryConstants.MaxLowStockThreshold}.");
 
+        var before = await _inventory.GetDetailAsync(
+            shop.ShopId,
+            productId,
+            SellerInventoryConstants.DefaultTransactionLimit,
+            cancellationToken)
+            ?? throw new NotFoundException("Product not found.");
+
         var result = await _inventory.UpdateLowStockThresholdAsync(
             shop.ShopId,
             productId,
@@ -86,6 +97,7 @@ public sealed class SellerInventoryService : ISellerInventoryService
             cancellationToken);
 
         await InvalidateProductCacheAsync(productId, cancellationToken);
+        await _lowStockNotifier.TryNotifyIfBecameLowAsync(productId, before.IsLowStock, cancellationToken);
         return result;
     }
 
@@ -104,6 +116,13 @@ public sealed class SellerInventoryService : ISellerInventoryService
 
         var note = OptionalBounded(request.Note, "Note", SellerInventoryConstants.MaxTransactionNoteLength);
 
+        var before = await _inventory.GetDetailAsync(
+            shop.ShopId,
+            productId,
+            SellerInventoryConstants.DefaultTransactionLimit,
+            cancellationToken)
+            ?? throw new NotFoundException("Product not found.");
+
         var result = await _inventory.AdjustAsync(
             shop.ShopId,
             productId,
@@ -117,6 +136,7 @@ public sealed class SellerInventoryService : ISellerInventoryService
             cancellationToken);
 
         await InvalidateProductCacheAsync(productId, cancellationToken);
+        await _lowStockNotifier.TryNotifyIfBecameLowAsync(productId, before.IsLowStock, cancellationToken);
         return result;
     }
 
