@@ -336,6 +336,56 @@ html[data-theme='dark'] .store-header-badge {
   cursor: pointer;
 }
 
+/* Product detail wishlist / compare — match theme bordered squares (anchors → buttons). */
+.product-single-action ul li .product-card-cart-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--divider-color, #e5e5e5);
+  border-radius: 5px;
+  padding: 12px 20px;
+  background: transparent;
+  transition: all 0.4s ease-in-out;
+}
+
+.product-single-action ul li .product-card-cart-btn:hover:not(:disabled) {
+  background: var(--primary-color, #16181d);
+}
+
+.product-single-action ul li .product-card-cart-btn img {
+  width: 100%;
+  max-width: 24px;
+  transition: all 0.4s ease-in-out;
+}
+
+.product-single-action ul li .product-card-cart-btn:hover:not(:disabled) img {
+  filter: brightness(0) invert(1);
+}
+
+.product-single-action ul li .product-card-cart-btn.is-wishlisted img {
+  filter: brightness(0) saturate(100%) invert(27%) sepia(97%) saturate(1800%) hue-rotate(340deg)
+    brightness(95%) contrast(95%);
+}
+
+.product-single-action ul li .product-card-cart-btn.is-wishlisted:hover:not(:disabled) img {
+  filter: brightness(0) invert(1);
+}
+
+.product-single-action ul li .product-card-cart-btn.is-compare-selected {
+  outline: 2px solid var(--primary-color, #16181d);
+  outline-offset: 2px;
+}
+
+@media (max-width: 767.98px) {
+  .product-single-action ul li .product-card-cart-btn {
+    padding: 10px 14px;
+  }
+
+  .product-single-action ul li .product-card-cart-btn img {
+    max-width: 20px;
+  }
+}
+
 /* Product card hover actions — match theme circular white buttons (anchors → buttons). */
 .product-item-action ul li .product-card-cart-btn {
   height: 50px;

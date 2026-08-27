@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { useShoppingAssistant } from '../../hooks/useAi';
 import { useToast } from '../../hooks/useToast';
@@ -59,9 +59,12 @@ function SuggestedProducts({
 /** Floating shopping-assistant chatbot — available on all storefront pages. */
 export function ShoppingAssistantWidget() {
   const navigate = useNavigate();
+  const location = useLocation();
   const toast = useToast();
   const { isAuthenticated } = useAuth();
   const compareCount = useAppSelector(selectCompareSelection).length;
+  /** Quieter FAB on PDP so it does not compete with reviews / purchase CTAs. */
+  const quietFab = /^\/products\/[^/]+\/?$/.test(location.pathname);
 
   const [open, setOpen] = useState(() => {
     try {
@@ -391,12 +394,12 @@ export function ShoppingAssistantWidget() {
 
       <button
         type="button"
-        className={`aidr-assistant-widget__fab${open ? ' is-open' : ''}`}
+        className={`aidr-assistant-widget__fab${open ? ' is-open' : ''}${quietFab && !open ? ' is-quiet' : ''}`}
         onClick={handleToggle}
         aria-expanded={open}
         aria-label={open ? 'Close shopping assistant' : 'Ask AI — shopping assistant'}
       >
-        {open ? '×' : '✨ Ask AI'}
+        {open ? '×' : quietFab ? '✨' : '✨ Ask AI'}
       </button>
     </div>
   );

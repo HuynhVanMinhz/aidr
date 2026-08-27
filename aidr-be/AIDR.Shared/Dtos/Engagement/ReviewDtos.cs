@@ -47,6 +47,13 @@ public sealed class ProductReviewListResult
     public Guid ProductId { get; init; }
     public decimal AvgRating { get; init; }
     public int ReviewCount { get; init; }
+
+    /// <summary>
+    /// Counts of visible reviews for stars 1–5 (index 0 = 1★ … index 4 = 5★).
+    /// Unfiltered by the rating query so the breakdown stays stable while filtering.
+    /// </summary>
+    public IReadOnlyList<int> RatingBreakdown { get; init; } = new[] { 0, 0, 0, 0, 0 };
+
     public IReadOnlyList<ProductReviewDto> Items { get; init; } = Array.Empty<ProductReviewDto>();
     public int Page { get; init; }
     public int PageSize { get; init; }
