@@ -302,42 +302,50 @@ public sealed class AiNlFilterService : IAiNlFilterService
 
         var lower = text.ToLowerInvariant();
 
-        // Exact / contains slug or name.
+        // Prefer longest explicit name/slug mention in the query (e.g. "Apple iPhone", "Samsung Galaxy").
         foreach (var c in categories.OrderByDescending(c => c.Name.Length))
         {
-            if (lower.Contains(c.Name.ToLowerInvariant()) || lower.Contains(c.Slug.ToLowerInvariant()))
+            var name = c.Name.ToLowerInvariant();
+            var slug = c.Slug.ToLowerInvariant();
+            if (name.Length >= 3 && lower.Contains(name, StringComparison.Ordinal))
+                return c;
+            if (slug.Length >= 3 && lower.Contains(slug, StringComparison.Ordinal))
                 return c;
         }
 
-        // Synonyms for common storefront roots.
+        // Synonyms → root category slug ONLY (exact). Do not use Slug.Contains("dien-thoai")
+        // or child categories like "dien-thoai-apple" steal generic "phone" queries.
         var synonyms = new (string Needle, string SlugHint)[]
         {
             ("điện thoại", "dien-thoai"),
             ("dien thoai", "dien-thoai"),
             ("smartphone", "dien-thoai"),
             ("phone", "dien-thoai"),
+            ("iphone", "dien-thoai"),
             ("laptop", "laptop"),
             ("máy tính", "laptop"),
             ("may tinh", "laptop"),
             ("macbook", "laptop"),
+            ("tablet", "tablet"),
             ("phụ kiện", "phu-kien"),
             ("phu kien", "phu-kien"),
             ("accessory", "phu-kien"),
-            ("tai nghe", "phu-kien"),
-            ("watch", "phu-kien"),
-            ("đồng hồ", "phu-kien")
+            ("tai nghe", "am-thanh"),
+            ("headphone", "am-thanh"),
+            ("watch", "deo-thong-minh"),
+            ("đồng hồ", "deo-thong-minh"),
+            ("dong ho", "deo-thong-minh")
         };
 
         foreach (var (needle, slugHint) in synonyms)
         {
             if (!lower.Contains(needle, StringComparison.Ordinal))
                 continue;
-            var hit = categories.FirstOrDefault(c =>
-                c.Slug.Equals(slugHint, StringComparison.OrdinalIgnoreCase)
-                || c.Slug.Contains(slugHint, StringComparison.OrdinalIgnoreCase)
-                || c.Name.Contains(needle, StringComparison.OrdinalIgnoreCase));
-            if (hit is not null)
-                return hit;
+
+            var exact = categories.FirstOrDefault(c =>
+                c.Slug.Equals(slugHint, StringComparison.OrdinalIgnoreCase));
+            if (exact is not null)
+                return exact;
         }
 
         return null;

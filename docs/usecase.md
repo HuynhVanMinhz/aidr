@@ -68,7 +68,7 @@
 | UC-52 | Update Return Request Status | **Actor:** Admin. Receiving → Refunded → Closed; hoàn tiền buyer trước rồi `RefundDebit` wallet seller (BR-R04); ghi history. **Business:** Theo dõi pipeline hoàn. | Done | P1 |
 | UC-53 | View Recommended Products | **Actor:** Buyer. SP gợi ý từ hành vi / hybrid strategy. **Business:** Tăng AOV & discovery. | Done | P2 |
 | UC-54 | View Similar Products | **Actor:** Buyer. SP tương tự theo category/specs/content. **Business:** Cross-sell trên trang detail. | Done | P2 |
-| UC-56 | Use AI Shopping Assistant | **Actor:** Buyer. Chatbot Ollama tư vấn SP / FAQ mua sắm. **Business:** Hỗ trợ 24/7, giảm tải CSKH. | Done | P2 |
+| UC-56 | Use AI Shopping Assistant | **Actor:** Buyer. Chatbot Groq tư vấn SP / FAQ mua sắm (intent + slot memory + NL filter retrieve). **Business:** Hỗ trợ 24/7, giảm tải CSKH. | Done | P2 |
 | UC-57 | View Chat List | **Actor:** Buyer/Seller. Danh sách thread buyer↔shop. **Business:** Kênh thương lượng / hỗ trợ trước-sau bán. | Done | P1 |
 | UC-58 | Send Message | **Actor:** Buyer/Seller. Gửi tin nhắn realtime SignalR; optional attachment. **Business:** Tăng trust & chốt sale. | Done | P1 |
 | UC-59 | View Product Reviews | **Actor:** Guest/Buyer. List review + rating; có thể hiện sentiment AI. **Business:** Social proof. | Done | P1 |

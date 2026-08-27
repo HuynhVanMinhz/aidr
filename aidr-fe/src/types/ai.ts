@@ -93,9 +93,56 @@ export type CompareSelectionItem = {
   currency: string;
 };
 
+export type AiChatContext = {
+  path?: string | null;
+  productId?: string | null;
+  compareProductIds?: string[] | null;
+};
+
+export type AiChatSlots = {
+  q?: string | null;
+  categoryId?: number | null;
+  categoryName?: string | null;
+  brand?: string | null;
+  minPrice?: number | null;
+  maxPrice?: number | null;
+  minRating?: number | null;
+  sort?: ProductSort | string | null;
+};
+
+export type AiChatActionType = 'open_catalog' | 'open_compare' | 'open_product' | 'none' | string;
+
+export type AiChatAction = {
+  type: AiChatActionType;
+  label?: string | null;
+  productIds?: string[] | null;
+};
+
+export type AiQuickReply = {
+  /** category | budget | useCase | priority | skip */
+  key: string;
+  label: string;
+  /** Echoed back as `quickReplyValue` so the answer bypasses NLU. */
+  value: string;
+};
+
+export type AiConsultStage = 'collecting' | 'ready' | 'presented' | string;
+
+export type AiConsultState = {
+  stage: AiConsultStage;
+  askedCount: number;
+  maxQuestions: number;
+  pendingQuestion?: string | null;
+};
+
+/** Sent by the "skip questions" button to end the consultation round. */
+export const AI_SKIP_QUESTIONS_VALUE = 'skip=all';
+
 export type AiChatRequest = {
   conversationId?: string | null;
   message: string;
+  context?: AiChatContext | null;
+  quickReplyValue?: string | null;
 };
 
 export type AiMessage = {
@@ -104,7 +151,7 @@ export type AiMessage = {
   content: string;
   metaJson?: string | null;
   createdAt: string;
-  /** Populated from the latest chat turn; may be empty for historical messages. */
+  /** Populated from chat turn or hydrated conversation detail. */
   suggestedProducts?: AiSuggestedProduct[];
 };
 
@@ -124,6 +171,9 @@ export type AiSuggestedProduct = {
   categoryName: string;
   shopId: string;
   shopName: string;
+  reason?: string | null;
+  /** Best match | Cheaper option | Step up — set on guided-consultation results. */
+  badge?: string | null;
 };
 
 export type AiChatResult = {
@@ -133,6 +183,11 @@ export type AiChatResult = {
   assistantMessage: AiMessage;
   suggestedProducts: AiSuggestedProduct[];
   source: AiSource;
+  intent?: string | null;
+  slots?: AiChatSlots | null;
+  actions?: AiChatAction[] | null;
+  quickReplies?: AiQuickReply[] | null;
+  consult?: AiConsultState | null;
 };
 
 export type AiConversationSummary = {
