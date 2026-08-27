@@ -197,6 +197,22 @@
   line-height: 1;
 }
 
+/* Product detail: icon-only FAB to reduce competition with page CTAs */
+.aidr-assistant-widget__fab.is-quiet {
+  width: 3.25rem;
+  min-width: 3.25rem;
+  height: 3.25rem;
+  padding: 0;
+  border-radius: 50%;
+  font-size: 1.15rem;
+  box-shadow: 0 6px 18px rgba(22, 24, 29, 0.18);
+  opacity: 0.88;
+}
+
+.aidr-assistant-widget__fab.is-quiet:hover {
+  opacity: 1;
+}
+
 .aidr-assistant-widget__panel {
   width: min(100vw - 1.5rem, 24.5rem);
   height: min(72vh, 34rem);
