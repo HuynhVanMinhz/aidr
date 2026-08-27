@@ -1,7 +1,12 @@
 import { createAsyncThunk, createSlice, type PayloadAction } from '@reduxjs/toolkit';
 import * as aiApi from '../services/aiApi';
 import type {
+  AiChatAction,
+  AiChatContext,
   AiChatResult,
+  AiChatSlots,
+  AiConsultState,
+  AiQuickReply,
   AiConversationSummary,
   AiMessage,
   AiSuggestedProduct,
@@ -14,6 +19,8 @@ import { getApiErrorMessage } from '../utils/apiError';
 export const COMPARE_MIN = 2;
 export const COMPARE_MAX = 5;
 export const AI_CHAT_MAX_LENGTH = 2000;
+/** Mirrors AiConstants.MaxConsultQuestions - MetaJson stores progress without the cap. */
+export const AI_MAX_CONSULT_QUESTIONS = 3;
 const COMPARE_STORAGE_KEY = 'aidr.compare.selection';
 
 export type AiState = {
@@ -37,6 +44,11 @@ export type AiState = {
   chatSending: boolean;
   chatError: string | null;
   lastChatSource: string | null;
+  lastIntent: string | null;
+  lastSlots: AiChatSlots | null;
+  lastActions: AiChatAction[];
+  lastQuickReplies: AiQuickReply[];
+  lastConsult: AiConsultState | null;
 };
 
 type AiRoot = { ai: AiState };
@@ -120,6 +132,11 @@ const initialState: AiState = {
   chatSending: false,
   chatError: null,
   lastChatSource: null,
+  lastIntent: null,
+  lastSlots: null,
+  lastActions: [],
+  lastQuickReplies: [],
+  lastConsult: null,
 };
 
 export const parseNlFilter = createAsyncThunk(
@@ -175,11 +192,21 @@ export const loadAiConversation = createAsyncThunk(
 
 export const sendAiChat = createAsyncThunk(
   'ai/sendChat',
-  async (args: { message: string; conversationId?: string | null }, { rejectWithValue }) => {
+  async (
+    args: {
+      message: string;
+      conversationId?: string | null;
+      context?: AiChatContext | null;
+      quickReplyValue?: string | null;
+    },
+    { rejectWithValue },
+  ) => {
     try {
       const result = await aiApi.sendAiChat({
         message: args.message,
         conversationId: args.conversationId ?? null,
+        context: args.context ?? null,
+        quickReplyValue: args.quickReplyValue ?? null,
       });
       return requireData(result, 'Unable to send message to the shopping assistant.');
     } catch (error) {
@@ -233,6 +260,11 @@ export const aiSlice = createSlice({
       state.messagesError = null;
       state.chatError = null;
       state.lastChatSource = null;
+      state.lastIntent = null;
+      state.lastSlots = null;
+      state.lastActions = [];
+      state.lastQuickReplies = [];
+      state.lastConsult = null;
     },
     clearAiAssistantState(state) {
       state.conversations = [];
@@ -245,6 +277,17 @@ export const aiSlice = createSlice({
       state.messagesError = null;
       state.chatError = null;
       state.lastChatSource = null;
+      state.lastIntent = null;
+      state.lastSlots = null;
+      state.lastActions = [];
+      state.lastQuickReplies = [];
+      state.lastConsult = null;
+    },
+    clearAiChatSlots(state) {
+      state.lastSlots = null;
+      state.lastActions = [];
+      state.lastQuickReplies = [];
+      state.lastConsult = null;
     },
   },
   extraReducers: (builder) => {
@@ -302,9 +345,44 @@ export const aiSlice = createSlice({
         state.activeTitle = action.payload.title ?? null;
         state.messages = action.payload.messages.map((m) => ({
           ...m,
-          suggestedProducts: undefined,
+          suggestedProducts: m.suggestedProducts ?? undefined,
         }));
         state.chatError = null;
+
+        const lastAssistant = [...action.payload.messages].reverse().find((m) => m.role === 'assistant');
+        if (lastAssistant?.metaJson) {
+          try {
+            const meta = JSON.parse(lastAssistant.metaJson) as {
+              intent?: string;
+              slots?: AiChatSlots;
+              actions?: AiChatAction[];
+              quickReplies?: AiQuickReply[];
+              consult?: AiConsultState;
+              source?: string;
+            };
+            state.lastIntent = meta.intent ?? null;
+            state.lastSlots = meta.slots ?? null;
+            state.lastActions = meta.actions ?? [];
+            // Reopening a half-finished consultation restores its chips and progress.
+            state.lastQuickReplies = meta.quickReplies ?? [];
+            state.lastConsult = meta.consult
+              ? { ...meta.consult, maxQuestions: meta.consult.maxQuestions ?? AI_MAX_CONSULT_QUESTIONS }
+              : null;
+            state.lastChatSource = meta.source ?? state.lastChatSource;
+          } catch {
+            state.lastIntent = null;
+            state.lastSlots = null;
+            state.lastActions = [];
+            state.lastQuickReplies = [];
+            state.lastConsult = null;
+          }
+        } else {
+          state.lastIntent = null;
+          state.lastSlots = null;
+          state.lastActions = [];
+          state.lastQuickReplies = [];
+          state.lastConsult = null;
+        }
       })
       .addCase(loadAiConversation.rejected, (state, action) => {
         state.messagesLoading = false;
@@ -327,6 +405,11 @@ export const aiSlice = createSlice({
         state.activeTitle = result.title ?? state.activeTitle;
         state.messages = [...state.messages, result.userMessage, assistant];
         state.lastChatSource = result.source;
+        state.lastIntent = result.intent ?? null;
+        state.lastSlots = result.slots ?? null;
+        state.lastActions = result.actions ?? [];
+        state.lastQuickReplies = result.quickReplies ?? [];
+        state.lastConsult = result.consult ?? null;
         state.conversations = upsertConversationSummary(state.conversations, result);
       })
       .addCase(sendAiChat.rejected, (state, action) => {
@@ -347,6 +430,7 @@ export const {
   clearCompareResult,
   startNewAiConversation,
   clearAiAssistantState,
+  clearAiChatSlots,
 } = aiSlice.actions;
 
 export const selectNlLoading = (state: AiRoot) => state.ai.nlLoading;
@@ -371,3 +455,8 @@ export const selectAiMessagesError = (state: AiRoot) => state.ai.messagesError;
 export const selectAiChatSending = (state: AiRoot) => state.ai.chatSending;
 export const selectAiChatError = (state: AiRoot) => state.ai.chatError;
 export const selectAiLastChatSource = (state: AiRoot) => state.ai.lastChatSource;
+export const selectAiLastIntent = (state: AiRoot) => state.ai.lastIntent;
+export const selectAiLastSlots = (state: AiRoot) => state.ai.lastSlots;
+export const selectAiLastActions = (state: AiRoot) => state.ai.lastActions;
+export const selectAiLastQuickReplies = (state: AiRoot) => state.ai.lastQuickReplies;
+export const selectAiLastConsult = (state: AiRoot) => state.ai.lastConsult;

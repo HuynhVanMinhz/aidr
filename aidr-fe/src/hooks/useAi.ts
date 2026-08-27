@@ -3,6 +3,7 @@ import {
   AI_CHAT_MAX_LENGTH,
   COMPARE_MAX,
   clearAiAssistantState,
+  clearAiChatSlots,
   clearCompareResult,
   clearCompareSelection,
   loadAiConversation,
@@ -17,7 +18,12 @@ import {
   selectAiConversations,
   selectAiConversationsError,
   selectAiConversationsLoading,
+  selectAiLastActions,
   selectAiLastChatSource,
+  selectAiLastConsult,
+  selectAiLastIntent,
+  selectAiLastQuickReplies,
+  selectAiLastSlots,
   selectAiMessages,
   selectAiMessagesError,
   selectAiMessagesLoading,
@@ -34,7 +40,7 @@ import {
   toggleCompareSelection,
 } from '../store/aiSlice';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
-import type { CompareSelectionItem } from '../types/ai';
+import type { AiChatContext, CompareSelectionItem } from '../types/ai';
 import { getApiErrorMessage } from '../utils/apiError';
 
 export function useNlFilter() {
@@ -141,6 +147,11 @@ export function useShoppingAssistant() {
   const sending = useAppSelector(selectAiChatSending);
   const chatError = useAppSelector(selectAiChatError);
   const lastSource = useAppSelector(selectAiLastChatSource);
+  const lastIntent = useAppSelector(selectAiLastIntent);
+  const lastSlots = useAppSelector(selectAiLastSlots);
+  const lastActions = useAppSelector(selectAiLastActions);
+  const lastQuickReplies = useAppSelector(selectAiLastQuickReplies);
+  const lastConsult = useAppSelector(selectAiLastConsult);
 
   const loadConversations = useCallback(
     async (page = 1) => {
@@ -176,8 +187,17 @@ export function useShoppingAssistant() {
     dispatch(clearAiAssistantState());
   }, [dispatch]);
 
+  const clearSlots = useCallback(() => {
+    dispatch(clearAiChatSlots());
+  }, [dispatch]);
+
   const send = useCallback(
-    async (message: string, conversationId?: string | null) => {
+    async (
+      message: string,
+      conversationId?: string | null,
+      context?: AiChatContext | null,
+      quickReplyValue?: string | null,
+    ) => {
       const trimmed = message.trim();
       if (!trimmed) {
         throw new Error('Message is required.');
@@ -189,6 +209,8 @@ export function useShoppingAssistant() {
         sendAiChat({
           message: trimmed,
           conversationId: conversationId ?? activeConversationId,
+          context: context ?? null,
+          quickReplyValue: quickReplyValue ?? null,
         }),
       );
       if (sendAiChat.fulfilled.match(action)) {
@@ -220,11 +242,17 @@ export function useShoppingAssistant() {
     sending,
     chatError,
     lastSource,
+    lastIntent,
+    lastSlots,
+    lastActions,
+    lastQuickReplies,
+    lastConsult,
     maxLength: AI_CHAT_MAX_LENGTH,
     loadConversations,
     openConversation,
     startNew,
     clearAll,
+    clearSlots,
     send,
     getErrorMessage,
   };
