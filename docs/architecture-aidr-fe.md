@@ -212,7 +212,7 @@ Kết nối sau khi auth thành công; reconnect với token mới khi refresh.
 |----|-----|
 | UC-90 | Ô “Tìm bằng ngôn ngữ tự nhiên” → BE trả filter JSON → bind vào filter panel |
 | UC-28 | Chọn 2–N sản phẩm → panel kết quả so sánh (bảng + tóm tắt AI) |
-| UC-56 | Floating chatbot (bottom-right) on storefront; deep-link product cards in reply |
+| UC-56 | Floating chatbot (bottom-right) on storefront; page context (PDP/compare); slot chips; **quick-reply chips + “Question n/3” + “Skip questions” cho luồng tư vấn dẫn dắt**; product card có badge Best match / Cheaper option / Step up; deep-link product cards + “See all” / Compare CTAs |
 | UC-53/54 | Section “Dành cho bạn” / “Sản phẩm tương tự” trên home & detail |
 
 Loading & empty states bắt buộc; không block toàn app khi LLM chậm (timeout + fallback message).

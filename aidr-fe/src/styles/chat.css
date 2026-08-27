@@ -145,7 +145,9 @@
   position: fixed;
   right: 1.25rem;
   bottom: 1.25rem;
-  z-index: 60;
+  /* Above the sticky store header (z-index 100 in theme/css/custom.css) and the
+     compare tray, but below full-screen overlays such as .aidr-video-lightbox (2000). */
+  z-index: 1500;
   display: flex;
   flex-direction: column;
   align-items: flex-end;
@@ -514,6 +516,144 @@
 
 .aidr-assistant__product-rating {
   font-size: 0.7rem;
+}
+
+.aidr-assistant__slots {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  align-items: center;
+  padding: 0.5rem 0.75rem 0;
+  border-bottom: 1px solid rgba(22, 24, 29, 0.06);
+  padding-bottom: 0.5rem;
+}
+
+.aidr-assistant__slot-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.15rem 0.5rem;
+  border-radius: 0.35rem;
+  background: #f4f5f7;
+  border: 1px solid rgba(22, 24, 29, 0.08);
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: #16181d;
+}
+
+.aidr-assistant__slot-clear {
+  border: 0;
+  background: transparent;
+  color: #6c757d;
+  font-size: 0.7rem;
+  text-decoration: underline;
+  padding: 0.15rem 0.25rem;
+  cursor: pointer;
+}
+
+.aidr-assistant__slot-clear:hover {
+  color: #16181d;
+}
+
+.aidr-assistant__product-row {
+  display: flex;
+  gap: 0.35rem;
+  align-items: stretch;
+}
+
+.aidr-assistant__product-row .aidr-assistant__product-card {
+  flex: 1;
+  min-width: 0;
+}
+
+.aidr-assistant__product-compare {
+  flex-shrink: 0;
+  align-self: center;
+  white-space: nowrap;
+  font-size: 0.7rem;
+  padding: 0.25rem 0.4rem;
+}
+
+.aidr-assistant__product-reason {
+  font-size: 0.68rem;
+  line-height: 1.3;
+}
+
+.aidr-assistant__product-badge {
+  align-self: flex-start;
+  font-size: 0.62rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: #0d6efd;
+  background: #eaf1ff;
+  border-radius: 0.6rem;
+  padding: 0.05rem 0.35rem;
+  margin: 0.1rem 0;
+}
+
+.aidr-assistant__quick {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  margin-top: 0.6rem;
+}
+
+.aidr-assistant__quick-progress {
+  font-size: 0.66rem;
+  letter-spacing: 0.02em;
+}
+
+.aidr-assistant__quick-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+}
+
+.aidr-assistant__quick-chip {
+  border: 1px solid #0d6efd;
+  background: #fff;
+  color: #0d6efd;
+  border-radius: 1rem;
+  font-size: 0.72rem;
+  line-height: 1.2;
+  padding: 0.28rem 0.6rem;
+  cursor: pointer;
+}
+
+.aidr-assistant__quick-chip:hover:not(:disabled) {
+  background: #0d6efd;
+  color: #fff;
+}
+
+.aidr-assistant__quick-chip:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.aidr-assistant__quick-skip {
+  align-self: flex-start;
+  border: 0;
+  background: transparent;
+  color: #6c757d;
+  font-size: 0.68rem;
+  text-decoration: underline;
+  padding: 0.1rem 0;
+  cursor: pointer;
+}
+
+.aidr-assistant__quick-skip:hover:not(:disabled) {
+  color: #16181d;
+}
+
+.aidr-assistant__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-top: 0.65rem;
+}
+
+.aidr-assistant__actions .btn {
+  font-size: 0.72rem;
 }
 
 @media (max-width: 575.98px) {
