@@ -29,6 +29,8 @@ export type ProductReviewListResult = {
   productId: string;
   avgRating: number;
   reviewCount: number;
+  /** Counts for stars 1–5 (index 0 = 1★ … index 4 = 5★). */
+  ratingBreakdown?: number[] | null;
   items: ProductReview[];
   page: number;
   pageSize: number;

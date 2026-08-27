@@ -30,8 +30,8 @@ export function SimilarProductsSection({ productId, categoryId, limit = 8 }: Pro
             </div>
           </div>
           <div className="col-xl-5">
-            <div className="section-btn">
-              <Link to={shopAllTo} className="btn-default">
+            <div className="section-btn section-btn--inline">
+              <Link to={shopAllTo} className="btn-default btn-border">
                 Shop All
               </Link>
             </div>

@@ -1,6 +1,7 @@
-import { useMemo, useState, type ReactNode } from 'react';
+import { useMemo, useState } from 'react';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { CatalogBreadcrumb } from '../../components/catalog/CatalogBreadcrumb';
+import { ProductAdditionalInfo } from '../../components/catalog/ProductAdditionalInfo';
 import { SimilarProductsSection } from '../../components/catalog/SimilarProductsSection';
 import { ProductReviewsPanel } from '../../components/reviews/ProductReviewsPanel';
 import { useAuth } from '../../hooks/useAuth';
@@ -11,7 +12,6 @@ import { useToast } from '../../hooks/useToast';
 import { useWishlistProduct } from '../../hooks/useWishlist';
 import {
   discountPercent,
-  formatDateVi,
   formatMoney,
   parseSpecsJson,
   parseTagsJson,
@@ -36,18 +36,6 @@ function StarRow({ rating, showValue }: { rating: number; showValue?: boolean })
         </span>
       )}
     </div>
-  );
-}
-
-function DetailRow({ label, value }: { label: string; value: ReactNode }) {
-  if (value == null || value === '' || value === '—') return null;
-  return (
-    <tr>
-      <td>
-        <b>{label}</b>
-      </td>
-      <td>{value}</td>
-    </tr>
   );
 }
 
@@ -466,71 +454,11 @@ export function ProductDetailPage() {
 
                   {tab === 'specs' && (
                     <div className="product-tab-item-box tab-pane fade show active">
-                      <div className="product-additional-content">
-                        <div className="product-additional-content-title">
-                          <h2>Additional Information</h2>
-                        </div>
-                        <div className="product-additional-info-table">
-                          <table>
-                            <tbody>
-                              <DetailRow label="Product name" value={product.name} />
-                              <DetailRow label="Slug" value={product.slug} />
-                              <DetailRow label="Brand" value={product.brand} />
-                              <DetailRow label="Model number" value={product.modelNumber} />
-                              <DetailRow label="Category" value={product.category.name} />
-                              <DetailRow label="Condition" value={product.conditionType} />
-                              <DetailRow label="Origin country" value={product.originCountry} />
-                              <DetailRow
-                                label="Warranty"
-                                value={
-                                  product.warrantyMonths != null
-                                    ? `${product.warrantyMonths} months`
-                                    : null
-                                }
-                              />
-                              <DetailRow label="Currency" value={product.currency} />
-                              <DetailRow
-                                label="Base price"
-                                value={formatMoney(product.basePrice, product.currency)}
-                              />
-                              <DetailRow
-                                label="Sale price"
-                                value={
-                                  product.salePrice != null
-                                    ? formatMoney(product.salePrice, product.currency)
-                                    : null
-                                }
-                              />
-                              <DetailRow
-                                label="Stock quantity"
-                                value={String(product.stockQuantity)}
-                              />
-                              <DetailRow
-                                label="Available quantity"
-                                value={String(product.availableQuantity)}
-                              />
-                              <DetailRow label="Sold count" value={String(product.soldCount)} />
-                              <DetailRow label="View count" value={String(product.viewCount)} />
-                              <DetailRow label="Average rating" value={product.avgRating.toFixed(1)} />
-                              <DetailRow label="Review count" value={String(product.reviewCount)} />
-                              <DetailRow
-                                label="Featured"
-                                value={product.isFeatured ? 'Yes' : 'No'}
-                              />
-                              <DetailRow label="Published at" value={formatDateVi(product.publishedAt)} />
-                              <DetailRow label="Shop" value={product.shop.shopName} />
-                              <DetailRow
-                                label="Shop verified"
-                                value={product.shop.isVerified ? 'Yes' : 'No'}
-                              />
-                              <DetailRow label="Tags" value={tags.length > 0 ? tags.join(', ') : null} />
-                              {Object.entries(specs).map(([key, value]) => (
-                                <DetailRow key={key} label={key} value={value} />
-                              ))}
-                            </tbody>
-                          </table>
-                        </div>
-                      </div>
+                      <ProductAdditionalInfo
+                        product={product}
+                        specs={specs}
+                        onOpenReviews={() => setTab('reviews')}
+                      />
                     </div>
                   )}
 
@@ -538,7 +466,6 @@ export function ProductDetailPage() {
                     <div className="product-tab-item-box tab-pane fade show active">
                       <ProductReviewsPanel
                         productId={product.productId}
-                        soldCount={product.soldCount}
                         active={tab === 'reviews'}
                       />
                     </div>

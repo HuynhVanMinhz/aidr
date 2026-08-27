@@ -39,6 +39,19 @@ public sealed class ProductReviewRepository : IProductReviewRepository
     {
         var stats = await GetProductRatingStatsAsync(productId, cancellationToken);
 
+        var ratingBuckets = await _db.ProductReviews.AsNoTracking()
+            .Where(r => r.ProductId == productId && r.IsVisible)
+            .GroupBy(r => r.Rating)
+            .Select(g => new { Rating = g.Key, Count = g.Count() })
+            .ToListAsync(cancellationToken);
+
+        var ratingBreakdown = new int[5];
+        foreach (var bucket in ratingBuckets)
+        {
+            if (bucket.Rating is >= 1 and <= 5)
+                ratingBreakdown[bucket.Rating - 1] = bucket.Count;
+        }
+
         var query = _db.ProductReviews.AsNoTracking()
             .Where(r => r.ProductId == productId && r.IsVisible);
 
@@ -103,7 +116,8 @@ public sealed class ProductReviewRepository : IProductReviewRepository
         {
             ProductId = productId,
             AvgRating = stats.AvgRating,
-            ReviewCount = stats.ReviewCount,
+            ReviewCount = ratingBreakdown.Sum() > 0 ? ratingBreakdown.Sum() : stats.ReviewCount,
+            RatingBreakdown = ratingBreakdown,
             Items = items,
             Page = page,
             PageSize = pageSize,

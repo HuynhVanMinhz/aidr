@@ -347,6 +347,35 @@ public class DevController : ControllerBase
         });
     }
 
+    /// <summary>Seed storefront product reviews + sync AvgRating/ReviewCount (dev only).</summary>
+    [HttpPost("seed-product-reviews")]
+    public async Task<IActionResult> SeedProductReviews(
+        [FromServices] AidrDbContext db,
+        [FromServices] IWebHostEnvironment env,
+        CancellationToken ct)
+    {
+        if (!env.IsDevelopment())
+            return NotFound();
+
+        await ProductReviewsDemoSeeder.SeedAsync(db, env.ContentRootPath, ct);
+
+        var airPodsId = Guid.Parse("11111111-1111-1111-1111-111111111106");
+        var airPods = await db.Products.AsNoTracking()
+            .Where(p => p.ProductId == airPodsId)
+            .Select(p => new { p.Name, p.ReviewCount, p.AvgRating })
+            .FirstOrDefaultAsync(ct);
+        var airPodsVisible = await db.ProductReviews.CountAsync(
+            r => r.ProductId == airPodsId && r.IsVisible,
+            ct);
+
+        return Ok(new
+        {
+            message = "Product reviews demo seed completed.",
+            airPodsProduct = airPods,
+            airPodsVisibleReviewCount = airPodsVisible
+        });
+    }
+
     /// <summary>Enrich SpecsJson on demo products for NL filter / compare testing (dev only).</summary>
     [HttpPost("seed-nl-compare")]
     public async Task<IActionResult> SeedNlCompare(
