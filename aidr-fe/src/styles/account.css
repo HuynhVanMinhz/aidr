@@ -520,3 +520,72 @@
     flex-wrap: wrap;
   }
 }
+
+/* —— Account security: grouped tip cards instead of one dense bullet list —— */
+.account-security-groups {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.75rem;
+}
+
+.account-security-group {
+  padding: 1.25rem;
+  border: 1px solid var(--divider-color, var(--border));
+  border-radius: 10px;
+  background: var(--card, var(--white-color, #fff));
+}
+
+.account-security-group__head {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  margin-bottom: 0.85rem;
+}
+
+.account-security-group__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  flex: 0 0 34px;
+  border-radius: 50%;
+  background: var(--aidr-accent-soft, rgba(22, 24, 29, 0.06));
+  color: var(--accent-color, var(--accent));
+  font-size: 0.875rem;
+}
+
+.account-security-group__head h3 {
+  margin: 0;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--primary-color, var(--ink));
+}
+
+.account-security-tips {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.account-security-tips li {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: start;
+  gap: 0.55rem;
+  font-size: 0.9375rem;
+  line-height: 1.5;
+  color: var(--text-color, var(--muted));
+}
+
+.account-security-tips li .fa-check {
+  margin-top: 0.3rem;
+  font-size: 0.75rem;
+  color: var(--accent-color, var(--accent));
+}
