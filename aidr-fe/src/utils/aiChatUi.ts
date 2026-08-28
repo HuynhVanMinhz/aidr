@@ -2,6 +2,7 @@ import type { CatalogFilters } from '../store/catalogSlice';
 import { defaultCatalogFilters } from '../store/catalogSlice';
 import type { AiChatSlots, NlFilterResult } from '../types/ai';
 import type { ProductSort } from '../types/catalog';
+import { filtersToSearchParams as filtersToUrlParams } from './catalogFilterUtils';
 
 const ALLOWED_SORTS: ProductSort[] = ['newest', 'price_asc', 'price_desc', 'popular', 'rating'];
 
@@ -16,15 +17,22 @@ export function slotsOrNlToCatalogFilters(source: AiChatSlots | NlFilterResult |
 
   let minRating: number | null = null;
   if (source.minRating != null && !Number.isNaN(Number(source.minRating))) {
-    const n = Number(source.minRating);
-    minRating = n >= 4 ? 4 : n >= 3 ? 3 : Math.min(5, Math.max(0, Math.round(n)));
+    const n = Math.round(Number(source.minRating));
+    if (n >= 1 && n <= 5) minRating = n;
   }
+
+  const categoryIds =
+    source.categoryId != null && !Number.isNaN(Number(source.categoryId))
+      ? [Number(source.categoryId)]
+      : [];
+
+  const brand = (source.brand ?? '').toString().trim();
 
   return {
     ...defaultCatalogFilters,
     q: (source.q ?? '').toString().trim(),
-    categoryId: source.categoryId ?? null,
-    brand: (source.brand ?? '').toString().trim(),
+    categoryIds,
+    brands: brand ? [brand] : [],
     minPrice: source.minPrice != null ? String(Math.round(Number(source.minPrice))) : '',
     maxPrice: source.maxPrice != null ? String(Math.round(Number(source.maxPrice))) : '',
     minRating,
@@ -35,15 +43,7 @@ export function slotsOrNlToCatalogFilters(source: AiChatSlots | NlFilterResult |
 
 /** Build `/products?...` query from chat slots for “See all matching products”. */
 export function catalogFiltersToSearchParams(filters: CatalogFilters): string {
-  const params = new URLSearchParams();
-  if (filters.q.trim()) params.set('q', filters.q.trim());
-  if (filters.categoryId != null) params.set('categoryId', String(filters.categoryId));
-  if (filters.brand.trim()) params.set('brand', filters.brand.trim());
-  if (filters.minPrice.trim()) params.set('minPrice', filters.minPrice.trim());
-  if (filters.maxPrice.trim()) params.set('maxPrice', filters.maxPrice.trim());
-  if (filters.minRating != null) params.set('minRating', String(filters.minRating));
-  if (filters.sort && filters.sort !== 'newest') params.set('sort', filters.sort);
-  const qs = params.toString();
+  const qs = filtersToUrlParams(filters).toString();
   return qs ? `/products?${qs}` : '/products';
 }
 

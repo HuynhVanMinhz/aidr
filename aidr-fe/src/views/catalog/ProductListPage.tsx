@@ -1,5 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
+import { ActiveFilterChips } from '../../components/catalog/ActiveFilterChips';
+import { CatalogFilterDrawer } from '../../components/catalog/CatalogFilterDrawer';
+import { CatalogFiltersPanel } from '../../components/catalog/CatalogFiltersPanel';
+import { CatalogSortDropdown } from '../../components/catalog/CatalogSortDropdown';
 import { CatalogBreadcrumb } from '../../components/catalog/CatalogBreadcrumb';
 import { NlSearchBar } from '../../components/catalog/NlSearchBar';
 import { ProductCard } from '../../components/catalog/ProductCard';
@@ -15,48 +19,12 @@ import {
   type CatalogFilters,
 } from '../../store/catalogSlice';
 import { useAppDispatch, useAppSelector } from '../../store/hooks';
-import type { ProductSort } from '../../types/catalog';
-
-function parseFiltersFromSearch(params: URLSearchParams): CatalogFilters {
-  const sortRaw = params.get('sort') || 'newest';
-  const allowed: ProductSort[] = ['newest', 'price_asc', 'price_desc', 'popular', 'rating'];
-  const sort = allowed.includes(sortRaw as ProductSort) ? (sortRaw as ProductSort) : 'newest';
-
-  const categoryRaw = params.get('categoryId');
-  const categoryId = categoryRaw && !Number.isNaN(Number(categoryRaw)) ? Number(categoryRaw) : null;
-
-  const minRatingRaw = params.get('minRating');
-  const minRating =
-    minRatingRaw && !Number.isNaN(Number(minRatingRaw)) ? Number(minRatingRaw) : null;
-
-  const pageRaw = params.get('page');
-  const page = pageRaw && Number(pageRaw) > 0 ? Number(pageRaw) : 1;
-
-  return {
-    q: params.get('q') ?? '',
-    categoryId,
-    brand: params.get('brand') ?? '',
-    minPrice: params.get('minPrice') ?? '',
-    maxPrice: params.get('maxPrice') ?? '',
-    minRating,
-    sort,
-    page,
-    pageSize: defaultCatalogFilters.pageSize,
-  };
-}
-
-function filtersToSearchParams(filters: CatalogFilters): URLSearchParams {
-  const params = new URLSearchParams();
-  if (filters.q.trim()) params.set('q', filters.q.trim());
-  if (filters.categoryId != null) params.set('categoryId', String(filters.categoryId));
-  if (filters.brand.trim()) params.set('brand', filters.brand.trim());
-  if (filters.minPrice.trim()) params.set('minPrice', filters.minPrice.trim());
-  if (filters.maxPrice.trim()) params.set('maxPrice', filters.maxPrice.trim());
-  if (filters.minRating != null) params.set('minRating', String(filters.minRating));
-  if (filters.sort !== 'newest') params.set('sort', filters.sort);
-  if (filters.page > 1) params.set('page', String(filters.page));
-  return params;
-}
+import {
+  buildActiveFilterChips,
+  filtersToSearchParams,
+  hasActiveFilters,
+  parseFiltersFromSearch,
+} from '../../utils/catalogFilterUtils';
 
 export function ProductListPage() {
   const dispatch = useAppDispatch();
@@ -66,16 +34,15 @@ export function ProductListPage() {
   const error = useAppSelector(selectCatalogListError);
   const paging = useAppSelector(selectCatalogPaging);
   const { categories } = useCategories();
+  const [drawerOpen, setDrawerOpen] = useState(false);
 
   const searchKey = searchParams.toString();
   const urlFilters = useMemo(
     () => parseFiltersFromSearch(new URLSearchParams(searchKey)),
     [searchKey],
   );
-  const [draft, setDraft] = useState<CatalogFilters>(urlFilters);
 
   useEffect(() => {
-    setDraft(urlFilters);
     void dispatch(fetchProducts(urlFilters));
   }, [dispatch, urlFilters]);
 
@@ -86,12 +53,25 @@ export function ProductListPage() {
     [setSearchParams],
   );
 
-  function handleApply() {
-    syncUrl({ ...draft, page: 1 });
-  }
+  const handleFilterChange = useCallback(
+    (patch: Partial<CatalogFilters>) => {
+      syncUrl({ ...urlFilters, ...patch, page: 1 });
+    },
+    [syncUrl, urlFilters],
+  );
+
+  const activeChips = useMemo(
+    () => buildActiveFilterChips(urlFilters, categories),
+    [urlFilters, categories],
+  );
 
   function handleClear() {
     syncUrl({ ...defaultCatalogFilters });
+    setDrawerOpen(false);
+  }
+
+  function handleRemoveChip(patch: Partial<CatalogFilters>) {
+    syncUrl({ ...urlFilters, ...patch, page: 1 });
   }
 
   function goToPage(page: number) {
@@ -99,6 +79,7 @@ export function ProductListPage() {
   }
 
   const title = urlFilters.q.trim() ? `Search: ${urlFilters.q.trim()}` : 'Our Products';
+  const activeFilterCount = activeChips.length;
 
   return (
     <>
@@ -123,18 +104,38 @@ export function ProductListPage() {
       <div className="page-products">
         <div className="container">
           <div className="row">
-            <div className="col-xl-3 col-lg-4">
+            <div className="col-xl-3 col-lg-4 catalog-filters-sidebar-col">
               <ProductFilters
-                filters={draft}
+                filters={urlFilters}
                 categories={categories}
-                onChange={(patch) => setDraft((prev) => ({ ...prev, ...patch }))}
-                onApply={handleApply}
+                onChange={handleFilterChange}
                 onClear={handleClear}
               />
             </div>
 
             <div className="col-xl-9 col-lg-8">
               <NlSearchBar onApplyFilters={(filters) => syncUrl(filters)} />
+
+              <div className="catalog-mobile-filter-bar">
+                <button
+                  type="button"
+                  className="catalog-mobile-filter-btn"
+                  onClick={() => setDrawerOpen(true)}
+                >
+                  <img src="/theme/images/icon-filter.svg" alt="" />
+                  Filters
+                  {activeFilterCount > 0 ? (
+                    <span className="catalog-mobile-filter-btn__badge">{activeFilterCount}</span>
+                  ) : null}
+                </button>
+              </div>
+
+              <ActiveFilterChips
+                chips={activeChips}
+                onRemove={handleRemoveChip}
+                onClearAll={handleClear}
+              />
+
               <div className="product-item-list-box">
                 <div className="product-category-filter-header">
                   <div className="product-category-filter-title">
@@ -167,23 +168,11 @@ export function ProductListPage() {
                       </ul>
                     </div>
                     <div className="product-category-sorting-list">
-                      <select
-                        name="sorting_list"
-                        className="form-control form-select"
-                        id="sorting_list"
-                        value={draft.sort}
-                        onChange={(e) => {
-                          const sort = e.target.value as ProductSort;
-                          setDraft((prev) => ({ ...prev, sort, page: 1 }));
-                          syncUrl({ ...draft, sort, page: 1 });
-                        }}
-                      >
-                        {SORT_OPTIONS.map((opt) => (
-                          <option key={opt.value} value={opt.value}>
-                            {opt.label}
-                          </option>
-                        ))}
-                      </select>
+                      <CatalogSortDropdown
+                        value={urlFilters.sort}
+                        options={SORT_OPTIONS}
+                        onChange={(sort) => syncUrl({ ...urlFilters, sort, page: 1 })}
+                      />
                     </div>
                   </div>
                 </div>
@@ -195,7 +184,11 @@ export function ProductListPage() {
                 )}
 
                 {!loading && !error && products.length === 0 && (
-                  <p className="text-muted">No matching products found.</p>
+                  <p className="text-muted">
+                    {hasActiveFilters(urlFilters)
+                      ? 'No products match your filters. Try adjusting or clearing filters.'
+                      : 'No matching products found.'}
+                  </p>
                 )}
 
                 <div className="product-item-list">
@@ -236,6 +229,16 @@ export function ProductListPage() {
           </div>
         </div>
       </div>
+
+      <CatalogFilterDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)}>
+        <CatalogFiltersPanel
+          filters={urlFilters}
+          categories={categories}
+          onChange={handleFilterChange}
+          onClear={handleClear}
+          showHeader={false}
+        />
+      </CatalogFilterDrawer>
     </>
   );
 }
