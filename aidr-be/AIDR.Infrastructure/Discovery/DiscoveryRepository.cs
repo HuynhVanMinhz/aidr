@@ -41,6 +41,9 @@ public sealed class DiscoveryRepository : IDiscoveryRepository
         if (query.ShopId is { } shopId)
             q = q.Where(p => p.ShopId == shopId);
 
+        if (query.ProductIds is { Count: > 0 })
+            q = q.Where(p => query.ProductIds.Contains(p.ProductId));
+
         if (query.Brands is { Count: > 0 })
             q = q.Where(p => p.Brand != null && query.Brands.Contains(p.Brand));
         else if (!string.IsNullOrWhiteSpace(query.Brand))

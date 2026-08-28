@@ -13,6 +13,7 @@ public sealed class ChatThreadDto
     public Guid? ProductId { get; init; }
     public string? ProductName { get; init; }
     public string? LastMessagePreview { get; init; }
+    public bool LastMessageIsMine { get; init; }
     public DateTime? LastMessageAt { get; init; }
     public int UnreadCount { get; init; }
     public string MyRole { get; init; } = null!;
@@ -49,4 +50,21 @@ public sealed class MarkChatThreadReadResponse
 {
     public Guid ThreadId { get; init; }
     public int UpdatedCount { get; init; }
+}
+
+/// <summary>Pushed over SignalR when a participant reads a thread, so delivery ticks stay live.</summary>
+public sealed class ChatThreadReadEvent
+{
+    public Guid ThreadId { get; init; }
+    public Guid ReaderUserId { get; init; }
+    public int UpdatedCount { get; init; }
+    public DateTime ReadAt { get; init; }
+}
+
+/// <summary>Pushed over SignalR while a participant is composing a message.</summary>
+public sealed class ChatTypingEvent
+{
+    public Guid ThreadId { get; init; }
+    public Guid UserId { get; init; }
+    public bool IsTyping { get; init; }
 }

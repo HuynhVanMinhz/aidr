@@ -48,6 +48,22 @@ export async function searchProducts(query: ProductQuery) {
   return data;
 }
 
+/**
+ * Resolve products by id for link previews. Unlike getProduct this records no view, so chat
+ * cards can re-render freely without polluting product analytics.
+ */
+export async function lookupProducts(productIds: string[]) {
+  const ids = [...new Set(productIds.filter(Boolean))];
+  if (ids.length === 0) {
+    return { success: true, data: [] as ProductListItem[] } as ApiResult<ProductListItem[]>;
+  }
+
+  const { data } = await apiClient.get<ApiResult<ProductListItem[]>>('/products/lookup', {
+    params: { ids: ids.join(',') },
+  });
+  return data;
+}
+
 export async function getProductBrands() {
   const { data } = await apiClient.get<ApiResult<BrandFilterOption[]>>('/products/brands');
   return data;

@@ -13,6 +13,7 @@ export type ChatThread = {
   productId?: string | null;
   productName?: string | null;
   lastMessagePreview?: string | null;
+  lastMessageIsMine: boolean;
   lastMessageAt?: string | null;
   unreadCount: number;
   myRole: string;
@@ -45,6 +46,19 @@ export type SendChatMessageRequest = {
 export type MarkChatThreadReadResponse = {
   threadId: string;
   updatedCount: number;
+};
+
+export type ChatThreadReadEvent = {
+  threadId: string;
+  readerUserId: string;
+  updatedCount: number;
+  readAt: string;
+};
+
+export type ChatTypingEvent = {
+  threadId: string;
+  userId: string;
+  isTyping: boolean;
 };
 
 export type ChatThreadListQuery = {

@@ -6,6 +6,8 @@ public sealed class ProductListQuery
 {
     public string? Q { get; init; }
     public Guid? ShopId { get; init; }
+    /// <summary>Restrict the result to these ids — used by the batch lookup for link previews.</summary>
+    public IReadOnlyList<Guid> ProductIds { get; init; } = Array.Empty<Guid>();
     public int? CategoryId { get; init; }
     public IReadOnlyList<int> CategoryIds { get; init; } = Array.Empty<int>();
     public string? Brand { get; init; }
@@ -211,6 +213,14 @@ public interface IDiscoveryService
 
     Task<PagedResult<ProductListItemDto>> SearchProductsAsync(
         ProductQueryRequest request,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Resolve a handful of approved products by id for link previews (chat cards, shared links).
+    /// Unlike <c>GetProductAsync</c> this records no view and returns only list-level fields.
+    /// </summary>
+    Task<IReadOnlyList<ProductListItemDto>> LookupProductsAsync(
+        IReadOnlyList<Guid> productIds,
         CancellationToken cancellationToken = default);
 
     Task<ProductDetailDto> GetProductAsync(

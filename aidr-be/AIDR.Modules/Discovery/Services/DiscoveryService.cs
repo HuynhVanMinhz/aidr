@@ -45,6 +45,31 @@ public sealed class DiscoveryService : IDiscoveryService
         CancellationToken cancellationToken = default)
         => QueryProductsAsync(request, requireKeyword: true, cancellationToken);
 
+    public async Task<IReadOnlyList<ProductListItemDto>> LookupProductsAsync(
+        IReadOnlyList<Guid> productIds,
+        CancellationToken cancellationToken = default)
+    {
+        var ids = (productIds ?? Array.Empty<Guid>())
+            .Where(id => id != Guid.Empty)
+            .Distinct()
+            .Take(DiscoveryConstants.MaxLookupIds)
+            .ToList();
+
+        if (ids.Count == 0)
+            return Array.Empty<ProductListItemDto>();
+
+        var (items, _) = await _repository.QueryApprovedProductsAsync(
+            new ProductListQuery
+            {
+                ProductIds = ids,
+                Page = 1,
+                PageSize = ids.Count
+            },
+            cancellationToken);
+
+        return items.Select(MapListItem).ToList();
+    }
+
     public async Task<ProductDetailDto> GetProductAsync(
         Guid productId,
         Guid? viewerUserId,
