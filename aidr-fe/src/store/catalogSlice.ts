@@ -12,11 +12,15 @@ import type {
 
 export type CatalogFilters = {
   q: string;
-  categoryId: number | null;
-  brand: string;
+  categoryIds: number[];
+  brands: string[];
   minPrice: string;
   maxPrice: string;
   minRating: number | null;
+  onSale: boolean | null;
+  inStock: boolean | null;
+  conditions: string[];
+  specFilters: Record<string, string>;
   sort: ProductSort;
   page: number;
   pageSize: number;
@@ -46,11 +50,15 @@ type CatalogRoot = { catalog: CatalogState };
 
 export const defaultCatalogFilters: CatalogFilters = {
   q: '',
-  categoryId: null,
-  brand: '',
+  categoryIds: [],
+  brands: [],
   minPrice: '',
   maxPrice: '',
   minRating: null,
+  onSale: null,
+  inStock: null,
+  conditions: [],
+  specFilters: {},
   sort: 'newest',
   page: 1,
   pageSize: 12,
@@ -78,11 +86,15 @@ const initialState: CatalogState = {
 function buildQueryKey(filters: CatalogFilters): string {
   return JSON.stringify({
     q: filters.q.trim(),
-    categoryId: filters.categoryId,
-    brand: filters.brand.trim(),
+    categoryIds: filters.categoryIds,
+    brands: filters.brands,
     minPrice: filters.minPrice,
     maxPrice: filters.maxPrice,
     minRating: filters.minRating,
+    onSale: filters.onSale,
+    inStock: filters.inStock,
+    conditions: filters.conditions,
+    specFilters: filters.specFilters,
     sort: filters.sort,
     page: filters.page,
     pageSize: filters.pageSize,
@@ -97,8 +109,14 @@ export function filtersToQuery(filters: CatalogFilters): ProductQuery {
   };
 
   if (filters.q.trim()) query.q = filters.q.trim();
-  if (filters.categoryId != null) query.categoryId = filters.categoryId;
-  if (filters.brand.trim()) query.brand = filters.brand.trim();
+  if (filters.categoryIds.length > 0) {
+    query.categoryIds = filters.categoryIds;
+    if (filters.categoryIds.length === 1) query.categoryId = filters.categoryIds[0];
+  }
+  if (filters.brands.length > 0) {
+    query.brands = filters.brands;
+    if (filters.brands.length === 1) query.brand = filters.brands[0];
+  }
 
   const minPrice = Number(filters.minPrice);
   if (filters.minPrice.trim() && Number.isFinite(minPrice) && minPrice >= 0) {
@@ -111,6 +129,10 @@ export function filtersToQuery(filters: CatalogFilters): ProductQuery {
   }
 
   if (filters.minRating != null) query.minRating = filters.minRating;
+  if (filters.onSale === true) query.onSale = true;
+  if (filters.inStock === true) query.inStock = true;
+  if (filters.conditions.length > 0) query.conditions = filters.conditions;
+  if (Object.keys(filters.specFilters).length > 0) query.specFilters = filters.specFilters;
 
   return query;
 }

@@ -33,13 +33,17 @@ public sealed class DiscoveryRepository : IDiscoveryRepository
                 || (p.ModelNumber != null && p.ModelNumber.Contains(keyword)));
         }
 
-        if (query.CategoryId is { } categoryId)
+        if (query.CategoryIds is { Count: > 0 })
+            q = q.Where(p => query.CategoryIds.Contains(p.CategoryId));
+        else if (query.CategoryId is { } categoryId)
             q = q.Where(p => p.CategoryId == categoryId);
 
         if (query.ShopId is { } shopId)
             q = q.Where(p => p.ShopId == shopId);
 
-        if (!string.IsNullOrWhiteSpace(query.Brand))
+        if (query.Brands is { Count: > 0 })
+            q = q.Where(p => p.Brand != null && query.Brands.Contains(p.Brand));
+        else if (!string.IsNullOrWhiteSpace(query.Brand))
         {
             var brand = query.Brand.Trim();
             q = q.Where(p => p.Brand != null && p.Brand == brand);
@@ -53,6 +57,27 @@ public sealed class DiscoveryRepository : IDiscoveryRepository
 
         if (query.MinRating is { } minRating)
             q = q.Where(p => p.AvgRating >= minRating);
+
+        if (query.OnSale == true)
+            q = q.Where(p => p.SalePrice != null && p.SalePrice < p.BasePrice);
+
+        if (query.InStock == true)
+            q = q.Where(p => p.StockQuantity - p.ReservedQuantity > 0);
+
+        if (query.Conditions is { Count: > 0 })
+            q = q.Where(p => query.Conditions.Contains(p.ConditionType));
+
+        if (query.SpecFilters is { Count: > 0 })
+        {
+            foreach (var pair in query.SpecFilters)
+            {
+                var token = $"\"{pair.Key}\":\"{pair.Value}\"";
+                var tokenSpaced = $"\"{pair.Key}\": \"{pair.Value}\"";
+                q = q.Where(p =>
+                    p.SpecsJson != null
+                    && (p.SpecsJson.Contains(token) || p.SpecsJson.Contains(tokenSpaced)));
+            }
+        }
 
         q = ApplySort(q, query.Sort);
 
@@ -251,6 +276,30 @@ public sealed class DiscoveryRepository : IDiscoveryRepository
                 ImageUrl = c.ImageUrl,
                 SortOrder = c.SortOrder
             })
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task<IReadOnlyDictionary<int, int>> GetApprovedProductCountsByCategoryAsync(
+        CancellationToken cancellationToken = default)
+    {
+        return await BuildApprovedQuery()
+            .GroupBy(p => p.CategoryId)
+            .Select(g => new { CategoryId = g.Key, Count = g.Count() })
+            .ToDictionaryAsync(x => x.CategoryId, x => x.Count, cancellationToken);
+    }
+
+    public async Task<IReadOnlyList<BrandFilterRecord>> GetApprovedBrandOptionsAsync(
+        CancellationToken cancellationToken = default)
+    {
+        return await BuildApprovedQuery()
+            .Where(p => p.Brand != null && p.Brand != "")
+            .GroupBy(p => p.Brand!)
+            .Select(g => new BrandFilterRecord
+            {
+                Brand = g.Key,
+                ProductCount = g.Count()
+            })
+            .OrderBy(b => b.Brand)
             .ToListAsync(cancellationToken);
     }
 
