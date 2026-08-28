@@ -43,6 +43,15 @@ public sealed class ProductsController : ControllerBase
         return Ok(ApiResult<PagedResult<ProductListItemDto>>.Ok(result));
     }
 
+    /// <summary>Distinct brand filter options for catalog sidebar.</summary>
+    [HttpGet("brands")]
+    public async Task<ActionResult<ApiResult<IReadOnlyList<BrandFilterOptionDto>>>> Brands(
+        CancellationToken cancellationToken)
+    {
+        var result = await _discovery.GetBrandFilterOptionsAsync(cancellationToken);
+        return Ok(ApiResult<IReadOnlyList<BrandFilterOptionDto>>.Ok(result));
+    }
+
     /// <summary>Get approved product detail and record a view.</summary>
     [HttpGet("{id:guid}")]
     public async Task<ActionResult<ApiResult<ProductDetailDto>>> GetById(

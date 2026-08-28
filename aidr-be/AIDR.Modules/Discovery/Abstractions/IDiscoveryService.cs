@@ -7,10 +7,17 @@ public sealed class ProductListQuery
     public string? Q { get; init; }
     public Guid? ShopId { get; init; }
     public int? CategoryId { get; init; }
+    public IReadOnlyList<int> CategoryIds { get; init; } = Array.Empty<int>();
     public string? Brand { get; init; }
+    public IReadOnlyList<string> Brands { get; init; } = Array.Empty<string>();
     public decimal? MinPrice { get; init; }
     public decimal? MaxPrice { get; init; }
     public decimal? MinRating { get; init; }
+    public bool? OnSale { get; init; }
+    public bool? InStock { get; init; }
+    public IReadOnlyList<string> Conditions { get; init; } = Array.Empty<string>();
+    public IReadOnlyDictionary<string, string> SpecFilters { get; init; }
+        = new Dictionary<string, string>();
     public string Sort { get; init; } = "newest";
     public int Page { get; init; } = 1;
     public int PageSize { get; init; } = 20;
@@ -108,6 +115,12 @@ public sealed class CategoryRecord
     public int SortOrder { get; init; }
 }
 
+public sealed class BrandFilterRecord
+{
+    public string Brand { get; init; } = null!;
+    public int ProductCount { get; init; }
+}
+
 public sealed class ShopPublicRecord
 {
     public Guid ShopId { get; init; }
@@ -173,6 +186,12 @@ public interface IDiscoveryRepository
     Task<IReadOnlyList<CategoryRecord>> GetActiveCategoriesAsync(
         CancellationToken cancellationToken = default);
 
+    Task<IReadOnlyDictionary<int, int>> GetApprovedProductCountsByCategoryAsync(
+        CancellationToken cancellationToken = default);
+
+    Task<IReadOnlyList<BrandFilterRecord>> GetApprovedBrandOptionsAsync(
+        CancellationToken cancellationToken = default);
+
     Task<ShopPublicRecord?> GetActiveShopByKeyAsync(
         string shopKey,
         CancellationToken cancellationToken = default);
@@ -201,6 +220,9 @@ public interface IDiscoveryService
         CancellationToken cancellationToken = default);
 
     Task<IReadOnlyList<CategoryTreeNodeDto>> GetCategoryTreeAsync(
+        CancellationToken cancellationToken = default);
+
+    Task<IReadOnlyList<BrandFilterOptionDto>> GetBrandFilterOptionsAsync(
         CancellationToken cancellationToken = default);
 
     Task<PagedResult<ShopListItemDto>> ListShopsAsync(
