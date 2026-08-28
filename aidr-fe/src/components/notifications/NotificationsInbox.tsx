@@ -118,7 +118,7 @@ export function NotificationsInbox({ audience, variant = 'store' }: Notification
                   disabled={mutating || unreadCount === 0 || busyId === 'all'}
                   onClick={() => void handleMarkAllRead()}
                 >
-                  Mark all read
+                  Mark all as read
                 </button>
               </div>
             </div>
@@ -187,7 +187,7 @@ export function NotificationsInbox({ audience, variant = 'store' }: Notification
                                     disabled={busy}
                                     onClick={() => void handleMarkRead(item.notificationId, item.isRead)}
                                   >
-                                    Mark read
+                                    Mark as read
                                   </button>
                                 ) : null}
                                 <button
@@ -240,9 +240,9 @@ export function NotificationsInbox({ audience, variant = 'store' }: Notification
 
   return (
     <div className="notifications-content-box">
-      <div className="buyer-orders-toolbar">
-        <div className="buyer-orders-filters">
-          <label htmlFor="notifications-unread-only">
+      <div className="notifications-toolbar">
+        <div className="notifications-toolbar__start">
+          <label htmlFor="notifications-unread-only" className="notifications-filter-chip">
             <input
               id="notifications-unread-only"
               type="checkbox"
@@ -251,13 +251,18 @@ export function NotificationsInbox({ audience, variant = 'store' }: Notification
                 setUnreadOnly(e.target.checked);
                 setPage(1);
               }}
-            />{' '}
-            Unread only
+            />
+            <span>Unread only</span>
           </label>
+          {!loading && items.length > 0 ? (
+            <p className="notifications-toolbar__summary">
+              {unreadCount} unread · {totalCount} total
+            </p>
+          ) : null}
         </div>
         <button
           type="button"
-          className="btn-default btn-highlighted"
+          className="btn-default btn-accent btn-border notifications-toolbar__mark-all"
           disabled={mutating || unreadCount === 0 || busyId === 'all'}
           onClick={() => void handleMarkAllRead()}
         >
@@ -266,7 +271,7 @@ export function NotificationsInbox({ audience, variant = 'store' }: Notification
       </div>
 
       {error ? (
-        <div className="alert alert-danger" role="alert">
+        <div className="alert alert-danger buyer-orders-alert" role="alert">
           {error}
         </div>
       ) : null}
@@ -281,10 +286,6 @@ export function NotificationsInbox({ audience, variant = 'store' }: Notification
 
       {items.length > 0 ? (
         <>
-          <p className="account-muted notifications-count-label">
-            {unreadCount} unread · {totalCount} total
-          </p>
-
           <ul className="notifications-list">
             {items.map((item) => {
               const busy = busyId === item.notificationId || mutating;
@@ -295,19 +296,28 @@ export function NotificationsInbox({ audience, variant = 'store' }: Notification
                   key={item.notificationId}
                   className={`notifications-list__item${item.isRead ? '' : ' is-unread'}`}
                 >
-                  <div className="notifications-list__meta">
-                    <span className="notifications-list__type">
-                      {notificationTypeLabel(item.type)}
-                    </span>
-                    <time dateTime={item.createdAt}>{formatNotificationTime(item.createdAt)}</time>
+                  <div className="notifications-list__head">
+                    <div className="notifications-list__head-main">
+                      <div className="notifications-list__labels">
+                        <span className="notifications-list__type">
+                          {notificationTypeLabel(item.type)}
+                        </span>
+                        {!item.isRead ? (
+                          <span className="notifications-list__unread-badge">Unread</span>
+                        ) : null}
+                      </div>
+                      <h3 className="notifications-list__title">{item.title}</h3>
+                    </div>
+                    <time className="notifications-list__time" dateTime={item.createdAt}>
+                      {formatNotificationTime(item.createdAt)}
+                    </time>
                   </div>
-                  <h3 className="notifications-list__title">{item.title}</h3>
                   <p className="notifications-list__body">{item.body}</p>
                   <div className="notifications-list__actions">
                     {href ? (
                       <Link
                         to={href}
-                        className="btn-default"
+                        className="btn-default btn-accent"
                         onClick={() => void handleMarkRead(item.notificationId, item.isRead)}
                       >
                         View
@@ -316,16 +326,16 @@ export function NotificationsInbox({ audience, variant = 'store' }: Notification
                     {!item.isRead ? (
                       <button
                         type="button"
-                        className="btn-default"
+                        className="btn-default btn-border"
                         disabled={busy}
                         onClick={() => void handleMarkRead(item.notificationId, item.isRead)}
                       >
-                        Mark read
+                        Mark as read
                       </button>
                     ) : null}
                     <button
                       type="button"
-                      className="btn-default btn-highlighted"
+                      className="btn-default btn-border account-btn-danger"
                       disabled={busy}
                       onClick={() => void handleDelete(item.notificationId)}
                     >
