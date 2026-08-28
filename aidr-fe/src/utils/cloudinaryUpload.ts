@@ -5,6 +5,7 @@ export const CloudinaryFolders = {
   profile: 'profile',
   product: 'product',
   category: 'category',
+  chat: 'chat',
 } as const;
 
 export type CloudinaryFolder = (typeof CloudinaryFolders)[keyof typeof CloudinaryFolders];
@@ -90,6 +91,23 @@ export function validateProductImageFile(file: File): void {
 export async function uploadProductImageToCloudinary(file: File): Promise<CloudinaryUploadResult> {
   validateProductImageFile(file);
   return uploadImageToCloudinary(file, CloudinaryFolders.product);
+}
+
+const MAX_CHAT_IMAGE_BYTES = 5 * 1024 * 1024;
+
+export function validateChatImageFile(file: File): void {
+  if (!file.type.startsWith('image/')) {
+    throw new Error('Only image files can be sent in chat.');
+  }
+  if (file.size > MAX_CHAT_IMAGE_BYTES) {
+    throw new Error('Image must be 5MB or smaller.');
+  }
+}
+
+/** Upload a chat photo to folder `chat`. */
+export async function uploadChatImageToCloudinary(file: File): Promise<CloudinaryUploadResult> {
+  validateChatImageFile(file);
+  return uploadImageToCloudinary(file, CloudinaryFolders.chat);
 }
 
 /** Upload category image to folder `category`. */

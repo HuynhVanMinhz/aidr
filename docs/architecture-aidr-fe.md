@@ -272,7 +272,7 @@ VITE_SIGNALR_HUB_URL=https://api.aidr.local/hubs
 | Recommend / Similar blocks | UC-53/54 (`RecommendedProductsSection` on home; `SimilarProductsSection` on product detail; `aiApi` + `recommendationSlice`) |
 | NL filter + Compare | UC-90 (`NlSearchBar` on `/products` → `POST /ai/nl-filter` → bind catalog filters); UC-28 (compare icon on card/detail → tray → `/compare` + `POST /ai/compare`, Buyer) |
 | AI chatbot | UC-56 (`ShoppingAssistantWidget` in `AppShell`, `aiApi` chat + conversations) |
-| Chat list / room | UC-57/58 (`/chat`, `/seller/chat`, `chatApi`, `chatSlice`, SignalR `ChatHub` → append message; open via `?shopId=&productId=` / `?threadId=`) |
+| Chat list / room | UC-57/58 (`/chat`, `/seller/chat`, `chatApi`, `chatSlice`, SignalR `ChatHub` → `ReceiveMessage` / `ThreadRead` / `Typing` on the per-user group, so every thread stays live; open via `?shopId=&productId=` / `?threadId=`; photos upload to Cloudinary folder `chat`, shared products travel as `/products/{id}` links rendered via `products/lookup`) |
 | Reviews / Seller profile / Follow | UC-59..63 (`reviewApi`, `reviewSlice`, product detail reviews tab; order detail review + seller rating when Completed); UC-65..67 (`followApi`, `followSlice`, shop page follow + `/account/following`) |
 | Seller dashboard / reports / wallet / shop vouchers | UC-69, 70, 85; UC-87..89 (`/seller/vouchers`, `voucherApi` seller + `sellerVoucherSlice`, create/edit/status/delete) |
 | Admin accounts / seller requests / system vouchers / insights | UC-71..81 (`/admin/accounts`, `/admin/accounts/:id`, `/admin/insights`, `adminApi` accounts+insights + `adminGovernanceSlice`; `/admin/vouchers`, `voucherApi` admin + `adminVoucherSlice`) |
