@@ -128,9 +128,11 @@ public sealed class ChatService : IChatService
             attachmentUrl,
             cancellationToken);
 
+        var participants = Participants(access);
+
         try
         {
-            await _realtime.PublishMessageAsync(threadId, message, cancellationToken);
+            await _realtime.PublishMessageAsync(message, participants, cancellationToken);
         }
         catch (Exception ex)
         {
@@ -157,9 +159,28 @@ public sealed class ChatService : IChatService
     {
         EnsureUserId(userId);
         EnsureThreadId(threadId);
-        await EnsureThreadParticipantAsync(userId, threadId, cancellationToken);
+        var access = await GetThreadAccessForParticipantAsync(userId, threadId, cancellationToken);
 
         var updatedCount = await _chats.MarkThreadReadAsync(userId, threadId, cancellationToken);
+
+        if (updatedCount > 0)
+        {
+            // Let the other party's delivery ticks flip without a refresh.
+            await TryPublishAsync(
+                () => _realtime.PublishThreadReadAsync(
+                    new ChatThreadReadEvent
+                    {
+                        ThreadId = threadId,
+                        ReaderUserId = userId,
+                        UpdatedCount = updatedCount,
+                        ReadAt = DateTime.UtcNow
+                    },
+                    Participants(access),
+                    cancellationToken),
+                "read receipt",
+                threadId);
+        }
+
         return new MarkChatThreadReadResponse
         {
             ThreadId = threadId,
@@ -173,6 +194,35 @@ public sealed class ChatService : IChatService
         CancellationToken cancellationToken = default)
     {
         await GetThreadAccessForParticipantAsync(userId, threadId, cancellationToken);
+    }
+
+    public async Task NotifyTypingAsync(
+        Guid userId,
+        Guid threadId,
+        bool isTyping,
+        CancellationToken cancellationToken = default)
+    {
+        EnsureUserId(userId);
+        EnsureThreadId(threadId);
+        var access = await GetThreadAccessForParticipantAsync(userId, threadId, cancellationToken);
+
+        var peerUserId = access.BuyerUserId == userId
+            ? access.ShopOwnerUserId
+            : access.BuyerUserId;
+
+        // Typing is disposable: never fail the caller because the push did not land.
+        await TryPublishAsync(
+            () => _realtime.PublishTypingAsync(
+                new ChatTypingEvent
+                {
+                    ThreadId = threadId,
+                    UserId = userId,
+                    IsTyping = isTyping
+                },
+                new[] { peerUserId },
+                cancellationToken),
+            "typing signal",
+            threadId);
     }
 
     private async Task<ChatThreadAccess> GetThreadAccessForParticipantAsync(
@@ -255,6 +305,21 @@ public sealed class ChatService : IChatService
         }
 
         return (content, attachmentUrl);
+    }
+
+    private static IReadOnlyCollection<Guid> Participants(ChatThreadAccess access)
+        => new[] { access.BuyerUserId, access.ShopOwnerUserId };
+
+    private async Task TryPublishAsync(Func<Task> publish, string what, Guid threadId)
+    {
+        try
+        {
+            await publish();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to push chat {What} for thread {ThreadId}", what, threadId);
+        }
     }
 
     private static void EnsureUserId(Guid userId)

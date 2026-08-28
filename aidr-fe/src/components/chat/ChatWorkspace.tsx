@@ -1,14 +1,27 @@
-import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import { ChatAvatar } from './ChatAvatar';
+import { ChatComposer, type ChatComposerHandle } from './ChatComposer';
+import {
+  BackIcon,
+  ChatBubbleIcon,
+  CloseIcon,
+  ImageIcon,
+  RefreshIcon,
+  SearchIcon,
+  TagIcon,
+} from './ChatIcons';
+import { ChatMessageList } from './ChatMessageList';
 import { useChat } from '../../hooks/useChat';
 import { useChatHub } from '../../hooks/useChatHub';
+import { useChatLiveSync } from '../../hooks/useChatSync';
 import { useToast } from '../../hooks/useToast';
 import {
-  avatarInitial,
   formatChatTime,
-  formatMessageTime,
+  formatRelativeActivity,
   threadPeerAvatar,
   threadPeerName,
+  threadPreviewText,
 } from '../../utils/chatUi';
 import '../../styles/chat.css';
 
@@ -20,12 +33,14 @@ export function ChatWorkspace({ variant = 'admin' }: ChatWorkspaceProps) {
   const toast = useToast();
   const [searchParams, setSearchParams] = useSearchParams();
   const [search, setSearch] = useState('');
-  const [draft, setDraft] = useState('');
-  const [attachmentUrl, setAttachmentUrl] = useState('');
-  const [showAttachment, setShowAttachment] = useState(false);
   const [bootstrapped, setBootstrapped] = useState(false);
-  const messagesEndRef = useRef<HTMLDivElement | null>(null);
+  /** On narrow screens the two panes share the viewport, one at a time. */
+  const [threadPaneOpen, setThreadPaneOpen] = useState(false);
+  const [dragActive, setDragActive] = useState(false);
   const openKeyRef = useRef<string | null>(null);
+  const searchRef = useRef<HTMLInputElement | null>(null);
+  const composerRef = useRef<ChatComposerHandle | null>(null);
+  const dragDepthRef = useRef(0);
 
   const {
     threads,
@@ -34,16 +49,28 @@ export function ChatWorkspace({ variant = 'admin' }: ChatWorkspaceProps) {
     activeThread,
     loadingThreads,
     loadingMessages,
+    loadingOlderMessages,
+    hasOlderMessages,
+    peerIsTyping,
+    typingByThread,
+    currentUserId,
     sending,
     opening,
     error,
+    totalUnread,
+    markRead,
+    refreshThreads,
     selectThread,
     openThread,
+    loadOlderMessages,
+    syncActiveThread,
     send,
+    notifyTyping,
     getErrorMessage,
   } = useChat({ autoLoadThreads: true });
 
-  useChatHub(activeThreadId);
+  useChatHub();
+  useChatLiveSync({ activeThreadId, refreshThreads, syncActiveThread });
 
   const filteredThreads = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -55,10 +82,6 @@ export function ChatWorkspace({ variant = 'admin' }: ChatWorkspaceProps) {
       return name.includes(q) || preview.includes(q) || product.includes(q);
     });
   }, [search, threads]);
-
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages, activeThreadId]);
 
   useEffect(() => {
     if (bootstrapped || loadingThreads) return;
@@ -73,17 +96,17 @@ export function ChatWorkspace({ variant = 'admin' }: ChatWorkspaceProps) {
         if (threadId) {
           openKeyRef.current = `thread:${threadId}`;
           await selectThread(threadId);
+          setThreadPaneOpen(true);
         } else if (shopId) {
           const key = `shop:${shopId}:${productId ?? ''}`;
           if (openKeyRef.current !== key) {
             openKeyRef.current = key;
-            const thread = await openThread({
-              shopId,
-              productId: productId || null,
-            });
+            const thread = await openThread({ shopId, productId: productId || null });
             resolvedThreadId = thread.threadId;
+            setThreadPaneOpen(true);
           }
         } else if (threads[0]) {
+          // Desktop opens the newest conversation; mobile still lands on the list.
           resolvedThreadId = threads[0].threadId;
           await selectThread(threads[0].threadId);
         }
@@ -118,307 +141,295 @@ export function ChatWorkspace({ variant = 'admin' }: ChatWorkspaceProps) {
     setSearchParams(next, { replace: true });
   }, [activeThreadId, bootstrapped, searchParams, setSearchParams]);
 
-  async function handleSelectThread(threadId: string) {
+  // Anything that lands in the conversation already on screen counts as read.
+  const lastMessage = messages[messages.length - 1];
+  useEffect(() => {
+    if (!activeThreadId || !lastMessage || lastMessage.isMine || lastMessage.isRead) return;
+    if (typeof document !== 'undefined' && document.visibilityState === 'hidden') return;
+    void markRead(activeThreadId).catch(() => {
+      // Read receipts are best-effort.
+    });
+  }, [activeThreadId, lastMessage, markRead]);
+
+  const handleSelectThread = useCallback(
+    async (threadId: string) => {
+      setThreadPaneOpen(true);
+      if (threadId === activeThreadId) return;
+      try {
+        await selectThread(threadId);
+      } catch (err) {
+        toast.error(getErrorMessage(err, 'Unable to open conversation.'));
+      }
+    },
+    [activeThreadId, getErrorMessage, selectThread, toast],
+  );
+
+  const handleSend = useCallback(
+    async (payload: { content: string | null; attachmentUrl: string | null }) => {
+      if (!activeThreadId) return;
+      try {
+        await send(activeThreadId, payload);
+      } catch (err) {
+        toast.error(getErrorMessage(err, 'Unable to send message.'));
+        throw err;
+      }
+    },
+    [activeThreadId, getErrorMessage, send, toast],
+  );
+
+  const handleTyping = useCallback(
+    (isTyping: boolean) => {
+      if (activeThreadId) notifyTyping(activeThreadId, isTyping);
+    },
+    [activeThreadId, notifyTyping],
+  );
+
+  const handleRefresh = useCallback(async () => {
     try {
-      await selectThread(threadId);
+      await refreshThreads();
     } catch (err) {
-      toast.error(getErrorMessage(err, 'Unable to open conversation.'));
+      toast.error(getErrorMessage(err, 'Unable to refresh conversations.'));
     }
+  }, [getErrorMessage, refreshThreads, toast]);
+
+  const handleLoadOlder = useCallback(() => {
+    void loadOlderMessages().catch((err) => {
+      toast.error(getErrorMessage(err, 'Unable to load older messages.'));
+    });
+  }, [getErrorMessage, loadOlderMessages, toast]);
+
+  // Dragenter/leave fire for every child, so track depth instead of toggling on each event.
+  function handleDragEnter(event: React.DragEvent) {
+    if (!event.dataTransfer?.types?.includes('Files')) return;
+    dragDepthRef.current += 1;
+    setDragActive(true);
   }
 
-  async function handleSubmit(event: FormEvent) {
+  function handleDragLeave() {
+    dragDepthRef.current = Math.max(0, dragDepthRef.current - 1);
+    if (dragDepthRef.current === 0) setDragActive(false);
+  }
+
+  function handleDrop(event: React.DragEvent) {
+    if (!event.dataTransfer?.files?.length) return;
     event.preventDefault();
-    if (!activeThreadId) return;
-
-    const content = draft.trim();
-    const attachment = attachmentUrl.trim();
-    if (!content && !attachment) return;
-
-    try {
-      await send(activeThreadId, {
-        content: content || null,
-        attachmentUrl: attachment || null,
-      });
-      setDraft('');
-      setAttachmentUrl('');
-      setShowAttachment(false);
-    } catch (err) {
-      toast.error(getErrorMessage(err, 'Unable to send message.'));
-    }
+    dragDepthRef.current = 0;
+    setDragActive(false);
+    composerRef.current?.attachFiles(event.dataTransfer.files);
   }
 
-  const peerName = activeThread ? threadPeerName(activeThread) : null;
+  const peerName = activeThread ? threadPeerName(activeThread) : '';
   const peerAvatar = activeThread ? threadPeerAvatar(activeThread) : null;
-  const rootClass = variant === 'store' ? 'aidr-chat aidr-chat--store' : 'aidr-chat aidr-chat--admin';
+  const showSkeletons = loadingThreads && threads.length === 0;
 
   return (
-    <div className={rootClass}>
-      <div className="row g-1">
-        <div className="col-xxl-3 col-lg-4">
-          <div className="card position-relative overflow-hidden h-100">
-            <div className="card-header border-0 d-flex justify-content-between align-items-center">
-              <h4 className="card-title mb-0">Chat</h4>
-              {(opening || loadingThreads) && (
-                <span className="text-muted fs-13">Loading…</span>
-              )}
-            </div>
+    <div
+      className={`chat-workspace chat-workspace--${variant}${
+        threadPaneOpen ? ' is-thread-open' : ''
+      }`}
+    >
+      <aside className="chat-sidebar">
+        <header className="chat-sidebar__head">
+          <h2 className="chat-sidebar__title">
+            Chat
+            {totalUnread > 0 ? <span className="chat-count">{totalUnread}</span> : null}
+          </h2>
+          <button
+            type="button"
+            className="chat-icon-btn"
+            onClick={() => void handleRefresh()}
+            disabled={loadingThreads || opening}
+            title="Refresh conversations"
+            aria-label="Refresh conversations"
+          >
+            <RefreshIcon className={loadingThreads ? 'is-spinning' : undefined} />
+          </button>
+        </header>
 
-            <form
-              className="chat-search px-3"
-              onSubmit={(e) => {
-                e.preventDefault();
+        <div className="chat-search">
+          <SearchIcon className="chat-search__icon" />
+          <input
+            ref={searchRef}
+            type="text"
+            className="chat-search__input"
+            placeholder="Search conversations"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            onKeyDown={(e) => e.key === 'Escape' && setSearch('')}
+            aria-label="Search conversations"
+          />
+          {search ? (
+            <button
+              type="button"
+              className="chat-search__clear"
+              onClick={() => {
+                setSearch('');
+                searchRef.current?.focus();
               }}
+              aria-label="Clear search"
             >
-              <div className="chat-search-box">
-                <input
-                  className="form-control"
-                  type="search"
-                  name="search"
-                  placeholder="Search…"
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  aria-label="Search conversations"
-                />
-                <span className="btn btn-sm btn-link search-icon p-0" aria-hidden>
-                  <i className="bx bx-search-alt" />
-                </span>
-              </div>
-            </form>
+              <CloseIcon />
+            </button>
+          ) : null}
+        </div>
 
-            <div className="px-3 mb-3 chat-setting-height aidr-chat__thread-list">
-              {loadingThreads && threads.length === 0 ? (
-                <p className="text-muted py-3 mb-0">Loading conversations…</p>
-              ) : null}
+        <div className="chat-list" role="list">
+          {showSkeletons
+            ? Array.from({ length: 5 }, (_, i) => (
+                <div className="chat-list__skeleton" key={i} aria-hidden="true">
+                  <span className="chat-skeleton chat-skeleton--avatar" />
+                  <span className="chat-skeleton chat-skeleton--line" />
+                  <span className="chat-skeleton chat-skeleton--line chat-skeleton--short" />
+                </div>
+              ))
+            : null}
 
-              {!loadingThreads && filteredThreads.length === 0 ? (
-                <p className="text-muted py-3 mb-0">
-                  {search.trim()
-                    ? 'No conversations match your search.'
-                    : 'No conversations yet. Message a shop from a product or shop page.'}
-                </p>
-              ) : null}
-
-              {filteredThreads.map((thread) => {
-                const name = threadPeerName(thread);
-                const avatar = threadPeerAvatar(thread);
-                const active = thread.threadId === activeThreadId;
-                return (
-                  <button
-                    key={thread.threadId}
-                    type="button"
-                    className="text-body aidr-chat__thread-btn"
-                    onClick={() => void handleSelectThread(thread.threadId)}
-                  >
-                    <div
-                      className={`d-flex align-items-center p-2 rounded-1${
-                        active ? ' bg-light bg-opacity-50' : ''
-                      }`}
-                    >
-                      <div className="flex-shrink-0 position-relative">
-                        {avatar ? (
-                          <img
-                            src={avatar}
-                            className="me-2 rounded-circle"
-                            height={36}
-                            width={36}
-                            alt=""
-                          />
-                        ) : (
-                          <span className="aidr-chat__avatar-fallback me-2">{avatarInitial(name)}</span>
-                        )}
-                      </div>
-                      <div className="flex-grow-1 overflow-hidden text-start">
-                        <h5 className="my-0 fs-14">
-                          <span className="float-end text-muted fs-13 fw-normal">
-                            {formatChatTime(thread.lastMessageAt ?? thread.createdAt)}
-                          </span>
-                          {name}
-                        </h5>
-                        <p className="mt-1 mb-0 fs-13 text-muted d-flex align-items-end justify-content-between gap-2">
-                          <span className="w-75 text-truncate">
-                            {thread.lastMessagePreview ||
-                              (thread.productName
-                                ? `About: ${thread.productName}`
-                                : 'No messages yet')}
-                          </span>
-                          {thread.unreadCount > 0 ? (
-                            <span className="badge bg-danger rounded-pill">{thread.unreadCount}</span>
-                          ) : null}
-                        </p>
-                      </div>
-                    </div>
-                  </button>
-                );
-              })}
+          {!showSkeletons && filteredThreads.length === 0 ? (
+            <div className="chat-list__empty">
+              <ChatBubbleIcon />
+              <p className="chat-list__empty-title">
+                {search.trim() ? 'No matches' : 'No conversations yet'}
+              </p>
+              <p>
+                {search.trim()
+                  ? 'Try a different name, product or keyword.'
+                  : 'Message a shop from any product or shop page to start one.'}
+              </p>
             </div>
-          </div>
-        </div>
+          ) : null}
 
-        <div className="col-xxl-9 col-lg-8">
-          <div className="card position-relative overflow-hidden h-100">
-            {!activeThread ? (
-              <div className="aidr-chat__empty d-flex align-items-center justify-content-center p-4">
-                <p className="text-muted mb-0">Select a conversation to start messaging.</p>
-              </div>
-            ) : (
-              <>
-                <div className="card-header d-flex align-items-center mh-100">
-                  <div className="d-flex align-items-center">
-                    {peerAvatar ? (
-                      <img
-                        src={peerAvatar}
-                        className="me-2 rounded"
-                        height={36}
-                        width={36}
-                        alt=""
-                      />
-                    ) : (
-                      <span className="aidr-chat__avatar-fallback me-2">
-                        {avatarInitial(peerName ?? '')}
-                      </span>
-                    )}
-                    <div className="d-flex flex-column">
-                      <h5 className="my-0 fs-16 fw-semibold text-dark">{peerName}</h5>
-                      {activeThread.productName ? (
-                        <p className="mb-0 text-muted fs-13">
-                          Product: {activeThread.productName}
-                        </p>
+          {filteredThreads.map((thread) => {
+            const name = threadPeerName(thread);
+            const active = thread.threadId === activeThreadId;
+            const typingUserId = typingByThread[thread.threadId];
+            const typing = Boolean(typingUserId && typingUserId !== currentUserId);
+            return (
+              <button
+                key={thread.threadId}
+                type="button"
+                role="listitem"
+                className={`chat-list__item${active ? ' is-active' : ''}${
+                  thread.unreadCount > 0 ? ' is-unread' : ''
+                }`}
+                onClick={() => void handleSelectThread(thread.threadId)}
+                aria-current={active}
+              >
+                <ChatAvatar name={name} src={threadPeerAvatar(thread)} size={44} />
+                <span className="chat-list__body">
+                  <span className="chat-list__top">
+                    <span className="chat-list__name">{name}</span>
+                    <time className="chat-list__time">
+                      {formatChatTime(thread.lastMessageAt ?? thread.createdAt)}
+                    </time>
+                  </span>
+                  <span className="chat-list__bottom">
+                    <span className="chat-list__preview">
+                      {typing ? (
+                        <em className="chat-list__typing">typing…</em>
                       ) : (
-                        <p className="mb-0 text-muted fs-13">
-                          {activeThread.myRole === 'Seller' ? 'Buyer chat' : 'Shop chat'}
-                        </p>
+                        threadPreviewText(thread)
                       )}
-                    </div>
-                  </div>
-                </div>
-
-                <div className="chat-box">
-                  <ul className="chat-conversation-list p-3 chatbox-height aidr-chat__messages">
-                    {loadingMessages && messages.length === 0 ? (
-                      <li className="clearfix">
-                        <p className="text-muted mb-0">Loading messages…</p>
-                      </li>
+                    </span>
+                    {thread.unreadCount > 0 ? (
+                      <span className="chat-badge">
+                        {thread.unreadCount > 99 ? '99+' : thread.unreadCount}
+                      </span>
                     ) : null}
-
-                    {!loadingMessages && messages.length === 0 ? (
-                      <li className="clearfix">
-                        <p className="text-muted mb-0">No messages yet. Say hello!</p>
-                      </li>
-                    ) : null}
-
-                    {messages.map((message) => (
-                      <li
-                        key={message.messageId}
-                        className={`clearfix${message.isMine ? ' odd' : ''}`}
-                      >
-                        <div className={`chat-conversation-text${message.isMine ? ' ms-0' : ''}`}>
-                          <div className={`d-flex${message.isMine ? ' justify-content-end' : ''}`}>
-                            <div className="chat-ctext-wrap">
-                              {message.content?.trim() ? <p>{message.content}</p> : null}
-                              {message.attachmentUrl ? (
-                                <a
-                                  href={message.attachmentUrl}
-                                  target="_blank"
-                                  rel="noreferrer"
-                                  className="aidr-chat__attachment"
-                                >
-                                  {/\.(png|jpe?g|gif|webp)(\?|$)/i.test(message.attachmentUrl) ? (
-                                    <img
-                                      src={message.attachmentUrl}
-                                      alt="Attachment"
-                                      className="img-thumbnail"
-                                      style={{ maxHeight: 120 }}
-                                    />
-                                  ) : (
-                                    <span>View attachment</span>
-                                  )}
-                                </a>
-                              ) : null}
-                            </div>
-                          </div>
-                          <p
-                            className={`text-muted fs-12 mb-0 mt-1${
-                              message.isMine ? '' : ' ms-2'
-                            }`}
-                          >
-                            {formatMessageTime(message.createdAt)}
-                            {message.isMine ? (
-                              <i
-                                className={`bx bx-check-double ms-1${
-                                  message.isRead ? ' text-primary' : ''
-                                }`}
-                              />
-                            ) : null}
-                          </p>
-                        </div>
-                      </li>
-                    ))}
-                    <div ref={messagesEndRef} />
-                  </ul>
-
-                  <div className="bg-light bg-opacity-50 p-2">
-                    {showAttachment ? (
-                      <div className="mb-2 px-1">
-                        <input
-                          type="url"
-                          className="form-control form-control-sm"
-                          placeholder="Attachment URL (optional)"
-                          value={attachmentUrl}
-                          onChange={(e) => setAttachmentUrl(e.target.value)}
-                          maxLength={512}
-                        />
-                      </div>
-                    ) : null}
-                    <form className="needs-validation" onSubmit={(e) => void handleSubmit(e)}>
-                      <div className="row align-items-center">
-                        <div className="col mb-2 mb-sm-0 d-flex">
-                          <div className="input-group">
-                            <input
-                              type="text"
-                              className="form-control border-0"
-                              placeholder="Enter your message"
-                              value={draft}
-                              onChange={(e) => setDraft(e.target.value)}
-                              maxLength={2000}
-                              disabled={sending}
-                              aria-label="Message"
-                            />
-                          </div>
-                        </div>
-                        <div className="col-sm-auto">
-                          <div className="btn-group btn-toolbar">
-                            <button
-                              type="button"
-                              className="btn btn-sm btn-light"
-                              title="Add attachment URL"
-                              onClick={() => setShowAttachment((v) => !v)}
-                            >
-                              <i className="bx bx-paperclip fs-18" />
-                            </button>
-                            <button
-                              type="submit"
-                              className="btn btn-sm btn-primary chat-send"
-                              disabled={
-                                sending || (!draft.trim() && !attachmentUrl.trim())
-                              }
-                              aria-label="Send message"
-                            >
-                              <i className="bx bx-send fs-18" />
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    </form>
-                  </div>
-                </div>
-              </>
-            )}
-          </div>
+                  </span>
+                </span>
+              </button>
+            );
+          })}
         </div>
-      </div>
+      </aside>
+
+      <section
+        className={`chat-main${dragActive ? ' is-drop-target' : ''}`}
+        onDragEnter={handleDragEnter}
+        onDragOver={(e) => {
+          if (e.dataTransfer?.types?.includes('Files')) e.preventDefault();
+        }}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
+      >
+        {!activeThread ? (
+          <div className="chat-empty">
+            <span className="chat-empty__art">
+              <ChatBubbleIcon />
+            </span>
+            <h3>Select a conversation</h3>
+            <p>
+              Pick someone from the list to read the history and reply. New messages arrive live —
+              no refresh needed.
+            </p>
+          </div>
+        ) : (
+          <>
+            <header className="chat-main__head">
+              <button
+                type="button"
+                className="chat-icon-btn chat-main__back"
+                onClick={() => setThreadPaneOpen(false)}
+                aria-label="Back to conversations"
+              >
+                <BackIcon />
+              </button>
+
+              <ChatAvatar name={peerName} src={peerAvatar} size={40} badge="online" />
+
+              <div className="chat-main__identity">
+                <h3 className="chat-main__name">{peerName}</h3>
+                <p className="chat-main__status">
+                  {peerIsTyping
+                    ? 'typing…'
+                    : formatRelativeActivity(activeThread.lastMessageAt) ||
+                      (activeThread.myRole === 'Seller' ? 'Buyer conversation' : 'Shop conversation')}
+                </p>
+              </div>
+
+              {activeThread.productName ? (
+                <span className="chat-main__context" title={activeThread.productName}>
+                  <TagIcon />
+                  <span>{activeThread.productName}</span>
+                </span>
+              ) : null}
+            </header>
+
+            <ChatMessageList
+              messages={messages}
+              activeThreadId={activeThreadId}
+              peerName={peerName}
+              peerAvatar={peerAvatar}
+              loading={loadingMessages}
+              loadingOlder={loadingOlderMessages}
+              hasOlder={hasOlderMessages}
+              peerIsTyping={peerIsTyping}
+              onLoadOlder={handleLoadOlder}
+            />
+
+            <ChatComposer
+              ref={composerRef}
+              threadId={activeThreadId}
+              peerName={peerName}
+              shopId={activeThread.shopId}
+              shopName={activeThread.shopName}
+              sending={sending}
+              onSend={handleSend}
+              onTyping={handleTyping}
+            />
+
+            {dragActive ? (
+              <div className="chat-drop" aria-hidden="true">
+                <ImageIcon />
+                <p>Drop an image to send it</p>
+              </div>
+            ) : null}
+          </>
+        )}
+      </section>
 
       {error ? (
-        <p className="text-danger mt-2 mb-0" role="alert">
+        <p className="chat-workspace__error" role="alert">
           {error}
         </p>
       ) : null}

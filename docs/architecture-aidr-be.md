@@ -107,6 +107,7 @@ aidr-be/
 |----|----------|--------|
 | UC-09/10/11 | `GET /api/products`, `GET /api/products/{id}`, `GET /api/categories` | Discovery |
 | UC-26/27 | `GET /api/products/search?q=&filters=&sort=` | Discovery |
+| UC-58 | `GET /api/products/lookup?ids=` — batch product summaries for link previews (chat product cards); records no view, unlike `GET /api/products/{id}` | Discovery |
 | UC-62b | `GET /api/shops/{shopKey}` — shop profile, policies, rating, approved products (paged; `shopKey` = ShopId hoặc Slug). Also `GET /api/shops?page=&pageSize=&sort=rating\|followers\|newest` — Active shops list (default rating desc) | Discovery |
 | UC-64 | `GET /api/shops/{shopKey}/rating` — AvgRating + RatingCount | Discovery |
 | UC-53/54 | `GET /api/recommendations`, `GET /api/products/{id}/similar` | AI + Discovery |
@@ -186,7 +187,7 @@ aidr-be/
 | UC-44 | `GET /api/notifications?page=&pageSize=&unreadOnly=` — inbox (paged, newest first); `GET /api/notifications/unread-count`; `POST /api/notifications/{id}/read`; `POST /api/notifications/read-all`; SignalR `NotificationHub` group `user:{userId}` event `ReceiveNotification` | Engagement |
 | UC-45 | `DELETE /api/notifications/{notificationId}` — owner hard-delete | Engagement |
 | UC-57 | `GET /api/chat/threads?page=&pageSize=` — thread list for buyer or shop owner (paged, by `LastMessageAt`); `GET /api/chat/threads/{threadId}`; `GET /api/chat/threads/{threadId}/messages?page=&pageSize=` — message window (page 1 = newest chunk, chronological within page) | Engagement |
-| UC-58 | `POST /api/chat/threads` — open/get-or-create `{ shopId, productId? }` (buyer); `POST /api/chat/threads/{threadId}/messages` — `{ content, attachmentUrl? }`; `POST /api/chat/threads/{threadId}/read`; SignalR `ChatHub` group `thread:{threadId}` event `ReceiveMessage` (+ `JoinThread`/`LeaveThread`) | Engagement |
+| UC-58 | `POST /api/chat/threads` — open/get-or-create `{ shopId, productId? }` (buyer); `POST /api/chat/threads/{threadId}/messages` — `{ content, attachmentUrl? }`; `POST /api/chat/threads/{threadId}/read`; SignalR `ChatHub` group `chat-user:{userId}` (joined on connect) events `ReceiveMessage` / `ThreadRead` / `Typing` (+ client calls `SendMessage`/`MarkRead`/`Typing`) | Engagement |
 
 ### 6.7 AI
 | UC | Endpoint | Module |
@@ -221,7 +222,7 @@ Invalidate khi Seller/Admin mutate product/category.
 ### 7.3 SignalR (Pub/Sub)
 Hubs đề xuất:
 - `NotificationHub` — group `user:{userId}` (UC-44)
-- `ChatHub` — group `thread:{threadId}` (UC-57/58)
+- `ChatHub` — group `chat-user:{userId}`, joined on connect so both participants stay in sync on every device (UC-57/58)
 - `OrderHub` (optional) — buyer/seller nhận status change (UC-47)
 
 ### 7.4 payOS
