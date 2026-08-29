@@ -1,7 +1,7 @@
 import { useEffect, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 
-type ConfirmVariant = 'primary' | 'success' | 'danger';
+type ConfirmVariant = 'primary' | 'success' | 'warning' | 'danger';
 
 type AdminConfirmModalProps = {
   open: boolean;
@@ -18,6 +18,7 @@ type AdminConfirmModalProps = {
 const confirmBtnClass: Record<ConfirmVariant, string> = {
   primary: 'btn btn-primary',
   success: 'btn btn-success',
+  warning: 'btn btn-warning',
   danger: 'btn btn-danger',
 };
 

@@ -20,6 +20,12 @@ public interface IAdminSellerRegistrationService
         Guid adminUserId,
         CancellationToken cancellationToken = default);
 
+    Task<AdminSellerRegistrationDto> RequestMoreInfoAsync(
+        Guid requestId,
+        Guid adminUserId,
+        RequestMoreInfoRequest request,
+        CancellationToken cancellationToken = default);
+
     Task<AdminSellerRegistrationDto> RejectAsync(
         Guid requestId,
         Guid adminUserId,

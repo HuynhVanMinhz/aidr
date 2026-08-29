@@ -17,6 +17,10 @@ export function sellerRegistrationBadgeClass(status: string): string {
       return adminBadgeClass.solidSuccess;
     case 'Rejected':
       return adminBadgeClass.outlineDanger;
+    // Pending is on us to decide; NeedsMoreInfo is on the applicant. Same colour
+    // for both would hide which queue actually needs attention.
+    case 'NeedsMoreInfo':
+      return adminBadgeClass.outlinePrimary;
     default:
       return adminBadgeClass.outlineWarning;
   }

@@ -11,10 +11,64 @@ const PAGE_SIZE = 10;
 
 const STATUS_FILTERS: { value: SellerRegistrationStatusFilter; label: string }[] = [
   { value: 'Pending', label: 'Pending' },
+  { value: 'NeedsMoreInfo', label: 'Waiting on applicant' },
   { value: 'Approved', label: 'Approved' },
   { value: 'Rejected', label: 'Rejected' },
   { value: 'all', label: 'All' },
 ];
+
+/**
+ * Three states worth distinguishing at a glance: verified, needs a human, and
+ * nothing on file. "Not filed with this form" is a footnote, not a warning —
+ * the identity is still checked.
+ */
+function IdentityBadge({
+  hasCheck,
+  status,
+  linked,
+}: {
+  hasCheck: boolean;
+  status?: string | null;
+  linked: boolean;
+}) {
+  if (!hasCheck) {
+    return (
+      <span
+        className="badge bg-warning-subtle text-warning px-2 py-1 fs-13"
+        title="This applicant has never verified their identity — read the documents by hand."
+      >
+        <IconifyIcon icon="solar:shield-cross-bold" className="me-1 align-middle" />
+        None
+      </span>
+    );
+  }
+
+  const passed = status === 'Passed';
+
+  return (
+    <span
+      className={`badge px-2 py-1 fs-13 ${
+        passed ? 'bg-success-subtle text-success' : 'bg-primary-subtle text-primary'
+      }`}
+      title={
+        linked
+          ? undefined
+          : 'Verified by this applicant, but after this application was submitted.'
+      }
+    >
+      <IconifyIcon
+        icon={passed ? 'solar:shield-check-bold' : 'solar:shield-warning-bold'}
+        className="me-1 align-middle"
+      />
+      {passed ? 'Verified' : 'Needs review'}
+      {linked ? '' : ' *'}
+    </span>
+  );
+}
+
+function statusLabel(status: string) {
+  return status === 'NeedsMoreInfo' ? 'Waiting on applicant' : status;
+}
 
 function formatDate(value: string) {
   const date = new Date(value);
@@ -48,32 +102,16 @@ export function AdminSellerRegistrationListPage() {
     if (serverPage !== page) setPage(serverPage);
   }, [serverPage, page]);
 
-  const viewTotal =
-    status === 'Pending'
-      ? summary.pendingCount
-      : status === 'Approved'
-        ? summary.approvedCount
-        : status === 'Rejected'
-          ? summary.rejectedCount
-          : summary.pendingCount + summary.approvedCount + summary.rejectedCount;
+  const allTotal = summary.pendingCount + summary.approvedCount + summary.rejectedCount;
 
   return (
     <>
       <div className="row">
         <div className="col-md-6 col-xl-3">
           <AdminStatCard
-            title="In This View"
-            value={debouncedQ ? totalCount : viewTotal}
-            unit="Requests"
-            icon="solar:clipboard-list-bold-duotone"
-            tone="primary"
-          />
-        </div>
-        <div className="col-md-6 col-xl-3">
-          <AdminStatCard
-            title="Pending"
+            title="Awaiting review"
             value={summary.pendingCount}
-            unit="Queue"
+            unit="In the queue"
             icon="solar:hourglass-bold-duotone"
             tone="warning"
           />
@@ -82,7 +120,7 @@ export function AdminSellerRegistrationListPage() {
           <AdminStatCard
             title="Approved"
             value={summary.approvedCount}
-            unit="Sellers"
+            unit="Selling now"
             icon="solar:shop-bold-duotone"
             tone="success"
           />
@@ -91,9 +129,18 @@ export function AdminSellerRegistrationListPage() {
           <AdminStatCard
             title="Rejected"
             value={summary.rejectedCount}
-            unit="Denied"
+            unit="Turned down"
             icon="solar:close-circle-bold-duotone"
             tone="danger"
+          />
+        </div>
+        <div className="col-md-6 col-xl-3">
+          <AdminStatCard
+            title="All applications"
+            value={allTotal}
+            unit="Since launch"
+            icon="solar:clipboard-list-bold-duotone"
+            tone="primary"
           />
         </div>
       </div>
@@ -139,22 +186,23 @@ export function AdminSellerRegistrationListPage() {
                   <tr>
                     <th>Shop</th>
                     <th>Applicant</th>
+                    <th>Identity</th>
                     <th>Submitted</th>
                     <th>Status</th>
-                    <th>Actions</th>
+                    <th className="text-end">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   {loading && items.length === 0 ? (
                     <tr>
-                      <td colSpan={5} className="text-center py-4 text-muted">
+                      <td colSpan={6} className="text-center py-4 text-muted">
                         Loading...
                       </td>
                     </tr>
                   ) : null}
                   {!loading && items.length === 0 ? (
                     <tr>
-                      <td colSpan={5} className="text-center py-4 text-muted">
+                      <td colSpan={6} className="text-center py-4 text-muted">
                         No seller registration requests found.
                       </td>
                     </tr>
@@ -173,17 +221,26 @@ export function AdminSellerRegistrationListPage() {
                         <p className="mb-0 fw-medium">{item.userFullName}</p>
                         <p className="text-muted mb-0 fs-13">{item.userEmail}</p>
                       </td>
-                      <td>{formatDate(item.createdAt)}</td>
                       <td>
-                        <span className={sellerRegistrationBadgeClass(item.status)}>{item.status}</span>
+                        <IdentityBadge
+                          hasCheck={item.hasIdentityCheck}
+                          status={item.kycStatus}
+                          linked={item.kycLinkedToApplication}
+                        />
                       </td>
+                      <td className="text-nowrap">{formatDate(item.createdAt)}</td>
                       <td>
+                        <span className={sellerRegistrationBadgeClass(item.status)}>
+                          {statusLabel(item.status)}
+                        </span>
+                      </td>
+                      <td className="text-end">
                         <Link
                           to={`/admin/seller-registrations/${item.requestId}`}
-                          className="btn btn-light btn-sm"
-                          title="Review"
+                          className="btn btn-light btn-sm text-nowrap"
                         >
-                          <IconifyIcon icon="solar:eye-broken" className="align-middle fs-18" />
+                          <IconifyIcon icon="solar:eye-broken" className="align-middle me-1" />
+                          Review
                         </Link>
                       </td>
                     </tr>
@@ -191,6 +248,12 @@ export function AdminSellerRegistrationListPage() {
                 </tbody>
               </table>
             </div>
+
+            {items.some((x) => x.hasIdentityCheck && !x.kycLinkedToApplication) ? (
+              <p className="text-muted fs-12 px-3 pt-3 mb-0">
+                * Identity verified by the applicant, but after that application was submitted.
+              </p>
+            ) : null}
 
             <AdminPagination
               page={page}

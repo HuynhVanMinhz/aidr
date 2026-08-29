@@ -72,4 +72,26 @@ public sealed class AdminSellerRegistrationsController : ControllerBase
         var result = await _registrations.RejectAsync(id, adminUserId, request, cancellationToken);
         return Ok(ApiResult<AdminSellerRegistrationDto>.Ok(result, "Seller registration rejected."));
     }
+
+    /// <summary>
+    /// Send the application back so the applicant can fix it, instead of
+    /// rejecting and making them start over.
+    /// </summary>
+    [HttpPost("{id:guid}/request-info")]
+    public async Task<ActionResult<ApiResult<AdminSellerRegistrationDto>>> RequestMoreInfo(
+        Guid id,
+        [FromBody] RequestMoreInfoRequest request,
+        CancellationToken cancellationToken)
+    {
+        var adminUserId = User.GetUserId();
+        var result = await _registrations.RequestMoreInfoAsync(
+            id,
+            adminUserId,
+            request,
+            cancellationToken);
+
+        return Ok(ApiResult<AdminSellerRegistrationDto>.Ok(
+            result,
+            "Sent back to the applicant for more information."));
+    }
 }

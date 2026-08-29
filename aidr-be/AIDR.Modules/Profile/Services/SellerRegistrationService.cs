@@ -1,6 +1,9 @@
 using System.Text.Json;
+using System.Text.RegularExpressions;
+using AIDR.Modules.Kyc.Abstractions;
 using AIDR.Modules.Profile.Abstractions;
 using AIDR.Shared.Constants;
+using AIDR.Shared.Dtos.Kyc;
 using AIDR.Shared.Dtos.Seller;
 using AIDR.Shared.Exceptions;
 
@@ -8,10 +11,19 @@ namespace AIDR.Modules.Profile.Services;
 
 public sealed class SellerRegistrationService : ISellerRegistrationService
 {
-    private readonly ISellerRegistrationRepository _repository;
+    /// <summary>Vietnamese tax code: 10 digits, optionally a 3-digit branch suffix.</summary>
+    private static readonly Regex TaxCodePattern = new(@"^\d{10}(-\d{3})?$", RegexOptions.Compiled);
 
-    public SellerRegistrationService(ISellerRegistrationRepository repository) =>
+    private readonly ISellerRegistrationRepository _repository;
+    private readonly IKycRepository _kyc;
+
+    public SellerRegistrationService(
+        ISellerRegistrationRepository repository,
+        IKycRepository kyc)
+    {
         _repository = repository;
+        _kyc = kyc;
+    }
 
     public async Task<BuyerSellerRegistrationDto> CreateAsync(
         Guid userId,
@@ -31,21 +43,154 @@ public sealed class SellerRegistrationService : ISellerRegistrationService
         if (await _repository.HasPendingAsync(userId, cancellationToken))
             throw new ConflictException("You already have a pending seller registration request.");
 
+        var kyc = await RequireUsableKycAsync(userId, cancellationToken);
+        var model = await BuildModelAsync(request, kyc, null, cancellationToken);
+
+        var record = await _repository.CreateAsync(userId, model, cancellationToken);
+        return Map(record, kyc);
+    }
+
+    public async Task<BuyerSellerRegistrationDto> UpdateMineAsync(
+        Guid userId,
+        CreateSellerRegistrationRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        EnsureUserId(userId);
+        if (request is null)
+            throw new AppException("Seller registration request body is required.");
+
+        var existing = await _repository.GetLatestForUserAsync(userId, cancellationToken)
+            ?? throw new NotFoundException("Seller registration request not found.");
+
+        if (!SellerRegistrationConstants.EditableStatuses.Contains(existing.Status))
+        {
+            throw new ConflictException(
+                $"A {existing.Status.ToLowerInvariant()} application cannot be edited.");
+        }
+
+        var kyc = await RequireUsableKycAsync(userId, cancellationToken);
+        var model = await BuildModelAsync(request, kyc, existing.RequestId, cancellationToken);
+
+        var record = await _repository.UpdateAsync(existing.RequestId, model, cancellationToken);
+        return Map(record, kyc);
+    }
+
+    /// <summary>
+    /// No identity check, no application. Enforced here and not just in the UI —
+    /// the endpoint is reachable directly.
+    /// </summary>
+    private async Task<KycVerificationDto> RequireUsableKycAsync(
+        Guid userId,
+        CancellationToken cancellationToken)
+    {
+        var kyc = await _kyc.GetLatestForUserAsync(userId, cancellationToken);
+
+        if (kyc is null)
+        {
+            throw new ConflictException(
+                "Verify your identity before applying to sell. Go to Become a seller and complete the eKYC step.");
+        }
+
+        if (!KycConstants.UsableStatuses.Contains(kyc.Status))
+        {
+            throw new ConflictException(
+                kyc.FailureReason
+                ?? "Your identity verification did not pass. Please try the eKYC step again.");
+        }
+
+        return kyc;
+    }
+
+    private async Task<SellerRegistrationWriteModel> BuildModelAsync(
+        CreateSellerRegistrationRequest request,
+        KycVerificationDto kyc,
+        Guid? excludeRequestId,
+        CancellationToken cancellationToken)
+    {
         var shopName = RequireText(request.ShopName, "Shop name", AdminConstants.MaxShopNameLength);
-        var businessInfo = OptionalText(
-            request.BusinessInfo,
-            "Business info",
-            AdminConstants.MaxSellerBusinessInfoLength);
-        var documentUrlsJson = NormalizeDocumentUrls(request.DocumentUrls);
 
-        var record = await _repository.CreateAsync(
-            userId,
-            shopName,
-            businessInfo,
-            documentUrlsJson,
-            cancellationToken);
+        if (await _repository.ShopNameTakenAsync(shopName, excludeRequestId, cancellationToken))
+            throw new ConflictException("That shop name is already taken. Pick another one.");
 
-        return Map(record);
+        var businessType = NormalizeBusinessType(request.BusinessType);
+        var needsLicense = SellerRegistrationConstants.RegisteredBusinessTypes.Contains(businessType);
+
+        var taxCode = OptionalText(
+            request.TaxCode,
+            "Tax code",
+            SellerRegistrationConstants.MaxTaxCodeLength);
+
+        if (needsLicense)
+        {
+            if (string.IsNullOrWhiteSpace(taxCode))
+                throw new AppException("A tax code is required for household and company sellers.");
+
+            if (!TaxCodePattern.IsMatch(taxCode))
+                throw new AppException("Tax code must be 10 digits, optionally followed by -NNN.");
+        }
+
+        var licenseUrl = OptionalUrl(request.LicenseImageUrl, "Business licence image");
+        if (needsLicense && string.IsNullOrWhiteSpace(licenseUrl))
+        {
+            throw new AppException(
+                "Upload a photo of the business licence for household and company sellers.");
+        }
+
+        return new SellerRegistrationWriteModel
+        {
+            ShopName = shopName,
+            BusinessInfo = OptionalText(
+                request.BusinessInfo,
+                "Business info",
+                AdminConstants.MaxSellerBusinessInfoLength),
+            DocumentUrlsJson = NormalizeDocumentUrls(request.DocumentUrls),
+            KycVerificationId = kyc.KycVerificationId,
+            BusinessType = businessType,
+            TaxCode = needsLicense ? taxCode : null,
+            BusinessAddress = OptionalText(
+                request.BusinessAddress,
+                "Business address",
+                SellerRegistrationConstants.MaxBusinessAddressLength),
+            ContactPhone = OptionalText(
+                request.ContactPhone,
+                "Contact phone",
+                SellerRegistrationConstants.MaxContactPhoneLength),
+            ContactEmail = OptionalText(
+                request.ContactEmail,
+                "Contact email",
+                SellerRegistrationConstants.MaxContactEmailLength),
+            LicenseImageUrl = licenseUrl,
+        };
+    }
+
+    private static string NormalizeBusinessType(string? value)
+    {
+        var raw = value?.Trim();
+        if (string.IsNullOrWhiteSpace(raw))
+            throw new AppException("Choose how you are selling: individual, household, or company.");
+
+        var match = SellerRegistrationConstants.BusinessTypes
+            .FirstOrDefault(t => string.Equals(t, raw, StringComparison.OrdinalIgnoreCase));
+
+        return match ?? throw new AppException($"Unknown business type '{raw}'.");
+    }
+
+    private static string? OptionalUrl(string? value, string label)
+    {
+        var url = value?.Trim();
+        if (string.IsNullOrWhiteSpace(url))
+            return null;
+
+        if (url.Length > AdminConstants.MaxSellerDocumentUrlLength)
+            throw new AppException($"{label} URL is too long.");
+
+        if (!Uri.TryCreate(url, UriKind.Absolute, out var uri)
+            || (uri.Scheme != Uri.UriSchemeHttp && uri.Scheme != Uri.UriSchemeHttps))
+        {
+            throw new AppException($"{label} must be an absolute http or https URL.");
+        }
+
+        return url;
     }
 
     public async Task<BuyerSellerRegistrationDto> GetMineAsync(
@@ -57,7 +202,11 @@ public sealed class SellerRegistrationService : ISellerRegistrationService
         var record = await _repository.GetLatestForUserAsync(userId, cancellationToken)
             ?? throw new NotFoundException("Seller registration request not found.");
 
-        return Map(record);
+        var kyc = record.KycVerificationId is { } kycId
+            ? await _kyc.GetByIdAsync(kycId, cancellationToken)
+            : await _kyc.GetLatestForUserAsync(userId, cancellationToken);
+
+        return Map(record, kyc);
     }
 
     private static string? NormalizeDocumentUrls(JsonElement? element)
@@ -139,16 +288,27 @@ public sealed class SellerRegistrationService : ISellerRegistrationService
         return JsonSerializer.Serialize(urls);
     }
 
-    private static BuyerSellerRegistrationDto Map(SellerRegistrationRecord record) => new()
+    private static BuyerSellerRegistrationDto Map(
+        SellerRegistrationRecord record,
+        KycVerificationDto? kyc) => new()
     {
         RequestId = record.RequestId,
         ShopName = record.ShopName,
         BusinessInfo = record.BusinessInfo,
+        BusinessType = record.BusinessType,
+        TaxCode = record.TaxCode,
+        BusinessAddress = record.BusinessAddress,
+        ContactPhone = record.ContactPhone,
+        ContactEmail = record.ContactEmail,
+        LicenseImageUrl = record.LicenseImageUrl,
         DocumentUrls = ParseDocumentUrls(record.DocumentUrlsJson),
         Status = record.Status,
         AdminNote = record.AdminNote,
         ReviewedAt = record.ReviewedAt,
-        CreatedAt = record.CreatedAt
+        CreatedAt = record.CreatedAt,
+        UpdatedAt = record.UpdatedAt,
+        Kyc = kyc,
+        CanEdit = SellerRegistrationConstants.EditableStatuses.Contains(record.Status)
     };
 
     private static IReadOnlyList<string> ParseDocumentUrls(string? json)
