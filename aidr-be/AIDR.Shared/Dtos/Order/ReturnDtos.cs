@@ -53,6 +53,8 @@ public sealed class BuyerReturnItemDto
     public Guid OrderItemId { get; init; }
     public Guid ProductId { get; init; }
     public string ProductName { get; init; } = null!;
+    public string? Sku { get; init; }
+    public string? ImageUrl { get; init; }
     public int Quantity { get; init; }
     public decimal UnitPrice { get; init; }
     public decimal LineTotal { get; init; }

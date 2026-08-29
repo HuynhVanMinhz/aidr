@@ -190,6 +190,8 @@ public sealed class ReturnRepository : IReturnRepository
             .Include(r => r.Order)
             .Include(r => r.Items)
                 .ThenInclude(i => i.OrderItem)
+                    .ThenInclude(oi => oi.Product)
+                        .ThenInclude(p => p.Images)
             .Include(r => r.Evidences)
             .Include(r => r.StatusHistories)
             .Where(r => ids.Contains(r.ReturnRequestId))
@@ -247,6 +249,8 @@ public sealed class ReturnRepository : IReturnRepository
             .Include(r => r.Order)
             .Include(r => r.Items)
                 .ThenInclude(i => i.OrderItem)
+                    .ThenInclude(oi => oi.Product)
+                        .ThenInclude(p => p.Images)
             .Include(r => r.Evidences)
             .Include(r => r.StatusHistories)
             .FirstOrDefaultAsync(r => r.ReturnRequestId == returnRequestId, cancellationToken);
@@ -263,6 +267,8 @@ public sealed class ReturnRepository : IReturnRepository
             .Include(r => r.Order)
             .Include(r => r.Items)
                 .ThenInclude(i => i.OrderItem)
+                    .ThenInclude(oi => oi.Product)
+                        .ThenInclude(p => p.Images)
             .Include(r => r.Evidences)
             .Include(r => r.StatusHistories)
             .FirstOrDefaultAsync(
@@ -295,6 +301,12 @@ public sealed class ReturnRepository : IReturnRepository
                     OrderItemId = i.OrderItemId,
                     ProductId = i.OrderItem.ProductId,
                     ProductName = i.OrderItem.ProductNameSnapshot,
+                    Sku = i.OrderItem.SkuSnapshot,
+                    ImageUrl = i.OrderItem.Product.Images
+                        .OrderByDescending(img => img.IsPrimary)
+                        .ThenBy(img => img.SortOrder)
+                        .Select(img => img.ImageUrl)
+                        .FirstOrDefault(),
                     Quantity = i.Quantity,
                     UnitPrice = i.OrderItem.UnitPrice,
                     LineTotal = decimal.Round(

@@ -82,10 +82,11 @@ export function AccountLayout() {
       >
         <div className="container">
           <div className="row">
-            <div className="col-lg-4">
+            {/* Narrower nav so detail pages get the room they need. */}
+            <div className="col-xl-3 col-lg-4">
               <AccountSidebar />
             </div>
-            <div className="col-lg-8">
+            <div className="col-xl-9 col-lg-8">
               <Outlet />
             </div>
           </div>
