@@ -1,4 +1,4 @@
-import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
+import { createAsyncThunk, createSlice, type PayloadAction } from '@reduxjs/toolkit';
 import { clearSession } from './authSlice';
 import * as cartApi from '../services/cartApi';
 import type { Cart, CartItem } from '../types/cart';
@@ -16,6 +16,8 @@ export type CartState = {
   mutating: boolean;
   error: string | null;
   loaded: boolean;
+  /** Cart items ticked for checkout. Unavailable items are never selectable. */
+  selectedIds: string[];
 };
 
 type CartRoot = { cart: CartState };
@@ -28,6 +30,7 @@ const emptyCartState = (): Omit<CartState, 'loading' | 'mutating' | 'error' | 'l
   subtotal: 0,
   currency: 'VND',
   updatedAt: null,
+  selectedIds: [],
 });
 
 const initialState: CartState = {
@@ -39,6 +42,12 @@ const initialState: CartState = {
 };
 
 function applyCart(state: CartState, cart: Cart) {
+  // Items already in the cart keep whatever the shopper ticked; anything new
+  // (or the very first load) starts selected.
+  const knownIds = new Set(state.items.map((i) => i.cartItemId));
+  const selected = new Set(state.selectedIds);
+  const hadCart = state.loaded;
+
   state.cartId = cart.cartId;
   state.items = cart.items ?? [];
   state.itemCount = cart.itemCount;
@@ -48,6 +57,11 @@ function applyCart(state: CartState, cart: Cart) {
   state.updatedAt = cart.updatedAt;
   state.loaded = true;
   state.error = null;
+
+  state.selectedIds = state.items
+    .filter((item) => item.isAvailable)
+    .filter((item) => (hadCart && knownIds.has(item.cartItemId) ? selected.has(item.cartItemId) : true))
+    .map((item) => item.cartItemId);
 }
 
 function requireCartData(result: { success: boolean; data?: Cart | null; message?: string | null }): Cart {
@@ -131,6 +145,26 @@ export const cartSlice = createSlice({
     clearCartState() {
       return { ...initialState };
     },
+    toggleCartSelection(state, action: PayloadAction<string>) {
+      const id = action.payload;
+      if (state.selectedIds.includes(id)) {
+        state.selectedIds = state.selectedIds.filter((x) => x !== id);
+        return;
+      }
+      const item = state.items.find((i) => i.cartItemId === id);
+      if (item?.isAvailable) state.selectedIds.push(id);
+    },
+    selectAllCartItems(state) {
+      state.selectedIds = state.items.filter((i) => i.isAvailable).map((i) => i.cartItemId);
+    },
+    clearCartSelection(state) {
+      state.selectedIds = [];
+    },
+    /** Buy now: check out exactly one line without touching the rest of the cart. */
+    selectOnlyCartItem(state, action: PayloadAction<string>) {
+      const item = state.items.find((i) => i.cartItemId === action.payload);
+      state.selectedIds = item?.isAvailable ? [item.cartItemId] : [];
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -203,7 +237,13 @@ export const cartSlice = createSlice({
   },
 });
 
-export const { clearCartState } = cartSlice.actions;
+export const {
+  clearCartState,
+  toggleCartSelection,
+  selectAllCartItems,
+  clearCartSelection,
+  selectOnlyCartItem,
+} = cartSlice.actions;
 
 export const selectCart = (state: CartRoot) => state.cart;
 export const selectCartItems = (state: CartRoot) => state.cart.items;
@@ -213,3 +253,4 @@ export const selectCartLoading = (state: CartRoot) => state.cart.loading;
 export const selectCartMutating = (state: CartRoot) => state.cart.mutating;
 export const selectCartError = (state: CartRoot) => state.cart.error;
 export const selectCartLoaded = (state: CartRoot) => state.cart.loaded;
+export const selectCartSelectedIds = (state: CartRoot) => state.cart.selectedIds;
