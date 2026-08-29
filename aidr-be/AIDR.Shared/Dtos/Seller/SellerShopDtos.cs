@@ -1,4 +1,4 @@
-namespace AIDR.Shared.Dtos.Seller;
+﻿namespace AIDR.Shared.Dtos.Seller;
 
 public sealed class SellerShopDto
 {
@@ -17,6 +17,11 @@ public sealed class SellerShopDto
     public string? District { get; init; }
     public string? Ward { get; init; }
     public string? StreetAddress { get; init; }
+
+    /// <summary>Pickup point on the map; the start of the order tracking route.</summary>
+    public double? Latitude { get; init; }
+    public double? Longitude { get; init; }
+
     public string? ReturnPolicy { get; init; }
     public string? ShippingPolicy { get; init; }
     public string? WebsiteUrl { get; init; }
@@ -48,6 +53,11 @@ public sealed class UpdateSellerShopRequest
     public string? District { get; set; }
     public string? Ward { get; set; }
     public string? StreetAddress { get; set; }
+
+    /// <summary>Pickup point on the map; the start of the order tracking route.</summary>
+    public double? Latitude { get; set; }
+    public double? Longitude { get; set; }
+
     public string? ReturnPolicy { get; set; }
     public string? ShippingPolicy { get; set; }
     public string? WebsiteUrl { get; set; }

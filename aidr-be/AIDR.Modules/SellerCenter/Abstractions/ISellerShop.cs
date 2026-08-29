@@ -1,4 +1,4 @@
-using AIDR.Shared.Dtos.Seller;
+﻿using AIDR.Shared.Dtos.Seller;
 
 namespace AIDR.Modules.SellerCenter.Abstractions;
 
@@ -20,6 +20,8 @@ public sealed class SellerShopSettingsRecord
     public string? District { get; init; }
     public string? Ward { get; init; }
     public string? StreetAddress { get; init; }
+    public double? Latitude { get; init; }
+    public double? Longitude { get; init; }
     public string? ReturnPolicy { get; init; }
     public string? ShippingPolicy { get; init; }
     public string? WebsiteUrl { get; init; }
@@ -57,6 +59,8 @@ public interface ISellerShopRepository
         string? district,
         string? ward,
         string? streetAddress,
+        double? latitude,
+        double? longitude,
         string? returnPolicy,
         string? shippingPolicy,
         string? websiteUrl,

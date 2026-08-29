@@ -1,4 +1,4 @@
-using AIDR.Api.Extensions;
+﻿using AIDR.Api.Extensions;
 using AIDR.Modules.Payment.Abstractions;
 using AIDR.Shared.Dtos.Payment;
 using AIDR.Shared.Results;
@@ -26,6 +26,21 @@ public sealed class PaymentsController : ControllerBase
     {
         var result = await _payments.CreatePayOsPaymentAsync(User.GetUserId(), request, cancellationToken);
         return Ok(ApiResult<CreatePayOsPaymentResponse>.Ok(result, "Payment link created."));
+    }
+
+    /// <summary>
+    /// Reconcile one order with payOS after the buyer returns from the checkout page.
+    /// The webhook stays the primary path; this covers the case where it has not
+    /// arrived yet, or cannot reach this API at all (local dev without a tunnel).
+    /// </summary>
+    [HttpPost("sync")]
+    [Authorize(Policy = "Buyer")]
+    public async Task<ActionResult<ApiResult<SyncPayOsPaymentResponse>>> Sync(
+        [FromBody] SyncPayOsPaymentRequest request,
+        CancellationToken cancellationToken)
+    {
+        var result = await _payments.SyncPayOsPaymentAsync(User.GetUserId(), request, cancellationToken);
+        return Ok(ApiResult<SyncPayOsPaymentResponse>.Ok(result, result.Message));
     }
 
     /// <summary>

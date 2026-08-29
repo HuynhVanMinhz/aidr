@@ -1,4 +1,4 @@
-using System.Text.Json;
+﻿using System.Text.Json;
 using AIDR.Modules.Engagement.Abstractions;
 using AIDR.Modules.Payment.Abstractions;
 using AIDR.Shared.Constants;
@@ -140,6 +140,118 @@ public sealed class PaymentService : IPaymentService
             OrderStatus = payment.OrderStatus,
             Amount = payment.Amount,
             Currency = payment.Currency
+        };
+    }
+
+    public async Task<SyncPayOsPaymentResponse> SyncPayOsPaymentAsync(
+        Guid buyerUserId,
+        SyncPayOsPaymentRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        if (request.OrderId == Guid.Empty)
+            throw new AppException("Order id is required.");
+
+        var payment = await _payments.GetPendingPaymentForBuyerOrderAsync(
+            buyerUserId,
+            request.OrderId,
+            cancellationToken)
+            ?? throw new NotFoundException("Payment for this order was not found.");
+
+        // Already settled — the webhook won the race, nothing to ask payOS about.
+        if (string.Equals(payment.PaymentStatus, PaymentConstants.StatusSucceeded, StringComparison.OrdinalIgnoreCase))
+        {
+            return new SyncPayOsPaymentResponse
+            {
+                OrderId = payment.OrderId,
+                OrderCode = payment.OrderCode,
+                PaymentStatus = payment.PaymentStatus,
+                OrderStatus = payment.OrderStatus,
+                ProviderStatus = "PAID",
+                Reconciled = false,
+                Message = "Payment already confirmed."
+            };
+        }
+
+        if (!string.Equals(payment.PaymentStatus, PaymentConstants.StatusPending, StringComparison.OrdinalIgnoreCase))
+        {
+            return new SyncPayOsPaymentResponse
+            {
+                OrderId = payment.OrderId,
+                OrderCode = payment.OrderCode,
+                PaymentStatus = payment.PaymentStatus,
+                OrderStatus = payment.OrderStatus,
+                ProviderStatus = payment.PaymentStatus.ToUpperInvariant(),
+                Reconciled = false,
+                Message = $"Payment is {payment.PaymentStatus}."
+            };
+        }
+
+        // No checkout link was ever created, so payOS has nothing under this code.
+        if (string.IsNullOrWhiteSpace(payment.ProviderPaymentId) && string.IsNullOrWhiteSpace(payment.CheckoutUrl))
+        {
+            return new SyncPayOsPaymentResponse
+            {
+                OrderId = payment.OrderId,
+                OrderCode = payment.OrderCode,
+                PaymentStatus = payment.PaymentStatus,
+                OrderStatus = payment.OrderStatus,
+                ProviderStatus = "NOTFOUND",
+                Reconciled = false,
+                Message = "No payOS checkout link has been created for this order yet."
+            };
+        }
+
+        var payOsOrderCode = TryReadPayOsOrderCode(payment.RawResponseJson) ?? ToPayOsOrderCode(payment.PaymentId);
+        var link = await _payOs.GetPaymentLinkAsync(payOsOrderCode, cancellationToken);
+
+        if (!string.Equals(link.Status, PaymentConstants.PayOsLinkStatusPaid, StringComparison.OrdinalIgnoreCase))
+        {
+            _logger.LogInformation(
+                "payOS reports {Status} for order {OrderId} (code {OrderCode}) — leaving it pending",
+                link.Status,
+                payment.OrderId,
+                payOsOrderCode);
+
+            return new SyncPayOsPaymentResponse
+            {
+                OrderId = payment.OrderId,
+                OrderCode = payment.OrderCode,
+                PaymentStatus = payment.PaymentStatus,
+                OrderStatus = payment.OrderStatus,
+                ProviderStatus = link.Status,
+                Reconciled = false,
+                Message = $"payOS reports the payment as {link.Status}."
+            };
+        }
+
+        var paidAmount = link.AmountPaid > 0 ? link.AmountPaid : link.Amount;
+        var result = await _payments.MarkPaidFromWebhookAsync(
+            string.IsNullOrWhiteSpace(link.PaymentLinkId) ? payment.ProviderPaymentId ?? string.Empty : link.PaymentLinkId,
+            payOsOrderCode,
+            paidAmount,
+            link.RawJson,
+            cancellationToken);
+
+        // Same notification the webhook path fires, and the same replay guard —
+        // whichever of the two gets here first is the only one that notifies.
+        if (result.Processed && !result.IdempotentReplay)
+            await NotifySellerNewPaidOrderAsync(result, cancellationToken);
+
+        _logger.LogInformation(
+            "Reconciled order {OrderId} against payOS: payment {PaymentStatus}, order {OrderStatus}",
+            payment.OrderId,
+            result.PaymentStatus,
+            result.OrderStatus);
+
+        return new SyncPayOsPaymentResponse
+        {
+            OrderId = payment.OrderId,
+            OrderCode = payment.OrderCode,
+            PaymentStatus = result.PaymentStatus ?? PaymentConstants.StatusSucceeded,
+            OrderStatus = result.OrderStatus ?? PaymentConstants.OrderStatusPaid,
+            ProviderStatus = link.Status,
+            Reconciled = result.Processed && !result.IdempotentReplay,
+            Message = "Payment confirmed with payOS."
         };
     }
 

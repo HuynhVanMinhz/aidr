@@ -16,6 +16,9 @@ export type SellerShop = {
   district?: string | null;
   ward?: string | null;
   streetAddress?: string | null;
+  /** Pickup point pinned on the map; the start of the order tracking route. */
+  latitude?: number | null;
+  longitude?: number | null;
   returnPolicy?: string | null;
   shippingPolicy?: string | null;
   websiteUrl?: string | null;
@@ -46,6 +49,9 @@ export type UpdateSellerShopPayload = {
   district?: string | null;
   ward?: string | null;
   streetAddress?: string | null;
+  /** Pickup point pinned on the map; the start of the order tracking route. */
+  latitude?: number | null;
+  longitude?: number | null;
   returnPolicy?: string | null;
   shippingPolicy?: string | null;
   websiteUrl?: string | null;

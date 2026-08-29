@@ -817,6 +817,31 @@
   margin-top: 14px;
 }
 
+/* Secondary to Pay now — for the buyer who already paid and came back. */
+.receipt-check-btn {
+  display: block;
+  width: 100%;
+  margin-top: 10px;
+  padding: 11px 18px;
+  border: 1px solid var(--checkout-border, #e3e5e8);
+  border-radius: 10px;
+  background: transparent;
+  color: var(--accent-color, #16181d);
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease, opacity 0.15s ease;
+}
+
+.receipt-check-btn:hover:not(:disabled) {
+  background: rgba(22, 24, 29, 0.04);
+}
+
+.receipt-check-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
 .receipt-payment__hint {
   margin: 10px 0 0;
   font-size: 0.75rem;

@@ -65,6 +65,24 @@ Chi tiết: `docs/solution-seller-onboarding-ekyc.md`. Cấu hình ở section `
 trong `appsettings.json`. Để `UseMock: true` khi chưa có API key FPT.AI — luồng
 UI chạy đủ với dữ liệu giả lập.
 
+### 2e. Tự động hoá vòng đời đơn hàng (GHN)
+
+```
+scripts/shipping-schema.sql   # bảng Shipments / ShipmentEvents
+scripts/seed-shipping.sql     # 2 đơn Paid chờ job đặt vận đơn GHN
+```
+
+Hoặc gọi `POST /api/dev/seed-shipping` (dev) — endpoint chạy cả hai script.
+
+Sau khi thanh toán thành công, job nền gọi **API GHN thật** để tạo vận đơn rồi đẩy đơn qua
+Confirmed → Shipping → Delivered theo webhook/poll của GHN. Seller vẫn cập nhật trạng thái
+thủ công được bất cứ lúc nào. Chi tiết: `docs/solution-auto-fulfillment-shipping.md`.
+
+Cấu hình ở section `Shipping` trong `appsettings.json` — **bắt buộc** điền
+`Ghn:Token` + `Ghn:ShopId` (lấy ở dashboard GHN, mục Cấu hình → API); nên đặt qua
+`dotnet user-secrets` hoặc biến môi trường `Shipping__Ghn__Token` thay vì commit.
+Thiếu credential thì job log cảnh báo và không chạy — không có mock thay thế.
+
 ### 3. Backend (không Docker)
 
 ```bash

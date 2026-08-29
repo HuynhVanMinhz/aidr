@@ -1,4 +1,4 @@
-using System.Text.RegularExpressions;
+﻿using System.Text.RegularExpressions;
 using AIDR.Modules.Profile.Abstractions;
 using AIDR.Shared.Constants;
 using AIDR.Shared.Dtos.Profile;
@@ -107,6 +107,8 @@ public sealed class ProfileService : IProfileService
                 District = a.District,
                 Ward = a.Ward,
                 StreetAddress = a.StreetAddress,
+                Latitude = a.Latitude,
+                Longitude = a.Longitude,
                 IsDefault = a.IsDefault
             })
             .ToList();

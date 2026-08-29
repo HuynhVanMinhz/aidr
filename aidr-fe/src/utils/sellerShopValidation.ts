@@ -11,7 +11,11 @@ export const SELLER_SHOP_MAX_ADDRESS = 200;
 export const SELLER_SHOP_MAX_PHONE = 20;
 export const SELLER_SHOP_MAX_OPENING_HOURS = 2000;
 
-export type SellerShopFormField = keyof UpdateSellerShopPayload;
+/**
+ * Only the text fields on the form. The pickup coordinates ride in the payload
+ * but never through this form, so they are not fields the validator can index.
+ */
+export type SellerShopFormField = keyof SellerShopFormValues;
 
 export type SellerShopFormValues = {
   shopName: string;

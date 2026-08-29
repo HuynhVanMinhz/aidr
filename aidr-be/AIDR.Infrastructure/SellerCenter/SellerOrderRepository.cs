@@ -1,19 +1,33 @@
-using System.Text.Json;
+﻿using System.Text.Json;
 using AIDR.Infrastructure.Persistence;
 using AIDR.Infrastructure.Persistence.Entities;
 using AIDR.Modules.SellerCenter.Abstractions;
+using AIDR.Modules.Shipping.Abstractions;
+using AIDR.Modules.Shipping.Services;
 using AIDR.Shared.Constants;
 using AIDR.Shared.Dtos.Seller;
+using AIDR.Shared.Dtos.Shipping;
 using AIDR.Shared.Exceptions;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 
 namespace AIDR.Infrastructure.SellerCenter;
 
 public sealed class SellerOrderRepository : ISellerOrderRepository
 {
     private readonly AidrDbContext _db;
+    private readonly IShipmentRepository _shipments;
+    private readonly ShippingOptions _shipping;
 
-    public SellerOrderRepository(AidrDbContext db) => _db = db;
+    public SellerOrderRepository(
+        AidrDbContext db,
+        IShipmentRepository shipments,
+        IOptions<ShippingOptions> shipping)
+    {
+        _db = db;
+        _shipments = shipments;
+        _shipping = shipping.Value;
+    }
 
     public async Task<(IReadOnlyList<SellerOrderListItemDto> Items, int TotalCount, int EffectivePage)> ListByShopAsync(
         Guid shopId,
@@ -66,8 +80,37 @@ public sealed class SellerOrderRepository : ISellerOrderRepository
             })
             .ToListAsync(cancellationToken);
 
+        var orderIds = rows.Select(o => o.OrderId).ToList();
+        var shipments = await _db.Shipments.AsNoTracking()
+            .Where(s => orderIds.Contains(s.OrderId))
+            .Select(s => new
+            {
+                s.OrderId,
+                s.Provider,
+                s.Status,
+                s.AttemptCount,
+                s.LastError,
+                s.TrackingCode
+            })
+            .ToDictionaryAsync(s => s.OrderId, cancellationToken);
+
         var items = rows.Select(o =>
         {
+            shipments.TryGetValue(o.OrderId, out var shipment);
+            var fulfillment = ShippingService.BuildFulfillment(
+                shipment is null
+                    ? null
+                    : new ShipmentDto
+                    {
+                        OrderId = o.OrderId,
+                        Provider = shipment.Provider,
+                        Status = shipment.Status,
+                        AttemptCount = shipment.AttemptCount,
+                        LastError = shipment.LastError,
+                        TrackingCode = shipment.TrackingCode
+                    },
+                _shipping);
+
             var (canUpdate, nextStatus) = ResolveNextStatus(o.Status);
             return new SellerOrderListItemDto
             {
@@ -91,7 +134,9 @@ public sealed class SellerOrderRepository : ISellerOrderRepository
                 DeliveredAt = o.DeliveredAt,
                 CompletedAt = o.CompletedAt,
                 CanUpdateStatus = canUpdate,
-                NextStatus = nextStatus
+                NextStatus = nextStatus,
+                AutoFulfillment = fulfillment.AutoEnabled && !fulfillment.RequiresSellerAction,
+                ShipmentStatus = shipment?.Status
             };
         }).ToList();
 
@@ -114,7 +159,11 @@ public sealed class SellerOrderRepository : ISellerOrderRepository
                 o => o.OrderId == orderId && o.ShopId == shopId,
                 cancellationToken);
 
-        return order is null ? null : MapDetail(order);
+        if (order is null)
+            return null;
+
+        var fulfillment = await BuildFulfillmentAsync(order, cancellationToken);
+        return MapDetail(order, fulfillment);
     }
 
     public async Task<SellerOrderDetailDto> UpdateStatusAsync(
@@ -187,10 +236,52 @@ public sealed class SellerOrderRepository : ISellerOrderRepository
         await _db.SaveChangesAsync(cancellationToken);
         await transaction.CommitAsync(cancellationToken);
 
-        return MapDetail(order);
+        return MapDetail(order, await BuildFulfillmentAsync(order, cancellationToken));
     }
 
-    private static SellerOrderDetailDto MapDetail(Order order)
+    private async Task<OrderFulfillmentDto> BuildFulfillmentAsync(
+        Persistence.Entities.Order order,
+        CancellationToken cancellationToken)
+    {
+        var shipment = await _shipments.GetByOrderAsync(order.OrderId, cancellationToken);
+
+        var shop = await _db.Shops.AsNoTracking()
+            .Where(s => s.ShopId == order.ShopId)
+            .Select(s => new
+            {
+                s.ShopName,
+                s.Province,
+                s.District,
+                s.Ward,
+                s.StreetAddress,
+                s.Latitude,
+                s.Longitude
+            })
+            .FirstOrDefaultAsync(cancellationToken);
+
+        var destination = ParseShippingSnapshot(order.ShippingSnapshotJson, order.ShippingAddressId);
+
+        var route = ShippingService.BuildRoute(
+            shop?.Latitude,
+            shop?.Longitude,
+            JoinAddress(shop?.ShopName, shop?.StreetAddress, shop?.Ward, shop?.District, shop?.Province),
+            destination.Latitude,
+            destination.Longitude,
+            JoinAddress(
+                destination.ReceiverName,
+                destination.StreetAddress,
+                destination.Ward,
+                destination.District,
+                destination.Province));
+
+        return ShippingService.BuildFulfillment(shipment, _shipping, route);
+    }
+
+    /// <summary>One readable line for a map marker; blank parts simply drop out.</summary>
+    private static string JoinAddress(params string?[] parts) =>
+        string.Join(", ", parts.Where(p => !string.IsNullOrWhiteSpace(p)).Select(p => p!.Trim()));
+
+    private static SellerOrderDetailDto MapDetail(Order order, OrderFulfillmentDto fulfillment)
     {
         var (canUpdate, nextStatus) = ResolveNextStatus(order.Status);
 
@@ -269,15 +360,22 @@ public sealed class SellerOrderRepository : ISellerOrderRepository
             DeliveredAt = order.DeliveredAt,
             CompletedAt = order.CompletedAt,
             CanUpdateStatus = canUpdate,
-            NextStatus = nextStatus
+            NextStatus = nextStatus,
+            Fulfillment = fulfillment
         };
     }
 
+    /// <summary>
+    /// The seller can always push the next step by hand, even while the carrier
+    /// is driving the same order — both paths only ever move forward, so whoever
+    /// gets there first wins and the other becomes a no-op.
+    /// </summary>
     private static (bool CanUpdate, string? NextStatus) ResolveNextStatus(string status)
     {
-        if (OrderConstants.SellerStatusTransitions.TryGetValue(status, out var next))
-            return (true, next);
-        return (false, null);
+        if (!OrderConstants.SellerStatusTransitions.TryGetValue(status, out var next))
+            return (false, null);
+
+        return (true, next);
     }
 
     private static string BuildDefaultHistoryNote(string fromStatus, string toStatus) =>
@@ -297,7 +395,9 @@ public sealed class SellerOrderRepository : ISellerOrderRepository
                 Province = TryGetString(root, "province") ?? string.Empty,
                 District = TryGetString(root, "district") ?? string.Empty,
                 Ward = TryGetString(root, "ward") ?? string.Empty,
-                StreetAddress = TryGetString(root, "streetAddress") ?? string.Empty
+                StreetAddress = TryGetString(root, "streetAddress") ?? string.Empty,
+                Latitude = TryGetDouble(root, "latitude"),
+                Longitude = TryGetDouble(root, "longitude")
             };
         }
         catch (JsonException)
@@ -318,6 +418,11 @@ public sealed class SellerOrderRepository : ISellerOrderRepository
     private static string? TryGetString(JsonElement root, string propertyName) =>
         root.TryGetProperty(propertyName, out var value) && value.ValueKind == JsonValueKind.String
             ? value.GetString()
+            : null;
+
+    private static double? TryGetDouble(JsonElement root, string propertyName) =>
+        root.TryGetProperty(propertyName, out var value) && value.ValueKind == JsonValueKind.Number
+            ? value.GetDouble()
             : null;
 
     private static Guid? TryGetGuid(JsonElement root, string propertyName)

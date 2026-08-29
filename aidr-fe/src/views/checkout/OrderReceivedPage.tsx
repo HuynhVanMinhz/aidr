@@ -10,6 +10,8 @@ import {
   hydrateCheckoutSuccess,
   selectCheckoutLastSuccess,
   selectCheckoutPaying,
+  selectCheckoutSyncing,
+  syncPayOsPayments,
 } from '../../store/checkoutSlice';
 import { useAppDispatch, useAppSelector } from '../../store/hooks';
 import type { CreatedOrder } from '../../types/order';
@@ -19,6 +21,15 @@ import { formatMoney } from '../../utils/formatCatalog';
 import { formatOrderDate, formatOrderStatus, orderStatusClass } from '../../utils/orderUi';
 
 const PLACEHOLDER = '/theme/images/product-image-1.png';
+
+/**
+ * payOS settles through a webhook this API may not be reachable for (any dev
+ * machine, any deploy without a public URL). So the page asks the API to
+ * reconcile with payOS instead of waiting for a callback that may never land.
+ * A bank transfer can take a few seconds to register, hence the retries.
+ */
+const SYNC_ATTEMPTS_ON_RETURN = 5;
+const SYNC_RETRY_MS = 4000;
 
 function formatAddressLine(parts: {
   streetAddress: string;
@@ -48,9 +59,12 @@ export function OrderReceivedPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const success = useAppSelector(selectCheckoutLastSuccess);
   const paying = useAppSelector(selectCheckoutPaying);
+  const syncing = useAppSelector(selectCheckoutSyncing);
   const [confirmingMock, setConfirmingMock] = useState(false);
   const [retryingOrderId, setRetryingOrderId] = useState<string | null>(null);
+  const [syncTick, setSyncTick] = useState(0);
   const mockHandledRef = useRef(false);
+  const syncAttemptsRef = useRef(0);
 
   const cancelled = searchParams.get('cancelled') === '1' || searchParams.get('cancel') === '1';
   const returnOrderId = searchParams.get('orderId');
@@ -106,25 +120,59 @@ export function OrderReceivedPage() {
       );
     });
 
-  const pendingOrders = orders.filter((o) => {
-    const link = paymentsByOrderId.get(o.orderId);
-    return !(
-      isPaidStatus(o.paymentStatus) ||
-      isPaidStatus(link?.paymentStatus) ||
-      isPaidStatus(o.status)
+  const pendingOrders = useMemo(
+    () =>
+      orders.filter((o) => {
+        const link = paymentsByOrderId.get(o.orderId);
+        return !(
+          isPaidStatus(o.paymentStatus) ||
+          isPaidStatus(link?.paymentStatus) ||
+          isPaidStatus(o.status)
+        );
+      }),
+    [orders, paymentsByOrderId],
+  );
+
+  const pendingOrderIdsKey = pendingOrders.map((o) => o.orderId).join(',');
+  const isMockReturn = searchParams.get('mockPayOs') === '1';
+  const returnedFromPayOs = Boolean(returnOrderId) && !cancelled && !isMockReturn;
+
+  // Reconcile with payOS instead of trusting the snapshot we redirected away with.
+  useEffect(() => {
+    if (!success || confirmingMock || isMockReturn) return;
+
+    const ids = pendingOrderIdsKey ? pendingOrderIdsKey.split(',') : [];
+    if (ids.length === 0) return;
+
+    const maxAttempts = returnedFromPayOs ? SYNC_ATTEMPTS_ON_RETURN : 1;
+    if (syncAttemptsRef.current >= maxAttempts) return;
+
+    let cancelledEffect = false;
+    const timer = window.setTimeout(
+      () => {
+        syncAttemptsRef.current += 1;
+        void dispatch(syncPayOsPayments(ids)).then(() => {
+          if (!cancelledEffect) setSyncTick((tick) => tick + 1);
+        });
+      },
+      syncAttemptsRef.current === 0 ? 0 : SYNC_RETRY_MS,
     );
-  });
+
+    return () => {
+      cancelledEffect = true;
+      window.clearTimeout(timer);
+    };
+  }, [dispatch, success, confirmingMock, isMockReturn, returnedFromPayOs, pendingOrderIdsKey, syncTick]);
 
   // Page notices are toasts, not banners.
   const cancelNotice = cancelled
     ? 'Payment cancelled — your order is still reserved. Retry payment.'
     : null;
-  const returnNotice =
-    returnOrderId && !cancelled && !searchParams.get('mockPayOs')
-      ? allPaid
-        ? 'Payment completed. Thank you!'
-        : 'If you finished paying on payOS, the status updates as soon as the webhook arrives.'
-      : null;
+  const returnNotice = returnedFromPayOs
+    ? allPaid
+      ? 'Payment completed. Thank you!'
+      : 'Checking your payment with payOS…'
+    : null;
 
   useToastMessage(cancelNotice, 'warning');
   useToastMessage(returnNotice, allPaid ? 'success' : 'info');
@@ -140,7 +188,29 @@ export function OrderReceivedPage() {
   const subtotalAll = orders.reduce((sum, o) => sum + o.subtotalAmount, 0);
   const discountAll = orders.reduce((sum, o) => sum + o.discountAmount, 0);
   const shippingAll = orders.reduce((sum, o) => sum + o.shippingFee, 0);
-  const busyPay = paying || retryingOrderId !== null || confirmingMock;
+  const busyPay = paying || retryingOrderId !== null || confirmingMock || syncing;
+
+  async function handleCheckStatus() {
+    const ids = pendingOrders.map((o) => o.orderId);
+    if (ids.length === 0) return;
+
+    const result = await dispatch(syncPayOsPayments(ids));
+    if (syncPayOsPayments.rejected.match(result)) {
+      toast.error(result.payload || 'Unable to check payment status.');
+      return;
+    }
+
+    const paidNow = result.payload.filter((r) => isPaidStatus(r.paymentStatus));
+    if (paidNow.length > 0) {
+      toast.success(
+        paidNow.length === ids.length
+          ? 'Payment confirmed.'
+          : `${paidNow.length} of ${ids.length} orders confirmed as paid.`,
+      );
+    } else {
+      toast.info('payOS has not received this payment yet.');
+    }
+  }
 
   async function handlePayNow(orderId: string) {
     const existing = paymentsByOrderId.get(orderId);
@@ -340,6 +410,14 @@ export function OrderReceivedPage() {
                           {formatMoney(amountDue, currency)}
                         </span>
                       </button>
+                      <button
+                        type="button"
+                        className="receipt-check-btn"
+                        disabled={busyPay}
+                        onClick={() => void handleCheckStatus()}
+                      >
+                        {syncing ? 'Checking with payOS…' : 'I have already paid — check status'}
+                      </button>
                       <p className="receipt-payment__hint">
                         {paymentLabel(primary.paymentStatus, paymentsByOrderId.get(primary.orderId))}{' '}
                         · you will be redirected to payOS.
@@ -348,10 +426,20 @@ export function OrderReceivedPage() {
                   )}
 
                   {!allPaid && !singleOrder && (
-                    <p className="receipt-payment__hint">
-                      {pendingOrders.length} of {orders.length} orders still need payment
-                      ({formatMoney(amountDue, currency)}). Pay each one from the list on the left.
-                    </p>
+                    <>
+                      <button
+                        type="button"
+                        className="receipt-check-btn"
+                        disabled={busyPay}
+                        onClick={() => void handleCheckStatus()}
+                      >
+                        {syncing ? 'Checking with payOS…' : 'I have already paid — check status'}
+                      </button>
+                      <p className="receipt-payment__hint">
+                        {pendingOrders.length} of {orders.length} orders still need payment
+                        ({formatMoney(amountDue, currency)}). Pay each one from the list on the left.
+                      </p>
+                    </>
                   )}
 
                   {allPaid && (
