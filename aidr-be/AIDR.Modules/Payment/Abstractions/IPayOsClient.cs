@@ -1,4 +1,4 @@
-using AIDR.Shared.Dtos.Payment;
+﻿using AIDR.Shared.Dtos.Payment;
 
 namespace AIDR.Modules.Payment.Abstractions;
 
@@ -30,6 +30,18 @@ public sealed class PayOsVerifiedWebhook
     public string? Reference { get; init; }
     public string? Currency { get; init; }
     public bool IsWebhookConfirmationProbe { get; init; }
+}
+
+public sealed class PayOsPaymentLinkInfo
+{
+    public required long OrderCode { get; init; }
+    /// <summary>Raw payOS state: PENDING | PAID | CANCELLED | EXPIRED | UNDERPAID | PROCESSING | FAILED.</summary>
+    public required string Status { get; init; }
+    public string? PaymentLinkId { get; init; }
+    public long Amount { get; init; }
+    public long AmountPaid { get; init; }
+    public string? RawJson { get; init; }
+    public bool IsMock { get; init; }
 }
 
 public sealed class PayOsRefundCommand
@@ -89,6 +101,16 @@ public interface IPayOsClient
 
     Task<PayOsCreateLinkResult> CreatePaymentLinkAsync(
         PayOsCreateLinkCommand command,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Ask payOS what actually happened to a payment link. The webhook is the
+    /// primary path, but it cannot reach a machine that is not publicly
+    /// addressable — this is how a buyer returning from the checkout page still
+    /// gets their order confirmed.
+    /// </summary>
+    Task<PayOsPaymentLinkInfo> GetPaymentLinkAsync(
+        long payOsOrderCode,
         CancellationToken cancellationToken = default);
 
     Task<PayOsVerifiedWebhook> VerifyWebhookAsync(

@@ -1,4 +1,4 @@
-using AIDR.Modules.SellerCenter.Abstractions;
+﻿using AIDR.Modules.SellerCenter.Abstractions;
 using AIDR.Shared.Constants;
 using AIDR.Shared.Dtos.Seller;
 using AIDR.Shared.Exceptions;
@@ -49,6 +49,8 @@ public sealed class SellerShopService : ISellerShopService
             OptionalText(request.District, "District", AdminConstants.MaxShopDistrictLength),
             OptionalText(request.Ward, "Ward", AdminConstants.MaxShopWardLength),
             OptionalText(request.StreetAddress, "Street address", AdminConstants.MaxShopStreetAddressLength),
+            OptionalCoordinate(request.Latitude, "Latitude", 90),
+            OptionalCoordinate(request.Longitude, "Longitude", 180),
             OptionalText(request.ReturnPolicy, "Return policy", AdminConstants.MaxShopPolicyLength),
             OptionalText(request.ShippingPolicy, "Shipping policy", AdminConstants.MaxShopPolicyLength),
             OptionalUrl(request.WebsiteUrl, "Website URL"),
@@ -76,6 +78,8 @@ public sealed class SellerShopService : ISellerShopService
         District = shop.District,
         Ward = shop.Ward,
         StreetAddress = shop.StreetAddress,
+        Latitude = shop.Latitude,
+        Longitude = shop.Longitude,
         ReturnPolicy = shop.ReturnPolicy,
         ShippingPolicy = shop.ShippingPolicy,
         WebsiteUrl = shop.WebsiteUrl,
@@ -91,6 +95,15 @@ public sealed class SellerShopService : ISellerShopService
         CreatedAt = shop.CreatedAt,
         UpdatedAt = shop.UpdatedAt
     };
+
+    /// <summary>A pin outside the globe is a client bug, not something to store.</summary>
+    private static double? OptionalCoordinate(double? value, string fieldName, double limit)
+    {
+        if (value is null) return null;
+        if (double.IsNaN(value.Value) || Math.Abs(value.Value) > limit)
+            throw new AppException($"{fieldName} must be between -{limit} and {limit}.");
+        return value;
+    }
 
     private static string RequireText(string? value, string fieldName, int maxLength)
     {

@@ -43,6 +43,8 @@ public class AidrDbContext : DbContext
     public DbSet<OrderItemLotAllocation> OrderItemLotAllocations => Set<OrderItemLotAllocation>();
     public DbSet<OrderStatusHistory> OrderStatusHistories => Set<OrderStatusHistory>();
     public DbSet<Payment> Payments => Set<Payment>();
+    public DbSet<Shipment> Shipments => Set<Shipment>();
+    public DbSet<ShipmentEvent> ShipmentEvents => Set<ShipmentEvent>();
     public DbSet<ReturnRequest> ReturnRequests => Set<ReturnRequest>();
     public DbSet<ReturnRequestItem> ReturnRequestItems => Set<ReturnRequestItem>();
     public DbSet<ReturnEvidence> ReturnEvidences => Set<ReturnEvidence>();
@@ -691,6 +693,44 @@ public class AidrDbContext : DbContext
                 .HasForeignKey(x => x.OrderId)
                 .OnDelete(DeleteBehavior.Restrict);
             e.HasIndex(x => x.OrderId);
+        });
+
+        modelBuilder.Entity<Shipment>(e =>
+        {
+            e.ToTable("Shipments");
+            e.HasKey(x => x.ShipmentId);
+            e.Property(x => x.Provider).HasMaxLength(20).IsRequired();
+            e.Property(x => x.ProviderShipmentId).HasMaxLength(60);
+            e.Property(x => x.TrackingCode).HasMaxLength(100);
+            e.Property(x => x.Status).HasMaxLength(20).IsRequired();
+            e.Property(x => x.ProviderStatus).HasMaxLength(60);
+            e.Property(x => x.ShippingFeeQuoted).HasPrecision(18, 2);
+            e.Property(x => x.LastError).HasMaxLength(500);
+            e.HasOne(x => x.Order)
+                .WithMany()
+                .HasForeignKey(x => x.OrderId)
+                .OnDelete(DeleteBehavior.Restrict);
+            // One order, one shipment — this is what stops a double dispatch.
+            e.HasIndex(x => x.OrderId).IsUnique();
+            e.HasIndex(x => new { x.Provider, x.ProviderShipmentId });
+            e.HasIndex(x => new { x.Status, x.NextActionAt });
+        });
+
+        modelBuilder.Entity<ShipmentEvent>(e =>
+        {
+            e.ToTable("ShipmentEvents");
+            e.HasKey(x => x.ShipmentEventId);
+            e.Property(x => x.ExternalEventId).HasMaxLength(120).IsRequired();
+            e.Property(x => x.ProviderStatus).HasMaxLength(60).IsRequired();
+            e.Property(x => x.MappedStatus).HasMaxLength(20).IsRequired();
+            e.Property(x => x.Description).HasMaxLength(300);
+            e.Property(x => x.Source).HasMaxLength(20).IsRequired();
+            e.HasOne(x => x.Shipment)
+                .WithMany(x => x.Events)
+                .HasForeignKey(x => x.ShipmentId)
+                .OnDelete(DeleteBehavior.Cascade);
+            e.HasIndex(x => new { x.ShipmentId, x.ExternalEventId }).IsUnique();
+            e.HasIndex(x => new { x.ShipmentId, x.OccurredAt });
         });
 
         modelBuilder.Entity<ReturnRequest>(e =>

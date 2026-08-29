@@ -1,4 +1,4 @@
-using AIDR.Infrastructure.Persistence;
+﻿using AIDR.Infrastructure.Persistence;
 using AIDR.Modules.SellerCenter.Abstractions;
 using AIDR.Shared.Exceptions;
 using Microsoft.EntityFrameworkCore;
@@ -36,6 +36,8 @@ public sealed class SellerShopRepository : ISellerShopRepository
         string? district,
         string? ward,
         string? streetAddress,
+        double? latitude,
+        double? longitude,
         string? returnPolicy,
         string? shippingPolicy,
         string? websiteUrl,
@@ -60,6 +62,8 @@ public sealed class SellerShopRepository : ISellerShopRepository
         shop.District = district;
         shop.Ward = ward;
         shop.StreetAddress = streetAddress;
+        shop.Latitude = latitude;
+        shop.Longitude = longitude;
         shop.ReturnPolicy = returnPolicy;
         shop.ShippingPolicy = shippingPolicy;
         shop.WebsiteUrl = websiteUrl;
@@ -90,6 +94,8 @@ public sealed class SellerShopRepository : ISellerShopRepository
         District = shop.District,
         Ward = shop.Ward,
         StreetAddress = shop.StreetAddress,
+        Latitude = shop.Latitude,
+        Longitude = shop.Longitude,
         ReturnPolicy = shop.ReturnPolicy,
         ShippingPolicy = shop.ShippingPolicy,
         WebsiteUrl = shop.WebsiteUrl,

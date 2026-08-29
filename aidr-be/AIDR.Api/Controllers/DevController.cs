@@ -1,6 +1,7 @@
-using AIDR.Infrastructure.Persistence;
+﻿using AIDR.Infrastructure.Persistence;
 using AIDR.Infrastructure.Seeding;
 using AIDR.Modules.Auth.Abstractions;
+using AIDR.Modules.Shipping.Abstractions;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -442,5 +443,67 @@ public class DevController : ControllerBase
                 "What vouchers can I use at checkout?"
             }
         });
+    }
+
+    /// <summary>Seed orders at every stage of the carrier pipeline (dev only).</summary>
+    [HttpPost("seed-shipping")]
+    public async Task<IActionResult> SeedShipping(
+        [FromServices] AidrDbContext db,
+        [FromServices] IWebHostEnvironment env,
+        CancellationToken ct)
+    {
+        if (!env.IsDevelopment())
+            return NotFound();
+
+        await ShippingDemoSeeder.SeedAsync(db, env.ContentRootPath, ct);
+
+        var shipments = await db.Shipments.CountAsync(ct);
+        var awaitingDispatch = await db.Orders.CountAsync(
+            o => o.Status == "Paid" && !db.Shipments.Any(s => s.OrderId == o.OrderId),
+            ct);
+
+        return Ok(new
+        {
+            message = "Shipping demo seed completed. The sweep books these with GHN on its next tick.",
+            shipmentCount = shipments,
+            ordersAwaitingDispatch = awaitingDispatch,
+            orderCodes = new[] { "SHIP-GHN-OK", "SHIP-GHN-FAIL" }
+        });
+    }
+
+    /// <summary>Add the map coordinate columns to Addresses / Shops (dev only).</summary>
+    [HttpPost("address-geo-schema")]
+    public async Task<IActionResult> ApplyAddressGeoSchema(
+        [FromServices] AidrDbContext db,
+        [FromServices] IWebHostEnvironment env,
+        CancellationToken ct)
+    {
+        if (!env.IsDevelopment())
+            return NotFound();
+
+        await SqlScriptSeeder.ExecuteFileAsync(
+            db,
+            env.ContentRootPath,
+            Path.Combine("scripts", "address-geo-schema.sql"),
+            ct);
+
+        return Ok(new
+        {
+            message = "Latitude / Longitude columns are in place on Addresses and Shops."
+        });
+    }
+
+    /// <summary>Run the fulfillment sweep once, on demand (dev only).</summary>
+    [HttpPost("shipping/sweep")]
+    public async Task<IActionResult> RunShippingSweep(
+        [FromServices] IShippingService shipping,
+        [FromServices] IWebHostEnvironment env,
+        CancellationToken ct)
+    {
+        if (!env.IsDevelopment())
+            return NotFound();
+
+        var result = await shipping.RunSweepAsync(ct);
+        return Ok(result);
     }
 }

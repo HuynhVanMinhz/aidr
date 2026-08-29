@@ -2885,3 +2885,496 @@
   font-size: 0.8125rem;
   color: #c0392b;
 }
+
+/* ------------------------------------------------- address form + map */
+
+.address-form-panel {
+  margin-top: 1.75rem;
+  border: 1px solid var(--acc-border);
+  border-radius: var(--acc-radius);
+  background: var(--bg-color, #fff);
+  overflow: hidden;
+}
+
+.address-form-panel__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 18px 20px;
+  border-bottom: 1px solid var(--acc-border);
+  background: rgba(22, 24, 29, 0.02);
+}
+
+.address-form-panel__title {
+  margin: 0 0 0.25rem;
+  font-size: 1.0625rem;
+  font-weight: 600;
+  color: var(--primary-color, #16181d);
+}
+
+.address-form-panel__sub {
+  margin: 0;
+  max-width: 52ch;
+  font-size: 0.8125rem;
+  line-height: 1.55;
+  color: var(--acc-muted);
+}
+
+.address-form {
+  padding: 20px;
+}
+
+.address-form__grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+  gap: 24px;
+  align-items: start;
+}
+
+.address-form__fields {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.address-form__row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.address-field {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.address-field label {
+  margin-bottom: 0.35rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--primary-color, #16181d);
+}
+
+.address-field .form-control,
+.address-field .form-select {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--acc-border);
+  border-radius: 10px;
+  background: var(--bg-color, #fff);
+  font-size: 0.875rem;
+  color: var(--primary-color, #16181d);
+}
+
+.address-field .form-select:disabled {
+  background: rgba(22, 24, 29, 0.04);
+  color: var(--acc-muted);
+  cursor: not-allowed;
+}
+
+.address-field .form-control:focus,
+.address-field .form-select:focus {
+  outline: none;
+  border-color: var(--primary-color, #16181d);
+  box-shadow: 0 0 0 3px rgba(22, 24, 29, 0.08);
+}
+
+/* Shown when a stored name has no match in the courier's current list. */
+.address-field__hint {
+  margin: 0.35rem 0 0;
+  font-size: 0.75rem;
+  color: var(--acc-muted);
+}
+
+.address-toggle {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.65rem;
+  margin: 0.25rem 0 0;
+  padding: 12px 14px;
+  border: 1px solid var(--acc-border);
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.address-toggle input {
+  margin-top: 0.2rem;
+  width: 1rem;
+  height: 1rem;
+  flex-shrink: 0;
+  accent-color: var(--primary-color, #16181d);
+}
+
+.address-toggle__text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.address-toggle__title {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--primary-color, #16181d);
+}
+
+.address-toggle__sub {
+  font-size: 0.75rem;
+  color: var(--acc-muted);
+}
+
+.address-form__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  margin-top: 20px;
+  padding-top: 18px;
+  border-top: 1px solid var(--acc-border);
+}
+
+.address-card--editing {
+  border-color: var(--primary-color, #16181d);
+}
+
+/* ------------------------------------------------------------ the map */
+
+.address-map {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px;
+  border: 1px solid var(--acc-border);
+  border-radius: var(--acc-radius);
+  background: rgba(22, 24, 29, 0.02);
+}
+
+.address-map__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.address-map__title {
+  margin: 0 0 0.2rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--primary-color, #16181d);
+}
+
+.address-map__hint {
+  margin: 0;
+  max-width: 34ch;
+  font-size: 0.75rem;
+  line-height: 1.5;
+  color: var(--acc-muted);
+}
+
+.address-map__canvas-wrap {
+  position: relative;
+}
+
+.address-map__canvas {
+  height: 320px;
+  border-radius: 10px;
+  overflow: hidden;
+  background: rgba(22, 24, 29, 0.05);
+}
+
+/* Leaflet paints its own stacking context; keep it under sticky headers. */
+.address-map__canvas .leaflet-pane,
+.address-map__canvas .leaflet-control {
+  z-index: 1;
+}
+
+.address-map__badge {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 2;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(22, 24, 29, 0.85);
+  color: #fff;
+  font-size: 0.6875rem;
+  font-weight: 600;
+}
+
+.address-map__pin-dot {
+  display: block;
+  width: 18px;
+  height: 18px;
+  border: 3px solid #fff;
+  border-radius: 50%;
+  background: var(--primary-color, #16181d);
+  box-shadow: 0 2px 8px rgba(22, 24, 29, 0.45);
+}
+
+.address-map__caption {
+  margin: 0;
+  font-size: 0.75rem;
+  line-height: 1.5;
+  color: var(--acc-muted);
+  word-break: break-word;
+}
+
+.address-map__error {
+  margin: 0;
+  font-size: 0.75rem;
+  color: #c0392b;
+}
+
+@media (max-width: 991px) {
+  .address-form__grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .address-map__canvas {
+    height: 260px;
+  }
+}
+
+@media (max-width: 575px) {
+  .address-form__row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .address-form-panel__head {
+    flex-direction: column;
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/* Order tracking map — buyer order detail and seller order detail     */
+/* ------------------------------------------------------------------ */
+
+.track-map {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.track-map__canvas {
+  border-radius: 10px;
+  overflow: hidden;
+  background: rgba(22, 24, 29, 0.05);
+}
+
+/* Bootstrap cards and the account sidebar both sit above 1; Leaflet must not. */
+.track-map__canvas .leaflet-pane,
+.track-map__canvas .leaflet-control {
+  z-index: 1;
+}
+
+.track-map--empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 24px;
+  text-align: center;
+  border: 1px dashed var(--acc-border, rgba(22, 24, 29, 0.15));
+  border-radius: 10px;
+  color: var(--acc-muted, #6b7280);
+}
+
+.track-map--empty i {
+  font-size: 1.6rem;
+  opacity: 0.5;
+}
+
+.track-map--empty p {
+  margin: 0;
+  max-width: 44ch;
+  font-size: 0.8125rem;
+  line-height: 1.6;
+}
+
+.track-map__marker {
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  border: 2px solid #fff;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.28);
+  color: #fff;
+  font-size: 0.8125rem;
+}
+
+.track-map__marker--pickup {
+  background: #16181d;
+}
+
+.track-map__marker--destination {
+  background: #1f8b4c;
+}
+
+.track-map__marker--parcel {
+  background: #e8952a;
+  font-size: 0.9375rem;
+  /* The one thing on the map that moves; give it a moment of attention. */
+  animation: track-map-pulse 2.4s ease-in-out infinite;
+}
+
+@keyframes track-map-pulse {
+  0%,
+  100% {
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.28);
+  }
+  50% {
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.28), 0 0 0 8px rgba(232, 149, 42, 0.22);
+  }
+}
+
+.track-map__route {
+  stroke: rgba(22, 24, 29, 0.35);
+}
+
+.track-map__route--done {
+  stroke: #e8952a;
+}
+
+.track-map__legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 18px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 0.75rem;
+  color: var(--acc-muted, #6b7280);
+}
+
+.track-map__legend li {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+}
+
+.track-map__key {
+  flex: none;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+.track-map__key--pickup {
+  background: #16181d;
+}
+
+.track-map__key--destination {
+  background: #1f8b4c;
+}
+
+/* ---------------------- buyer tracking card ----------------------- */
+
+.order-tracking__carrier {
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: rgba(22, 24, 29, 0.06);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.order-tracking__state {
+  margin: 0 0 12px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--primary-color, #16181d);
+}
+
+.order-tracking__code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-weight: 500;
+}
+
+.order-tracking__disclaimer {
+  display: flex;
+  gap: 8px;
+  margin: 12px 0 0;
+  font-size: 0.75rem;
+  line-height: 1.6;
+  color: var(--acc-muted, #6b7280);
+}
+
+.order-tracking__disclaimer i {
+  margin-top: 2px;
+  flex: none;
+}
+
+.order-tracking__facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 32px;
+  margin: 12px 0 0;
+}
+
+.order-tracking__facts dt {
+  font-size: 0.6875rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--acc-muted, #6b7280);
+}
+
+.order-tracking__facts dd {
+  margin: 2px 0 0;
+  font-size: 0.8125rem;
+  color: var(--primary-color, #16181d);
+}
+
+.order-tracking__timeline {
+  margin: 16px 0 0;
+  padding: 0 0 0 18px;
+  list-style: none;
+  border-left: 1px solid var(--acc-border, rgba(22, 24, 29, 0.12));
+}
+
+.order-tracking__timeline li {
+  position: relative;
+  padding-bottom: 14px;
+}
+
+.order-tracking__timeline li:last-child {
+  padding-bottom: 0;
+}
+
+.order-tracking__timeline li::before {
+  content: '';
+  position: absolute;
+  left: -23px;
+  top: 5px;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--acc-border, rgba(22, 24, 29, 0.25));
+}
+
+/* The newest carrier event is the one the buyer came here to read. */
+.order-tracking__timeline li:first-child::before {
+  background: #e8952a;
+}
+
+.order-tracking__timeline-title {
+  margin: 0;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--primary-color, #16181d);
+}
+
+.order-tracking__timeline-meta {
+  margin: 2px 0 0;
+  font-size: 0.75rem;
+  line-height: 1.5;
+  color: var(--acc-muted, #6b7280);
+}
+
+/* No keyless dark basemap exists, so the light tiles are inverted instead.
+   Only the tile pane is filtered — markers and route lines keep their colours. */
+.leaflet-tiles-dark .leaflet-tile-pane {
+  filter: invert(1) hue-rotate(180deg) brightness(0.92) contrast(0.9);
+}

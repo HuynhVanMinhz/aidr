@@ -1,3 +1,5 @@
+﻿using AIDR.Shared.Dtos.Shipping;
+
 namespace AIDR.Shared.Dtos.Seller;
 
 public sealed class SellerOrderQueryRequest
@@ -40,6 +42,12 @@ public sealed class SellerOrderListItemDto
     public DateTime? CompletedAt { get; init; }
     public bool CanUpdateStatus { get; init; }
     public string? NextStatus { get; init; }
+
+    /// <summary>A carrier is driving this order; the seller only watches.</summary>
+    public bool AutoFulfillment { get; init; }
+
+    /// <summary>Carrier shipment status, null until the shipment is booked.</summary>
+    public string? ShipmentStatus { get; init; }
 }
 
 public sealed class SellerOrderDetailDto
@@ -73,6 +81,9 @@ public sealed class SellerOrderDetailDto
     public DateTime? CompletedAt { get; init; }
     public bool CanUpdateStatus { get; init; }
     public string? NextStatus { get; init; }
+
+    /// <summary>Who is moving this order forward, and the shipment behind it.</summary>
+    public OrderFulfillmentDto Fulfillment { get; init; } = null!;
 }
 
 public sealed class SellerOrderShippingDto
@@ -84,6 +95,10 @@ public sealed class SellerOrderShippingDto
     public string District { get; init; } = null!;
     public string Ward { get; init; } = null!;
     public string StreetAddress { get; init; } = null!;
+
+    /// <summary>Delivery point as pinned when the order was placed; null on older orders.</summary>
+    public double? Latitude { get; init; }
+    public double? Longitude { get; init; }
 }
 
 public sealed class SellerOrderItemDto

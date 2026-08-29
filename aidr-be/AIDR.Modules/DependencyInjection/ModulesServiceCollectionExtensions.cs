@@ -1,4 +1,4 @@
-using AIDR.Modules.Admin.Abstractions;
+﻿using AIDR.Modules.Admin.Abstractions;
 using AIDR.Modules.Admin.Services;
 using AIDR.Modules.AI.Abstractions;
 using AIDR.Modules.AI.Services;
@@ -20,6 +20,8 @@ using AIDR.Modules.SellerCenter.Abstractions;
 using AIDR.Modules.SellerCenter.Services;
 using AIDR.Modules.Settlement.Abstractions;
 using AIDR.Modules.Settlement.Services;
+using AIDR.Modules.Shipping.Abstractions;
+using AIDR.Modules.Shipping.Services;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace AIDR.Modules.DependencyInjection;
@@ -57,6 +59,7 @@ public static class ModulesServiceCollectionExtensions
         services.AddScoped<IVoucherService, VoucherService>();
         services.AddScoped<IPaymentService, PaymentService>();
         services.AddScoped<ISettlementService, SettlementService>();
+        services.AddScoped<IShippingService, ShippingService>();
         services.AddScoped<IKycService, KycService>();
         services.AddScoped<IWishlistService, WishlistService>();
         services.AddScoped<IProductReviewService, ProductReviewService>();

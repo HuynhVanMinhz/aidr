@@ -1,6 +1,8 @@
 import { adminBadgeClass } from './adminBadge';
 import { BUYER_ORDER_STATUS_FILTERS, formatOrderStatus } from './orderUi';
 
+export { formatShipmentStatus } from './shipmentUi';
+
 export const SELLER_ORDER_STATUS_FILTERS = BUYER_ORDER_STATUS_FILTERS;
 
 export const MAX_TRACKING_CODE_LENGTH = 100;
@@ -27,6 +29,27 @@ export function sellerOrderStatusBadgeClass(status: string | null | undefined): 
       return adminBadgeClass.solidLight;
   }
 }
+
+export function shipmentStatusBadgeClass(status: string | null | undefined): string {
+  switch (status) {
+    case 'Delivered':
+      return adminBadgeClass.solidSuccess;
+    case 'PickedUp':
+    case 'InTransit':
+      return adminBadgeClass.outlineWarning;
+    case 'Created':
+      return adminBadgeClass.outlineSuccess;
+    case 'Failed':
+    case 'Returned':
+    case 'Cancelled':
+      return adminBadgeClass.outlineDanger;
+    case 'Pending':
+      return adminBadgeClass.outlineSecondary;
+    default:
+      return adminBadgeClass.solidLight;
+  }
+}
+
 
 export function sellerOrderUpdateActionLabel(nextStatus: string | null | undefined): string {
   switch (nextStatus) {
