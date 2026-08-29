@@ -27,7 +27,17 @@ public sealed class AdminSellerRegistrationRepository : IAdminSellerRegistration
                     from reviewer in reviewers.DefaultIfEmpty()
                     join shop in _db.Shops.AsNoTracking() on r.UserId equals shop.OwnerUserId into shops
                     from shop in shops.DefaultIfEmpty()
-                    select new { Request = r, User = u, Reviewer = reviewer, Shop = shop };
+                    select new
+                    {
+                        Request = r,
+                        User = u,
+                        Reviewer = reviewer,
+                        Shop = shop,
+                        LatestKyc = _db.KycVerifications
+                            .Where(k => k.UserId == r.UserId)
+                            .OrderByDescending(k => k.CreatedAt)
+                            .FirstOrDefault()
+                    };
 
         if (!string.IsNullOrWhiteSpace(status))
             query = query.Where(x => x.Request.Status == status);
@@ -66,7 +76,9 @@ public sealed class AdminSellerRegistrationRepository : IAdminSellerRegistration
             .Take(pageSize)
             .ToListAsync(cancellationToken);
 
-        var items = rows.Select(x => Map(x.Request, x.User, x.Reviewer, x.Shop?.ShopId)).ToList();
+        var items = rows
+            .Select(x => Map(x.Request, x.User, x.Reviewer, x.Shop?.ShopId, x.LatestKyc))
+            .ToList();
         return (items, totalCount, page, summary);
     }
 
@@ -82,10 +94,22 @@ public sealed class AdminSellerRegistrationRepository : IAdminSellerRegistration
             join shop in _db.Shops.AsNoTracking() on r.UserId equals shop.OwnerUserId into shops
             from shop in shops.DefaultIfEmpty()
             where r.RequestId == requestId
-            select new { Request = r, User = u, Reviewer = reviewer, Shop = shop }
+            select new
+            {
+                Request = r,
+                User = u,
+                Reviewer = reviewer,
+                Shop = shop,
+                LatestKyc = _db.KycVerifications
+                    .Where(k => k.UserId == r.UserId)
+                    .OrderByDescending(k => k.CreatedAt)
+                    .FirstOrDefault()
+            }
         ).FirstOrDefaultAsync(cancellationToken);
 
-        return row is null ? null : Map(row.Request, row.User, row.Reviewer, row.Shop?.ShopId);
+        return row is null
+            ? null
+            : Map(row.Request, row.User, row.Reviewer, row.Shop?.ShopId, row.LatestKyc);
     }
 
     public async Task<ApproveSellerRegistrationResult> ApproveAsync(
@@ -182,6 +206,41 @@ public sealed class AdminSellerRegistrationRepository : IAdminSellerRegistration
         };
     }
 
+    public async Task<AdminSellerRegistrationRecord> RequestMoreInfoAsync(
+        Guid requestId,
+        Guid adminUserId,
+        string adminNote,
+        CancellationToken cancellationToken = default)
+    {
+        var entity = await _db.SellerRegistrationRequests
+            .FirstOrDefaultAsync(r => r.RequestId == requestId, cancellationToken)
+            ?? throw new NotFoundException("Seller registration request not found.");
+
+        if (entity.Status != AdminConstants.SellerRegistrationStatusPending)
+        {
+            throw new ConflictException(
+                "Only pending seller registration requests can be sent back for more information.");
+        }
+
+        var user = await _db.Users.AsNoTracking()
+            .FirstOrDefaultAsync(u => u.UserId == entity.UserId, cancellationToken)
+            ?? throw new NotFoundException("Applicant user not found.");
+
+        var now = DateTime.UtcNow;
+        entity.Status = SellerRegistrationConstants.StatusNeedsMoreInfo;
+        entity.AdminNote = adminNote;
+        entity.ReviewedBy = adminUserId;
+        entity.ReviewedAt = now;
+        entity.UpdatedAt = now;
+
+        await _db.SaveChangesAsync(cancellationToken);
+
+        var reviewer = await _db.Users.AsNoTracking()
+            .FirstOrDefaultAsync(u => u.UserId == adminUserId, cancellationToken);
+
+        return Map(entity, user, reviewer, shopId: null);
+    }
+
     public async Task<AdminSellerRegistrationRecord> RejectAsync(
         Guid requestId,
         Guid adminUserId,
@@ -220,8 +279,11 @@ public sealed class AdminSellerRegistrationRepository : IAdminSellerRegistration
         SellerRegistrationRequest request,
         User user,
         User? reviewer,
-        Guid? shopId) => new()
+        Guid? shopId,
+        KycVerification? latestKyc = null) => new()
     {
+        LatestKycVerificationId = latestKyc?.KycVerificationId,
+        LatestKycStatus = latestKyc?.Status,
         RequestId = request.RequestId,
         UserId = request.UserId,
         UserEmail = user.Email,
@@ -235,6 +297,13 @@ public sealed class AdminSellerRegistrationRepository : IAdminSellerRegistration
         ReviewerFullName = reviewer?.FullName,
         ReviewedAt = request.ReviewedAt,
         CreatedAt = request.CreatedAt,
-        ShopId = shopId
+        ShopId = shopId,
+        KycVerificationId = request.KycVerificationId,
+        BusinessType = request.BusinessType,
+        TaxCode = request.TaxCode,
+        BusinessAddress = request.BusinessAddress,
+        ContactPhone = request.ContactPhone,
+        ContactEmail = request.ContactEmail,
+        LicenseImageUrl = request.LicenseImageUrl
     };
 }

@@ -61,6 +61,21 @@ export async function rejectSellerRegistration(id: string, payload: RejectSeller
   return data;
 }
 
+/**
+ * Send an application back for changes instead of rejecting it — the applicant
+ * keeps their identity check and can edit and resubmit.
+ */
+export async function requestMoreInfoOnSellerRegistration(
+  id: string,
+  payload: RejectSellerRegistrationPayload,
+) {
+  const { data } = await apiClient.post<ApiResult<AdminSellerRegistration>>(
+    `/admin/seller-registrations/${id}/request-info`,
+    payload,
+  );
+  return data;
+}
+
 export async function listAdminProducts(query: AdminProductListQuery = {}) {
   const { data } = await apiClient.get<ApiResult<AdminProductListResult>>('/admin/products', {
     params: {

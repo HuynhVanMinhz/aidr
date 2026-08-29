@@ -15,6 +15,7 @@ public class AidrDbContext : DbContext
     public DbSet<Category> Categories => Set<Category>();
     public DbSet<Shop> Shops => Set<Shop>();
     public DbSet<SellerRegistrationRequest> SellerRegistrationRequests => Set<SellerRegistrationRequest>();
+    public DbSet<KycVerification> KycVerifications => Set<KycVerification>();
     public DbSet<Wallet> Wallets => Set<Wallet>();
     public DbSet<WalletTransaction> WalletTransactions => Set<WalletTransaction>();
     public DbSet<ShopBankAccount> ShopBankAccounts => Set<ShopBankAccount>();
@@ -166,6 +167,42 @@ public class AidrDbContext : DbContext
                 .HasForeignKey(x => x.ReviewedBy)
                 .OnDelete(DeleteBehavior.Restrict);
             e.HasIndex(x => x.Status);
+            e.Property(x => x.BusinessType).HasMaxLength(20);
+            e.Property(x => x.TaxCode).HasMaxLength(32);
+            e.Property(x => x.BusinessAddress).HasMaxLength(300);
+            e.Property(x => x.ContactPhone).HasMaxLength(20);
+            e.Property(x => x.ContactEmail).HasMaxLength(256);
+            e.Property(x => x.LicenseImageUrl).HasMaxLength(512);
+            e.HasOne(x => x.KycVerification)
+                .WithMany()
+                .HasForeignKey(x => x.KycVerificationId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<KycVerification>(e =>
+        {
+            e.ToTable("KycVerifications");
+            e.HasKey(x => x.KycVerificationId);
+            e.Property(x => x.Provider).HasMaxLength(30).IsRequired();
+            e.Property(x => x.DocumentType).HasMaxLength(30);
+            e.Property(x => x.DocumentNumberMask).HasMaxLength(32);
+            e.Property(x => x.DocumentNumberHash).HasMaxLength(64).IsFixedLength();
+            e.Property(x => x.FullName).HasMaxLength(150);
+            e.Property(x => x.DateOfBirth).HasMaxLength(20);
+            e.Property(x => x.Gender).HasMaxLength(20);
+            e.Property(x => x.HomeTown).HasMaxLength(300);
+            e.Property(x => x.PermanentAddress).HasMaxLength(500);
+            e.Property(x => x.IssueDate).HasMaxLength(20);
+            e.Property(x => x.ExpiryDate).HasMaxLength(20);
+            e.Property(x => x.FrontImageUrl).HasMaxLength(512);
+            e.Property(x => x.BackImageUrl).HasMaxLength(512);
+            e.Property(x => x.SelfieImageUrl).HasMaxLength(512);
+            e.Property(x => x.FaceMatchSimilarity).HasPrecision(5, 4);
+            e.Property(x => x.Status).HasMaxLength(20).IsRequired();
+            e.Property(x => x.FailureReason).HasMaxLength(500);
+            e.HasOne(x => x.User).WithMany().HasForeignKey(x => x.UserId)
+                .OnDelete(DeleteBehavior.Restrict);
+            e.HasIndex(x => new { x.UserId, x.CreatedAt });
         });
 
         modelBuilder.Entity<Wallet>(e =>

@@ -55,6 +55,16 @@ Cấu hình payOS + kịch bản test trên UI: `docs/guide-payos-settlement-tes
 Cấu hình ở section `Settlement` trong `appsettings.json` (phí 3%, giữ 30 ngày,
 auto-complete 7 ngày, `PayoutMode`).
 
+### 2d. eKYC cho đăng ký bán hàng
+
+```
+scripts/seller-kyc-schema.sql   # bảng KycVerifications + mở rộng SellerRegistrationRequests
+```
+
+Chi tiết: `docs/solution-seller-onboarding-ekyc.md`. Cấu hình ở section `FptAi`
+trong `appsettings.json`. Để `UseMock: true` khi chưa có API key FPT.AI — luồng
+UI chạy đủ với dữ liệu giả lập.
+
 ### 3. Backend (không Docker)
 
 ```bash

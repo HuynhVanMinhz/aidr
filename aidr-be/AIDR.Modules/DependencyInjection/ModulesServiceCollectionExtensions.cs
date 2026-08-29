@@ -8,6 +8,8 @@ using AIDR.Modules.Discovery.Abstractions;
 using AIDR.Modules.Discovery.Services;
 using AIDR.Modules.Engagement.Abstractions;
 using AIDR.Modules.Engagement.Services;
+using AIDR.Modules.Kyc.Abstractions;
+using AIDR.Modules.Kyc.Services;
 using AIDR.Modules.Order.Abstractions;
 using AIDR.Modules.Order.Services;
 using AIDR.Modules.Payment.Abstractions;
@@ -55,6 +57,7 @@ public static class ModulesServiceCollectionExtensions
         services.AddScoped<IVoucherService, VoucherService>();
         services.AddScoped<IPaymentService, PaymentService>();
         services.AddScoped<ISettlementService, SettlementService>();
+        services.AddScoped<IKycService, KycService>();
         services.AddScoped<IWishlistService, WishlistService>();
         services.AddScoped<IProductReviewService, ProductReviewService>();
         services.AddScoped<ISellerRatingService, SellerRatingService>();

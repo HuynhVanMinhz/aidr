@@ -274,3 +274,63 @@ html[data-aidr-shell='admin'] .wrapper .page-content > .container-xxl {
 .aidr-admin-select.is-invalid .dropdown-toggle {
   border-color: var(--bs-form-invalid-border-color, #dc3545);
 }
+
+/* ---------------------------------------------------------------
+   Seller registration review
+   --------------------------------------------------------------- */
+
+/* Keep the decision panel in reach while reading a long application. */
+@media (min-width: 992px) {
+  .reg-decision {
+    position: sticky;
+    top: 84px;
+  }
+}
+
+/* The note applies to the two actions under this line, not to Approve above it. */
+.reg-decision__divider {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 20px 0 16px;
+  color: var(--bs-secondary-color, #6c757d);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.reg-decision__divider::before,
+.reg-decision__divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--bs-border-color, #e5e7eb);
+}
+
+/* A raw Cloudinary URL tells the reviewer nothing — show the document. */
+.reg-doc {
+  display: block;
+  width: 110px;
+  text-decoration: none;
+}
+
+.reg-doc img,
+.reg-doc__file {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 110px;
+  height: 74px;
+  object-fit: cover;
+  border: 1px solid var(--bs-border-color, #e5e7eb);
+  border-radius: 8px;
+  background: var(--bs-tertiary-bg, #f6f7f9);
+  color: var(--bs-secondary-color, #6c757d);
+}
+
+.reg-doc__label {
+  display: block;
+  margin-top: 4px;
+  font-size: 0.75rem;
+  color: var(--bs-secondary-color, #6c757d);
+}

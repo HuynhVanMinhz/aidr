@@ -1,6 +1,7 @@
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using AIDR.Modules.Admin.Abstractions;
+using AIDR.Modules.Kyc.Abstractions;
 using AIDR.Shared.Constants;
 using AIDR.Shared.Dtos.Admin;
 using AIDR.Shared.Exceptions;
@@ -13,7 +14,8 @@ public sealed class AdminSellerRegistrationService : IAdminSellerRegistrationSer
     {
         AdminConstants.SellerRegistrationStatusPending,
         AdminConstants.SellerRegistrationStatusApproved,
-        AdminConstants.SellerRegistrationStatusRejected
+        AdminConstants.SellerRegistrationStatusRejected,
+        SellerRegistrationConstants.StatusNeedsMoreInfo
     };
 
     private static readonly Regex NonSlugChars = new(
@@ -21,9 +23,15 @@ public sealed class AdminSellerRegistrationService : IAdminSellerRegistrationSer
         RegexOptions.Compiled | RegexOptions.CultureInvariant);
 
     private readonly IAdminSellerRegistrationRepository _repository;
+    private readonly IKycRepository _kyc;
 
-    public AdminSellerRegistrationService(IAdminSellerRegistrationRepository repository) =>
+    public AdminSellerRegistrationService(
+        IAdminSellerRegistrationRepository repository,
+        IKycRepository kyc)
+    {
         _repository = repository;
+        _kyc = kyc;
+    }
 
     public async Task<AdminSellerRegistrationListResultDto> ListAsync(
         string? status,
@@ -45,7 +53,7 @@ public sealed class AdminSellerRegistrationService : IAdminSellerRegistrationSer
 
         return new AdminSellerRegistrationListResultDto
         {
-            Items = items.Select(Map).ToList(),
+            Items = items.Select(r => Map(r)).ToList(),
             Page = effectivePage,
             PageSize = normalizedPageSize,
             TotalCount = totalCount,
@@ -64,7 +72,15 @@ public sealed class AdminSellerRegistrationService : IAdminSellerRegistrationSer
         var record = await _repository.GetByIdAsync(requestId, cancellationToken)
             ?? throw new NotFoundException("Seller registration request not found.");
 
-        return Map(record);
+        // The reviewer needs the identity check next to the paperwork. Applications
+        // filed before the applicant verified carry no link, so fall back to the
+        // person's own latest check rather than showing nothing.
+        var kycId = record.KycVerificationId ?? record.LatestKycVerificationId;
+        var kyc = kycId is { } id
+            ? await _kyc.GetByIdAsync(id, cancellationToken)
+            : null;
+
+        return Map(record, kyc);
     }
 
     public async Task<ApproveSellerRegistrationResultDto> ApproveAsync(
@@ -129,6 +145,41 @@ public sealed class AdminSellerRegistrationService : IAdminSellerRegistrationSer
         }
 
         var record = await _repository.RejectAsync(requestId, adminUserId, note, cancellationToken);
+        return Map(record);
+    }
+
+    public async Task<AdminSellerRegistrationDto> RequestMoreInfoAsync(
+        Guid requestId,
+        Guid adminUserId,
+        RequestMoreInfoRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        EnsureRequestId(requestId);
+        EnsureUserId(adminUserId, "Admin user id");
+
+        if (request is null)
+            throw new AppException("A note is required so the applicant knows what to fix.");
+
+        var note = RequireAdminNote(request.AdminNote);
+
+        var existing = await _repository.GetByIdAsync(requestId, cancellationToken)
+            ?? throw new NotFoundException("Seller registration request not found.");
+
+        if (!string.Equals(
+                existing.Status,
+                AdminConstants.SellerRegistrationStatusPending,
+                StringComparison.OrdinalIgnoreCase))
+        {
+            throw new ConflictException(
+                "Only pending seller registration requests can be sent back for more information.");
+        }
+
+        var record = await _repository.RequestMoreInfoAsync(
+            requestId,
+            adminUserId,
+            note,
+            cancellationToken);
+
         return Map(record);
     }
 
@@ -253,8 +304,17 @@ public sealed class AdminSellerRegistrationService : IAdminSellerRegistrationSer
         }
     }
 
-    private static AdminSellerRegistrationDto Map(AdminSellerRegistrationRecord record) => new()
+    private static AdminSellerRegistrationDto Map(
+        AdminSellerRegistrationRecord record,
+        AIDR.Shared.Dtos.Kyc.KycVerificationDto? kyc = null) => new()
     {
+        Kyc = kyc,
+        HasIdentityCheck =
+            record.KycVerificationId is not null || record.LatestKycVerificationId is not null,
+        KycLinkedToApplication = record.KycVerificationId is not null,
+        KycStatus = record.KycVerificationId is not null
+            ? kyc?.Status
+            : record.LatestKycStatus,
         RequestId = record.RequestId,
         UserId = record.UserId,
         UserEmail = record.UserEmail,
@@ -268,6 +328,12 @@ public sealed class AdminSellerRegistrationService : IAdminSellerRegistrationSer
         ReviewerFullName = record.ReviewerFullName,
         ReviewedAt = record.ReviewedAt,
         CreatedAt = record.CreatedAt,
-        ShopId = record.ShopId
+        ShopId = record.ShopId,
+        BusinessType = record.BusinessType,
+        TaxCode = record.TaxCode,
+        BusinessAddress = record.BusinessAddress,
+        ContactPhone = record.ContactPhone,
+        ContactEmail = record.ContactEmail,
+        LicenseImageUrl = record.LicenseImageUrl
     };
 }

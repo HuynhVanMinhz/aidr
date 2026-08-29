@@ -1,132 +1,195 @@
-import { useEffect, useMemo, useState, type FormEvent } from 'react';
+import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 import { Link } from 'react-router-dom';
+import { KycStep } from '../../components/account/KycStep';
+import { SelectField } from '../../components/common/SelectField';
 import { useAuth } from '../../hooks/useAuth';
 import { useToast } from '../../hooks/useToast';
 import { useToastMessage } from '../../hooks/useToastMessage';
+import { getMyKyc } from '../../services/kycApi';
 import {
   createSellerRegistration,
   getMySellerRegistration,
-  type BuyerSellerRegistration,
+  updateSellerRegistration,
 } from '../../services/sellerRegistrationApi';
+import type { KycVerification } from '../../types/kyc';
+import type {
+  BuyerSellerRegistration,
+  SellerBusinessType,
+} from '../../types/sellerRegistration';
 import { sellerRegistrationBadgeClass } from '../../utils/adminBadge';
 import { getApiErrorMessage } from '../../utils/apiError';
-import {
-  canSubmitBuyerSellerRegistrationForm,
-  parseDocumentUrls,
-  validateBuyerSellerRegistrationForm,
-  type BuyerSellerRegistrationFormField,
-  type BuyerSellerRegistrationFormValues,
-} from '../../utils/buyerSellerRegistrationValidation';
-import { visibleFieldErrors } from '../../utils/formValidation';
+import { isCloudinaryConfigured, uploadKycImageToCloudinary } from '../../utils/cloudinaryUpload';
+import { formatOrderDate } from '../../utils/orderUi';
 
-function formatDate(value?: string | null) {
-  if (!value) return '—';
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return value;
-  return date.toLocaleString();
-}
+const BUSINESS_TYPES: { value: SellerBusinessType; label: string; hint: string }[] = [
+  {
+    value: 'Individual',
+    label: 'Individual',
+    hint: 'Selling under your own name. No tax code or licence needed.',
+  },
+  {
+    value: 'Household',
+    label: 'Household business',
+    hint: 'Registered household. Tax code and business licence required.',
+  },
+  {
+    value: 'Company',
+    label: 'Company',
+    hint: 'Registered company. Tax code and business licence required.',
+  },
+];
 
-function hasSellerRole(roles: string[]) {
-  return roles.some((role) => role.toUpperCase() === 'SELLER');
-}
+type Form = {
+  shopName: string;
+  businessType: SellerBusinessType;
+  taxCode: string;
+  businessAddress: string;
+  contactPhone: string;
+  contactEmail: string;
+  businessInfo: string;
+  licenseImageUrl: string;
+};
 
-function isFormLocked(registration: BuyerSellerRegistration | null, isSeller: boolean) {
-  if (isSeller) return true;
-  if (!registration) return false;
-  return registration.status === 'Pending' || registration.status === 'Approved';
-}
+const EMPTY_FORM: Form = {
+  shopName: '',
+  businessType: 'Individual',
+  taxCode: '',
+  businessAddress: '',
+  contactPhone: '',
+  contactEmail: '',
+  businessInfo: '',
+  licenseImageUrl: '',
+};
+
+const TAX_CODE_PATTERN = /^\d{10}(-\d{3})?$/;
 
 export function BecomeSellerPage() {
-  const { roles } = useAuth();
   const toast = useToast();
-  const isSeller = hasSellerRole(roles);
+  const { roles } = useAuth();
+  const isSeller = roles.includes('Seller');
 
+  const [kyc, setKyc] = useState<KycVerification | null>(null);
   const [registration, setRegistration] = useState<BuyerSellerRegistration | null>(null);
+  const [form, setForm] = useState<Form>(EMPTY_FORM);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
-  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [uploadingLicense, setUploadingLicense] = useState(false);
+  const licenseInput = useRef<HTMLInputElement>(null);
 
   useToastMessage(loadError);
-  useToastMessage(submitError);
-
-  const [form, setForm] = useState<BuyerSellerRegistrationFormValues>({
-    shopName: '',
-    businessInfo: '',
-    documentUrls: '',
-  });
-  const [dirty, setDirty] = useState(false);
-  const [touched, setTouched] = useState<Partial<Record<BuyerSellerRegistrationFormField, boolean>>>({});
-  const [submitted, setSubmitted] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
-    setLoading(true);
-    setLoadError(null);
-    void getMySellerRegistration()
-      .then((data) => {
+
+    void (async () => {
+      try {
+        const [kycResult, regResult] = await Promise.all([
+          getMyKyc(),
+          getMySellerRegistration(),
+        ]);
         if (cancelled) return;
-        setRegistration(data);
-        if (data) {
+
+        setKyc(kycResult);
+        setRegistration(regResult);
+
+        if (regResult) {
           setForm({
-            shopName: data.shopName,
-            businessInfo: data.businessInfo ?? '',
-            documentUrls: data.documentUrls.join('\n'),
+            shopName: regResult.shopName ?? '',
+            businessType: regResult.businessType ?? 'Individual',
+            taxCode: regResult.taxCode ?? '',
+            businessAddress: regResult.businessAddress ?? '',
+            contactPhone: regResult.contactPhone ?? '',
+            contactEmail: regResult.contactEmail ?? '',
+            businessInfo: regResult.businessInfo ?? '',
+            licenseImageUrl: regResult.licenseImageUrl ?? '',
           });
         }
-      })
-      .catch((err) => {
-        if (!cancelled) {
-          setLoadError(getApiErrorMessage(err));
-        }
-      })
-      .finally(() => {
+        setLoadError(null);
+      } catch (err) {
+        if (!cancelled) setLoadError(getApiErrorMessage(err, 'Unable to load your application.'));
+      } finally {
         if (!cancelled) setLoading(false);
-      });
+      }
+    })();
+
     return () => {
       cancelled = true;
     };
   }, []);
 
-  const locked = isFormLocked(registration, isSeller);
+  const kycDone = Boolean(kyc?.canStartSellerApplication);
+  const editing = !registration || registration.canEdit;
+  const needsLicense = form.businessType !== 'Individual';
 
-  const fieldErrors = useMemo(() => validateBuyerSellerRegistrationForm(form), [form]);
-  const visibleErrors = visibleFieldErrors(fieldErrors, touched, submitted);
-  const canSubmit = !locked && canSubmitBuyerSellerRegistrationForm(form, dirty, fieldErrors);
+  const errors = useMemo(() => {
+    const next: Partial<Record<keyof Form, string>> = {};
+    if (!form.shopName.trim()) next.shopName = 'Shop name is required.';
+    else if (form.shopName.trim().length < 3) next.shopName = 'Use at least 3 characters.';
 
-  function updateField<K extends BuyerSellerRegistrationFormField>(key: K, value: string) {
-    setDirty(true);
+    if (needsLicense) {
+      if (!form.taxCode.trim()) next.taxCode = 'Tax code is required for this business type.';
+      else if (!TAX_CODE_PATTERN.test(form.taxCode.trim()))
+        next.taxCode = 'Use 10 digits, optionally followed by -NNN.';
+
+      if (!form.licenseImageUrl) next.licenseImageUrl = 'Upload the business licence.';
+    }
+
+    if (form.contactEmail.trim() && !form.contactEmail.includes('@')) {
+      next.contactEmail = 'Enter a valid email address.';
+    }
+    return next;
+  }, [form, needsLicense]);
+
+  const canSubmit = kycDone && editing && Object.keys(errors).length === 0 && !submitting;
+
+  function patch<K extends keyof Form>(key: K, value: Form[K]) {
     setForm((prev) => ({ ...prev, [key]: value }));
+  }
+
+  async function handleLicensePick(file: File | undefined) {
+    if (!file) return;
+    setUploadingLicense(true);
+    try {
+      const uploaded = await uploadKycImageToCloudinary(file);
+      patch('licenseImageUrl', uploaded.secureUrl);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Unable to upload the licence.');
+    } finally {
+      setUploadingLicense(false);
+      if (licenseInput.current) licenseInput.current.value = '';
+    }
   }
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
-    if (locked) return;
-
-    setSubmitted(true);
-    setSubmitError(null);
-
-    const errors = validateBuyerSellerRegistrationForm(form);
-    if (Object.keys(errors).length > 0) return;
+    if (!canSubmit) return;
 
     setSubmitting(true);
     try {
-      const result = await createSellerRegistration({
+      const payload = {
         shopName: form.shopName.trim(),
+        businessType: form.businessType,
+        taxCode: needsLicense ? form.taxCode.trim() : null,
+        businessAddress: form.businessAddress.trim() || null,
+        contactPhone: form.contactPhone.trim() || null,
+        contactEmail: form.contactEmail.trim() || null,
         businessInfo: form.businessInfo.trim() || null,
-        documentUrls: parseDocumentUrls(form.documentUrls),
-      });
+        licenseImageUrl: needsLicense ? form.licenseImageUrl : null,
+      };
+
+      const result = registration
+        ? await updateSellerRegistration(payload)
+        : await createSellerRegistration(payload);
+
       if (!result.success || !result.data) {
-        throw new Error(result.message || 'Unable to submit seller registration.');
+        throw new Error(result.message || 'Unable to submit your application.');
       }
+
       setRegistration(result.data);
-      setDirty(false);
-      setSubmitted(false);
-      toast.success('Seller registration submitted. We will review your application soon.');
+      toast.success(result.message || 'Application submitted.');
     } catch (err) {
-      const message = getApiErrorMessage(err);
-      setSubmitError(message);
-      toast.error(message);
+      toast.error(getApiErrorMessage(err, 'Unable to submit your application.'));
     } finally {
       setSubmitting(false);
     }
@@ -134,117 +197,277 @@ export function BecomeSellerPage() {
 
   if (loading) {
     return (
-      <div className="account-details-content-box">
-        <p className="account-muted">Loading registration…</p>
+      <div className="account-page">
+        <p className="account-muted">Loading your application…</p>
       </div>
     );
   }
 
-  return (
-    <div className="account-details-content-box">
-      {isSeller ? (
-        <div className="auth-alert auth-alert--success">
-          You already have a seller account.{' '}
-          <Link to="/seller">Open Seller Center</Link>
+  if (isSeller) {
+    return (
+      <div className="account-page">
+        <div className="account-empty">
+          <p>You already have a seller account.</p>
+          <Link to="/seller" className="account-btn account-btn--primary">
+            Open Seller Center
+          </Link>
         </div>
-      ) : null}
+      </div>
+    );
+  }
+
+  /* Progress: identity → business profile → review. */
+  const steps = [
+    { key: 'kyc', label: 'Identity', done: kycDone },
+    { key: 'profile', label: 'Business profile', done: Boolean(registration) },
+    { key: 'review', label: 'Admin review', done: registration?.status === 'Approved' },
+  ];
+  const activeIndex = !kycDone ? 0 : !registration ? 1 : 2;
+
+  return (
+    <div className="account-page seller-apply">
+      <ol className="seller-steps">
+        {steps.map((step, index) => (
+          <li
+            key={step.key}
+            className={`seller-steps__item${
+              step.done ? ' is-done' : index === activeIndex ? ' is-active' : ''
+            }`}
+          >
+            <span className="seller-steps__marker">
+              {step.done ? <i className="fa-solid fa-check" aria-hidden /> : index + 1}
+            </span>
+            <span className="seller-steps__label">{step.label}</span>
+          </li>
+        ))}
+      </ol>
 
       {registration ? (
-        <div className="account-details-content-item mb-4">
-          <div className="checkout-bill-address-title">
-            <h2>Application status</h2>
-          </div>
-          <p>
-            Status:{' '}
-            <span className={sellerRegistrationBadgeClass(registration.status)}>
-              {registration.status}
-            </span>
-          </p>
-          <p className="account-muted mb-1">Submitted {formatDate(registration.createdAt)}</p>
-          {registration.reviewedAt ? (
-            <p className="account-muted mb-1">Reviewed {formatDate(registration.reviewedAt)}</p>
-          ) : null}
-          {registration.adminNote ? (
-            <div className="buyer-return-note mt-3">
-              <strong>Admin note:</strong> {registration.adminNote}
+        <section className="account-card seller-status">
+          <div className="seller-status__head">
+            <div>
+              <h3 className="order-card__title seller-status__title">Application status</h3>
+              <p className="seller-status__meta">
+                Submitted {formatOrderDate(registration.createdAt)}
+                {registration.updatedAt && registration.updatedAt !== registration.createdAt
+                  ? ` · updated ${formatOrderDate(registration.updatedAt)}`
+                  : ''}
+              </p>
             </div>
-          ) : null}
-        </div>
-      ) : null}
-
-      <form className="checkout-bill-address-form" onSubmit={handleSubmit} noValidate>
-        <div className="account-details-content-item">
-          <div className="checkout-bill-address-title">
-            <h2>{registration ? 'Registration details' : 'Apply to become a seller'}</h2>
+            <span className={sellerRegistrationBadgeClass(registration.status)}>
+              {registration.status === 'NeedsMoreInfo' ? 'More info needed' : registration.status}
+            </span>
           </div>
 
-          {locked && !isSeller ? (
-            <p className="account-muted">
-              Your application is under review or already approved. You cannot edit it at this time.
+          {registration.adminNote ? (
+            <p className="order-note">
+              <strong>Note from the review team:</strong> {registration.adminNote}
             </p>
           ) : null}
 
-          <div className="row">
-            <div className="form-group col-md-12">
-              <label htmlFor="seller-shop-name">Shop name *</label>
-              <input
-                id="seller-shop-name"
-                type="text"
-                className="form-control"
-                value={form.shopName}
-                disabled={locked}
-                onChange={(e) => updateField('shopName', e.target.value)}
-                onBlur={() => setTouched((prev) => ({ ...prev, shopName: true }))}
-              />
-              {visibleErrors.shopName ? (
-                <p className="form-field-error">{visibleErrors.shopName}</p>
-              ) : null}
-            </div>
-
-            <div className="form-group col-md-12">
-              <label htmlFor="seller-business-info">Business information</label>
-              <textarea
-                id="seller-business-info"
-                className="form-control"
-                rows={4}
-                value={form.businessInfo}
-                disabled={locked}
-                placeholder="Describe your business, product categories, and experience."
-                onChange={(e) => updateField('businessInfo', e.target.value)}
-                onBlur={() => setTouched((prev) => ({ ...prev, businessInfo: true }))}
-              />
-              {visibleErrors.businessInfo ? (
-                <p className="form-field-error">{visibleErrors.businessInfo}</p>
-              ) : null}
-            </div>
-
-            <div className="form-group col-md-12">
-              <label htmlFor="seller-document-urls">Supporting document URLs</label>
-              <textarea
-                id="seller-document-urls"
-                className="form-control"
-                rows={4}
-                value={form.documentUrls}
-                disabled={locked}
-                placeholder="One URL per line (business license, ID, storefront photos…)"
-                onChange={(e) => updateField('documentUrls', e.target.value)}
-                onBlur={() => setTouched((prev) => ({ ...prev, documentUrls: true }))}
-              />
-              {visibleErrors.documentUrls ? (
-                <p className="form-field-error">{visibleErrors.documentUrls}</p>
-              ) : null}
-            </div>
-          </div>
-
-          {!locked ? (
-            <div className="account-form-actions">
-              <button type="submit" className="btn-default" disabled={!canSubmit || submitting}>
-                {submitting ? 'Submitting…' : registration ? 'Resubmit application' : 'Submit application'}
-              </button>
-            </div>
+          {registration.canEdit ? (
+            <p className="seller-status__hint">
+              Update the form below and submit again — you do not need to redo the identity check.
+            </p>
+          ) : registration.status === 'Pending' ? (
+            <p className="seller-status__hint">
+              We are reviewing your application. You cannot edit it while it is under review.
+            </p>
           ) : null}
-        </div>
-      </form>
+        </section>
+      ) : null}
+
+      <section className="account-card">
+        <h3 className="order-card__title">
+          Step 1 — Identity
+          {kycDone ? <span className="order-card__count">Done</span> : null}
+        </h3>
+        <KycStep kyc={kyc} onVerified={setKyc} />
+      </section>
+
+      <section className={`account-card${kycDone ? '' : ' seller-locked'}`}>
+        <h3 className="order-card__title">
+          Step 2 — Business profile
+          {kycDone && !editing ? (
+            <span className="order-card__count order-card__count--muted">Locked</span>
+          ) : null}
+        </h3>
+
+        {/*
+          The reason the fields are dead sits in the status card at the top of the
+          page, which is off-screen by the time you reach the form. Repeat it here.
+        */}
+        {kycDone && !editing ? (
+          <p className="seller-lock-notice">
+            <i className="fa-solid fa-lock" aria-hidden />
+            <span>
+              {registration?.status === 'Approved'
+                ? 'Your application was approved, so this form is closed. Change your shop details from the seller dashboard.'
+                : 'These fields are read-only while your application is being reviewed. You can edit them again if the team asks for changes or rejects the application.'}
+            </span>
+          </p>
+        ) : null}
+
+        {!kycDone ? (
+          <p className="account-muted">
+            Finish the identity check first. It only takes a minute.
+          </p>
+        ) : (
+          <form onSubmit={(e) => void handleSubmit(e)} noValidate>
+            <fieldset disabled={!editing} className="seller-fieldset">
+              <div className="seller-form__row">
+                <label className="seller-field">
+                  <span className="seller-field__label">Shop name *</span>
+                  <input
+                    className="seller-input"
+                    value={form.shopName}
+                    maxLength={150}
+                    onChange={(e) => patch('shopName', e.target.value)}
+                    placeholder="TechZone Official"
+                  />
+                  {errors.shopName ? (
+                    <span className="form-field-error">{errors.shopName}</span>
+                  ) : null}
+                </label>
+
+                <div className="seller-field">
+                  <span className="seller-field__label">How are you selling? *</span>
+                  <SelectField
+                    value={form.businessType}
+                    options={BUSINESS_TYPES.map((t) => ({ value: t.value, label: t.label }))}
+                    onChange={(value) => patch('businessType', value as SellerBusinessType)}
+                  />
+                  <span className="seller-field__hint">
+                    {BUSINESS_TYPES.find((t) => t.value === form.businessType)?.hint}
+                  </span>
+                </div>
+              </div>
+
+              {needsLicense ? (
+                <div className="seller-form__row">
+                  <label className="seller-field">
+                    <span className="seller-field__label">Tax code *</span>
+                    <input
+                      className="seller-input"
+                      value={form.taxCode}
+                      maxLength={32}
+                      inputMode="numeric"
+                      onChange={(e) => patch('taxCode', e.target.value)}
+                      placeholder="0123456789"
+                    />
+                    {errors.taxCode ? (
+                      <span className="form-field-error">{errors.taxCode}</span>
+                    ) : null}
+                  </label>
+
+                  <div className="seller-field">
+                    <span className="seller-field__label">Business licence *</span>
+                    <div className="seller-license">
+                      {form.licenseImageUrl ? (
+                        <a href={form.licenseImageUrl} target="_blank" rel="noreferrer">
+                          <img src={form.licenseImageUrl} alt="Business licence" />
+                        </a>
+                      ) : (
+                        <span className="seller-license__empty">
+                          <i className="fa-regular fa-file-lines" aria-hidden />
+                        </span>
+                      )}
+                      <input
+                        ref={licenseInput}
+                        type="file"
+                        accept="image/*"
+                        className="kyc-slot__input"
+                        onChange={(e) => void handleLicensePick(e.target.files?.[0])}
+                      />
+                      <button
+                        type="button"
+                        className="account-btn account-btn--secondary account-btn--sm"
+                        disabled={uploadingLicense || !isCloudinaryConfigured()}
+                        onClick={() => licenseInput.current?.click()}
+                      >
+                        {uploadingLicense
+                          ? 'Uploading…'
+                          : form.licenseImageUrl
+                            ? 'Replace'
+                            : 'Upload licence'}
+                      </button>
+                    </div>
+                    {errors.licenseImageUrl ? (
+                      <span className="form-field-error">{errors.licenseImageUrl}</span>
+                    ) : null}
+                  </div>
+                </div>
+              ) : null}
+
+              <div className="seller-form__row">
+                <label className="seller-field">
+                  <span className="seller-field__label">Contact phone</span>
+                  <input
+                    className="seller-input"
+                    value={form.contactPhone}
+                    maxLength={20}
+                    inputMode="tel"
+                    onChange={(e) => patch('contactPhone', e.target.value)}
+                    placeholder="0900000000"
+                  />
+                </label>
+                <label className="seller-field">
+                  <span className="seller-field__label">Contact email</span>
+                  <input
+                    className="seller-input"
+                    value={form.contactEmail}
+                    maxLength={256}
+                    onChange={(e) => patch('contactEmail', e.target.value)}
+                    placeholder="shop@example.com"
+                  />
+                  {errors.contactEmail ? (
+                    <span className="form-field-error">{errors.contactEmail}</span>
+                  ) : null}
+                </label>
+              </div>
+
+              <label className="seller-field">
+                <span className="seller-field__label">Business address</span>
+                <input
+                  className="seller-input"
+                  value={form.businessAddress}
+                  maxLength={300}
+                  onChange={(e) => patch('businessAddress', e.target.value)}
+                  placeholder="Warehouse or store address"
+                />
+              </label>
+
+              <label className="seller-field">
+                <span className="seller-field__label">What will you sell?</span>
+                <textarea
+                  className="seller-input seller-input--area"
+                  rows={3}
+                  maxLength={1000}
+                  value={form.businessInfo}
+                  onChange={(e) => patch('businessInfo', e.target.value)}
+                  placeholder="Product categories, brands, where you source from…"
+                />
+              </label>
+            </fieldset>
+
+            {editing ? (
+              <div className="order-detail__actions">
+                <button
+                  type="submit"
+                  className="account-btn account-btn--primary"
+                  disabled={!canSubmit}
+                >
+                  {submitting
+                    ? 'Submitting…'
+                    : registration
+                      ? 'Resubmit application'
+                      : 'Submit application'}
+                </button>
+              </div>
+            ) : null}
+          </form>
+        )}
+      </section>
     </div>
   );
 }
