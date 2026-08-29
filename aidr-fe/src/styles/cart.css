@@ -61,9 +61,37 @@
   color: var(--text-color, #707070);
 }
 
+.cart-select-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid var(--cart-border, rgba(22, 24, 29, 0.08));
+  font-size: 0.8125rem;
+}
+
+.cart-select-bar input[type='checkbox'] {
+  width: 1.05rem;
+  height: 1.05rem;
+  accent-color: var(--primary-color, #16181d);
+  cursor: pointer;
+}
+
+.cart-select-bar label {
+  margin: 0;
+  font-weight: 600;
+  color: var(--primary-color, #16181d);
+  cursor: pointer;
+}
+
+.cart-select-bar__count {
+  margin-left: auto;
+  color: var(--text-color, #707070);
+}
+
 .cart-list-header {
   display: grid;
-  grid-template-columns: minmax(0, 2.2fr) 0.9fr 1fr 1fr;
+  grid-template-columns: 2rem minmax(0, 2.2fr) 0.9fr 1fr 1fr;
   gap: 0.75rem;
   padding: 0 0 0.65rem;
   font-size: 0.75rem;
@@ -80,7 +108,7 @@
 
 .cart-line {
   display: grid;
-  grid-template-columns: minmax(0, 2.2fr) 0.9fr 1fr 1fr;
+  grid-template-columns: 2rem minmax(0, 2.2fr) 0.9fr 1fr 1fr;
   gap: 0.75rem;
   align-items: center;
   padding: 1rem 0;
@@ -93,6 +121,43 @@
 
 .cart-line--unavailable {
   opacity: 0.88;
+}
+
+.cart-line__select-col {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  align-self: center;
+}
+
+.cart-line__checkbox {
+  width: 1.05rem;
+  height: 1.05rem;
+  accent-color: var(--primary-color, #16181d);
+  cursor: pointer;
+}
+
+.cart-line__checkbox:disabled {
+  cursor: not-allowed;
+}
+
+/* Unticked lines are not part of the total — mute their subtotal to say so. */
+.cart-line:not(.cart-line--selected) .cart-line__line-total {
+  color: var(--text-color, #707070);
+  font-weight: 500;
+}
+
+/* The checkbox is self-explanatory visually; the label is for screen readers. */
+.cart-line__checkbox-label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 
 .cart-line__product-col {
@@ -834,9 +899,17 @@
   }
 
   .cart-line {
+    position: relative;
     grid-template-columns: 1fr;
     gap: 0.65rem;
     align-items: start;
+    padding-left: 1.9rem;
+  }
+
+  .cart-line__select-col {
+    position: absolute;
+    top: 1.1rem;
+    left: 0;
   }
 
   .cart-line__col-label {

@@ -10,6 +10,8 @@ type Props = {
   item: CartItem;
   index: number;
   busy: boolean;
+  selected: boolean;
+  onToggleSelected: (cartItemId: string) => void;
   onChangeQty: (cartItemId: string, nextQty: number, maxAvailable: number) => void;
   onRemove: (cartItemId: string) => void;
 };
@@ -18,7 +20,15 @@ function formatQty(value: number) {
   return String(value);
 }
 
-export function CartItemRow({ item, index, busy, onChangeQty, onRemove }: Props) {
+export function CartItemRow({
+  item,
+  index,
+  busy,
+  selected,
+  onToggleSelected,
+  onChangeQty,
+  onRemove,
+}: Props) {
   const [imageSrc, setImageSrc] = useState(() =>
     resolveProductImageUrl(item.primaryImageUrl, index),
   );
@@ -27,7 +37,25 @@ export function CartItemRow({ item, index, busy, onChangeQty, onRemove }: Props)
   const lowStock = item.isAvailable && item.availableQuantity > 0 && item.availableQuantity <= 5;
 
   return (
-    <article className={`cart-line${!item.isAvailable ? ' cart-line--unavailable' : ''}`}>
+    <article
+      className={`cart-line${!item.isAvailable ? ' cart-line--unavailable' : ''}${
+        selected ? ' cart-line--selected' : ''
+      }`}
+    >
+      <div className="cart-line__select-col">
+        <input
+          type="checkbox"
+          className="cart-line__checkbox"
+          id={`cart-select-${item.cartItemId}`}
+          checked={selected}
+          disabled={busy || !item.isAvailable}
+          onChange={() => onToggleSelected(item.cartItemId)}
+        />
+        <label className="cart-line__checkbox-label" htmlFor={`cart-select-${item.cartItemId}`}>
+          {selected ? `Deselect ${item.productName}` : `Select ${item.productName} for checkout`}
+        </label>
+      </div>
+
       <div className="cart-line__product-col">
         <div className="cart-line__media">
           <Link to={`/products/${item.productId}`} className="cart-line__image-link" tabIndex={-1}>

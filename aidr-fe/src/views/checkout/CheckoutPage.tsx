@@ -62,6 +62,7 @@ export function CheckoutPage() {
     currency,
     loading: cartLoading,
     loaded: cartLoaded,
+    selectedItems,
     getErrorMessage,
   } = useCart({ autoLoad: true });
   const { profile, loading: profileLoading } = useProfile();
@@ -77,11 +78,12 @@ export function CheckoutPage() {
   const [buyerNote, setBuyerNote] = useState('');
   const [addressTouched, setAddressTouched] = useState(false);
 
-  const availableItems = useMemo(() => items.filter((i) => i.isAvailable), [items]);
-  const unavailableCount = items.length - availableItems.length;
+  // Only the lines ticked in the cart are ordered here.
+  const availableItems = selectedItems;
+  const excludedCount = items.length - availableItems.length;
   const unavailableNotice =
-    unavailableCount > 0
-      ? `${unavailableCount} item(s) in your cart are unavailable and will be skipped.`
+    excludedCount > 0
+      ? `${excludedCount} item(s) in your cart are not part of this order.`
       : null;
 
   useToastMessage(checkoutError);
@@ -217,7 +219,8 @@ export function CheckoutPage() {
     navigate('/order-received', { replace: true });
   }
 
-  if (cartLoaded && items.length === 0) {
+  // Nothing ticked (or an empty cart) means there is nothing to pay for.
+  if (cartLoaded && availableItems.length === 0) {
     return <Navigate to="/cart" replace />;
   }
 

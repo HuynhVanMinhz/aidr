@@ -32,7 +32,6 @@ export function CartPage() {
   const toast = useToast();
   const {
     items,
-    subtotal,
     currency,
     loading,
     mutating,
@@ -41,6 +40,12 @@ export function CartPage() {
     setItemQuantity,
     removeItem,
     clearAll,
+    selectedItems,
+    selectableCount,
+    isSelected,
+    toggleSelected,
+    selectAll,
+    clearSelection,
     getErrorMessage,
   } = useCart({ autoLoad: true });
   const applied = useAppSelector(selectAppliedVouchers);
@@ -48,14 +53,22 @@ export function CartPage() {
   const [busyItemId, setBusyItemId] = useState<string | null>(null);
   useToastMessage(error);
 
-  const cartItemIds = useMemo(() => items.map((i) => i.cartItemId), [items]);
+  // Vouchers, totals and checkout all follow the ticked lines, not the whole cart.
+  const cartItemIds = useMemo(
+    () => selectedItems.map((i) => i.cartItemId),
+    [selectedItems],
+  );
   const itemCount = useMemo(
-    () => items.reduce((sum, item) => sum + item.quantity, 0),
-    [items],
+    () => selectedItems.reduce((sum, item) => sum + item.quantity, 0),
+    [selectedItems],
+  );
+  const selectedSubtotal = useMemo(
+    () => selectedItems.reduce((sum, item) => sum + item.lineTotal, 0),
+    [selectedItems],
   );
   const shopOptions = useMemo(() => {
     const map = new Map<string, { shopId: string; shopName: string; subtotal: number }>();
-    for (const item of items) {
+    for (const item of selectedItems) {
       const existing = map.get(item.shopId);
       if (existing) {
         existing.subtotal += item.lineTotal;
@@ -68,23 +81,24 @@ export function CartPage() {
       }
     }
     return [...map.values()];
-  }, [items]);
+  }, [selectedItems]);
 
-  const payableTotal = Math.max(0, subtotal - discountTotal);
-  const hasAvailableItems = items.some((i) => i.isAvailable);
+  const payableTotal = Math.max(0, selectedSubtotal - discountTotal);
+  const selectedCount = selectedItems.length;
+  const allSelected = selectableCount > 0 && selectedCount === selectableCount;
   const busy = mutating || busyItemId != null;
   const isDesktopSummary = useDesktopSummary();
 
   const orderSummaryProps = {
     itemCount,
-    subtotal,
+    subtotal: selectedSubtotal,
     discountTotal,
     appliedCount: applied.length,
     payableTotal,
     currency,
     cartItemIds,
     shopOptions,
-    checkoutDisabled: !hasAvailableItems,
+    checkoutDisabled: selectedCount === 0,
   };
 
   async function changeQty(cartItemId: string, nextQty: number, maxAvailable: number) {
@@ -161,12 +175,33 @@ export function CartPage() {
                       <div>
                         <h2>Your items</h2>
                         <p>
-                          {itemCount} {itemCount === 1 ? 'item' : 'items'} in your cart
+                          {selectedCount} of {items.length}{' '}
+                          {items.length === 1 ? 'item' : 'items'} selected for checkout
                         </p>
                       </div>
                     </header>
 
+                    <div className="cart-select-bar">
+                      <input
+                        type="checkbox"
+                        id="cart-select-all"
+                        checked={allSelected}
+                        ref={(el) => {
+                          if (el) el.indeterminate = selectedCount > 0 && !allSelected;
+                        }}
+                        disabled={busy || selectableCount === 0}
+                        onChange={() => (allSelected ? clearSelection() : selectAll())}
+                      />
+                      <label htmlFor="cart-select-all">
+                        {allSelected ? 'Deselect all' : 'Select all'}
+                      </label>
+                      <span className="cart-select-bar__count">
+                        {selectedCount} selected
+                      </span>
+                    </div>
+
                     <div className="cart-list-header" aria-hidden>
+                      <span />
                       <span>Product</span>
                       <span>Price</span>
                       <span>Quantity</span>
@@ -182,6 +217,8 @@ export function CartPage() {
                             item={item}
                             index={index}
                             busy={itemBusy || busy}
+                            selected={isSelected(item.cartItemId)}
+                            onToggleSelected={toggleSelected}
                             onChangeQty={(id, qty, max) => void changeQty(id, qty, max)}
                             onRemove={(id) => void handleRemove(id)}
                           />
