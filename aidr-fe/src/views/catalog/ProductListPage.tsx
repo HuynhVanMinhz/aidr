@@ -9,6 +9,7 @@ import { NlSearchBar } from '../../components/catalog/NlSearchBar';
 import { ProductCard } from '../../components/catalog/ProductCard';
 import { ProductFilters, SORT_OPTIONS } from '../../components/catalog/ProductFilters';
 import { useCategories } from '../../hooks/useCatalog';
+import { useToastMessage } from '../../hooks/useToastMessage';
 import {
   defaultCatalogFilters,
   fetchProducts,
@@ -35,6 +36,7 @@ export function ProductListPage() {
   const paging = useAppSelector(selectCatalogPaging);
   const { categories } = useCategories();
   const [drawerOpen, setDrawerOpen] = useState(false);
+  useToastMessage(error);
 
   const searchKey = searchParams.toString();
   const urlFilters = useMemo(
@@ -177,13 +179,7 @@ export function ProductListPage() {
                   </div>
                 </div>
 
-                {error && (
-                  <div className="alert alert-danger" role="alert">
-                    {error}
-                  </div>
-                )}
-
-                {!loading && !error && products.length === 0 && (
+                {!loading && products.length === 0 && (
                   <p className="text-muted">
                     {hasActiveFilters(urlFilters)
                       ? 'No products match your filters. Try adjusting or clearing filters.'

@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useBuyerOrders } from '../../hooks/useBuyerOrders';
+import { useToastMessage } from '../../hooks/useToastMessage';
 import { formatMoney } from '../../utils/formatCatalog';
 import {
   BUYER_ORDER_STATUS_FILTERS,
@@ -25,6 +26,7 @@ export function OrdersPage() {
   );
 
   const { list, loading, error, refresh } = useBuyerOrders(query);
+  useToastMessage(error);
 
   const totalPages = list?.totalPages ?? 0;
   const items = list?.items ?? [];
@@ -61,12 +63,6 @@ export function OrdersPage() {
           Refresh
         </button>
       </div>
-
-      {error ? (
-        <div className="alert alert-danger buyer-orders-alert" role="alert">
-          {error}
-        </div>
-      ) : null}
 
       {loading && items.length === 0 ? (
         <p className="account-muted">Loading orders…</p>

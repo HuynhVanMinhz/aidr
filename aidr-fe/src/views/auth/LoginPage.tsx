@@ -2,6 +2,7 @@ import { useEffect, useState, type FormEvent } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { AuthLayout } from '../../components/auth/AuthLayout';
 import { useAuth } from '../../hooks/useAuth';
+import { useToastMessage } from '../../hooks/useToastMessage';
 
 export function LoginPage() {
   const navigate = useNavigate();
@@ -15,6 +16,7 @@ export function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  useToastMessage(error);
 
   // Resume OAuth callback if interceptor redirected here with stale returnUrl
   useEffect(() => {
@@ -65,7 +67,6 @@ export function LoginPage() {
                         <p>Access your account to track orders and shop on AIDR.</p>
                       </div>
 
-                      {error && <div className="auth-alert auth-alert--error">{error}</div>}
 
                       <div className="checkout-login-form">
                         <div className="form-group">

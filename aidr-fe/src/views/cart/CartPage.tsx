@@ -5,6 +5,7 @@ import { CartItemRow } from '../../components/cart/CartItemRow';
 import { CartOrderSummary } from '../../components/cart/CartOrderSummary';
 import { useCart } from '../../hooks/useCart';
 import { useToast } from '../../hooks/useToast';
+import { useToastMessage } from '../../hooks/useToastMessage';
 import { useAppSelector } from '../../store/hooks';
 import { selectAppliedDiscountTotal, selectAppliedVouchers } from '../../store/voucherSlice';
 
@@ -45,6 +46,7 @@ export function CartPage() {
   const applied = useAppSelector(selectAppliedVouchers);
   const discountTotal = useAppSelector(selectAppliedDiscountTotal);
   const [busyItemId, setBusyItemId] = useState<string | null>(null);
+  useToastMessage(error);
 
   const cartItemIds = useMemo(() => items.map((i) => i.cartItemId), [items]);
   const itemCount = useMemo(
@@ -139,12 +141,6 @@ export function CartPage() {
 
       <div className="page-cart">
         <div className="container">
-          {error && (
-            <div className="alert alert-danger" role="alert">
-              {error}
-            </div>
-          )}
-
           {loading && !loaded ? (
             <p className="cart-loading">Loading cart…</p>
           ) : items.length === 0 ? (

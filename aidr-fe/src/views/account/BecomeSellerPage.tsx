@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { useToast } from '../../hooks/useToast';
+import { useToastMessage } from '../../hooks/useToastMessage';
 import {
   createSellerRegistration,
   getMySellerRegistration,
@@ -45,6 +46,9 @@ export function BecomeSellerPage() {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+
+  useToastMessage(loadError);
+  useToastMessage(submitError);
 
   const [form, setForm] = useState<BuyerSellerRegistrationFormValues>({
     shopName: '',
@@ -138,8 +142,6 @@ export function BecomeSellerPage() {
 
   return (
     <div className="account-details-content-box">
-      {loadError ? <div className="auth-alert auth-alert--error">{loadError}</div> : null}
-
       {isSeller ? (
         <div className="auth-alert auth-alert--success">
           You already have a seller account.{' '}
@@ -175,8 +177,6 @@ export function BecomeSellerPage() {
           <div className="checkout-bill-address-title">
             <h2>{registration ? 'Registration details' : 'Apply to become a seller'}</h2>
           </div>
-
-          {submitError ? <div className="auth-alert auth-alert--error">{submitError}</div> : null}
 
           {locked && !isSeller ? (
             <p className="account-muted">

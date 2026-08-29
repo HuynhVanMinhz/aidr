@@ -4,6 +4,7 @@ import { ProductCard } from '../components/catalog/ProductCard';
 import { RecommendedProductsSection } from '../components/catalog/RecommendedProductsSection';
 import { HomeExtraSections } from '../components/home/HomeExtraSections';
 import { useCategories } from '../hooks/useCatalog';
+import { useToastMessage } from '../hooks/useToastMessage';
 import {
   defaultCatalogFilters,
   fetchProducts,
@@ -32,6 +33,7 @@ export function HomePage() {
   const loading = useAppSelector(selectCatalogListLoading);
   const error = useAppSelector(selectCatalogListError);
   const { categories, loading: categoriesLoading } = useCategories();
+  useToastMessage(error);
 
   const flatCategories = useMemo(() => flattenCategories(categories), [categories]);
   const promoCategories = flatCategories.slice(0, 3);
@@ -194,12 +196,7 @@ export function HomePage() {
           </div>
 
           {loading && <p>Loading products…</p>}
-          {error && (
-            <div className="alert alert-danger" role="alert">
-              {error}
-            </div>
-          )}
-          {!loading && !error && products.length === 0 && (
+          {!loading && products.length === 0 && (
             <p className="text-muted">No products available yet.</p>
           )}
 

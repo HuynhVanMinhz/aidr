@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react';
 import { Link } from 'react-router-dom';
 import { useProfile } from '../../hooks/useProfile';
+import { useToastMessage } from '../../hooks/useToastMessage';
 import * as authApi from '../../services/authApi';
 
 export function ChangePasswordPage() {
@@ -16,6 +17,11 @@ export function ChangePasswordPage() {
   const [sendingSetLink, setSendingSetLink] = useState(false);
   const [setLinkError, setSetLinkError] = useState<string | null>(null);
   const [setLinkSuccess, setSetLinkSuccess] = useState<string | null>(null);
+
+  useToastMessage(passwordError);
+  useToastMessage(passwordSuccess, 'success');
+  useToastMessage(setLinkError);
+  useToastMessage(setLinkSuccess, 'success');
 
   const canSubmit =
     currentPassword.length > 0 && newPassword.length > 0 && confirmPassword.length > 0;
@@ -83,8 +89,6 @@ export function ChangePasswordPage() {
             You cannot change your password until you set one via email.
           </p>
 
-          {setLinkError && <div className="auth-alert auth-alert--error">{setLinkError}</div>}
-          {setLinkSuccess && <div className="auth-alert auth-alert--success">{setLinkSuccess}</div>}
 
           <div className="checkout-login-btn account-form-actions">
             <button
@@ -120,8 +124,6 @@ export function ChangePasswordPage() {
             letter and a special character).
           </p>
 
-          {passwordError && <div className="auth-alert auth-alert--error">{passwordError}</div>}
-          {passwordSuccess && <div className="auth-alert auth-alert--success">{passwordSuccess}</div>}
 
           <div className="checkout-bill-address-form">
             <div className="row">

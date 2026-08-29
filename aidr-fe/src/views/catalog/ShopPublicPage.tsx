@@ -5,6 +5,7 @@ import { ProductCard } from '../../components/catalog/ProductCard';
 import { SORT_OPTIONS } from '../../components/catalog/ProductFilters';
 import { useFollowShop } from '../../hooks/useFollow';
 import { useToast } from '../../hooks/useToast';
+import { useToastMessage } from '../../hooks/useToastMessage';
 import { useAppDispatch, useAppSelector } from '../../store/hooks';
 import {
   clearShop,
@@ -94,6 +95,7 @@ export function ShopPublicPage() {
   const ratingLoading = useAppSelector(selectShopRatingLoading);
   const error = useAppSelector(selectShopError);
   const ratingError = useAppSelector(selectShopRatingError);
+  useToastMessage(error);
   const filters = useAppSelector(selectShopFilters);
   const [tab, setTab] = useState<ShopTab>('about');
   const [draftQ, setDraftQ] = useState('');
@@ -207,13 +209,16 @@ export function ShopPublicPage() {
       </div>
 
       {error && (
-        <div className="container py-5">
-          <div className="alert alert-danger" role="alert">
-            {error}
+        <div className="container">
+          <div className="page-state">
+            <p className="page-state__title">Shop not available</p>
+            <p className="page-state__text">
+              This shop could not be loaded. It may have been closed or the link is out of date.
+            </p>
+            <Link to="/products" className="btn-default">
+              Browse products
+            </Link>
           </div>
-          <Link to="/products" className="btn-default">
-            Browse products
-          </Link>
         </div>
       )}
 

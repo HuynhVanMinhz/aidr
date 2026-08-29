@@ -7,6 +7,7 @@ using AIDR.Shared.Constants;
 using AIDR.Shared.Dtos.Order;
 using AIDR.Shared.Exceptions;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 namespace AIDR.Infrastructure.Ordering;
 
@@ -19,11 +20,16 @@ public sealed class OrderRepository : IOrderRepository
 
     private readonly AidrDbContext _db;
     private readonly ILowStockNotifier _lowStockNotifier;
+    private readonly ILogger<OrderRepository> _logger;
 
-    public OrderRepository(AidrDbContext db, ILowStockNotifier lowStockNotifier)
+    public OrderRepository(
+        AidrDbContext db,
+        ILowStockNotifier lowStockNotifier,
+        ILogger<OrderRepository> logger)
     {
         _db = db;
         _lowStockNotifier = lowStockNotifier;
+        _logger = logger;
     }
 
     public async Task<CreateOrderResponse> CreateOrdersFromCartAsync(
@@ -641,11 +647,21 @@ public sealed class OrderRepository : IOrderRepository
             };
 
             orderItems.Add(orderItem);
+
+            var primaryImageUrl = await _db.ProductImages
+                .Where(img => img.ProductId == product.ProductId)
+                .OrderByDescending(img => img.IsPrimary)
+                .ThenBy(img => img.SortOrder)
+                .Select(img => img.ImageUrl)
+                .FirstOrDefaultAsync(cancellationToken);
+
             itemDtos.Add(new CreatedOrderItemDto
             {
                 OrderItemId = orderItemId,
                 ProductId = product.ProductId,
                 ProductName = product.Name,
+                Sku = product.ModelNumber,
+                ImageUrl = primaryImageUrl,
                 Quantity = cartItem.Quantity,
                 UnitPrice = unitPrice,
                 UnitCostAvg = unitCostAvg,
@@ -883,7 +899,20 @@ public sealed class OrderRepository : IOrderRepository
         }
 
         if (remaining > 0)
-            throw new ConflictException($"Insufficient stock for '{product.Name}'.");
+        {
+            // StockQuantity is denormalised from the lots; when they disagree the product
+            // was stocked without an inventory lot (see scripts/seed-inventory-lots.sql).
+            _logger.LogWarning(
+                "Lot allocation short for product {ProductId} ({ProductName}): needed {Needed}, lots hold {Allocated}, StockQuantity says {StockQuantity}",
+                product.ProductId,
+                product.Name,
+                quantity,
+                quantity - remaining,
+                product.StockQuantity);
+
+            throw new ConflictException(
+                $"Insufficient stock for '{product.Name}'. Only {quantity - remaining} unit(s) are backed by inventory lots.");
+        }
 
         return allocations;
     }
