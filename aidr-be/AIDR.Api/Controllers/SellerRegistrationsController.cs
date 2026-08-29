@@ -29,6 +29,23 @@ public sealed class SellerRegistrationsController : ControllerBase
             "Seller registration submitted."));
     }
 
+    /// <summary>
+    /// Update and resubmit an application that was rejected or sent back for
+    /// more information, instead of forcing a brand new one.
+    /// </summary>
+    [HttpPut("me")]
+    public async Task<ActionResult<ApiResult<BuyerSellerRegistrationDto>>> UpdateMine(
+        [FromBody] CreateSellerRegistrationRequest request,
+        CancellationToken cancellationToken)
+    {
+        var result = await _registrations.UpdateMineAsync(
+            User.GetUserId(),
+            request,
+            cancellationToken);
+
+        return Ok(ApiResult<BuyerSellerRegistrationDto>.Ok(result, "Application resubmitted."));
+    }
+
     /// <summary>Get the latest seller registration request for the current buyer.</summary>
     [HttpGet("me")]
     public async Task<ActionResult<ApiResult<BuyerSellerRegistrationDto>>> GetMine(

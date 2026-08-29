@@ -137,8 +137,52 @@ public class SellerRegistrationRequest
     public DateTime? ReviewedAt { get; set; }
     public DateTime CreatedAt { get; set; }
 
+    /* Identity + legal profile — see docs/solution-seller-onboarding-ekyc.md */
+    public Guid? KycVerificationId { get; set; }
+    public string? BusinessType { get; set; }
+    public string? TaxCode { get; set; }
+    public string? BusinessAddress { get; set; }
+    public string? ContactPhone { get; set; }
+    public string? ContactEmail { get; set; }
+    public string? LicenseImageUrl { get; set; }
+    public DateTime? UpdatedAt { get; set; }
+
     public User User { get; set; } = null!;
     public User? Reviewer { get; set; }
+    public KycVerification? KycVerification { get; set; }
+}
+
+/// <summary>One identity check attempt against the eKYC provider.</summary>
+public class KycVerification
+{
+    public Guid KycVerificationId { get; set; }
+    public Guid UserId { get; set; }
+    public string Provider { get; set; } = "FPTAI";
+    public string? DocumentType { get; set; }
+    /// <summary>Only the last four digits stay readable.</summary>
+    public string? DocumentNumberMask { get; set; }
+    /// <summary>SHA-256 of the full number; used to stop one identity opening many shops.</summary>
+    public string? DocumentNumberHash { get; set; }
+    public string? FullName { get; set; }
+    public string? DateOfBirth { get; set; }
+    public string? Gender { get; set; }
+    public string? HomeTown { get; set; }
+    public string? PermanentAddress { get; set; }
+    public string? IssueDate { get; set; }
+    public string? ExpiryDate { get; set; }
+    public string? FrontImageUrl { get; set; }
+    public string? BackImageUrl { get; set; }
+    public string? SelfieImageUrl { get; set; }
+    public decimal? FaceMatchSimilarity { get; set; }
+    public bool FaceMatched { get; set; }
+    public string Status { get; set; } = "Pending";
+    public string? FailureReason { get; set; }
+    public string? RawOcrJson { get; set; }
+    public string? RawFaceJson { get; set; }
+    public DateTime CreatedAt { get; set; }
+    public DateTime? VerifiedAt { get; set; }
+
+    public User User { get; set; } = null!;
 }
 
 public class Wallet

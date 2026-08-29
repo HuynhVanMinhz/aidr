@@ -26,4 +26,12 @@ export async function createSellerRegistration(payload: CreateSellerRegistration
   return data;
 }
 
+export async function updateSellerRegistration(payload: CreateSellerRegistrationPayload) {
+  const { data } = await apiClient.put<BuyerSellerRegistrationApiResult>(
+    '/seller-registrations/me',
+    payload,
+  );
+  return data;
+}
+
 export type { ApiResult, BuyerSellerRegistration };

@@ -6,6 +6,7 @@ export const CloudinaryFolders = {
   product: 'product',
   category: 'category',
   chat: 'chat',
+  kyc: 'kyc',
 } as const;
 
 export type CloudinaryFolder = (typeof CloudinaryFolders)[keyof typeof CloudinaryFolders];
@@ -114,4 +115,21 @@ export async function uploadChatImageToCloudinary(file: File): Promise<Cloudinar
 export async function uploadCategoryImageToCloudinary(file: File): Promise<CloudinaryUploadResult> {
   validateCategoryImageFile(file);
   return uploadImageToCloudinary(file, CloudinaryFolders.category);
+}
+
+const MAX_KYC_IMAGE_BYTES = 8 * 1024 * 1024;
+
+export function validateKycImageFile(file: File): void {
+  if (!file.type.startsWith('image/')) {
+    throw new Error('Please choose a photo (JPG or PNG).');
+  }
+  if (file.size > MAX_KYC_IMAGE_BYTES) {
+    throw new Error('Photo must be 8MB or smaller.');
+  }
+}
+
+/** Upload an eKYC photo (ID card or portrait) to folder `kyc`. */
+export async function uploadKycImageToCloudinary(file: File): Promise<CloudinaryUploadResult> {
+  validateKycImageFile(file);
+  return uploadImageToCloudinary(file, CloudinaryFolders.kyc);
 }

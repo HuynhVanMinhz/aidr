@@ -1,3 +1,4 @@
+import type { KycVerification } from './kyc';
 export type AdminCategory = {
   categoryId: number;
   parentId?: number | null;
@@ -56,7 +57,11 @@ export type UpdateCategoryPayload = {
   parentId?: number | null;
 };
 
-export type SellerRegistrationStatus = 'Pending' | 'Approved' | 'Rejected';
+export type SellerRegistrationStatus =
+  | 'Pending'
+  | 'NeedsMoreInfo'
+  | 'Approved'
+  | 'Rejected';
 
 export type AdminSellerRegistration = {
   requestId: string;
@@ -73,6 +78,20 @@ export type AdminSellerRegistration = {
   reviewedAt?: string | null;
   createdAt: string;
   shopId?: string | null;
+  businessType?: string | null;
+  taxCode?: string | null;
+  businessAddress?: string | null;
+  contactPhone?: string | null;
+  contactEmail?: string | null;
+  licenseImageUrl?: string | null;
+  /** Whether any identity check exists for this applicant — available on the list too. */
+  hasIdentityCheck: boolean;
+  /** False when the check was completed after this application was submitted. */
+  kycLinkedToApplication: boolean;
+  /** Status of that check, present on the list too. */
+  kycStatus?: string | null;
+  /** Identity check backing this application (detail endpoint only). */
+  kyc?: KycVerification | null;
 };
 
 export type AdminSellerRegistrationListResult = {

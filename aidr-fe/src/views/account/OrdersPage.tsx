@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { SelectField } from '../../components/common/SelectField';
 import { useBuyerOrders } from '../../hooks/useBuyerOrders';
 import { useToastMessage } from '../../hooks/useToastMessage';
 import { PRODUCT_IMAGE_PLACEHOLDER, resolveProductImageUrl } from '../../utils/catalogImage';
@@ -41,21 +42,12 @@ export function OrdersPage() {
   return (
     <div className="account-page">
       <div className="account-toolbar">
-        <div className="account-field">
-          <label htmlFor="buyer-order-status">Status</label>
-          <select
-            id="buyer-order-status"
-            className="account-select"
-            value={status}
-            onChange={(event) => handleStatusChange(event.target.value)}
-          >
-            {BUYER_ORDER_STATUS_FILTERS.map((filter) => (
-              <option key={filter.value || 'all'} value={filter.value}>
-                {filter.label}
-              </option>
-            ))}
-          </select>
-        </div>
+        <SelectField
+          label="Status"
+          value={status}
+          options={BUYER_ORDER_STATUS_FILTERS}
+          onChange={handleStatusChange}
+        />
         <div className="d-flex align-items-center gap-3">
           {totalCount > 0 ? (
             <p className="account-count">

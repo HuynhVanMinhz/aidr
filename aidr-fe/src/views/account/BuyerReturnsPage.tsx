@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { SelectField } from '../../components/common/SelectField';
 import { useToastMessage } from '../../hooks/useToastMessage';
 import { listBuyerReturns } from '../../services/returnApi';
 import type { BuyerReturnRequest } from '../../types/return';
@@ -62,21 +63,12 @@ export function BuyerReturnsPage() {
   return (
     <div className="account-page">
       <div className="account-toolbar">
-        <div className="account-field">
-          <label htmlFor="buyer-return-status">Status</label>
-          <select
-            id="buyer-return-status"
-            className="account-select"
-            value={status}
-            onChange={(e) => handleStatusChange(e.target.value)}
-          >
-            {RETURN_STATUS_FILTERS.map((filter) => (
-              <option key={filter.value || 'all'} value={filter.value}>
-                {filter.label}
-              </option>
-            ))}
-          </select>
-        </div>
+        <SelectField
+          label="Status"
+          value={status}
+          options={RETURN_STATUS_FILTERS}
+          onChange={handleStatusChange}
+        />
         {totalCount > 0 ? (
           <p className="account-count">
             {totalCount} request{totalCount === 1 ? '' : 's'}

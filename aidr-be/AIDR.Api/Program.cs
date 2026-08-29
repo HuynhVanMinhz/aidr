@@ -59,6 +59,15 @@ if (!useInMemoryCache)
     healthChecks.AddRedis(redisConnection, name: "redis", tags: ["ready"]);
 }
 
+// A mock identity check that looks real is worse than no check at all — refuse
+// to start with it enabled anywhere but Development.
+if (!builder.Environment.IsDevelopment()
+    && builder.Configuration.GetValue("FptAi:UseMock", false))
+{
+    throw new InvalidOperationException(
+        "FptAi:UseMock must be false outside Development. Set a real FptAi:ApiKey.");
+}
+
 var app = builder.Build();
 
 app.UseMiddleware<CorrelationIdMiddleware>();

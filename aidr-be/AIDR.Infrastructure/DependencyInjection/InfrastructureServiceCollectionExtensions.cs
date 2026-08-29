@@ -7,6 +7,7 @@ using AIDR.Infrastructure.Discovery;
 using AIDR.Infrastructure.Engagement;
 using AIDR.Infrastructure.Ordering;
 using AIDR.Infrastructure.PayOs;
+using AIDR.Infrastructure.Kyc;
 using AIDR.Infrastructure.Persistence;
 using AIDR.Infrastructure.Profile;
 using AIDR.Infrastructure.SellerCenter;
@@ -18,6 +19,7 @@ using AIDR.Modules.Auth.Abstractions;
 using AIDR.Modules.Auth.Services;
 using AIDR.Modules.Discovery.Abstractions;
 using AIDR.Modules.Engagement.Abstractions;
+using AIDR.Modules.Kyc.Abstractions;
 using AIDR.Modules.Order.Abstractions;
 using AIDR.Modules.Payment.Abstractions;
 using AIDR.Modules.Payment.Services;
@@ -67,6 +69,10 @@ public static class InfrastructureServiceCollectionExtensions
         services.Configure<PayOsOptions>(configuration.GetSection(PayOsOptions.SectionName));
         services.Configure<GroqOptions>(configuration.GetSection(GroqOptions.SectionName));
         services.Configure<SettlementOptions>(configuration.GetSection(SettlementOptions.SectionName));
+        services.Configure<FptAiOptions>(configuration.GetSection(FptAiOptions.SectionName));
+
+        // Typed client: it both downloads the uploaded images and calls FPT.AI.
+        services.AddHttpClient<IFptAiEkycClient, FptAiEkycClient>();
 
         services.AddScoped<IAuthUserRepository, AuthUserRepository>();
         services.AddScoped<IProfileRepository, ProfileRepository>();
@@ -90,6 +96,7 @@ public static class InfrastructureServiceCollectionExtensions
         services.AddScoped<ISellerShopVoucherRepository, SellerShopVoucherRepository>();
         services.AddScoped<ISellerFinanceRepository, SellerFinanceRepository>();
         services.AddScoped<ISettlementRepository, SettlementRepository>();
+        services.AddScoped<IKycRepository, KycRepository>();
         services.AddScoped<ISellerShopRepository, SellerShopRepository>();
         services.AddScoped<ICartRepository, CartRepository>();
         services.AddScoped<IOrderRepository, OrderRepository>();
