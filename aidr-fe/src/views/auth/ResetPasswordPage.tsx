@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { AuthLayout } from '../../components/auth/AuthLayout';
+import { useToastMessage } from '../../hooks/useToastMessage';
 import * as authApi from '../../services/authApi';
 import { getApiErrorMessage } from '../../utils/apiError';
 
@@ -13,6 +14,7 @@ export function ResetPasswordPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  useToastMessage(error);
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -43,12 +45,15 @@ export function ResetPasswordPage() {
       <AuthLayout>
         <div className="page-forgot-password">
           <div className="container">
-            <div className="auth-alert auth-alert--error" style={{ maxWidth: 520, margin: '2rem auto' }}>
-              Invalid password reset link. Please request a new one.
+            <div className="page-state">
+              <p className="page-state__title">Invalid reset link</p>
+              <p className="page-state__text">
+                This password reset link is missing or has expired.
+              </p>
+              <Link to="/forgot-password" className="btn-default btn-accent">
+                Request a new link
+              </Link>
             </div>
-            <p style={{ textAlign: 'center' }}>
-              <Link to="/forgot-password">Request a new link</Link>
-            </p>
           </div>
         </div>
       </AuthLayout>
@@ -81,7 +86,6 @@ export function ResetPasswordPage() {
                           <p>Enter a new password for your account.</p>
                         </div>
 
-                        {error && <div className="auth-alert auth-alert--error">{error}</div>}
 
                         <div className="checkout-login-form">
                           <div className="form-group">

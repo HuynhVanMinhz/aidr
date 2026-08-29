@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useToast } from '../../hooks/useToast';
+import { useToastMessage } from '../../hooks/useToastMessage';
 import { useVouchers } from '../../hooks/useVouchers';
 import { formatMoney } from '../../utils/formatCatalog';
 
@@ -55,6 +56,9 @@ export function VoucherApplyPanel({
     getErrorMessage,
   } = useVouchers({ autoLoad: true, cartItemIds });
 
+  // Apply/remove outcomes already toast from the handlers; this covers list load failures.
+  useToastMessage(error);
+
   const defaultShopId = useMemo(() => {
     if (shopOptions.length === 0) return '';
     if (shopOptions.length === 1) return shopOptions[0].shopId;
@@ -65,7 +69,7 @@ export function VoucherApplyPanel({
   const [promoSuccess, setPromoSuccess] = useState<string | null>(null);
   const effectiveShopId = selectedShopId || defaultShopId;
   const needsShopPicker = shopOptions.length > 1;
-  const promoError = previewError || error;
+  const promoInvalid = Boolean(previewError || error);
 
   async function handleApplyCode() {
     setPromoSuccess(null);
@@ -121,7 +125,7 @@ export function VoucherApplyPanel({
 
       <div
         className={`voucher-promo-row${
-          promoError ? ' voucher-promo-row--error' : promoSuccess ? ' voucher-promo-row--success' : ''
+          promoInvalid ? ' voucher-promo-row--error' : promoSuccess ? ' voucher-promo-row--success' : ''
         }`}
       >
         <div className="voucher-promo-row__field">
@@ -137,7 +141,7 @@ export function VoucherApplyPanel({
             }}
             disabled={previewing}
             aria-label="Voucher code"
-            aria-invalid={Boolean(promoError)}
+            aria-invalid={promoInvalid}
             autoComplete="off"
             onKeyDown={(e) => {
               if (e.key === 'Enter') {
@@ -156,19 +160,6 @@ export function VoucherApplyPanel({
           {previewing ? '…' : 'Apply'}
         </button>
       </div>
-
-      {promoError ? (
-        <p className="voucher-promo-feedback voucher-promo-feedback--error" role="alert">
-          <i className="fa-solid fa-circle-exclamation" aria-hidden />
-          {promoError}
-        </p>
-      ) : null}
-      {!promoError && promoSuccess ? (
-        <p className="voucher-promo-feedback voucher-promo-feedback--success" role="status">
-          <i className="fa-solid fa-circle-check" aria-hidden />
-          {promoSuccess}
-        </p>
-      ) : null}
 
       {applied.length > 0 ? (
         <ul className="voucher-applied-list">

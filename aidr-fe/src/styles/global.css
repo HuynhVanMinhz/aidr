@@ -180,3 +180,28 @@ a:hover {
   border-color: var(--accent);
   color: var(--accent);
 }
+
+/* Neutral page-level state (load failure, not found). Transient notifications
+   are shown as toasts; this only keeps the page from rendering blank. */
+.page-state {
+  padding: 3rem 0 4rem;
+  text-align: center;
+}
+
+.page-state__title {
+  margin: 0 0 0.5rem;
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+.page-state__text {
+  margin: 0 0 1.25rem;
+  color: var(--text-color, #707070);
+}
+
+.page-state .btn-default {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  text-decoration: none;
+}

@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { ProductCard } from './ProductCard';
 import { useSimilarProducts } from '../../hooks/useRecommendations';
+import { useToastMessage } from '../../hooks/useToastMessage';
 import { toProductListItem } from '../../types/ai';
 
 type Props = {
@@ -11,8 +12,10 @@ type Props = {
 
 export function SimilarProductsSection({ productId, categoryId, limit = 8 }: Props) {
   const { items, loading, error } = useSimilarProducts(productId, { limit });
+  useToastMessage(error);
 
-  if (!loading && !error && items.length === 0) {
+  // Errors are surfaced as a toast; a supplementary section just stays hidden.
+  if (!loading && items.length === 0) {
     return null;
   }
 
@@ -39,11 +42,6 @@ export function SimilarProductsSection({ productId, categoryId, limit = 8 }: Pro
         </div>
 
         {loading && <p>Loading similar products…</p>}
-        {error && (
-          <div className="alert alert-danger" role="alert">
-            {error}
-          </div>
-        )}
 
         {!loading && items.length > 0 && (
           <div className="row">

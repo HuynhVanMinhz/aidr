@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useToast } from '../../hooks/useToast';
 import { useNotifications } from '../../hooks/useNotifications';
+import { useToastMessage } from '../../hooks/useToastMessage';
 import {
   formatNotificationTime,
   getNotificationHref,
@@ -41,6 +42,9 @@ export function NotificationsInbox({ audience, variant = 'store' }: Notification
     remove,
     getErrorMessage,
   } = useNotifications(query, { autoLoad: true });
+
+  // Buyer side shows notifications as toasts; the admin card keeps its inline banner.
+  useToastMessage(variant === 'store' ? error : null);
 
   async function handleMarkRead(notificationId: string, isRead: boolean) {
     if (isRead) return;
@@ -269,12 +273,6 @@ export function NotificationsInbox({ audience, variant = 'store' }: Notification
           Mark all as read
         </button>
       </div>
-
-      {error ? (
-        <div className="alert alert-danger buyer-orders-alert" role="alert">
-          {error}
-        </div>
-      ) : null}
 
       {loading && items.length === 0 ? <p className="account-muted">Loading notifications…</p> : null}
 

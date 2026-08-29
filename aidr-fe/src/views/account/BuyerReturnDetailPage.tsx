@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
+import { useToastMessage } from '../../hooks/useToastMessage';
 import { getBuyerReturnById, requireBuyerReturn } from '../../services/returnApi';
 import type { BuyerReturnRequest } from '../../types/return';
 import { getApiErrorMessage } from '../../utils/apiError';
@@ -18,6 +19,8 @@ export function BuyerReturnDetailPage() {
   const [item, setItem] = useState<BuyerReturnRequest | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  useToastMessage(error);
 
   useEffect(() => {
     if (!returnId) return;
@@ -43,9 +46,12 @@ export function BuyerReturnDetailPage() {
   if (!returnId) {
     return (
       <div className="account-details-content-box">
-        <div className="auth-alert auth-alert--error">
-          Return request id is required.{' '}
-          <Link to="/account/returns">Back to returns</Link>
+        <div className="page-state">
+          <p className="page-state__title">Return request not found</p>
+          <p className="page-state__text">The link is missing a return request id.</p>
+          <Link to="/account/returns" className="btn-default">
+            Back to returns
+          </Link>
         </div>
       </div>
     );
@@ -62,9 +68,14 @@ export function BuyerReturnDetailPage() {
   if (error || !item) {
     return (
       <div className="account-details-content-box">
-        <div className="auth-alert auth-alert--error">
-          {error || 'Return request not found.'}{' '}
-          <Link to="/account/returns">Back to returns</Link>
+        <div className="page-state">
+          <p className="page-state__title">Return request not available</p>
+          <p className="page-state__text">
+            This return request could not be loaded. It may have been removed.
+          </p>
+          <Link to="/account/returns" className="btn-default">
+            Back to returns
+          </Link>
         </div>
       </div>
     );

@@ -4,6 +4,7 @@ import { OrderReviewSection } from '../../components/reviews/OrderReviewSection'
 import { useBuyerOrderDetail } from '../../hooks/useBuyerOrders';
 import { useBuyerOrderReturn } from '../../hooks/useBuyerOrderReturn';
 import { useToast } from '../../hooks/useToast';
+import { useToastMessage } from '../../hooks/useToastMessage';
 import { formatMoney } from '../../utils/formatCatalog';
 import { tryValidateField, visibleFieldErrors } from '../../utils/formValidation';
 import {
@@ -45,11 +46,11 @@ export function OrderDetailPage() {
     refresh: refreshReturn,
   } = useBuyerOrderReturn(orderId);
 
+  useToastMessage(error);
+
   const [showCancelForm, setShowCancelForm] = useState(false);
   const [cancelReason, setCancelReason] = useState('');
   const [cancelReasonError, setCancelReasonError] = useState<string | null>(null);
-  const [actionError, setActionError] = useState<string | null>(null);
-
   const [showReturnForm, setShowReturnForm] = useState(false);
   const [returnForm, setReturnForm] = useState<BuyerReturnFormValues>(emptyReturnForm);
   const [returnDirty, setReturnDirty] = useState(false);
@@ -94,7 +95,6 @@ export function OrderDetailPage() {
 
   async function handleCancel(event: FormEvent) {
     event.preventDefault();
-    setActionError(null);
 
     const trimmed = cancelReason.trim();
     if (trimmed.length > MAX_CANCEL_REASON) {
@@ -110,13 +110,11 @@ export function OrderDetailPage() {
       setCancelReason('');
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Unable to cancel order.';
-      setActionError(message);
       toast.error(message);
     }
   }
 
   async function handleConfirmReceived() {
-    setActionError(null);
     const confirmed = window.confirm(
       'Confirm that you have received this order? This will complete the order.',
     );
@@ -128,7 +126,6 @@ export function OrderDetailPage() {
     } catch (err) {
       const message =
         err instanceof Error ? err.message : 'Unable to confirm order received.';
-      setActionError(message);
       toast.error(message);
     }
   }
@@ -142,7 +139,6 @@ export function OrderDetailPage() {
       unboxingUrl: true,
       testingUrl: true,
     });
-    setActionError(null);
 
     if (
       returnErrors.reason ||
@@ -171,7 +167,6 @@ export function OrderDetailPage() {
     } catch (err) {
       const message =
         err instanceof Error ? err.message : 'Unable to submit return request.';
-      setActionError(message);
       toast.error(message);
     }
   }
@@ -198,8 +193,11 @@ export function OrderDetailPage() {
   if (error || !detail) {
     return (
       <div className="view-order-content-box">
-        <div className="alert alert-danger" role="alert">
-          {error || 'Order not found.'}
+        <div className="page-state">
+          <p className="page-state__title">Order not available</p>
+          <p className="page-state__text">
+            This order could not be loaded. Try again, or pick it from your order list.
+          </p>
         </div>
         <div className="buyer-order-detail-actions">
           <button
@@ -236,12 +234,6 @@ export function OrderDetailPage() {
           {formatOrderStatus(detail.status)}
         </span>
       </div>
-
-      {actionError ? (
-        <div className="alert alert-danger buyer-orders-alert" role="alert">
-          {actionError}
-        </div>
-      ) : null}
 
       <div className="view-order-product-info-box">
         <div className="cart-item-header">

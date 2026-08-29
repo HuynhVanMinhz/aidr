@@ -280,15 +280,21 @@ public sealed class PaymentService : IPaymentService
             Currency = payment.Currency
         };
 
+    /// <summary>
+    /// payOS accepts orderCode as a JSON number, so it must stay within the
+    /// IEEE-754 safe integer range (max 9007199254740991) or the create-link
+    /// call is rejected. Fold the payment id into that range.
+    /// </summary>
+    private const long MaxPayOsOrderCode = 9_007_199_254_740_991L;
+
     public static long ToPayOsOrderCode(Guid paymentId)
     {
         var bytes = paymentId.ToByteArray();
         var value = BitConverter.ToInt64(bytes, 0);
-        if (value == long.MinValue)
-            return long.MaxValue;
+        var abs = value == long.MinValue ? long.MaxValue : Math.Abs(value);
 
-        var abs = Math.Abs(value);
-        return abs == 0 ? 1L : abs;
+        var code = abs % MaxPayOsOrderCode;
+        return code == 0 ? 1L : code;
     }
 
     private static int ToVndInteger(decimal amount)

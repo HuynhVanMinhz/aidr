@@ -231,10 +231,6 @@
   min-width: 200px;
 }
 
-.buyer-orders-alert {
-  margin-bottom: 1rem;
-}
-
 .buyer-orders-empty {
   display: flex;
   flex-direction: column;

@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { AuthLayout } from '../../components/auth/AuthLayout';
 import { useAuth } from '../../hooks/useAuth';
+import { useToastMessage } from '../../hooks/useToastMessage';
 
 const CODE_STORAGE_PREFIX = 'aidr_oauth_code:';
 
@@ -18,6 +19,8 @@ export function GoogleCallbackPage() {
     oauthError ? oauthErrorDescription || oauthError : null,
   );
   const [loading, setLoading] = useState(Boolean(code && !oauthError));
+
+  useToastMessage(error);
 
   useEffect(() => {
     if (oauthError || !code) {
@@ -70,12 +73,13 @@ export function GoogleCallbackPage() {
               </>
             )}
             {error && (
-              <>
-                <div className="auth-alert auth-alert--error">{error}</div>
-                <div className="login-content-form-btn login-now-btn">
-                  <Link to="/login">Back to sign in</Link>
-                </div>
-              </>
+              <div className="page-state">
+                <p className="page-state__title">Google sign-in failed</p>
+                <p className="page-state__text">We could not complete the sign-in. Please try again.</p>
+                <Link to="/login" className="btn-default btn-accent">
+                  Back to sign in
+                </Link>
+              </div>
             )}
           </div>
         </div>

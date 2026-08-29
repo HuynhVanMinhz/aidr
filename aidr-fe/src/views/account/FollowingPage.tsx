@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useToast } from '../../hooks/useToast';
 import { useFollowedShops } from '../../hooks/useFollow';
+import { useToastMessage } from '../../hooks/useToastMessage';
 
 const PLACEHOLDER_LOGO = '/theme/images/icon-about-us-item-1.svg';
 const PAGE_SIZE = 20;
@@ -24,6 +25,8 @@ export function FollowingPage() {
     getErrorMessage,
   } = useFollowedShops(query, { autoLoad: true });
 
+  useToastMessage(error);
+
   async function handleUnfollow(shopId: string) {
     setBusyId(shopId);
     try {
@@ -43,12 +46,6 @@ export function FollowingPage() {
 
   return (
     <div className="follow-content-box">
-      {error ? (
-        <div className="alert alert-danger" role="alert">
-          {error}
-        </div>
-      ) : null}
-
       {loading && items.length === 0 ? <p className="account-muted">Loading followed shops…</p> : null}
 
       {!loading && items.length === 0 ? (

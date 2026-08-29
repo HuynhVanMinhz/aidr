@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { CatalogBreadcrumb } from '../../components/catalog/CatalogBreadcrumb';
 import { useAuth } from '../../hooks/useAuth';
 import { useCompare } from '../../hooks/useAi';
+import { useToastMessage } from '../../hooks/useToastMessage';
 import { COMPARE_MIN } from '../../store/aiSlice';
 import {
   buildCompareInsights,
@@ -24,6 +25,7 @@ export function ComparePage() {
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
   const { selection, loading, error, result, compare, clearResult, remove, clear } = useCompare();
+  useToastMessage(error);
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -106,11 +108,6 @@ export function ComparePage() {
         <div className="container">
           {loading && <p className="text-muted">Generating comparison…</p>}
 
-          {error && (
-            <div className="alert alert-danger" role="alert">
-              {error}
-            </div>
-          )}
 
           {!loading && result && (
             <>

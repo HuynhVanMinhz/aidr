@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useToastMessage } from '../../hooks/useToastMessage';
 import { listBuyerReturns } from '../../services/returnApi';
 import type { BuyerReturnRequest } from '../../types/return';
 import { getApiErrorMessage } from '../../utils/apiError';
@@ -31,6 +32,7 @@ export function BuyerReturnsPage() {
   const [totalCount, setTotalCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  useToastMessage(error);
 
   useEffect(() => {
     let cancelled = false;
@@ -85,12 +87,6 @@ export function BuyerReturnsPage() {
           </select>
         </div>
       </div>
-
-      {error ? (
-        <div className="alert alert-danger buyer-orders-alert" role="alert">
-          {error}
-        </div>
-      ) : null}
 
       {loading && items.length === 0 ? (
         <p className="account-muted">Loading return requests…</p>
