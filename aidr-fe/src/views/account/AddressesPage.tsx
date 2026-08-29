@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { useProfile } from '../../hooks/useProfile';
+import { useToastMessage } from '../../hooks/useToastMessage';
 import type { Address, AddressUpsert } from '../../types/profile';
 import { validateRequired, validateVnPhone } from '../../utils/validators';
 
@@ -26,6 +27,10 @@ export function AddressesPage() {
   const [showForm, setShowForm] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const [formSuccess, setFormSuccess] = useState<string | null>(null);
+
+  useToastMessage(error);
+  useToastMessage(formError);
+  useToastMessage(formSuccess, 'success');
 
   const addresses = profile?.addresses ?? [];
   const canAddMore = addresses.length < MAX_ADDRESSES;
@@ -204,7 +209,6 @@ export function AddressesPage() {
 
   return (
     <div className="account-address-content-box">
-      {error && !profile && <div className="auth-alert auth-alert--error">{error}</div>}
 
       <div className="account-address-content-header">
         <p>
@@ -217,8 +221,6 @@ export function AddressesPage() {
         )}
       </div>
 
-      {formError && <div className="auth-alert auth-alert--error">{formError}</div>}
-      {formSuccess && <div className="auth-alert auth-alert--success">{formSuccess}</div>}
 
       <div className="account-address-item-list">
         {sortedAddresses.length === 0 ? (

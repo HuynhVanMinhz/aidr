@@ -33,6 +33,16 @@ docker compose up -d --build
 
 Chạy `database.sql` trên SQL Server (`localhost,1433`, sa / `Your_strong_Password123`).
 
+### 2b. Seed dữ liệu
+
+Chạy các script trong `scripts/` theo nhu cầu, **và luôn chạy `scripts/seed-inventory-lots.sql` cuối cùng**.
+
+Hầu hết script seed chỉ set `Products.StockQuantity` mà không tạo `InventoryLots`.
+Checkout phân bổ giá vốn theo FIFO trên `InventoryLots`, nên nếu thiếu lô thì mọi đơn
+đều fail với `Insufficient stock for '<product>'` dù tồn kho hiển thị > 0.
+`seed-inventory-lots.sql` tạo lô mở đầu cho phần chênh lệch và đồng bộ lại
+`StockQuantity` / `AvgCostPrice`. Script idempotent, chạy lại được.
+
 ### 3. Backend (không Docker)
 
 ```bash

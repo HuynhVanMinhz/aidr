@@ -662,8 +662,18 @@
   padding-right: 0.35rem;
 }
 
+.voucher-card-list {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(22, 24, 29, 0.2) transparent;
+}
+
 .voucher-card-list::-webkit-scrollbar {
   width: 5px;
+  background: transparent;
+}
+
+.voucher-card-list::-webkit-scrollbar-track {
+  background: transparent;
 }
 
 .voucher-card-list::-webkit-scrollbar-thumb {

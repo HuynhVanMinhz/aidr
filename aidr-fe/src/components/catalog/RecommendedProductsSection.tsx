@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { ProductCard } from './ProductCard';
 import { useRecommendations } from '../../hooks/useRecommendations';
+import { useToastMessage } from '../../hooks/useToastMessage';
 import { toProductListItem } from '../../types/ai';
 
 type Props = {
@@ -9,8 +10,10 @@ type Props = {
 
 export function RecommendedProductsSection({ pageSize = 6 }: Props) {
   const { items, loading, error } = useRecommendations({ pageSize });
+  useToastMessage(error);
 
-  if (!loading && !error && items.length === 0) {
+  // Errors are surfaced as a toast; a supplementary section just stays hidden.
+  if (!loading && items.length === 0) {
     return null;
   }
 
@@ -34,11 +37,6 @@ export function RecommendedProductsSection({ pageSize = 6 }: Props) {
         </div>
 
         {loading && <p>Loading recommendations…</p>}
-        {error && (
-          <div className="alert alert-danger" role="alert">
-            {error}
-          </div>
-        )}
 
         {!loading && items.length > 0 && (
           <div className="row">

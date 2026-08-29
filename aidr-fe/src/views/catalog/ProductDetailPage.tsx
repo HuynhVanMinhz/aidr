@@ -9,6 +9,7 @@ import { useCompare } from '../../hooks/useAi';
 import { useProductDetail } from '../../hooks/useCatalog';
 import { useCart } from '../../hooks/useCart';
 import { useToast } from '../../hooks/useToast';
+import { useToastMessage } from '../../hooks/useToastMessage';
 import { useWishlistProduct } from '../../hooks/useWishlist';
 import {
   discountPercent,
@@ -45,6 +46,7 @@ export function ProductDetailPage() {
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
   const { product, loading, error } = useProductDetail(id);
+  useToastMessage(error);
   const { addItem, mutating, getErrorMessage } = useCart({ autoLoad: isAuthenticated });
   const {
     inWishlist,
@@ -89,12 +91,15 @@ export function ProductDetailPage() {
     return (
       <div className="page-product-single">
         <div className="container">
-          <div className="alert alert-danger" role="alert">
-            {error || 'Product not found.'}
+          <div className="page-state">
+            <p className="page-state__title">Product not available</p>
+            <p className="page-state__text">
+              This product could not be loaded. It may have been removed or is no longer published.
+            </p>
+            <Link to="/products" className="btn-default btn-accent">
+              Back to Products
+            </Link>
           </div>
-          <Link to="/products" className="btn-default btn-accent">
-            Back to Products
-          </Link>
         </div>
       </div>
     );

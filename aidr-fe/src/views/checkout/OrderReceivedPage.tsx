@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, Navigate, useSearchParams } from 'react-router-dom';
 import { CatalogBreadcrumb } from '../../components/catalog/CatalogBreadcrumb';
 import { useToast } from '../../hooks/useToast';
+import { useToastMessage } from '../../hooks/useToastMessage';
 import {
   clearCheckoutSuccess,
   confirmMockPayOsReturn,
@@ -11,9 +12,13 @@ import {
   selectCheckoutPaying,
 } from '../../store/checkoutSlice';
 import { useAppDispatch, useAppSelector } from '../../store/hooks';
+import type { CreatedOrder } from '../../types/order';
 import type { OrderPaymentLink } from '../../types/payment';
 import { loadCheckoutSuccess } from '../../utils/checkoutStorage';
 import { formatMoney } from '../../utils/formatCatalog';
+import { formatOrderDate, formatOrderStatus, orderStatusClass } from '../../utils/orderUi';
+
+const PLACEHOLDER = '/theme/images/product-image-1.png';
 
 function formatAddressLine(parts: {
   streetAddress: string;
@@ -22,20 +27,6 @@ function formatAddressLine(parts: {
   province: string;
 }) {
   return `${parts.streetAddress}, ${parts.ward}, ${parts.district}, ${parts.province}`;
-}
-
-function formatOrderDate(iso: string) {
-  try {
-    return new Intl.DateTimeFormat('en-GB', {
-      day: 'numeric',
-      month: 'short',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    }).format(new Date(iso));
-  } catch {
-    return iso;
-  }
 }
 
 function isPaidStatus(status: string | undefined | null) {
@@ -47,7 +38,7 @@ function isPaidStatus(status: string | undefined | null) {
 function paymentLabel(orderPaymentStatus: string, link?: OrderPaymentLink) {
   const status = link?.paymentStatus || orderPaymentStatus;
   if (isPaidStatus(status) || isPaidStatus(link?.orderStatus)) return 'Paid';
-  if (status?.toLowerCase() === 'pending') return 'Pending payment';
+  if (status?.toLowerCase() === 'pending') return 'Payment pending';
   return status || 'Pending';
 }
 
@@ -60,6 +51,9 @@ export function OrderReceivedPage() {
   const [confirmingMock, setConfirmingMock] = useState(false);
   const [retryingOrderId, setRetryingOrderId] = useState<string | null>(null);
   const mockHandledRef = useRef(false);
+
+  const cancelled = searchParams.get('cancelled') === '1' || searchParams.get('cancel') === '1';
+  const returnOrderId = searchParams.get('orderId');
 
   useEffect(() => {
     if (success) return;
@@ -95,29 +89,58 @@ export function OrderReceivedPage() {
     })();
   }, [dispatch, searchParams, setSearchParams, success, toast]);
 
-  const returnOrderId = searchParams.get('orderId');
-  const cancelled = searchParams.get('cancelled') === '1' || searchParams.get('cancel') === '1';
-
   const paymentsByOrderId = useMemo(() => {
     const map = new Map<string, OrderPaymentLink>();
     for (const p of success?.payments ?? []) map.set(p.orderId, p);
     return map;
   }, [success?.payments]);
 
+  const orders = useMemo(() => success?.orders ?? [], [success?.orders]);
+
+  const allPaid =
+    orders.length > 0 &&
+    orders.every((o) => {
+      const link = paymentsByOrderId.get(o.orderId);
+      return (
+        isPaidStatus(o.paymentStatus) || isPaidStatus(link?.paymentStatus) || isPaidStatus(o.status)
+      );
+    });
+
+  const pendingOrders = orders.filter((o) => {
+    const link = paymentsByOrderId.get(o.orderId);
+    return !(
+      isPaidStatus(o.paymentStatus) ||
+      isPaidStatus(link?.paymentStatus) ||
+      isPaidStatus(o.status)
+    );
+  });
+
+  // Page notices are toasts, not banners.
+  const cancelNotice = cancelled
+    ? 'Payment cancelled — your order is still reserved. Retry payment.'
+    : null;
+  const returnNotice =
+    returnOrderId && !cancelled && !searchParams.get('mockPayOs')
+      ? allPaid
+        ? 'Payment completed. Thank you!'
+        : 'If you finished paying on payOS, the status updates as soon as the webhook arrives.'
+      : null;
+
+  useToastMessage(cancelNotice, 'warning');
+  useToastMessage(returnNotice, allPaid ? 'success' : 'info');
+
   if (!success || success.orders.length === 0) {
     return <Navigate to="/cart" replace />;
   }
 
-  const { orders, grandTotal, currency, shipping, buyerNote } = success;
+  const { grandTotal, currency, shipping, buyerNote } = success;
   const primary = orders[0];
-  const allPaid = orders.every((o) => {
-    const link = paymentsByOrderId.get(o.orderId);
-    return isPaidStatus(o.paymentStatus) || isPaidStatus(link?.paymentStatus) || isPaidStatus(o.status);
-  });
-  const pendingCount = orders.filter((o) => {
-    const link = paymentsByOrderId.get(o.orderId);
-    return !(isPaidStatus(o.paymentStatus) || isPaidStatus(link?.paymentStatus) || isPaidStatus(o.status));
-  }).length;
+  const singleOrder = orders.length === 1;
+  const amountDue = pendingOrders.reduce((sum, o) => sum + o.totalAmount, 0);
+  const subtotalAll = orders.reduce((sum, o) => sum + o.subtotalAmount, 0);
+  const discountAll = orders.reduce((sum, o) => sum + o.discountAmount, 0);
+  const shippingAll = orders.reduce((sum, o) => sum + o.shippingFee, 0);
+  const busyPay = paying || retryingOrderId !== null || confirmingMock;
 
   async function handlePayNow(orderId: string) {
     const existing = paymentsByOrderId.get(orderId);
@@ -149,6 +172,12 @@ export function OrderReceivedPage() {
     window.location.assign(link.checkoutUrl);
   }
 
+  function payButtonLabel(order: CreatedOrder) {
+    if (busyPay) return 'Please wait…';
+    const link = paymentsByOrderId.get(order.orderId);
+    return link?.checkoutUrl ? 'Pay now' : 'Create payment link';
+  }
+
   return (
     <>
       <div className="page-header light-section">
@@ -168,160 +197,215 @@ export function OrderReceivedPage() {
 
       <div className="page-order-receive">
         <div className="container">
-          {cancelled && (
-            <div className="alert alert-warning checkout-alerts" role="alert">
-              Payment was cancelled. You can retry payment below while the order is still pending.
-            </div>
-          )}
-          {returnOrderId && !cancelled && !searchParams.get('mockPayOs') && (
-            <div className="alert alert-info checkout-alerts" role="alert">
-              {confirmingMock
-                ? 'Confirming payment…'
-                : allPaid
-                  ? 'Payment completed. Thank you!'
-                  : 'If you finished paying on payOS, status will update shortly after the webhook is received. You can also use Pay now for any remaining orders.'}
-            </div>
-          )}
+          <div className="receipt-intro">
+            <p className="receipt-intro__code">
+              {singleOrder ? primary.orderCode : `${orders.length} orders placed`}
+              <span className="receipt-intro__date">{formatOrderDate(primary.createdAt)}</span>
+            </p>
+            <p className="receipt-intro__lead">
+              Thank you. Your order{singleOrder ? ' has' : 's have'} been received and stock is
+              reserved.{' '}
+              {allPaid
+                ? 'Payment is complete.'
+                : 'Complete payment with payOS to confirm your purchase.'}
+            </p>
+          </div>
 
-          <div className="row">
-            <div className="col-xl-4 col-lg-5">
-              <div className="page-single-sidebar">
-                <div className="order-receive-sidebar">
-                  <div className="order-receive-sidebar-item order-receive-box">
-                    <h2 className="order-sidebar-item-title">Order summary</h2>
-                    <ul>
-                      <li>
-                        Orders
-                        <span>
-                          <b>{orders.length}</b>
-                        </span>
-                      </li>
-                      <li>
-                        Order date<span>{formatOrderDate(primary.createdAt)}</span>
-                      </li>
-                      <li>
-                        Payment
-                        <span>
-                          Online (payOS)
-                          {allPaid ? ' — Paid' : pendingCount > 0 ? ` — ${pendingCount} pending` : ''}
-                        </span>
-                      </li>
-                      <li>
-                        Total<span>{formatMoney(grandTotal, currency)}</span>
-                      </li>
-                    </ul>
-                  </div>
+          <div className="row receipt-layout">
+            {/* Left — what was ordered */}
+            <div className="col-xl-7 receipt-main-col">
+              {orders.map((order) => {
+                const link = paymentsByOrderId.get(order.orderId);
+                const paid =
+                  isPaidStatus(order.paymentStatus) ||
+                  isPaidStatus(link?.paymentStatus) ||
+                  isPaidStatus(order.status);
+                const status = link?.orderStatus || order.status;
 
-                  <div className="order-receive-sidebar-item">
-                    <h2 className="order-sidebar-item-title">Shipping address</h2>
-                    <ul>
-                      <li>{shipping.receiverName}</li>
-                      <li>{formatAddressLine(shipping)}</li>
-                      <li>
-                        <a href={`tel:${shipping.phone}`}>{shipping.phone}</a>
-                      </li>
-                    </ul>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="col-xl-8 col-lg-7">
-              <div className="order-receive-content-box">
-                <div className="order-receive-title-box">
-                  <h2>{orders.length === 1 ? `ORDER ${primary.orderCode}` : 'ORDERS PLACED'}</h2>
-                  <p>
-                    Thank you. Your order{orders.length > 1 ? 's have' : ' has'} been received and
-                    stock has been reserved.
-                    {allPaid
-                      ? ' Payment is complete.'
-                      : ' Complete online payment with payOS to confirm your purchase.'}
-                  </p>
-                </div>
-
-                {orders.map((order) => {
-                  const link = paymentsByOrderId.get(order.orderId);
-                  const paid =
-                    isPaidStatus(order.paymentStatus) ||
-                    isPaidStatus(link?.paymentStatus) ||
-                    isPaidStatus(order.status);
-                  const busyPay = paying || retryingOrderId === order.orderId || confirmingMock;
-
-                  return (
-                    <div key={order.orderId} className="order-receive-content-list">
-                      <ul>
-                        <li className="order-receive-content-list-title">
+                return (
+                  <section key={order.orderId} className="receipt-card">
+                    <div className="receipt-card__head">
+                      <div className="receipt-card__heading">
+                        <h2 className="receipt-card__title">Order details</h2>
+                        <p className="receipt-card__sub">
                           {order.orderCode} · {order.shopName}
-                          <span>{formatMoney(order.totalAmount, order.currency)}</span>
-                        </li>
-                        {order.items.map((item) => (
-                          <li key={item.orderItemId}>
-                            {item.productName} × {item.quantity}
-                            <span>{formatMoney(item.lineTotal, order.currency)}</span>
-                          </li>
-                        ))}
-                        <li>
-                          Subtotal
-                          <span>{formatMoney(order.subtotalAmount, order.currency)}</span>
-                        </li>
-                        <li>
-                          Shipping
-                          <span>
-                            {order.shippingFee > 0
-                              ? formatMoney(order.shippingFee, order.currency)
-                              : 'Free'}
+                        </p>
+                      </div>
+                      <span className={orderStatusClass(status)}>{formatOrderStatus(status)}</span>
+                    </div>
+
+                    <ul className="receipt-line-list">
+                      {order.items.map((item) => (
+                        <li key={item.orderItemId} className="receipt-line">
+                          <span className="receipt-line__thumb">
+                            <img
+                              src={item.imageUrl || PLACEHOLDER}
+                              alt=""
+                              loading="lazy"
+                              onError={(e) => {
+                                const img = e.currentTarget;
+                                if (img.dataset.fallback === '1') return;
+                                img.dataset.fallback = '1';
+                                img.src = PLACEHOLDER;
+                              }}
+                            />
+                          </span>
+                          <span className="receipt-line__info">
+                            <span className="receipt-line__name">{item.productName}</span>
+                            <span className="receipt-line__meta">
+                              {item.sku ? <span>{item.sku}</span> : null}
+                              <span>Qty {item.quantity}</span>
+                              <span>{formatMoney(item.unitPrice, order.currency)} each</span>
+                            </span>
+                          </span>
+                          <span className="receipt-line__price">
+                            {formatMoney(item.lineTotal, order.currency)}
                           </span>
                         </li>
-                        <li>
-                          Status
-                          <span>{link?.orderStatus || order.status}</span>
-                        </li>
-                        <li>
-                          Payment
-                          <span>{paymentLabel(order.paymentStatus, link)}</span>
-                        </li>
-                      </ul>
+                      ))}
+                    </ul>
 
-                      {!paid && (
-                        <div className="order-receive-pay-actions">
-                          <button
-                            type="button"
-                            className="btn-default btn-accent"
-                            disabled={busyPay}
-                            onClick={() => void handlePayNow(order.orderId)}
-                          >
-                            {busyPay ? 'Please wait…' : link?.checkoutUrl ? 'Pay now' : 'Create payment link'}
-                          </button>
-                        </div>
-                      )}
+                    <div className="receipt-card__foot">
+                      <span className="receipt-card__foot-label">Order total</span>
+                      <span className="receipt-card__foot-value">
+                        {formatMoney(order.totalAmount, order.currency)}
+                      </span>
                     </div>
-                  );
-                })}
+
+                    {!paid && !singleOrder && (
+                      <button
+                        type="button"
+                        className="receipt-pay-btn receipt-pay-btn--inline"
+                        disabled={busyPay}
+                        onClick={() => void handlePayNow(order.orderId)}
+                      >
+                        {payButtonLabel(order)}
+                      </button>
+                    )}
+                  </section>
+                );
+              })}
+            </div>
+
+            {/* Right — finish paying */}
+            <div className="col-xl-5 receipt-side-col">
+              <div className="receipt-sidebar">
+                <section className="receipt-card receipt-payment">
+                  <div className="receipt-card__head">
+                    <div className="receipt-card__heading">
+                      <h2 className="receipt-card__title">Payment summary</h2>
+                      <p className="receipt-card__sub">Online payment (payOS)</p>
+                    </div>
+                    <span
+                      className={orderStatusClass(allPaid ? 'Paid' : 'PendingPayment')}
+                      aria-label={allPaid ? 'Paid' : 'Payment pending'}
+                    >
+                      {allPaid ? '🟢 Paid' : '🟡 Payment Pending'}
+                    </span>
+                  </div>
+
+                  <div className="receipt-totals">
+                    <p className="receipt-totals__row">
+                      <span>Subtotal</span>
+                      <span>{formatMoney(subtotalAll, currency)}</span>
+                    </p>
+                    {discountAll > 0 && (
+                      <p className="receipt-totals__row receipt-totals__row--discount">
+                        <span>Discount</span>
+                        <span>−{formatMoney(discountAll, currency)}</span>
+                      </p>
+                    )}
+                    <p className="receipt-totals__row">
+                      <span>Shipping</span>
+                      <span>
+                        {shippingAll > 0 ? formatMoney(shippingAll, currency) : 'Free'}
+                      </span>
+                    </p>
+                    <p className="receipt-totals__grand">
+                      <span>Total</span>
+                      <span>{formatMoney(grandTotal, currency)}</span>
+                    </p>
+                  </div>
+
+                  {!allPaid && singleOrder && (
+                    <>
+                      <button
+                        type="button"
+                        className="receipt-pay-btn"
+                        disabled={busyPay}
+                        onClick={() => void handlePayNow(primary.orderId)}
+                      >
+                        {payButtonLabel(primary)}
+                        <span className="receipt-pay-btn__amount">
+                          {formatMoney(amountDue, currency)}
+                        </span>
+                      </button>
+                      <p className="receipt-payment__hint">
+                        {paymentLabel(primary.paymentStatus, paymentsByOrderId.get(primary.orderId))}{' '}
+                        · you will be redirected to payOS.
+                      </p>
+                    </>
+                  )}
+
+                  {!allPaid && !singleOrder && (
+                    <p className="receipt-payment__hint">
+                      {pendingOrders.length} of {orders.length} orders still need payment
+                      ({formatMoney(amountDue, currency)}). Pay each one from the list on the left.
+                    </p>
+                  )}
+
+                  {allPaid && (
+                    <p className="receipt-payment__hint receipt-payment__hint--ok">
+                      Payment received. We have notified the shop.
+                    </p>
+                  )}
+                </section>
+
+                <section className="receipt-card receipt-shipping">
+                  <div className="receipt-card__head">
+                    <div className="receipt-card__heading">
+                      <h2 className="receipt-card__title">Shipping address</h2>
+                    </div>
+                  </div>
+                  <p className="receipt-shipping__name">{shipping.receiverName}</p>
+                  <p className="receipt-shipping__row">
+                    <i className="fa-solid fa-location-dot" aria-hidden />
+                    <span>{formatAddressLine(shipping)}</span>
+                  </p>
+                  <p className="receipt-shipping__row">
+                    <i className="fa-solid fa-phone" aria-hidden />
+                    <a href={`tel:${shipping.phone}`}>{shipping.phone}</a>
+                  </p>
+                </section>
 
                 {buyerNote ? (
-                  <div className="order-receive-content-list">
-                    <ul>
-                      <li>
-                        Note<span>{buyerNote}</span>
-                      </li>
-                    </ul>
-                  </div>
+                  <section className="receipt-card">
+                    <div className="receipt-card__head">
+                      <div className="receipt-card__heading">
+                        <h2 className="receipt-card__title">Order note</h2>
+                      </div>
+                    </div>
+                    <p className="receipt-note">{buyerNote}</p>
+                  </section>
                 ) : null}
 
-                <div className="order-receive-actions">
+                <div className="receipt-secondary-actions">
                   <Link
                     to="/account/orders"
-                    className="btn-default"
+                    className="receipt-secondary-link"
                     onClick={() => dispatch(clearCheckoutSuccess())}
                   >
                     View my orders
                   </Link>
+                  <span className="receipt-secondary-sep" aria-hidden>
+                    ·
+                  </span>
                   <Link
                     to="/products"
-                    className="btn-default btn-accent"
+                    className="receipt-secondary-link"
                     onClick={() => dispatch(clearCheckoutSuccess())}
                   >
-                    Continue Shopping
+                    Continue shopping
                   </Link>
                 </div>
               </div>
@@ -329,6 +413,24 @@ export function OrderReceivedPage() {
           </div>
         </div>
       </div>
+
+      {/* Mobile: keep the primary CTA reachable without scrolling back up. */}
+      {!allPaid && singleOrder && (
+        <div className="receipt-sticky-pay">
+          <div className="receipt-sticky-pay__amount">
+            <span>Amount due</span>
+            <strong>{formatMoney(amountDue, currency)}</strong>
+          </div>
+          <button
+            type="button"
+            className="receipt-pay-btn"
+            disabled={busyPay}
+            onClick={() => void handlePayNow(primary.orderId)}
+          >
+            {payButtonLabel(primary)}
+          </button>
+        </div>
+      )}
     </>
   );
 }

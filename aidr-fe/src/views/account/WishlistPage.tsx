@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useCart } from '../../hooks/useCart';
 import { useToast } from '../../hooks/useToast';
+import { useToastMessage } from '../../hooks/useToastMessage';
 import { useWishlist } from '../../hooks/useWishlist';
 import { resolveProductImageUrl } from '../../utils/catalogImage';
 import { discountPercent, formatMoney } from '../../utils/formatCatalog';
@@ -25,6 +26,8 @@ export function WishlistPage() {
     removeItem,
     getErrorMessage,
   } = useWishlist(query, { autoLoad: true });
+
+  useToastMessage(error);
 
   const { addItem: addToCart, getErrorMessage: getCartError } = useCart();
 
@@ -63,12 +66,6 @@ export function WishlistPage() {
 
   return (
     <div className="wishlist-content-box">
-      {error ? (
-        <div className="alert alert-danger buyer-orders-alert" role="alert">
-          {error}
-        </div>
-      ) : null}
-
       {loading && items.length === 0 ? <p className="account-muted">Loading wishlist…</p> : null}
 
       {!loading && items.length === 0 ? (

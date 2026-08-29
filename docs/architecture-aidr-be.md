@@ -230,6 +230,18 @@ Hubs đề xuất:
 2. Webhook `POST /api/payments/payos/webhook` verify signature → `Payments.Status=Succeeded`, `Orders.Status=Paid`.
 3. Idempotent theo `ProviderPaymentId`.
 
+Ghi chú vận hành:
+- `PayOS:UseMock=false` → gọi payOS thật qua SDK `payOS 2.1.0`. `UseMock=true` chỉ sinh
+  link giả trỏ về `ReturnUrl` (dev offline). Kiểm tra nhanh credential:
+  `GET https://api-merchant.payos.vn/v2/payment-requests/999999999` kèm header
+  `x-client-id` / `x-api-key` — trả `{"code":"101"}` nghĩa là auth OK.
+- `orderCode` gửi payOS là số JSON nên phải nằm trong khoảng safe integer
+  (≤ 9007199254740991); `PaymentService.ToPayOsOrderCode` fold GUID payment id về khoảng này.
+- Webhook cần URL public. Ở local phải mở tunnel (ngrok) rồi gọi
+  `POST /api/payments/payos/confirm-webhook` (role Admin) để đăng ký URL với payOS.
+  Không có bước này thì thanh toán thật vẫn diễn ra ở phía payOS nhưng
+  `Payments.Status` / `Orders.Status` trong DB **không** tự cập nhật.
+
 ### 7.5 Groq (LLM)
 - HTTP client tới Groq OpenAI-compatible API (`https://api.groq.com/openai/v1`).
 - Auth: `Authorization: Bearer {Groq:ApiKey}` (user-secrets / env, không commit key).

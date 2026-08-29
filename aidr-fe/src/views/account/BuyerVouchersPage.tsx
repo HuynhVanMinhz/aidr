@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useToastMessage } from '../../hooks/useToastMessage';
 import { listVouchers } from '../../services/voucherApi';
 import type { VoucherListItem } from '../../types/voucher';
 import { getApiErrorMessage } from '../../utils/apiError';
@@ -27,6 +28,7 @@ export function BuyerVouchersPage() {
   const [items, setItems] = useState<VoucherListItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  useToastMessage(error);
 
   useEffect(() => {
     let cancelled = false;
@@ -56,12 +58,6 @@ export function BuyerVouchersPage() {
       <p className="account-muted">
         Browse available platform and shop vouchers. Eligibility may depend on your cart at checkout.
       </p>
-
-      {error ? (
-        <div className="alert alert-danger buyer-orders-alert" role="alert">
-          {error}
-        </div>
-      ) : null}
 
       {loading ? <p className="account-muted">Loading vouchers…</p> : null}
 
