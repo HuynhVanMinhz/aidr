@@ -51,6 +51,7 @@ import { AdminAccountDetailPage } from '../views/admin/AdminAccountDetailPage';
 import { AdminCustomerInsightsPage } from '../views/admin/AdminCustomerInsightsPage';
 import { AdminOrderListPage } from '../views/admin/AdminOrderListPage';
 import { AdminOrderDetailPage } from '../views/admin/AdminOrderDetailPage';
+import { AdminSettlementsPage } from '../views/admin/AdminSettlementsPage';
 import { SellerHomePage } from '../views/seller/SellerHomePage';
 import { SellerProductListPage } from '../views/seller/SellerProductListPage';
 import { SellerProductFormPage } from '../views/seller/SellerProductFormPage';
@@ -64,6 +65,7 @@ import { SellerShopVoucherFormPage } from '../views/seller/SellerShopVoucherForm
 import { SellerNotificationsPage } from '../views/seller/SellerNotificationsPage';
 import { SellerReportsPage } from '../views/seller/SellerReportsPage';
 import { SellerWalletPage } from '../views/seller/SellerWalletPage';
+import { SellerSettlementsPage } from '../views/seller/SellerSettlementsPage';
 import { SellerChatPage } from '../views/seller/SellerChatPage';
 import { SellerShopSettingsPage } from '../views/seller/SellerShopSettingsPage';
 import { SellerAlertsPage } from '../views/seller/SellerAlertsPage';
@@ -113,6 +115,7 @@ export function App() {
             <Route path="return-requests/:id" element={<AdminReturnRequestDetailPage />} />
             <Route path="orders" element={<AdminOrderListPage />} />
             <Route path="orders/:orderId" element={<AdminOrderDetailPage />} />
+            <Route path="settlements" element={<AdminSettlementsPage />} />
             <Route path="vouchers" element={<AdminSystemVoucherListPage />} />
             <Route path="vouchers/new" element={<AdminSystemVoucherFormPage />} />
             <Route path="vouchers/:id/edit" element={<AdminSystemVoucherFormPage />} />
@@ -138,6 +141,7 @@ export function App() {
             <Route path="orders/:orderId" element={<SellerOrderDetailPage />} />
             <Route path="reports" element={<SellerReportsPage />} />
             <Route path="wallet" element={<SellerWalletPage />} />
+            <Route path="settlements" element={<SellerSettlementsPage />} />
             <Route path="notifications" element={<SellerNotificationsPage />} />
             <Route path="chat" element={<SellerChatPage />} />
             <Route path="vouchers" element={<SellerShopVoucherListPage />} />

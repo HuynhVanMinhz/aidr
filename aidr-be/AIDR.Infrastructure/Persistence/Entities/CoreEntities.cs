@@ -161,12 +161,89 @@ public class WalletTransaction
     public string TxType { get; set; } = null!;
     public decimal Amount { get; set; }
     public decimal BalanceAfter { get; set; }
+    /// <summary>Pending balance after this movement; null on rows written before escrow existed.</summary>
+    public decimal? PendingAfter { get; set; }
     public string? ReferenceType { get; set; }
     public Guid? ReferenceId { get; set; }
     public string? Note { get; set; }
     public DateTime CreatedAt { get; set; }
 
     public Wallet Wallet { get; set; } = null!;
+}
+
+public class ShopBankAccount
+{
+    public Guid ShopBankAccountId { get; set; }
+    public Guid ShopId { get; set; }
+    public string BankBin { get; set; } = null!;
+    public string? BankName { get; set; }
+    public string AccountNumber { get; set; } = null!;
+    public string AccountName { get; set; } = null!;
+    public string Status { get; set; } = "Unverified";
+    public bool IsDefault { get; set; } = true;
+    public Guid? VerifiedBy { get; set; }
+    public DateTime? VerifiedAt { get; set; }
+    public string? RejectReason { get; set; }
+    public DateTime CreatedAt { get; set; }
+    public DateTime UpdatedAt { get; set; }
+
+    public Shop Shop { get; set; } = null!;
+}
+
+/// <summary>One row per order: what the platform owes the shop, and when.</summary>
+public class SettlementEntry
+{
+    public Guid SettlementEntryId { get; set; }
+    public Guid OrderId { get; set; }
+    public Guid ShopId { get; set; }
+    public decimal GrossAmount { get; set; }
+    public decimal SubsidyAmount { get; set; }
+    public decimal CommissionRate { get; set; }
+    public decimal CommissionAmount { get; set; }
+    public decimal NetAmount { get; set; }
+    public string Currency { get; set; } = "VND";
+    public string Status { get; set; } = "Holding";
+    public DateTime HoldUntil { get; set; }
+    public DateTime? EligibleAt { get; set; }
+    public Guid? PayoutBatchId { get; set; }
+    public string? HoldReason { get; set; }
+    public string? ReversedReason { get; set; }
+    public DateTime CreatedAt { get; set; }
+    public DateTime UpdatedAt { get; set; }
+
+    public Order Order { get; set; } = null!;
+    public Shop Shop { get; set; } = null!;
+    public PayoutBatch? PayoutBatch { get; set; }
+}
+
+/// <summary>One admin approval = one transfer to one shop.</summary>
+public class PayoutBatch
+{
+    public Guid PayoutBatchId { get; set; }
+    public string BatchCode { get; set; } = null!;
+    public Guid ShopId { get; set; }
+    public Guid ShopBankAccountId { get; set; }
+    public DateTime PeriodTo { get; set; }
+    public int EntryCount { get; set; }
+    public decimal GrossAmount { get; set; }
+    public decimal CommissionAmount { get; set; }
+    public decimal NetAmount { get; set; }
+    public string Currency { get; set; } = "VND";
+    public string Status { get; set; } = "Draft";
+    public Guid? ApprovedBy { get; set; }
+    public DateTime? ApprovedAt { get; set; }
+    public string? ProviderPayoutId { get; set; }
+    public string? ProviderState { get; set; }
+    public DateTime? PaidAt { get; set; }
+    public string? FailureReason { get; set; }
+    public int AttemptCount { get; set; }
+    public string? RawResponseJson { get; set; }
+    public DateTime CreatedAt { get; set; }
+    public DateTime UpdatedAt { get; set; }
+
+    public Shop Shop { get; set; } = null!;
+    public ShopBankAccount ShopBankAccount { get; set; } = null!;
+    public ICollection<SettlementEntry> Entries { get; set; } = new List<SettlementEntry>();
 }
 
 public class Product

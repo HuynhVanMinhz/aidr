@@ -17,6 +17,9 @@ public class AidrDbContext : DbContext
     public DbSet<SellerRegistrationRequest> SellerRegistrationRequests => Set<SellerRegistrationRequest>();
     public DbSet<Wallet> Wallets => Set<Wallet>();
     public DbSet<WalletTransaction> WalletTransactions => Set<WalletTransaction>();
+    public DbSet<ShopBankAccount> ShopBankAccounts => Set<ShopBankAccount>();
+    public DbSet<SettlementEntry> SettlementEntries => Set<SettlementEntry>();
+    public DbSet<PayoutBatch> PayoutBatches => Set<PayoutBatch>();
     public DbSet<Product> Products => Set<Product>();
     public DbSet<ProductImage> ProductImages => Set<ProductImage>();
     public DbSet<InventoryLot> InventoryLots => Set<InventoryLot>();
@@ -184,6 +187,7 @@ public class AidrDbContext : DbContext
             e.Property(x => x.TxType).HasMaxLength(30).IsRequired();
             e.Property(x => x.Amount).HasPrecision(18, 2);
             e.Property(x => x.BalanceAfter).HasPrecision(18, 2);
+            e.Property(x => x.PendingAfter).HasPrecision(18, 2);
             e.Property(x => x.ReferenceType).HasMaxLength(40);
             e.Property(x => x.Note).HasMaxLength(300);
             e.HasOne(x => x.Wallet)
@@ -191,6 +195,65 @@ public class AidrDbContext : DbContext
                 .HasForeignKey(x => x.WalletId)
                 .OnDelete(DeleteBehavior.Cascade);
             e.HasIndex(x => new { x.ReferenceType, x.ReferenceId });
+        });
+
+        modelBuilder.Entity<ShopBankAccount>(e =>
+        {
+            e.ToTable("ShopBankAccounts");
+            e.HasKey(x => x.ShopBankAccountId);
+            e.Property(x => x.BankBin).HasMaxLength(20).IsRequired();
+            e.Property(x => x.BankName).HasMaxLength(150);
+            e.Property(x => x.AccountNumber).HasMaxLength(40).IsRequired();
+            e.Property(x => x.AccountName).HasMaxLength(150).IsRequired();
+            e.Property(x => x.Status).HasMaxLength(20).IsRequired();
+            e.Property(x => x.RejectReason).HasMaxLength(300);
+            e.HasOne(x => x.Shop).WithMany().HasForeignKey(x => x.ShopId);
+            e.HasIndex(x => x.ShopId);
+        });
+
+        modelBuilder.Entity<SettlementEntry>(e =>
+        {
+            e.ToTable("SettlementEntries");
+            e.HasKey(x => x.SettlementEntryId);
+            e.Property(x => x.GrossAmount).HasPrecision(18, 2);
+            e.Property(x => x.SubsidyAmount).HasPrecision(18, 2);
+            e.Property(x => x.CommissionRate).HasPrecision(6, 4);
+            e.Property(x => x.CommissionAmount).HasPrecision(18, 2);
+            e.Property(x => x.NetAmount).HasPrecision(18, 2);
+            e.Property(x => x.Currency).HasMaxLength(3).IsRequired();
+            e.Property(x => x.Status).HasMaxLength(20).IsRequired();
+            e.Property(x => x.HoldReason).HasMaxLength(300);
+            e.Property(x => x.ReversedReason).HasMaxLength(300);
+            e.HasOne(x => x.Order).WithMany().HasForeignKey(x => x.OrderId)
+                .OnDelete(DeleteBehavior.Restrict);
+            e.HasOne(x => x.Shop).WithMany().HasForeignKey(x => x.ShopId)
+                .OnDelete(DeleteBehavior.Restrict);
+            e.HasOne(x => x.PayoutBatch).WithMany(b => b.Entries)
+                .HasForeignKey(x => x.PayoutBatchId)
+                .OnDelete(DeleteBehavior.Restrict);
+            e.HasIndex(x => x.OrderId).IsUnique();
+            e.HasIndex(x => new { x.ShopId, x.Status, x.HoldUntil });
+        });
+
+        modelBuilder.Entity<PayoutBatch>(e =>
+        {
+            e.ToTable("PayoutBatches");
+            e.HasKey(x => x.PayoutBatchId);
+            e.Property(x => x.BatchCode).HasMaxLength(30).IsRequired();
+            e.Property(x => x.GrossAmount).HasPrecision(18, 2);
+            e.Property(x => x.CommissionAmount).HasPrecision(18, 2);
+            e.Property(x => x.NetAmount).HasPrecision(18, 2);
+            e.Property(x => x.Currency).HasMaxLength(3).IsRequired();
+            e.Property(x => x.Status).HasMaxLength(20).IsRequired();
+            e.Property(x => x.ProviderPayoutId).HasMaxLength(100);
+            e.Property(x => x.ProviderState).HasMaxLength(40);
+            e.Property(x => x.FailureReason).HasMaxLength(500);
+            e.HasOne(x => x.Shop).WithMany().HasForeignKey(x => x.ShopId)
+                .OnDelete(DeleteBehavior.Restrict);
+            e.HasOne(x => x.ShopBankAccount).WithMany().HasForeignKey(x => x.ShopBankAccountId)
+                .OnDelete(DeleteBehavior.Restrict);
+            e.HasIndex(x => x.BatchCode).IsUnique();
+            e.HasIndex(x => new { x.Status, x.CreatedAt });
         });
 
         modelBuilder.Entity<Product>(e =>

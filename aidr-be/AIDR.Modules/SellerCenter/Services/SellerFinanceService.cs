@@ -105,7 +105,7 @@ public sealed class SellerFinanceService : ISellerFinanceService
 
         if (match is null)
             throw new AppException(
-                "Transaction type must be OrderCredit, RefundDebit, Withdrawal, or Adjustment.");
+                $"Unknown wallet transaction type '{normalized}'.");
 
         return match;
     }

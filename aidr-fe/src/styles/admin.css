@@ -58,7 +58,14 @@ html[data-aidr-shell='admin'] .aidr-datepicker input.flatpickr-mobile {
   display: none !important;
 }
 
-/* KPI / stat cards — equal height via parent `.col.d-flex` + theme card margin */
+/* KPI / stat cards — every card in a row is the same height regardless of how
+   many lines its value wraps to. Bootstrap already stretches the columns, so the
+   card only has to fill its column; the subtracted 1.5rem is the theme's own
+   `.card` margin-bottom, which sits inside the column height. */
+html[data-aidr-shell='admin'] .aidr-stat-card {
+  height: calc(100% - 1.5rem);
+}
+
 html[data-aidr-shell='admin'] .row > [class*='col'].d-flex > .aidr-stat-card {
   width: 100%;
   flex: 1 1 auto;

@@ -7,7 +7,9 @@ using AIDR.Shared.Constants;
 using AIDR.Shared.Dtos.Order;
 using AIDR.Shared.Exceptions;
 using Microsoft.EntityFrameworkCore;
+using AIDR.Modules.Settlement.Abstractions;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace AIDR.Infrastructure.Ordering;
 
@@ -20,15 +22,18 @@ public sealed class OrderRepository : IOrderRepository
 
     private readonly AidrDbContext _db;
     private readonly ILowStockNotifier _lowStockNotifier;
+    private readonly SettlementOptions _settlementOptions;
     private readonly ILogger<OrderRepository> _logger;
 
     public OrderRepository(
         AidrDbContext db,
         ILowStockNotifier lowStockNotifier,
+        IOptions<SettlementOptions> settlementOptions,
         ILogger<OrderRepository> logger)
     {
         _db = db;
         _lowStockNotifier = lowStockNotifier;
+        _settlementOptions = settlementOptions.Value;
         _logger = logger;
     }
 
@@ -327,12 +332,62 @@ public sealed class OrderRepository : IOrderRepository
         foreach (var item in order.Items)
             item.Product.SoldCount += item.Quantity;
 
-        await CreditSellerWalletAsync(order, now, cancellationToken);
+        await HoldSettlementAsync(order, now, cancellationToken);
 
         await _db.SaveChangesAsync(cancellationToken);
         await transaction.CommitAsync(cancellationToken);
 
         return MapDetail(order);
+    }
+
+    public async Task<bool> AutoCompleteDeliveredOrderAsync(
+        Guid orderId,
+        CancellationToken cancellationToken = default)
+    {
+        await using var transaction = await _db.Database.BeginTransactionAsync(cancellationToken);
+
+        var order = await _db.Orders
+            .Include(o => o.Items)
+                .ThenInclude(i => i.Product)
+            .Include(o => o.StatusHistories)
+            .FirstOrDefaultAsync(o => o.OrderId == orderId, cancellationToken);
+
+        if (order is null)
+            return false;
+
+        if (!string.Equals(order.Status, OrderConstants.StatusDelivered, StringComparison.OrdinalIgnoreCase))
+        {
+            await transaction.CommitAsync(cancellationToken);
+            return false;
+        }
+
+        var now = DateTime.UtcNow;
+        var fromStatus = order.Status;
+
+        order.Status = OrderConstants.StatusCompleted;
+        order.CompletedAt = now;
+        order.UpdatedAt = now;
+
+        order.StatusHistories.Add(new OrderStatusHistory
+        {
+            OrderId = order.OrderId,
+            FromStatus = fromStatus,
+            ToStatus = OrderConstants.StatusCompleted,
+            ChangedBy = null,
+            Note = "Auto-completed after the confirmation window elapsed",
+            CreatedAt = now
+        });
+
+        foreach (var item in order.Items)
+            item.Product.SoldCount += item.Quantity;
+
+        await HoldSettlementAsync(order, now, cancellationToken);
+
+        await _db.SaveChangesAsync(cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
+
+        _logger.LogInformation("Auto-completed delivered order {OrderCode}", order.OrderCode);
+        return true;
     }
 
     private async Task ReleaseReservedStockAsync(
@@ -384,24 +439,56 @@ public sealed class OrderRepository : IOrderRepository
         }
     }
 
-    private async Task CreditSellerWalletAsync(Order order, DateTime now, CancellationToken cancellationToken)
+    /// <summary>
+    /// Money does not go straight to the seller. The platform holds the shop's net
+    /// for <c>Settlement:HoldDays</c> (covering the return window) and keeps the
+    /// commission; an admin releases it later. See docs/solution-escrow-settlement.md.
+    /// </summary>
+    private async Task HoldSettlementAsync(Order order, DateTime now, CancellationToken cancellationToken)
     {
-        var alreadyCredited = await _db.WalletTransactions.AnyAsync(
-            t => t.ReferenceType == OrderConstants.WalletReferenceTypeOrder
-                 && t.ReferenceId == order.OrderId
-                 && t.TxType == OrderConstants.WalletTxTypeOrderCredit,
-            cancellationToken);
+        // UQ_Settle_Order also guards this at the DB level.
+        var alreadyHeld = await _db.SettlementEntries
+            .AnyAsync(e => e.OrderId == order.OrderId, cancellationToken);
 
-        if (alreadyCredited)
+        if (alreadyHeld)
             return;
 
         var wallet = await _db.Wallets
             .FirstOrDefaultAsync(w => w.ShopId == order.ShopId, cancellationToken)
             ?? throw new AppException("Seller wallet was not found for this shop.");
 
-        var creditAmount = decimal.Round(order.TotalAmount, 2, MidpointRounding.AwayFromZero);
-        wallet.AvailableBalance = decimal.Round(
-            wallet.AvailableBalance + creditAmount,
+        var rate = _settlementOptions.CommissionRate;
+        var gross = decimal.Round(order.TotalAmount, 2, MidpointRounding.AwayFromZero);
+
+        // Shipping is excluded from the fee base — charging commission on the
+        // courier fee would be wrong once shipping is no longer free.
+        var commissionable = SettlementConstants.CommissionableAmount(
+            order.SubtotalAmount,
+            order.DiscountAmount);
+        var commission = SettlementConstants.RoundVnd(commissionable * rate);
+        if (commission > gross)
+            commission = gross;
+        var net = gross - commission;
+
+        _db.SettlementEntries.Add(new SettlementEntry
+        {
+            SettlementEntryId = Guid.NewGuid(),
+            OrderId = order.OrderId,
+            ShopId = order.ShopId,
+            GrossAmount = gross,
+            SubsidyAmount = 0m,
+            CommissionRate = rate,
+            CommissionAmount = commission,
+            NetAmount = net,
+            Currency = order.Currency,
+            Status = SettlementConstants.EntryStatusHolding,
+            HoldUntil = now.AddDays(_settlementOptions.HoldDays),
+            CreatedAt = now,
+            UpdatedAt = now
+        });
+
+        wallet.PendingBalance = decimal.Round(
+            wallet.PendingBalance + net,
             2,
             MidpointRounding.AwayFromZero);
         wallet.UpdatedAt = now;
@@ -409,12 +496,27 @@ public sealed class OrderRepository : IOrderRepository
         _db.WalletTransactions.Add(new WalletTransaction
         {
             WalletId = wallet.WalletId,
-            TxType = OrderConstants.WalletTxTypeOrderCredit,
-            Amount = creditAmount,
+            TxType = SettlementConstants.TxSettlementHold,
+            Amount = net,
             BalanceAfter = wallet.AvailableBalance,
+            PendingAfter = wallet.PendingBalance,
             ReferenceType = OrderConstants.WalletReferenceTypeOrder,
             ReferenceId = order.OrderId,
-            Note = $"Order credit for {order.OrderCode}",
+            Note = $"Settlement held for {order.OrderCode}",
+            CreatedAt = now
+        });
+
+        // Informational row so the platform fee is visible in the shop's ledger.
+        _db.WalletTransactions.Add(new WalletTransaction
+        {
+            WalletId = wallet.WalletId,
+            TxType = SettlementConstants.TxCommissionFee,
+            Amount = -commission,
+            BalanceAfter = wallet.AvailableBalance,
+            PendingAfter = wallet.PendingBalance,
+            ReferenceType = OrderConstants.WalletReferenceTypeOrder,
+            ReferenceId = order.OrderId,
+            Note = $"Platform fee {rate:P2} on {order.OrderCode}",
             CreatedAt = now
         });
     }
