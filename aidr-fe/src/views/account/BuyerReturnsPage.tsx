@@ -4,25 +4,16 @@ import { useToastMessage } from '../../hooks/useToastMessage';
 import { listBuyerReturns } from '../../services/returnApi';
 import type { BuyerReturnRequest } from '../../types/return';
 import { getApiErrorMessage } from '../../utils/apiError';
-import { buyerReturnStatusClass, formatReturnStatus } from '../../utils/returnUi';
+import { formatMoney } from '../../utils/formatCatalog';
+import { formatOrderDate } from '../../utils/orderUi';
+import {
+  buyerReturnStatusClass,
+  formatReturnStatus,
+  returnStatusIcon,
+  RETURN_STATUS_FILTERS,
+} from '../../utils/returnUi';
 
 const PAGE_SIZE = 10;
-
-const STATUS_FILTERS = [
-  { value: '', label: 'All' },
-  { value: 'Pending', label: 'Pending' },
-  { value: 'Approved', label: 'Approved' },
-  { value: 'Receiving', label: 'Receiving' },
-  { value: 'Refunded', label: 'Refunded' },
-  { value: 'Closed', label: 'Closed' },
-  { value: 'Rejected', label: 'Rejected' },
-] as const;
-
-function formatDate(value: string) {
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return value;
-  return date.toLocaleString();
-}
 
 export function BuyerReturnsPage() {
   const [status, setStatus] = useState('');
@@ -69,23 +60,28 @@ export function BuyerReturnsPage() {
   }
 
   return (
-    <div className="account-order-detail-box">
-      <div className="buyer-orders-toolbar">
-        <div className="buyer-orders-filters">
+    <div className="account-page">
+      <div className="account-toolbar">
+        <div className="account-field">
           <label htmlFor="buyer-return-status">Status</label>
           <select
             id="buyer-return-status"
-            className="form-control"
+            className="account-select"
             value={status}
             onChange={(e) => handleStatusChange(e.target.value)}
           >
-            {STATUS_FILTERS.map((filter) => (
+            {RETURN_STATUS_FILTERS.map((filter) => (
               <option key={filter.value || 'all'} value={filter.value}>
                 {filter.label}
               </option>
             ))}
           </select>
         </div>
+        {totalCount > 0 ? (
+          <p className="account-count">
+            {totalCount} request{totalCount === 1 ? '' : 's'}
+          </p>
+        ) : null}
       </div>
 
       {loading && items.length === 0 ? (
@@ -93,9 +89,12 @@ export function BuyerReturnsPage() {
       ) : null}
 
       {!loading && items.length === 0 ? (
-        <div className="buyer-orders-empty">
-          <p>You have no return requests{status ? ` with status “${formatReturnStatus(status)}”` : ''}.</p>
-          <Link to="/account/orders" className="btn-default">
+        <div className="account-empty">
+          <p>
+            You have no return requests
+            {status ? ` with status “${formatReturnStatus(status)}”` : ''}.
+          </p>
+          <Link to="/account/orders" className="account-btn account-btn--primary">
             View orders
           </Link>
         </div>
@@ -103,60 +102,66 @@ export function BuyerReturnsPage() {
 
       {items.length > 0 ? (
         <>
-          <div className="account-order-table-box">
-            <table>
-              <thead>
-                <tr>
-                  <th>Order</th>
-                  <th>Submitted</th>
-                  <th>Reason</th>
-                  <th>Items</th>
-                  <th>Status</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {items.map((item) => (
-                  <tr key={item.returnRequestId}>
-                    <td className="account-order-table-no">{item.orderCode}</td>
-                    <td>{formatDate(item.createdAt)}</td>
-                    <td>{item.reason}</td>
-                    <td>{item.items.length}</td>
-                    <td>
-                      <span className={buyerReturnStatusClass(item.status)}>
-                        {formatReturnStatus(item.status)}
+          {/*
+            Cards instead of a table: six columns did not fit the account column
+            and pushed the Actions button off screen.
+          */}
+          <ul className="account-stack">
+            {items.map((item) => {
+              const refund =
+                item.refundAmount ?? item.items.reduce((sum, l) => sum + l.lineTotal, 0);
+
+              return (
+                <li key={item.returnRequestId}>
+                  <Link
+                    to={`/account/returns/${item.returnRequestId}`}
+                    className="account-row"
+                  >
+                    <div className="account-row__main">
+                      <p className="account-row__code">
+                        {item.orderCode}
+                        <span className={`${buyerReturnStatusClass(item.status)} return-status-chip`}>
+                          <i className={returnStatusIcon(item.status)} aria-hidden />
+                          {formatReturnStatus(item.status)}
+                        </span>
+                      </p>
+                      <p className="account-row__text">{item.reason}</p>
+                      <p className="account-row__meta">
+                        <span>{formatOrderDate(item.createdAt)}</span>
+                        <span>
+                          {item.items.length} item{item.items.length === 1 ? '' : 's'}
+                        </span>
+                      </p>
+                    </div>
+                    <div className="account-row__side">
+                      <p className="account-row__amount">{formatMoney(refund, 'VND')}</p>
+                      <span className="account-row__cta">
+                        View details
+                        <i className="fa-solid fa-arrow-right" aria-hidden />
                       </span>
-                    </td>
-                    <td>
-                      <Link
-                        to={`/account/returns/${item.returnRequestId}`}
-                        className="btn-default btn-accent btn-border"
-                      >
-                        View
-                      </Link>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                    </div>
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
 
           {totalPages > 1 ? (
-            <div className="buyer-orders-pagination">
+            <div className="account-pagination">
               <button
                 type="button"
-                className="btn-default btn-accent btn-border"
+                className="account-btn account-btn--secondary account-btn--sm"
                 disabled={page <= 1 || loading}
                 onClick={() => setPage((current) => Math.max(1, current - 1))}
               >
                 Previous
               </button>
               <span>
-                Page {page} of {totalPages} ({totalCount} total)
+                Page {page} of {totalPages}
               </span>
               <button
                 type="button"
-                className="btn-default btn-accent btn-border"
+                className="account-btn account-btn--secondary account-btn--sm"
                 disabled={page >= totalPages || loading}
                 onClick={() => setPage((current) => current + 1)}
               >

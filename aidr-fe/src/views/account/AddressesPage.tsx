@@ -208,53 +208,74 @@ export function AddressesPage() {
   }
 
   return (
-    <div className="account-address-content-box">
-
-      <div className="account-address-content-header">
-        <p>
-          These addresses will be used by default at checkout. Maximum of {MAX_ADDRESSES} addresses.
+    <div className="account-page account-address-content-box">
+      <div className="account-toolbar">
+        <p className="account-toolbar__lead">
+          These addresses will be used by default at checkout. Maximum of {MAX_ADDRESSES}{' '}
+          addresses — {sortedAddresses.length} saved.
         </p>
         {canAddMore && (
-          <button type="button" className="btn-default btn-accent" onClick={startAdd} disabled={saving}>
+          <button
+            type="button"
+            className="account-btn account-btn--primary"
+            onClick={startAdd}
+            disabled={saving}
+          >
+            <i className="fa-solid fa-plus" aria-hidden />
             Add address
           </button>
         )}
       </div>
 
-
-      <div className="account-address-item-list">
-        {sortedAddresses.length === 0 ? (
-          <p className="account-muted">No addresses yet.</p>
-        ) : (
-          sortedAddresses.map((address) => (
-            <div key={address.addressId} className="account-address-item">
-              <div className="account-address-item-title">
-                <h2>
-                  {address.isDefault ? 'Default address' : 'Shipping address'}
-                  {address.isDefault && <span className="account-badge">Default</span>}
-                </h2>
-                <p>
-                  <button
-                    type="button"
-                    className="account-link-btn"
-                    onClick={() => setEditingId(address.addressId)}
-                    disabled={saving}
-                  >
-                    Edit <img src="/theme/images/icon-pen.svg" alt="" />
-                  </button>
+      {sortedAddresses.length === 0 ? (
+        <div className="account-empty">
+          <p>No addresses yet. Add one so checkout can deliver your orders.</p>
+          <button
+            type="button"
+            className="account-btn account-btn--primary"
+            onClick={startAdd}
+            disabled={saving}
+          >
+            Add address
+          </button>
+        </div>
+      ) : (
+        <div className="address-grid">
+          {sortedAddresses.map((address) => (
+            <article
+              key={address.addressId}
+              className={`address-card${address.isDefault ? ' address-card--default' : ''}`}
+            >
+              <div className="address-card__head">
+                <p className="address-card__name">
+                  {address.receiverName}
+                  {address.isDefault && <span className="address-card__badge">Default</span>}
                 </p>
+                <button
+                  type="button"
+                  className="account-btn account-btn--ghost account-btn--sm"
+                  onClick={() => setEditingId(address.addressId)}
+                  disabled={saving}
+                >
+                  <i className="fa-solid fa-pen-to-square" aria-hidden />
+                  Edit
+                </button>
               </div>
-              <div className="account-address-item-info-list">
-                <ul>
-                  <li>{address.receiverName} · {address.phone}</li>
-                  <li>{formatAddressLine(address)}</li>
-                </ul>
-              </div>
-              <div className="account-address-actions">
+
+              <p className="address-card__row">
+                <i className="fa-solid fa-location-dot" aria-hidden />
+                <span>{formatAddressLine(address)}</span>
+              </p>
+              <p className="address-card__row">
+                <i className="fa-solid fa-phone" aria-hidden />
+                <span>{address.phone}</span>
+              </p>
+
+              <div className="address-card__actions">
                 {!address.isDefault && (
                   <button
                     type="button"
-                    className="btn-default btn-border"
+                    className="account-btn account-btn--secondary account-btn--sm"
                     onClick={() => handleSetDefault(address.addressId)}
                     disabled={saving}
                   >
@@ -263,17 +284,18 @@ export function AddressesPage() {
                 )}
                 <button
                   type="button"
-                  className="btn-default btn-border account-btn-danger"
+                  className="account-btn account-btn--danger account-btn--sm"
                   onClick={() => handleDelete(address.addressId)}
                   disabled={saving}
                 >
+                  <i className="fa-regular fa-trash-can" aria-hidden />
                   Delete
                 </button>
               </div>
-            </div>
-          ))
-        )}
-      </div>
+            </article>
+          ))}
+        </div>
+      )}
 
       {showForm && (
         <div className="account-addresses-content-box account-form-panel">
