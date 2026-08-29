@@ -35,7 +35,12 @@ public static class SellerFinanceConstants
         WalletTxTypeOrderCredit,
         WalletTxTypeRefundDebit,
         WalletTxTypeWithdrawal,
-        WalletTxTypeAdjustment
+        WalletTxTypeAdjustment,
+        SettlementConstants.TxSettlementHold,
+        SettlementConstants.TxCommissionFee,
+        SettlementConstants.TxSettlementRelease,
+        SettlementConstants.TxPayout,
+        SettlementConstants.TxSettlementReversal
     };
 
     /// <summary>Paid shop orders that count as sales (excludes unpaid, cancelled, returned).</summary>
@@ -46,15 +51,6 @@ public static class SellerFinanceConstants
         OrderConstants.StatusShipping,
         OrderConstants.StatusDelivered,
         OrderConstants.StatusCompleted
-    };
-
-    /// <summary>Buyer paid but seller wallet not credited yet (credit happens on Completed).</summary>
-    public static readonly HashSet<string> PendingSettlementStatuses = new(StringComparer.OrdinalIgnoreCase)
-    {
-        OrderConstants.StatusPaid,
-        OrderConstants.StatusConfirmed,
-        OrderConstants.StatusShipping,
-        OrderConstants.StatusDelivered
     };
 
     /// <summary>Orders waiting on seller fulfillment action.</summary>

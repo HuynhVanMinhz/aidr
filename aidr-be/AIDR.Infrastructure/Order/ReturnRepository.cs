@@ -120,6 +120,20 @@ public sealed class ReturnRepository : IReturnRepository
         });
 
         _db.ReturnRequests.Add(returnRequest);
+
+        // Freeze the shop's settlement: a disputed order must not be paid out
+        // just because its hold window happens to expire mid-dispute.
+        var entry = await _db.SettlementEntries
+            .FirstOrDefaultAsync(e => e.OrderId == order.OrderId, cancellationToken);
+
+        if (entry is not null && SettlementConstants.PendingBalanceStatuses.Contains(entry.Status))
+        {
+            entry.Status = SettlementConstants.EntryStatusOnHold;
+            entry.HoldReason = "Return request open";
+            entry.PayoutBatchId = null;
+            entry.UpdatedAt = now;
+        }
+
         await _db.SaveChangesAsync(cancellationToken);
         await transaction.CommitAsync(cancellationToken);
 

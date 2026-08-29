@@ -375,6 +375,17 @@ export function AdminShell({ variant = 'admin', children }: AdminShellProps) {
                 </NavLink>
               </li>
               <li className="nav-item">
+                <NavLink
+                  className={({ isActive }) => `nav-link${isActive ? ' active' : ''}`}
+                  to="/admin/settlements"
+                >
+                  <span className="nav-icon">
+                    <IconifyIcon icon="solar:card-transfer-bold-duotone" />
+                  </span>
+                  <span className="nav-text">Settlements</span>
+                </NavLink>
+              </li>
+              <li className="nav-item">
                 <a
                   className={`nav-link menu-arrow ${governanceOpen ? '' : 'collapsed'}`}
                   href="#sidebarGovernance"
@@ -433,6 +444,17 @@ export function AdminShell({ variant = 'admin', children }: AdminShellProps) {
                     <IconifyIcon icon="solar:wallet-bold-duotone" />
                   </span>
                   <span className="nav-text">Wallet</span>
+                </NavLink>
+              </li>
+              <li className="nav-item">
+                <NavLink
+                  className={({ isActive }) => `nav-link${isActive ? ' active' : ''}`}
+                  to="/seller/settlements"
+                >
+                  <span className="nav-icon">
+                    <IconifyIcon icon="solar:hand-money-bold-duotone" />
+                  </span>
+                  <span className="nav-text">Settlements</span>
                 </NavLink>
               </li>
               <li className="nav-item">

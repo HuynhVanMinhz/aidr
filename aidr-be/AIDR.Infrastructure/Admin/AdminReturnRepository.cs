@@ -296,7 +296,7 @@ public sealed class AdminReturnRepository : IAdminReturnRepository
             payment.UpdatedAt = now;
         }
 
-        await DebitSellerWalletAsync(order, entity.ReturnRequestId, refundAmount, now, cancellationToken);
+        await ReverseSettlementAsync(order, entity.ReturnRequestId, refundAmount, now, cancellationToken);
     }
 
     private async Task ExecutePayOsRefundAsync(
@@ -465,26 +465,72 @@ public sealed class AdminReturnRepository : IAdminReturnRepository
         });
     }
 
-    private async Task DebitSellerWalletAsync(
+    /// <summary>
+    /// Take the shop's money back for a refunded order. Which balance it comes out
+    /// of depends on how far the settlement got:
+    ///   still held  -> drop the pending amount, and the platform earns no commission;
+    ///   released    -> debit the available balance (may go negative, BR-R04) and
+    ///                  credit back the commission already recognised.
+    /// </summary>
+    private async Task ReverseSettlementAsync(
         Order order,
         Guid returnRequestId,
         decimal refundAmount,
         DateTime now,
         CancellationToken cancellationToken)
     {
-        var alreadyDebited = await _db.WalletTransactions.AnyAsync(
+        var alreadyReversed = await _db.WalletTransactions.AnyAsync(
             t => t.ReferenceType == ReturnConstants.WalletReferenceTypeReturnRequest
                  && t.ReferenceId == returnRequestId
-                 && t.TxType == ReturnConstants.WalletTxTypeRefundDebit,
+                 && (t.TxType == ReturnConstants.WalletTxTypeRefundDebit
+                     || t.TxType == SettlementConstants.TxSettlementReversal),
             cancellationToken);
 
-        if (alreadyDebited)
+        if (alreadyReversed)
+            return;
+
+        var entry = await _db.SettlementEntries
+            .FirstOrDefaultAsync(e => e.OrderId == order.OrderId, cancellationToken);
+
+        // No entry yet (order never reached Completed) — nothing was ever owed.
+        if (entry is null)
             return;
 
         var wallet = await _db.Wallets
             .FirstOrDefaultAsync(w => w.ShopId == order.ShopId, cancellationToken)
             ?? throw new AppException("Seller wallet was not found for this shop.");
 
+        if (SettlementConstants.PendingBalanceStatuses.Contains(entry.Status))
+        {
+            wallet.PendingBalance = decimal.Round(
+                Math.Max(0m, wallet.PendingBalance - entry.NetAmount),
+                2,
+                MidpointRounding.AwayFromZero);
+            wallet.UpdatedAt = now;
+
+            _db.WalletTransactions.Add(new WalletTransaction
+            {
+                WalletId = wallet.WalletId,
+                TxType = SettlementConstants.TxSettlementReversal,
+                Amount = -entry.NetAmount,
+                BalanceAfter = wallet.AvailableBalance,
+                PendingAfter = wallet.PendingBalance,
+                ReferenceType = ReturnConstants.WalletReferenceTypeReturnRequest,
+                ReferenceId = returnRequestId,
+                Note = $"Settlement reversed — order {order.OrderCode} refunded before release",
+                CreatedAt = now
+            });
+
+            entry.Status = SettlementConstants.EntryStatusReversed;
+            entry.ReversedReason = $"Return refunded on {now:yyyy-MM-dd}";
+            entry.PayoutBatchId = null;
+            entry.UpdatedAt = now;
+            return;
+        }
+
+        // Already released or paid out: claw the net back from the available
+        // balance and hand back the commission — the platform does not keep a fee
+        // on an order that was returned.
         wallet.AvailableBalance = decimal.Round(
             wallet.AvailableBalance - refundAmount,
             2,
@@ -497,11 +543,37 @@ public sealed class AdminReturnRepository : IAdminReturnRepository
             TxType = ReturnConstants.WalletTxTypeRefundDebit,
             Amount = -refundAmount,
             BalanceAfter = wallet.AvailableBalance,
+            PendingAfter = wallet.PendingBalance,
             ReferenceType = ReturnConstants.WalletReferenceTypeReturnRequest,
             ReferenceId = returnRequestId,
             Note = $"Refund debit for return on order {order.OrderCode}",
             CreatedAt = now
         });
+
+        if (entry.CommissionAmount > 0)
+        {
+            wallet.AvailableBalance = decimal.Round(
+                wallet.AvailableBalance + entry.CommissionAmount,
+                2,
+                MidpointRounding.AwayFromZero);
+            wallet.UpdatedAt = now;
+
+            _db.WalletTransactions.Add(new WalletTransaction
+            {
+                WalletId = wallet.WalletId,
+                TxType = SettlementConstants.TxCommissionFee,
+                Amount = entry.CommissionAmount,
+                BalanceAfter = wallet.AvailableBalance,
+                PendingAfter = wallet.PendingBalance,
+                ReferenceType = ReturnConstants.WalletReferenceTypeReturnRequest,
+                ReferenceId = returnRequestId,
+                Note = $"Platform fee refunded — order {order.OrderCode} returned",
+                CreatedAt = now
+            });
+        }
+
+        entry.ReversedReason = $"Refunded after release on {now:yyyy-MM-dd}";
+        entry.UpdatedAt = now;
     }
 
     private async Task RestoreOrderStatusAfterRejectAsync(
@@ -537,6 +609,22 @@ public sealed class AdminReturnRepository : IAdminReturnRepository
             Note = "Return request rejected; order status restored",
             CreatedAt = now
         });
+
+        // Dispute over — let the settlement continue where it left off.
+        var entry = await _db.SettlementEntries
+            .FirstOrDefaultAsync(e => e.OrderId == order.OrderId, cancellationToken);
+
+        if (entry is not null
+            && string.Equals(entry.Status, SettlementConstants.EntryStatusOnHold, StringComparison.OrdinalIgnoreCase))
+        {
+            var due = entry.HoldUntil <= now;
+            entry.Status = due
+                ? SettlementConstants.EntryStatusEligible
+                : SettlementConstants.EntryStatusHolding;
+            entry.EligibleAt = due ? now : null;
+            entry.HoldReason = null;
+            entry.UpdatedAt = now;
+        }
     }
 
     private static Task MarkOrderReturnedAsync(Order order, Guid adminUserId, DateTime now)

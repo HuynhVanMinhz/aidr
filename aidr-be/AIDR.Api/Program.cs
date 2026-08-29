@@ -1,3 +1,4 @@
+using AIDR.Api.BackgroundJobs;
 using AIDR.Api.Hubs;
 using AIDR.Api.Middleware;
 using AIDR.Api.Realtime;
@@ -20,6 +21,9 @@ builder.Services.AddOpenApi();
 builder.Services.AddSignalR();
 builder.Services.AddAidrInfrastructure(builder.Configuration);
 builder.Services.AddAidrModules();
+
+// Escrow pipeline: auto-complete delivered orders, release held settlements, poll payouts.
+builder.Services.AddHostedService<SettlementBackgroundService>();
 builder.Services.AddAidrJwtAuthentication(builder.Configuration);
 builder.Services.AddScoped<INotificationRealtimePublisher, SignalRNotificationRealtimePublisher>();
 builder.Services.AddScoped<IChatRealtimePublisher, SignalRChatRealtimePublisher>();

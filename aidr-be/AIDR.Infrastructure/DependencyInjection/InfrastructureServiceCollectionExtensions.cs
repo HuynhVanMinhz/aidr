@@ -10,6 +10,7 @@ using AIDR.Infrastructure.PayOs;
 using AIDR.Infrastructure.Persistence;
 using AIDR.Infrastructure.Profile;
 using AIDR.Infrastructure.SellerCenter;
+using AIDR.Infrastructure.Settlement;
 using AIDR.Modules.Admin.Abstractions;
 using AIDR.Modules.AI.Abstractions;
 using AIDR.Modules.AI.Services;
@@ -22,6 +23,7 @@ using AIDR.Modules.Payment.Abstractions;
 using AIDR.Modules.Payment.Services;
 using AIDR.Modules.Profile.Abstractions;
 using AIDR.Modules.SellerCenter.Abstractions;
+using AIDR.Modules.Settlement.Abstractions;
 using AIDR.Shared.Caching;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
@@ -64,6 +66,7 @@ public static class InfrastructureServiceCollectionExtensions
         services.Configure<SmtpOptions>(configuration.GetSection(SmtpOptions.SectionName));
         services.Configure<PayOsOptions>(configuration.GetSection(PayOsOptions.SectionName));
         services.Configure<GroqOptions>(configuration.GetSection(GroqOptions.SectionName));
+        services.Configure<SettlementOptions>(configuration.GetSection(SettlementOptions.SectionName));
 
         services.AddScoped<IAuthUserRepository, AuthUserRepository>();
         services.AddScoped<IProfileRepository, ProfileRepository>();
@@ -86,6 +89,7 @@ public static class InfrastructureServiceCollectionExtensions
         services.AddScoped<ISellerOrderRepository, SellerOrderRepository>();
         services.AddScoped<ISellerShopVoucherRepository, SellerShopVoucherRepository>();
         services.AddScoped<ISellerFinanceRepository, SellerFinanceRepository>();
+        services.AddScoped<ISettlementRepository, SettlementRepository>();
         services.AddScoped<ISellerShopRepository, SellerShopRepository>();
         services.AddScoped<ICartRepository, CartRepository>();
         services.AddScoped<IOrderRepository, OrderRepository>();
