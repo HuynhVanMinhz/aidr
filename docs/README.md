@@ -43,6 +43,18 @@ Checkout phân bổ giá vốn theo FIFO trên `InventoryLots`, nên nếu thi�
 `seed-inventory-lots.sql` tạo lô mở đầu cho phần chênh lệch và đồng bộ lại
 `StockQuantity` / `AvgCostPrice`. Script idempotent, chạy lại được.
 
+### 2c. Escrow / đối soát seller
+
+```
+scripts/settlement-schema.sql          # bảng ShopBankAccounts / SettlementEntries / PayoutBatches
+scripts/seed-settlement-backfill.sql   # backfill đơn Completed cũ (phí 0%) + đồng bộ PendingBalance
+```
+
+Chạy theo đúng thứ tự trên. Chi tiết flow: `docs/solution-escrow-settlement.md`.
+Cấu hình payOS + kịch bản test trên UI: `docs/guide-payos-settlement-testing.md`.
+Cấu hình ở section `Settlement` trong `appsettings.json` (phí 3%, giữ 30 ngày,
+auto-complete 7 ngày, `PayoutMode`).
+
 ### 3. Backend (không Docker)
 
 ```bash
