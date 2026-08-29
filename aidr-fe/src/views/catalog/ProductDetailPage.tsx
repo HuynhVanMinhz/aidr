@@ -47,7 +47,7 @@ export function ProductDetailPage() {
   const { isAuthenticated } = useAuth();
   const { product, loading, error } = useProductDetail(id);
   useToastMessage(error);
-  const { addItem, mutating, getErrorMessage } = useCart({ autoLoad: isAuthenticated });
+  const { addItem, buyNow, mutating, getErrorMessage } = useCart({ autoLoad: isAuthenticated });
   const {
     inWishlist,
     toggle: toggleWishlist,
@@ -61,6 +61,7 @@ export function ProductDetailPage() {
   const [tab, setTab] = useState<'description' | 'specs' | 'reviews'>('description');
   const [qty, setQty] = useState(1);
   const [adding, setAdding] = useState(false);
+  const [buying, setBuying] = useState(false);
   const [wishlistPending, setWishlistPending] = useState(false);
 
   const images = useMemo(() => {
@@ -111,7 +112,7 @@ export function ProductDetailPage() {
   const maxQty = Math.min(MAX_QTY, Math.max(1, detail.availableQuantity));
   const safeQty = Math.min(Math.max(1, qty), maxQty);
   const outOfStock = detail.availableQuantity < 1;
-  const addBusy = adding || mutating;
+  const addBusy = adding || buying || mutating;
   const productId = detail.productId;
 
   async function handleAddToCart() {
@@ -133,6 +134,28 @@ export function ProductDetailPage() {
       toast.error(getErrorMessage(err, 'Unable to add item to cart.'));
     } finally {
       setAdding(false);
+    }
+  }
+
+  async function handleBuyNow() {
+    if (!isAuthenticated) {
+      const returnUrl = encodeURIComponent(location.pathname + location.search);
+      navigate(`/login?returnUrl=${returnUrl}`);
+      return;
+    }
+    if (outOfStock) {
+      toast.error('Product is out of stock.');
+      return;
+    }
+
+    setBuying(true);
+    try {
+      await buyNow(productId, safeQty);
+      navigate('/checkout');
+    } catch (err) {
+      toast.error(getErrorMessage(err, 'Unable to start checkout.'));
+    } finally {
+      setBuying(false);
     }
   }
 
@@ -286,7 +309,15 @@ export function ProductDetailPage() {
                         disabled={outOfStock || addBusy}
                         onClick={() => void handleAddToCart()}
                       >
-                        {outOfStock ? 'Out of Stock' : addBusy ? 'Adding…' : 'Add To Cart'}
+                        {outOfStock ? 'Out of Stock' : adding ? 'Adding…' : 'Add To Cart'}
+                      </button>
+                      <button
+                        type="button"
+                        className="product-single-buy-now"
+                        disabled={outOfStock || addBusy}
+                        onClick={() => void handleBuyNow()}
+                      >
+                        {buying ? 'Starting…' : 'Buy Now'}
                       </button>
                     </div>
                     <div className="product-single-action">
