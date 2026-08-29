@@ -1,4 +1,4 @@
-namespace AIDR.Shared.Constants;
+﻿namespace AIDR.Shared.Constants;
 
 public static class PaymentConstants
 {
@@ -14,6 +14,9 @@ public static class PaymentConstants
     public const string OrderStatusPaid = "Paid";
 
     public const string PayOsSuccessCode = "00";
+
+    /// <summary>payOS payment-link state that means the money has arrived.</summary>
+    public const string PayOsLinkStatusPaid = "PAID";
 
     /// <summary>payOS VietQR description limit.</summary>
     public const int MaxDescriptionLength = 25;

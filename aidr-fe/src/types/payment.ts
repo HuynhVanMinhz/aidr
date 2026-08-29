@@ -32,6 +32,24 @@ export type OrderPaymentLink = {
   currency: string;
 };
 
+export type SyncPayOsPaymentRequest = {
+  orderId: string;
+};
+
+export type SyncPayOsPaymentResponse = {
+  orderId: string;
+  orderCode: string;
+  paymentStatus: string;
+  orderStatus: string;
+  /** Raw payOS payment-link state: PENDING | PAID | CANCELLED | EXPIRED | ... */
+  providerStatus: string;
+  /** True when this call is what moved the order to Paid. */
+  reconciled: boolean;
+  message: string;
+};
+
+export type SyncPayOsPaymentApiResult = ApiResult<SyncPayOsPaymentResponse>;
+
 export type PayOsWebhookRequest = {
   code?: string;
   description?: string;

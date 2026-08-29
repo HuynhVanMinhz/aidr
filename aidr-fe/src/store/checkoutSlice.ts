@@ -4,7 +4,7 @@ import { fetchCart } from './cartSlice';
 import * as orderApi from '../services/orderApi';
 import * as paymentApi from '../services/paymentApi';
 import type { CheckoutSuccessState, CreateOrderRequest, CreateOrderResponse, CreatedOrder } from '../types/order';
-import type { OrderPaymentLink } from '../types/payment';
+import type { OrderPaymentLink, SyncPayOsPaymentResponse } from '../types/payment';
 import { getApiErrorMessage } from '../utils/apiError';
 import {
   clearCheckoutSuccessStorage,
@@ -15,6 +15,8 @@ import {
 export type CheckoutState = {
   submitting: boolean;
   paying: boolean;
+  /** A reconcile-with-payOS round trip is in flight. */
+  syncing: boolean;
   error: string | null;
   lastSuccess: CheckoutSuccessState | null;
 };
@@ -24,6 +26,7 @@ type CheckoutRoot = { checkout: CheckoutState };
 const initialState: CheckoutState = {
   submitting: false,
   paying: false,
+  syncing: false,
   error: null,
   lastSuccess: loadCheckoutSuccess(),
 };
@@ -134,6 +137,36 @@ export const createPayOsLinksForOrders = createAsyncThunk<
     return links;
   } catch (error) {
     return rejectWithValue(getApiErrorMessage(error, 'Unable to create payment link.'));
+  }
+});
+
+/**
+ * Ask the API what payOS says about these orders. The payOS webhook is the
+ * primary settlement path, but it never reaches a dev machine — without this the
+ * buyer returns from a completed payment to an order still marked pending, and
+ * the "Pay now" button happily sends them back to the same live checkout link.
+ */
+export const syncPayOsPayments = createAsyncThunk<
+  SyncPayOsPaymentResponse[],
+  string[],
+  { rejectValue: string; state: CheckoutRoot }
+>('checkout/syncPayOsPayments', async (orderIds, { rejectWithValue }) => {
+  try {
+    const results: SyncPayOsPaymentResponse[] = [];
+
+    for (const orderId of orderIds) {
+      try {
+        const result = await paymentApi.syncPayOsPayment({ orderId });
+        if (result.success && result.data) results.push(result.data);
+      } catch (error) {
+        // One unreachable order should not hide the state of the others.
+        console.warn('payOS sync failed for order', orderId, error);
+      }
+    }
+
+    return results;
+  } catch (error) {
+    return rejectWithValue(getApiErrorMessage(error, 'Unable to check payment status.'));
   }
 });
 
@@ -254,6 +287,34 @@ export const checkoutSlice = createSlice({
         state.paying = false;
         state.error = action.payload ?? 'Unable to create payment link.';
       })
+      .addCase(syncPayOsPayments.pending, (state) => {
+        state.syncing = true;
+      })
+      .addCase(syncPayOsPayments.fulfilled, (state, action) => {
+        state.syncing = false;
+        if (!state.lastSuccess || action.payload.length === 0) return;
+
+        const byOrderId = new Map(action.payload.map((r) => [r.orderId, r]));
+        state.lastSuccess = {
+          ...state.lastSuccess,
+          orders: state.lastSuccess.orders.map((o) => {
+            const synced = byOrderId.get(o.orderId);
+            return synced
+              ? { ...o, status: synced.orderStatus, paymentStatus: synced.paymentStatus }
+              : o;
+          }),
+          payments: (state.lastSuccess.payments ?? []).map((p) => {
+            const synced = byOrderId.get(p.orderId);
+            return synced
+              ? { ...p, paymentStatus: synced.paymentStatus, orderStatus: synced.orderStatus }
+              : p;
+          }),
+        };
+        saveCheckoutSuccess(state.lastSuccess);
+      })
+      .addCase(syncPayOsPayments.rejected, (state) => {
+        state.syncing = false;
+      })
       .addCase(confirmMockPayOsReturn.fulfilled, (state, action) => {
         const { orderId, paymentStatus, orderStatus } = action.payload;
         if (!state.lastSuccess) return;
@@ -281,5 +342,6 @@ export const {
 export const selectCheckout = (state: CheckoutRoot) => state.checkout;
 export const selectCheckoutSubmitting = (state: CheckoutRoot) => state.checkout.submitting;
 export const selectCheckoutPaying = (state: CheckoutRoot) => state.checkout.paying;
+export const selectCheckoutSyncing = (state: CheckoutRoot) => state.checkout.syncing;
 export const selectCheckoutError = (state: CheckoutRoot) => state.checkout.error;
 export const selectCheckoutLastSuccess = (state: CheckoutRoot) => state.checkout.lastSuccess;

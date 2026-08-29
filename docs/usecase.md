@@ -61,7 +61,7 @@
 | UC-44 | View Notifications | **Actor:** Buyer/Seller. Inbox thông báo (order, payment, chat, **product moderation**, return, **low-stock**…); SignalR push. **Business:** Giữ user engagement realtime. | Done | P1 |
 | UC-45 | Delete Notification | **Actor:** Buyer/Seller. Xóa / ẩn thông báo. **Business:** Dọn inbox. | Done | P2 |
 | UC-46 | View Order List | **Actor:** Seller. Đơn của shop; lọc status. **Business:** Vận hành fulfillment. | Done | P0 |
-| UC-47 | Update Order Status | **Actor:** Seller. Paid→Confirmed→Shipping→Delivered; nhập tracking thủ công. **Business:** Cập nhật tiến độ giao (không API GHN). | Done | P0 |
+| UC-47 | Update Order Status | **Actor:** System (GHN) + Seller. Paid→Confirmed→Shipping→Delivered chạy tự động: job gọi API GHN tạo vận đơn sau khi Paid, webhook/poll GHN đẩy các bậc sau; seller **vẫn** cập nhật thủ công được bất cứ lúc nào (cùng luật chỉ-tiến). **Business:** Tracking đúng thực tế, không phụ thuộc thao tác tay. Xem `docs/solution-auto-fulfillment-shipping.md`. | Done | P0 |
 | UC-48 | View Return Requests | **Actor:** Admin. Queue return/refund toàn hệ thống. **Business:** Điều phối hoàn hàng (không exchange). | Done | P1 |
 | UC-49 | View Return Request Details | **Actor:** Admin. Chi tiết lý do, **video Unboxing/Testing**, order lines. **Business:** Ra quyết định Approve/Reject dựa bằng chứng. | Done | P1 |
 | UC-50 | Approve / Reject Return Request | **Actor:** Admin. Duyệt hoặc từ chối + note bắt buộc khi reject (BR-R03). Approve → pipeline Receiving→Refund. **Business:** Kiểm soát gian lận / policy. | Done | P1 |

@@ -1,4 +1,4 @@
-namespace AIDR.Infrastructure.Persistence.Entities;
+﻿namespace AIDR.Infrastructure.Persistence.Entities;
 
 public class Role
 {
@@ -43,6 +43,11 @@ public class Address
     public string District { get; set; } = null!;
     public string Ward { get; set; } = null!;
     public string StreetAddress { get; set; } = null!;
+
+    /// <summary>Delivery point the buyer pinned on the map. Null on addresses saved before the map existed.</summary>
+    public double? Latitude { get; set; }
+    public double? Longitude { get; set; }
+
     public bool IsDefault { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
@@ -107,6 +112,11 @@ public class Shop
     public string? District { get; set; }
     public string? Ward { get; set; }
     public string? StreetAddress { get; set; }
+
+    /// <summary>Pickup point the seller pinned in Shop settings; the start of the tracking map.</summary>
+    public double? Latitude { get; set; }
+    public double? Longitude { get; set; }
+
     public string CostingMethod { get; set; } = "FIFO";
     public string? ReturnPolicy { get; set; }
     public string? ShippingPolicy { get; set; }
@@ -785,4 +795,48 @@ public class AiMessage
     public DateTime CreatedAt { get; set; }
 
     public AiConversation Conversation { get; set; } = null!;
+}
+
+public class Shipment
+{
+    public Guid ShipmentId { get; set; }
+    public Guid OrderId { get; set; }
+    public string Provider { get; set; } = null!;
+    public string? ProviderShipmentId { get; set; }
+    public string? TrackingCode { get; set; }
+    public string Status { get; set; } = "Pending";
+    public string? ProviderStatus { get; set; }
+    public decimal? ShippingFeeQuoted { get; set; }
+    public DateTime? ExpectedDeliveryAt { get; set; }
+
+    /// <summary>Mock: when the simulator steps forward. Real carrier: when to poll again.</summary>
+    public DateTime? NextActionAt { get; set; }
+    public DateTime? LastSyncedAt { get; set; }
+    public int AttemptCount { get; set; }
+    public string? LastError { get; set; }
+    public string? RawCreateJson { get; set; }
+    public DateTime CreatedAt { get; set; }
+    public DateTime UpdatedAt { get; set; }
+
+    public Order Order { get; set; } = null!;
+    public ICollection<ShipmentEvent> Events { get; set; } = new List<ShipmentEvent>();
+}
+
+public class ShipmentEvent
+{
+    public Guid ShipmentEventId { get; set; }
+    public Guid ShipmentId { get; set; }
+
+    /// <summary>Idempotency key — unique per shipment, so a replayed webhook is a no-op.</summary>
+    public string ExternalEventId { get; set; } = null!;
+    public string ProviderStatus { get; set; } = null!;
+    public string MappedStatus { get; set; } = null!;
+    public string? Description { get; set; }
+    public string Source { get; set; } = null!;
+    public bool AppliedToOrder { get; set; }
+    public DateTime OccurredAt { get; set; }
+    public DateTime ReceivedAt { get; set; }
+    public string? RawJson { get; set; }
+
+    public Shipment Shipment { get; set; } = null!;
 }

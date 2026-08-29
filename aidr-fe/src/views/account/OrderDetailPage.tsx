@@ -1,12 +1,14 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { OrderReviewSection } from '../../components/reviews/OrderReviewSection';
+import { OrderTrackingMap } from '../../components/shipping/OrderTrackingMap';
 import { useBuyerOrderDetail } from '../../hooks/useBuyerOrders';
 import { useBuyerOrderReturn } from '../../hooks/useBuyerOrderReturn';
 import { useToast } from '../../hooks/useToast';
 import { useToastMessage } from '../../hooks/useToastMessage';
 import { PRODUCT_IMAGE_PLACEHOLDER, resolveProductImageUrl } from '../../utils/catalogImage';
 import { formatMoney } from '../../utils/formatCatalog';
+import { formatShipmentStatus } from '../../utils/shipmentUi';
 import { tryValidateField, visibleFieldErrors } from '../../utils/formValidation';
 import {
   formatOrderDate,
@@ -19,6 +21,7 @@ import {
   formatReturnStatus,
   returnStatusIcon,
 } from '../../utils/returnUi';
+import { routeProgress } from '../../types/tracking';
 import {
   canRequestReturn,
   canSubmitBuyerReturnForm,
@@ -221,6 +224,19 @@ export function OrderDetailPage() {
 
   const shipping = detail.shipping;
   const payment = detail.payment;
+  const tracking = detail.tracking ?? null;
+  // Nothing to track before payment, and nothing left to track once it is cancelled.
+  const showTracking =
+    tracking !== null &&
+    detail.status !== 'PendingPayment' &&
+    detail.status !== 'Cancelled' &&
+    (Boolean(tracking.shipmentStatus) ||
+      Boolean(tracking.route.pickup) ||
+      Boolean(tracking.route.destination));
+  const trackingProgress = routeProgress(tracking?.shipmentStatus, detail.status);
+  const trackingLabel = tracking?.shipmentStatus
+    ? formatShipmentStatus(tracking.shipmentStatus)
+    : formatOrderStatus(detail.status);
   const eligibleForReturn = canRequestReturn(detail.status) && !returnRequest;
   const busy = mutating || returnMutating;
 
@@ -284,6 +300,72 @@ export function OrderDetailPage() {
               ))}
             </ul>
           </section>
+
+          {showTracking && tracking ? (
+            <section className="account-card order-tracking">
+              <h3 className="order-card__title">
+                Delivery tracking
+                <span className="order-tracking__carrier">{tracking.carrier}</span>
+              </h3>
+
+              <p className="order-tracking__state">
+                {trackingLabel}
+                {tracking.trackingCode ? (
+                  <>
+                    {' · '}
+                    <span className="order-tracking__code">{tracking.trackingCode}</span>
+                  </>
+                ) : null}
+              </p>
+
+              <OrderTrackingMap
+                route={tracking.route}
+                progress={trackingProgress}
+                parcelLabel={trackingLabel}
+                emptyHint="No map yet — this order has no pinned pickup or delivery point. Pin the delivery point on the address in Shipping addresses and it will show here on your next order."
+              />
+
+              <p className="order-tracking__disclaimer">
+                <i className="fa-regular fa-circle-question" aria-hidden />
+                <span>
+                  {tracking.carrier} reports delivery milestones, not the driver's live
+                  position — the parcel is drawn along the route at the point its latest
+                  status implies.
+                </span>
+              </p>
+
+              <dl className="order-tracking__facts">
+                {tracking.expectedDeliveryAt ? (
+                  <div>
+                    <dt>Expected</dt>
+                    <dd>{formatOrderDate(tracking.expectedDeliveryAt)}</dd>
+                  </div>
+                ) : null}
+                {tracking.lastUpdateAt ? (
+                  <div>
+                    <dt>Last update</dt>
+                    <dd>{formatOrderDate(tracking.lastUpdateAt)}</dd>
+                  </div>
+                ) : null}
+              </dl>
+
+              {tracking.events.length > 0 ? (
+                <ol className="order-tracking__timeline">
+                  {tracking.events.map((event) => (
+                    <li key={event.shipmentEventId}>
+                      <p className="order-tracking__timeline-title">
+                        {formatShipmentStatus(event.mappedStatus)}
+                      </p>
+                      <p className="order-tracking__timeline-meta">
+                        {formatOrderDate(event.occurredAt)}
+                        {event.description?.trim() ? ` · ${event.description}` : ''}
+                      </p>
+                    </li>
+                  ))}
+                </ol>
+              ) : null}
+            </section>
+          ) : null}
 
           <section className="account-card">
             <h3 className="order-card__title">Shipping address</h3>

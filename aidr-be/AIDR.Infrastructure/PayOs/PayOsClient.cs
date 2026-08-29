@@ -1,4 +1,4 @@
-using System.Globalization;
+﻿using System.Globalization;
 using System.Text.Json;
 using AIDR.Modules.Payment.Abstractions;
 using AIDR.Modules.Payment.Services;
@@ -84,6 +84,58 @@ public sealed class PayOsClient : IPayOsClient
         {
             _logger.LogError(ex, "Unexpected payOS create payment link error");
             throw new AppException("Unable to create payOS payment link.", 502);
+        }
+    }
+
+    public async Task<PayOsPaymentLinkInfo> GetPaymentLinkAsync(
+        long payOsOrderCode,
+        CancellationToken cancellationToken = default)
+    {
+        if (UseMock)
+        {
+            // The mock checkout settles through the mockPayOs=1 return, so there
+            // is nothing to ask about here — report it as still pending.
+            return new PayOsPaymentLinkInfo
+            {
+                OrderCode = payOsOrderCode,
+                Status = "PENDING",
+                PaymentLinkId = $"mock_{payOsOrderCode}",
+                IsMock = true
+            };
+        }
+
+        var client = _client.Value
+            ?? throw new AppException("payOS credentials are missing.", 503);
+
+        try
+        {
+            var link = await client.PaymentRequests.GetAsync(payOsOrderCode);
+            cancellationToken.ThrowIfCancellationRequested();
+
+            return new PayOsPaymentLinkInfo
+            {
+                OrderCode = link.OrderCode,
+                Status = link.Status.ToString().ToUpperInvariant(),
+                PaymentLinkId = link.Id,
+                Amount = link.Amount,
+                AmountPaid = link.AmountPaid,
+                RawJson = JsonSerializer.Serialize(link),
+                IsMock = false
+            };
+        }
+        catch (AppException)
+        {
+            throw;
+        }
+        catch (PayOSException ex)
+        {
+            _logger.LogWarning(ex, "payOS get payment link {OrderCode} failed", payOsOrderCode);
+            throw new AppException($"Unable to read payOS payment status: {ex.Message}", 502);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Unexpected payOS get payment link error for {OrderCode}", payOsOrderCode);
+            throw new AppException("Unable to read payOS payment status.", 502);
         }
     }
 

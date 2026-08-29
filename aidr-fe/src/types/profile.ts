@@ -8,6 +8,9 @@ export type Address = {
   district: string;
   ward: string;
   streetAddress: string;
+  /** Delivery point pinned on the map; null on addresses saved before the map existed. */
+  latitude?: number | null;
+  longitude?: number | null;
   isDefault: boolean;
 };
 
@@ -31,6 +34,8 @@ export type AddressUpsert = {
   district: string;
   ward: string;
   streetAddress: string;
+  latitude?: number | null;
+  longitude?: number | null;
   isDefault: boolean;
 };
 

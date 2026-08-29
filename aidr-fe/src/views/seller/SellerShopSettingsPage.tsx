@@ -1,9 +1,11 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { Link } from 'react-router-dom';
+import { AddressMapPicker } from '../../components/address/AddressMapPicker';
 import { FormField } from '../../components/admin/FormField';
 import { useToast } from '../../hooks/useToast';
 import { getMyShop, requireSellerShop, updateMyShop } from '../../services/sellerApi';
 import type { SellerShop } from '../../types/sellerShop';
+import type { LatLng } from '../../types/shippingLocation';
 import { getApiErrorMessage } from '../../utils/apiError';
 import { visibleFieldErrors } from '../../utils/formValidation';
 import {
@@ -50,6 +52,9 @@ export function SellerShopSettingsPage() {
   const [dirty, setDirty] = useState(false);
   const [touched, setTouched] = useState<Partial<Record<SellerShopFormField, boolean>>>({});
   const [submitted, setSubmitted] = useState(false);
+  // Kept beside the form rather than in it: the form values are all strings, and
+  // a coordinate that round-trips through a string loses precision for no gain.
+  const [pickupPoint, setPickupPoint] = useState<LatLng | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -63,6 +68,11 @@ export function SellerShopSettingsPage() {
         const values = shopToForm(data);
         setForm(values);
         setInitial(values);
+        setPickupPoint(
+          data.latitude != null && data.longitude != null
+            ? { lat: data.latitude, lng: data.longitude }
+            : null,
+        );
       })
       .catch((err) => {
         if (!cancelled) setLoadError(getApiErrorMessage(err));
@@ -98,7 +108,11 @@ export function SellerShopSettingsPage() {
 
     setSubmitting(true);
     try {
-      const result = await updateMyShop(sellerShopFormToPayload(form));
+      const result = await updateMyShop({
+        ...sellerShopFormToPayload(form),
+        latitude: pickupPoint?.lat ?? null,
+        longitude: pickupPoint?.lng ?? null,
+      });
       const data = requireSellerShop(result);
       setShop(data);
       const values = shopToForm(data);
@@ -315,6 +329,20 @@ export function SellerShopSettingsPage() {
                       onBlur={() => markTouched('streetAddress')}
                     />
                   </FormField>
+                </div>
+                <div className="col-12">
+                  <AddressMapPicker
+                    point={pickupPoint}
+                    onPick={(next) => {
+                      setDirty(true);
+                      setPickupPoint(next);
+                    }}
+                    caption={
+                      pickupPoint
+                        ? 'This is where the carrier collects parcels, and where the buyer’s tracking map starts.'
+                        : 'No pickup pin yet — without one the order tracking map has nowhere to start.'
+                    }
+                  />
                 </div>
                 <div className="col-lg-6">
                   <FormField label="Website URL" htmlFor="shop-website" error={visibleErrors.websiteUrl}>
