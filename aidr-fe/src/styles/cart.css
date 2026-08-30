@@ -1129,6 +1129,176 @@
   background: rgba(22, 24, 29, 0.05);
 }
 
+/* Each group is only rendered when the role has it, so the separator marks a
+   real boundary rather than decorating a fixed list. */
+.store-header-dropdown-body--menu + .store-header-dropdown-body--menu {
+  border-top: 1px solid var(--divider-color, #e5e7eb);
+}
+
+.store-header-dropdown-group {
+  padding: 6px 16px 4px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--text-color, #6b7280);
+  opacity: 0.7;
+}
+
+.store-header-dropdown-body--menu a.store-header-dropdown-workspace {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 600;
+}
+
+.store-header-dropdown-workspace i {
+  width: 16px;
+  text-align: center;
+  opacity: 0.75;
+}
+
+.store-header-dropdown-body--menu a.store-header-dropdown-cta {
+  color: var(--accent-color, #0f766e);
+  font-weight: 600;
+}
+
+.store-header-role-badges {
+  display: inline-flex;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.store-header-role-badge {
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.store-header-role-badge.is-seller {
+  background: rgba(13, 148, 136, 0.14);
+  color: #0f766e;
+}
+
+.store-header-role-badge.is-admin {
+  background: rgba(180, 83, 9, 0.14);
+  color: #b45309;
+}
+
+/* Workspace entry point in the header action row. It reads as a doorway out of
+   the storefront, which a plain nav link never did. */
+.store-header-workspace-item {
+  display: flex;
+  align-items: center;
+}
+
+.store-workspace-switcher {
+  position: relative;
+}
+
+.store-workspace-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 38px;
+  padding: 0 14px;
+  border: 1px solid var(--divider-color, #e5e7eb);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--primary-color, #16181d);
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.store-workspace-btn:hover {
+  background: rgba(22, 24, 29, 0.06);
+  border-color: currentColor;
+  color: var(--primary-color, #16181d);
+}
+
+.store-workspace-btn i {
+  font-size: 14px;
+  opacity: 0.8;
+}
+
+.store-workspace-btn__caret {
+  font-size: 10px;
+}
+
+.store-workspace-menu {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  z-index: 1200;
+  min-width: 200px;
+  padding: 6px 0;
+  background: var(--white-color, #fff);
+  border: 1px solid var(--divider-color, #e5e7eb);
+  border-radius: 12px;
+  box-shadow: 0 12px 32px rgba(22, 24, 29, 0.14);
+}
+
+.store-workspace-menu a {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px;
+  color: var(--primary-color, #16181d);
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.store-workspace-menu a:hover {
+  background: rgba(22, 24, 29, 0.05);
+}
+
+/* The seller application is a call to action, not another destination. */
+.nav-menu-wrapper .nav-link--cta {
+  color: var(--accent-color, #0f766e);
+  font-weight: 700;
+}
+
+/* The workspace nav items exist only for the widths where the header action row
+   (and with it the switcher) is hidden. */
+.nav-item--workspace {
+  display: none;
+}
+
+.nav-menu-wrapper .nav-link--workspace {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 700;
+}
+
+@media (max-width: 991.98px) {
+  .nav-item--workspace {
+    display: block;
+  }
+}
+
+@media (max-width: 991.98px) {
+  .store-workspace-btn span {
+    display: none;
+  }
+
+  .store-workspace-btn {
+    padding: 0 12px;
+  }
+
+  .store-workspace-btn__caret {
+    display: none;
+  }
+}
+
 .store-header-dropdown-item {
   display: flex;
   flex-direction: column;
@@ -1210,6 +1380,48 @@ html[data-theme='dark'] .store-header-icon-wrap i {
 html[data-theme='dark'] .store-header-badge {
   background: #e8eaed;
   color: #12141a;
+}
+
+/* Dark theme for the workspace controls: the light palette above hard-codes a
+   white panel and a near-black label, both of which vanish here. */
+html[data-theme='dark'] .store-workspace-btn,
+html[data-theme='dark'] .store-workspace-menu a {
+  color: var(--aidr-text, #e8eaed);
+}
+
+html[data-theme='dark'] .store-workspace-btn {
+  border-color: rgba(255, 255, 255, 0.18);
+}
+
+html[data-theme='dark'] .store-workspace-btn:hover,
+html[data-theme='dark'] .store-workspace-menu a:hover,
+html[data-theme='dark'] .store-header-dropdown-body--menu a:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+html[data-theme='dark'] .store-workspace-menu {
+  background: var(--aidr-navbar, #12141a);
+  border-color: rgba(255, 255, 255, 0.1);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
+}
+
+html[data-theme='dark'] .store-header-dropdown-body--menu + .store-header-dropdown-body--menu {
+  border-top-color: rgba(255, 255, 255, 0.1);
+}
+
+html[data-theme='dark'] .store-header-role-badge.is-seller {
+  background: rgba(45, 212, 191, 0.18);
+  color: #5eead4;
+}
+
+html[data-theme='dark'] .store-header-role-badge.is-admin {
+  background: rgba(251, 191, 36, 0.18);
+  color: #fcd34d;
+}
+
+html[data-theme='dark'] .store-header-dropdown-body--menu a.store-header-dropdown-cta,
+html[data-theme='dark'] .nav-menu-wrapper .nav-link--cta {
+  color: #5eead4;
 }
 
 .product-card-cart-btn {

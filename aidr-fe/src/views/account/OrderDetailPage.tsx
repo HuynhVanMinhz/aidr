@@ -390,6 +390,16 @@ export function OrderDetailPage() {
               </p>
             ) : null}
           </section>
+
+          {detail.status === 'Completed' && !returnRequest ? (
+            <OrderReviewSection
+              orderId={detail.orderId}
+              shopId={detail.shopId}
+              shopName={detail.shopName}
+              items={detail.items}
+              currency={detail.currency}
+            />
+          ) : null}
         </div>
 
         <aside className="order-detail__side">
@@ -503,15 +513,6 @@ export function OrderDetailPage() {
             View return
           </Link>
         </section>
-      ) : null}
-
-      {detail.status === 'Completed' && !returnRequest ? (
-        <OrderReviewSection
-          orderId={detail.orderId}
-          shopId={detail.shopId}
-          shopName={detail.shopName}
-          items={detail.items}
-        />
       ) : null}
 
       {/* Primary action first, destructive last, "back" as a quiet link. */}

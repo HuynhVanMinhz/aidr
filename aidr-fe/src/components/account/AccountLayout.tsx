@@ -81,12 +81,14 @@ export function AccountLayout() {
         }
       >
         <div className="container">
-          <div className="row">
-            {/* Narrower nav so detail pages get the room they need. */}
-            <div className="col-xl-3 col-lg-4">
+          <div className="row account-shell">
+            {/* The nav is a fixed 232px from lg up (see account.css) rather than
+                a quarter of the page: it holds short labels, and every detail
+                page here is the thing the reader actually came for. */}
+            <div className="col-xl-3 col-lg-4 account-shell__nav">
               <AccountSidebar />
             </div>
-            <div className="col-xl-9 col-lg-8">
+            <div className="col-xl-9 col-lg-8 account-shell__main">
               <Outlet />
             </div>
           </div>
