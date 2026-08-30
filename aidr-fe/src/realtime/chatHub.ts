@@ -1,11 +1,18 @@
 import * as signalR from '@microsoft/signalr';
-import type { ChatMessage } from '../types/chat';
+import type { ChatMessage, ChatThreadReadEvent, ChatTypingEvent } from '../types/chat';
 
 const RECEIVE_METHOD = 'ReceiveMessage';
+const THREAD_READ_METHOD = 'ThreadRead';
+const TYPING_METHOD = 'Typing';
+
+export type ChatHubHandlers = {
+  onMessage?: (message: ChatMessage) => void;
+  onThreadRead?: (event: ChatThreadReadEvent) => void;
+  onTyping?: (event: ChatTypingEvent) => void;
+};
 
 let connection: signalR.HubConnection | null = null;
-let receiveHandler: ((message: ChatMessage) => void) | null = null;
-let joinedThreadId: string | null = null;
+let handlers: ChatHubHandlers = {};
 
 function hubBaseUrl() {
   return import.meta.env.VITE_SIGNALR_HUB_URL || '/hubs';
@@ -21,39 +28,37 @@ function ensureConnection(getAccessToken: () => string | null | undefined) {
     .withAutomaticReconnect()
     .build();
 
-  connection.on(RECEIVE_METHOD, (payload: ChatMessage) => {
-    receiveHandler?.(payload);
-  });
-
-  connection.onreconnected(async () => {
-    if (!joinedThreadId || !connection) return;
-    try {
-      await connection.invoke('JoinThread', joinedThreadId);
-    } catch {
-      // Rejoin is best-effort; REST still works.
-    }
-  });
+  // The server delivers chat events per user group, joined on connect, so there is nothing to
+  // re-subscribe to after a reconnect.
+  connection.on(RECEIVE_METHOD, (payload: ChatMessage) => handlers.onMessage?.(payload));
+  connection.on(THREAD_READ_METHOD, (payload: ChatThreadReadEvent) =>
+    handlers.onThreadRead?.(payload),
+  );
+  connection.on(TYPING_METHOD, (payload: ChatTypingEvent) => handlers.onTyping?.(payload));
 
   return connection;
 }
 
 export async function startChatHub(
   getAccessToken: () => string | null | undefined,
-  onReceive: (message: ChatMessage) => void,
+  nextHandlers: ChatHubHandlers,
 ) {
-  receiveHandler = onReceive;
+  handlers = nextHandlers;
   const hub = ensureConnection(getAccessToken);
 
-  if (hub.state === signalR.HubConnectionState.Connected) return hub;
-  if (hub.state === signalR.HubConnectionState.Connecting) return hub;
+  if (
+    hub.state === signalR.HubConnectionState.Connected ||
+    hub.state === signalR.HubConnectionState.Connecting
+  ) {
+    return hub;
+  }
 
   await hub.start();
   return hub;
 }
 
 export async function stopChatHub() {
-  receiveHandler = null;
-  joinedThreadId = null;
+  handlers = {};
   if (!connection) return;
 
   const hub = connection;
@@ -66,35 +71,19 @@ export async function stopChatHub() {
   }
 }
 
-export async function joinChatThread(threadId: string) {
+/** Best-effort typing signal — never throws, the composer must not care if it fails. */
+export async function sendTypingSignal(threadId: string, isTyping: boolean) {
   if (!connection || connection.state !== signalR.HubConnectionState.Connected) return;
 
-  if (joinedThreadId && joinedThreadId !== threadId) {
-    try {
-      await connection.invoke('LeaveThread', joinedThreadId);
-    } catch {
-      // ignore
-    }
+  try {
+    await connection.invoke('Typing', threadId, isTyping);
+  } catch {
+    // Typing is disposable.
   }
-
-  joinedThreadId = threadId;
-  await connection.invoke('JoinThread', threadId);
 }
 
-export async function leaveChatThread(threadId?: string) {
-  const id = threadId ?? joinedThreadId;
-  if (!id || !connection || connection.state !== signalR.HubConnectionState.Connected) {
-    if (!threadId || threadId === joinedThreadId) joinedThreadId = null;
-    return;
-  }
-
-  try {
-    await connection.invoke('LeaveThread', id);
-  } catch {
-    // ignore
-  }
-
-  if (joinedThreadId === id) joinedThreadId = null;
+export function isChatHubConnected() {
+  return connection?.state === signalR.HubConnectionState.Connected;
 }
 
 export function getChatHubConnection() {

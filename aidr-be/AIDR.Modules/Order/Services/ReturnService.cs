@@ -67,6 +67,67 @@ public sealed class ReturnService : IReturnService
             ?? throw new NotFoundException("Return request not found for this order.");
     }
 
+    public async Task<BuyerReturnListResultDto> ListForBuyerAsync(
+        Guid buyerUserId,
+        string? status,
+        int page,
+        int pageSize,
+        CancellationToken cancellationToken = default)
+    {
+        if (buyerUserId == Guid.Empty)
+            throw new AppException("Buyer user id is required.");
+
+        var normalizedStatus = NormalizeStatusFilter(status);
+        var (normalizedPage, normalizedPageSize) = ReturnConstants.NormalizePaging(page, pageSize);
+
+        var (items, totalCount, effectivePage) = await _returns.ListForBuyerAsync(
+            buyerUserId,
+            normalizedStatus,
+            normalizedPage,
+            normalizedPageSize,
+            cancellationToken);
+
+        return new BuyerReturnListResultDto
+        {
+            Items = items,
+            Page = effectivePage,
+            PageSize = normalizedPageSize,
+            TotalCount = totalCount
+        };
+    }
+
+    public async Task<BuyerReturnRequestDto> GetByIdForBuyerAsync(
+        Guid buyerUserId,
+        Guid returnRequestId,
+        CancellationToken cancellationToken = default)
+    {
+        if (buyerUserId == Guid.Empty)
+            throw new AppException("Buyer user id is required.");
+        if (returnRequestId == Guid.Empty)
+            throw new AppException("Return request id is required.");
+
+        return await _returns.GetByIdForBuyerAsync(buyerUserId, returnRequestId, cancellationToken)
+            ?? throw new NotFoundException("Return request not found.");
+    }
+
+    private static string? NormalizeStatusFilter(string? status)
+    {
+        if (string.IsNullOrWhiteSpace(status) ||
+            string.Equals(status.Trim(), "all", StringComparison.OrdinalIgnoreCase))
+        {
+            return null;
+        }
+
+        var trimmed = status.Trim();
+        var match = ReturnConstants.AllStatuses.FirstOrDefault(s =>
+            string.Equals(s, trimmed, StringComparison.OrdinalIgnoreCase));
+
+        if (match is null)
+            throw new AppException("Status filter must be a known return status or all.");
+
+        return match;
+    }
+
     private static IReadOnlyList<(Guid OrderItemId, int Quantity)> NormalizeItems(
         IReadOnlyList<CreateReturnItemRequest>? items)
     {

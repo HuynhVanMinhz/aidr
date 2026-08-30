@@ -1,12 +1,16 @@
-import { useCallback, useEffect } from 'react';
+import { useCallback, useEffect, useMemo } from 'react';
 import { selectIsAuthenticated } from '../store/authSlice';
 import {
   addCartItem,
   clearCartItems,
+  clearCartSelection,
   fetchCart,
   removeCartItem,
+  selectAllCartItems,
   selectCart,
   selectCartLoaded,
+  selectOnlyCartItem,
+  toggleCartSelection,
   updateCartItemQty,
 } from '../store/cartSlice';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
@@ -35,6 +39,23 @@ export function useCart(options?: { autoLoad?: boolean }) {
       return result.payload;
     },
     [dispatch],
+  );
+
+  /**
+   * Add the product then narrow the checkout selection to just that line, so
+   * "Buy now" goes straight to payment without dragging the rest of the cart in.
+   */
+  const buyNow = useCallback(
+    async (productId: string, quantity: number) => {
+      const updated = await addItem(productId, quantity);
+      const line = updated.items.find((i) => i.productId === productId);
+      if (!line) {
+        throw new Error('Unable to start checkout for this product.');
+      }
+      dispatch(selectOnlyCartItem(line.cartItemId));
+      return line;
+    },
+    [addItem, dispatch],
   );
 
   const setItemQuantity = useCallback(
@@ -67,14 +88,38 @@ export function useCart(options?: { autoLoad?: boolean }) {
     return result.payload;
   }, [dispatch]);
 
+  const toggleSelected = useCallback(
+    (cartItemId: string) => dispatch(toggleCartSelection(cartItemId)),
+    [dispatch],
+  );
+  const selectAll = useCallback(() => dispatch(selectAllCartItems()), [dispatch]);
+  const clearSelection = useCallback(() => dispatch(clearCartSelection()), [dispatch]);
+
+  const selectedIdSet = useMemo(() => new Set(cart.selectedIds), [cart.selectedIds]);
+  const selectedItems = useMemo(
+    () => cart.items.filter((item) => item.isAvailable && selectedIdSet.has(item.cartItemId)),
+    [cart.items, selectedIdSet],
+  );
+  const selectableCount = useMemo(
+    () => cart.items.filter((item) => item.isAvailable).length,
+    [cart.items],
+  );
+
   return {
     ...cart,
     isAuthenticated,
     refresh,
     addItem,
+    buyNow,
     setItemQuantity,
     removeItem,
     clearAll,
+    selectedItems,
+    selectableCount,
+    isSelected: useCallback((cartItemId: string) => selectedIdSet.has(cartItemId), [selectedIdSet]),
+    toggleSelected,
+    selectAll,
+    clearSelection,
     getErrorMessage: getApiErrorMessage,
   };
 }

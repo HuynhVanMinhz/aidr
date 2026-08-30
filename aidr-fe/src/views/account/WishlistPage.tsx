@@ -2,10 +2,11 @@ import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useCart } from '../../hooks/useCart';
 import { useToast } from '../../hooks/useToast';
+import { useToastMessage } from '../../hooks/useToastMessage';
 import { useWishlist } from '../../hooks/useWishlist';
+import { resolveProductImageUrl } from '../../utils/catalogImage';
 import { discountPercent, formatMoney } from '../../utils/formatCatalog';
 
-const PLACEHOLDER = '/theme/images/product-image-1.png';
 const PAGE_SIZE = 20;
 
 export function WishlistPage() {
@@ -25,6 +26,8 @@ export function WishlistPage() {
     removeItem,
     getErrorMessage,
   } = useWishlist(query, { autoLoad: true });
+
+  useToastMessage(error);
 
   const { addItem: addToCart, getErrorMessage: getCartError } = useCart();
 
@@ -63,12 +66,6 @@ export function WishlistPage() {
 
   return (
     <div className="wishlist-content-box">
-      {error ? (
-        <div className="alert alert-danger" role="alert">
-          {error}
-        </div>
-      ) : null}
-
       {loading && items.length === 0 ? <p className="account-muted">Loading wishlist…</p> : null}
 
       {!loading && items.length === 0 ? (
@@ -82,86 +79,95 @@ export function WishlistPage() {
 
       {items.length > 0 ? (
         <>
-          <p className="account-muted wishlist-count-label">
+          <p className="wishlist-toolbar__summary">
             {totalCount} {totalCount === 1 ? 'item' : 'items'}
           </p>
 
-          <div className="wishlist-item-table">
-            <div className="wishlist-item-header">
-              <span className="wishlist-product-tag">Product</span>
-              <span className="wishlist-price-tag">Unit Price</span>
-              <span className="wishlist-status-tag">Stock Status</span>
-              <span className="wishlist-action-tag">Action</span>
-            </div>
-
-            {items.map((item) => {
+          <div className="wishlist-grid">
+            {items.map((item, index) => {
               const off = discountPercent(item.basePrice, item.salePrice);
               const busy = busyId === item.wishlistItemId || mutating;
-              const imageUrl = item.primaryImageUrl || PLACEHOLDER;
+              const imageUrl = resolveProductImageUrl(item.primaryImageUrl, index);
 
               return (
-                <div className="wishlist-item" key={item.wishlistItemId}>
-                  <div className="wishlist-item-image-content">
-                    <div className="wishlist-item-image">
-                      <figure>
-                        <Link to={`/products/${item.productId}`}>
-                          <img src={imageUrl} alt={item.productName} />
-                        </Link>
-                      </figure>
-                    </div>
-                    <div className="wishlist-item-info-content">
-                      <div className="wishlist-item-title">
-                        <p>
-                          <Link to={`/products/${item.productId}`}>{item.productName}</Link>
-                        </p>
-                        <p>
-                          <Link to={`/shops/${item.shopId}`}>{item.shopName}</Link>
-                        </p>
-                      </div>
-                      <div className="wishlist-item-price">
-                        <p>
-                          {item.salePrice != null && item.salePrice < item.basePrice ? (
-                            <>
-                              <span>{formatMoney(item.basePrice, item.currency)}</span>{' '}
-                              {formatMoney(item.effectivePrice, item.currency)}
-                            </>
-                          ) : (
-                            formatMoney(item.effectivePrice, item.currency)
-                          )}
-                        </p>
-                        {off != null ? <p>{off}% OFF</p> : null}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="wishlist-item-status-action">
-                    <div className="wishlist-item-status">
-                      <p>{item.isAvailable ? 'In Stock' : 'Out of Stock'}</p>
-                    </div>
-                    <div className="wishlist-item-action wishlist-item-action--row">
-                      <button
-                        type="button"
-                        className="btn-default btn-accent btn-border wishlist-add-cart-btn"
-                        disabled={busy || !item.isAvailable}
-                        onClick={() =>
-                          void handleAddToCart(item.productId, item.wishlistItemId, item.isAvailable)
-                        }
+                <article className="wishlist-card" key={item.wishlistItemId}>
+                  <div className="wishlist-card__media">
+                    <div className="wishlist-card__corner-actions">
+                      <span
+                        className="wishlist-card__heart"
+                        title="In your wishlist"
+                        aria-label="In your wishlist"
                       >
-                        Add to cart
-                      </button>
+                        <img src="/theme/images/icon-wishlist-primary.svg" alt="" />
+                      </span>
                       <button
                         type="button"
-                        className="wishlist-remove-btn"
+                        className="wishlist-card__remove"
                         aria-label="Remove from wishlist"
-                        title="Remove"
+                        title="Remove from wishlist"
                         disabled={busy}
                         onClick={() => void handleRemove(item.wishlistItemId)}
                       >
                         <i className="fa-regular fa-trash-can" aria-hidden />
                       </button>
                     </div>
+                    <Link
+                      to={`/products/${item.productId}`}
+                      className="wishlist-card__image"
+                      aria-label={item.productName}
+                    >
+                      <img
+                        src={imageUrl}
+                        alt={item.productName}
+                        loading="lazy"
+                        onError={(e) => {
+                          e.currentTarget.onerror = null;
+                          e.currentTarget.src = resolveProductImageUrl(null, index);
+                        }}
+                      />
+                    </Link>
                   </div>
-                </div>
+
+                  <div className="wishlist-card__body">
+                    <h3 className="wishlist-card__name">
+                      <Link to={`/products/${item.productId}`}>{item.productName}</Link>
+                    </h3>
+                    <p className="wishlist-card__seller">
+                      <Link to={`/shops/${item.shopId}`}>{item.shopName}</Link>
+                    </p>
+                    <div className="wishlist-card__price">
+                      <span className="wishlist-card__price-current">
+                        {formatMoney(item.effectivePrice, item.currency)}
+                      </span>
+                      {item.salePrice != null && item.salePrice < item.basePrice ? (
+                        <span className="wishlist-card__price-old">
+                          {formatMoney(item.basePrice, item.currency)}
+                        </span>
+                      ) : null}
+                      {off != null ? (
+                        <span className="wishlist-card__discount">{off}% OFF</span>
+                      ) : null}
+                    </div>
+                    <p
+                      className={`wishlist-card__stock${
+                        item.isAvailable ? ' is-in-stock' : ' is-out-of-stock'
+                      }`}
+                    >
+                      {item.isAvailable ? 'In Stock' : 'Out of Stock'}
+                    </p>
+                  </div>
+
+                  <button
+                    type="button"
+                    className="btn-default btn-accent wishlist-card__cta"
+                    disabled={busy || !item.isAvailable}
+                    onClick={() =>
+                      void handleAddToCart(item.productId, item.wishlistItemId, item.isAvailable)
+                    }
+                  >
+                    Add to cart
+                  </button>
+                </article>
               );
             })}
           </div>

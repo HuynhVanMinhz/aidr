@@ -61,14 +61,14 @@
 | UC-44 | View Notifications | **Actor:** Buyer/Seller. Inbox thông báo (order, payment, chat, **product moderation**, return, **low-stock**…); SignalR push. **Business:** Giữ user engagement realtime. | Done | P1 |
 | UC-45 | Delete Notification | **Actor:** Buyer/Seller. Xóa / ẩn thông báo. **Business:** Dọn inbox. | Done | P2 |
 | UC-46 | View Order List | **Actor:** Seller. Đơn của shop; lọc status. **Business:** Vận hành fulfillment. | Done | P0 |
-| UC-47 | Update Order Status | **Actor:** Seller. Paid→Confirmed→Shipping→Delivered; nhập tracking thủ công. **Business:** Cập nhật tiến độ giao (không API GHN). | Done | P0 |
+| UC-47 | Update Order Status | **Actor:** System (GHN) + Seller. Paid→Confirmed→Shipping→Delivered chạy tự động: job gọi API GHN tạo vận đơn sau khi Paid, webhook/poll GHN đẩy các bậc sau; seller **vẫn** cập nhật thủ công được bất cứ lúc nào (cùng luật chỉ-tiến). **Business:** Tracking đúng thực tế, không phụ thuộc thao tác tay. Xem `docs/solution-auto-fulfillment-shipping.md`. | Done | P0 |
 | UC-48 | View Return Requests | **Actor:** Admin. Queue return/refund toàn hệ thống. **Business:** Điều phối hoàn hàng (không exchange). | Done | P1 |
 | UC-49 | View Return Request Details | **Actor:** Admin. Chi tiết lý do, **video Unboxing/Testing**, order lines. **Business:** Ra quyết định Approve/Reject dựa bằng chứng. | Done | P1 |
 | UC-50 | Approve / Reject Return Request | **Actor:** Admin. Duyệt hoặc từ chối + note bắt buộc khi reject (BR-R03). Approve → pipeline Receiving→Refund. **Business:** Kiểm soát gian lận / policy. | Done | P1 |
 | UC-52 | Update Return Request Status | **Actor:** Admin. Receiving → Refunded → Closed; hoàn tiền buyer trước rồi `RefundDebit` wallet seller (BR-R04); ghi history. **Business:** Theo dõi pipeline hoàn. | Done | P1 |
 | UC-53 | View Recommended Products | **Actor:** Buyer. SP gợi ý từ hành vi / hybrid strategy. **Business:** Tăng AOV & discovery. | Done | P2 |
 | UC-54 | View Similar Products | **Actor:** Buyer. SP tương tự theo category/specs/content. **Business:** Cross-sell trên trang detail. | Done | P2 |
-| UC-56 | Use AI Shopping Assistant | **Actor:** Buyer. Chatbot Ollama tư vấn SP / FAQ mua sắm. **Business:** Hỗ trợ 24/7, giảm tải CSKH. | Done | P2 |
+| UC-56 | Use AI Shopping Assistant | **Actor:** Buyer. Chatbot Groq tư vấn SP / FAQ mua sắm (intent + slot memory + NL filter retrieve). **Business:** Hỗ trợ 24/7, giảm tải CSKH. | Done | P2 |
 | UC-57 | View Chat List | **Actor:** Buyer/Seller. Danh sách thread buyer↔shop. **Business:** Kênh thương lượng / hỗ trợ trước-sau bán. | Done | P1 |
 | UC-58 | Send Message | **Actor:** Buyer/Seller. Gửi tin nhắn realtime SignalR; optional attachment. **Business:** Tăng trust & chốt sale. | Done | P1 |
 | UC-59 | View Product Reviews | **Actor:** Guest/Buyer. List review + rating; có thể hiện sentiment AI. **Business:** Social proof. | Done | P1 |
@@ -89,6 +89,7 @@
 | UC-74 | Unlock User Account | **Actor:** Admin. Mở khóa tài khoản. **Business:** Khôi phục sau xử lý. | Done | P1 |
 | UC-75 | View Seller Registration Requests | **Actor:** Admin. Queue Pending đăng ký seller. **Business:** Kiểm soát ai được bán. | Done | P0 |
 | UC-76 | Approve / Reject Seller Registration | **Actor:** Admin. Approve → gán role Seller + tạo Shop + Wallet; Reject + note. **Business:** Onboarding seller an toàn. | Done | P0 |
+| UC-77 | Apply to Become Seller | **Actor:** Buyer. Gửi Seller Registration (shop name, business info, documents); xem trạng thái Pending/Approved/Rejected. **Business:** Khép vòng onboarding seller từ phía buyer. | Done | P0 |
 | UC-78 | Create Voucher in System | **Actor:** Admin. Tạo voucher Scope=System. **Business:** Campaign toàn sàn. | Done | P1 |
 | UC-79 | Update Voucher in System | **Actor:** Admin. Sửa điều kiện / thời hạn. **Business:** Điều chỉnh campaign. | Done | P2 |
 | UC-80 | Delete Voucher in System | **Actor:** Admin. Xóa / vô hiệu voucher chưa dùng nhiều. **Business:** Dọn KM hết hạn. | Done | P2 |
@@ -112,4 +113,4 @@
 | P2 | ~15 | AI / social / polish |
 | P3 | 0 (hiện tại) | Dự phòng |
 
-**ID trống (reserved / out of scope MVP):** UC-51, UC-55, UC-68, UC-77, UC-82–84, UC-86.
+**ID trống (reserved / out of scope MVP):** UC-51, UC-55, UC-68, UC-82–84, UC-86.

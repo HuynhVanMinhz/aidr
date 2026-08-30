@@ -1,9 +1,15 @@
-import { useEffect, useMemo, useState, type FormEvent } from 'react';
+import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
+import { AddressMapPicker } from '../../components/address/AddressMapPicker';
 import { useProfile } from '../../hooks/useProfile';
+import { useShippingLocations } from '../../hooks/useShippingLocations';
+import { useToastMessage } from '../../hooks/useToastMessage';
 import type { Address, AddressUpsert } from '../../types/profile';
+import type { LatLng } from '../../types/shippingLocation';
+import { geocodeAddress, reverseGeocode } from '../../utils/geocoding';
 import { validateRequired, validateVnPhone } from '../../utils/validators';
 
 const MAX_ADDRESSES = 10;
+const GEOCODE_DEBOUNCE_MS = 900;
 
 const emptyForm: AddressUpsert = {
   receiverName: '',
@@ -27,7 +33,23 @@ export function AddressesPage() {
   const [formError, setFormError] = useState<string | null>(null);
   const [formSuccess, setFormSuccess] = useState<string | null>(null);
 
-  const addresses = profile?.addresses ?? [];
+  const locations = useShippingLocations();
+  // Until the buyer touches a dropdown, a saved address keeps the names it was
+  // stored with — the carrier lists may not resolve them, and losing them silently
+  // would be worse than showing a blank select next to the value.
+  const [locationsTouched, setLocationsTouched] = useState(false);
+
+  const [point, setPoint] = useState<LatLng | null>(null);
+  const [mapCaption, setMapCaption] = useState<string | null>(null);
+  const [mapBusy, setMapBusy] = useState(false);
+  /** 'manual' means the buyer placed this pin; auto-geocoding must not move it. */
+  const pinSourceRef = useRef<'auto' | 'manual'>('auto');
+
+  useToastMessage(error);
+  useToastMessage(formError);
+  useToastMessage(formSuccess, 'success');
+
+  const addresses = useMemo(() => profile?.addresses ?? [], [profile?.addresses]);
   const canAddMore = addresses.length < MAX_ADDRESSES;
 
   const sortedAddresses = useMemo(
@@ -35,30 +57,119 @@ export function AddressesPage() {
     [addresses],
   );
 
+  const {
+    provinceId,
+    districtId,
+    wardId,
+    provinceName,
+    districtName,
+    wardName,
+    seed,
+    reset: resetLocations,
+  } = locations;
+
   useEffect(() => {
-    if (editingId) {
-      const current = addresses.find((a) => a.addressId === editingId);
-      if (current) {
-        setForm({
-          addressId: current.addressId,
-          receiverName: current.receiverName,
-          phone: current.phone,
-          province: current.province,
-          district: current.district,
-          ward: current.ward,
-          streetAddress: current.streetAddress,
-          isDefault: current.isDefault,
-        });
-        setShowForm(true);
-      }
+    if (!editingId) return;
+
+    const current = addresses.find((a) => a.addressId === editingId);
+    if (!current) return;
+
+    setForm({
+      addressId: current.addressId,
+      receiverName: current.receiverName,
+      phone: current.phone,
+      province: current.province,
+      district: current.district,
+      ward: current.ward,
+      streetAddress: current.streetAddress,
+      latitude: current.latitude ?? null,
+      longitude: current.longitude ?? null,
+      isDefault: current.isDefault,
+    });
+    // A saved pin is the buyer's own; re-geocoding would move it under them.
+    if (current.latitude != null && current.longitude != null) {
+      setPoint({ lat: current.latitude, lng: current.longitude });
+      pinSourceRef.current = 'manual';
     }
-  }, [addresses, editingId]);
+    setLocationsTouched(false);
+    seed({
+      province: current.province,
+      district: current.district,
+      ward: current.ward,
+    });
+    setShowForm(true);
+  }, [addresses, editingId, seed]);
+
+  // Carrier spelling wins once a unit resolves, so a saved "Hanoi" becomes the
+  // name the carrier itself uses the next time this address is saved.
+  useEffect(() => {
+    setForm((f) => ({
+      ...f,
+      province: provinceId ? provinceName : locationsTouched ? '' : f.province,
+      district: districtId ? districtName : locationsTouched ? '' : f.district,
+      ward: wardId ? wardName : locationsTouched ? '' : f.ward,
+    }));
+  }, [provinceId, districtId, wardId, provinceName, districtName, wardName, locationsTouched]);
+
+  // Re-pin whenever the written address changes — unless the buyer moved the pin.
+  const addressQuery = [form.streetAddress, form.ward, form.district, form.province]
+    .map((part) => part.trim())
+    .filter(Boolean)
+    .join(', ');
+
+  useEffect(() => {
+    if (!showForm || pinSourceRef.current === 'manual') return;
+    if (!form.province.trim() || !form.district.trim()) return;
+
+    const controller = new AbortController();
+    const timer = setTimeout(() => {
+      setMapBusy(true);
+      void geocodeAddress(addressQuery, controller.signal)
+        .then((found) => {
+          if (controller.signal.aborted || !found) return;
+          setPoint(found);
+          setMapCaption(addressQuery);
+        })
+        .catch(() => undefined)
+        .finally(() => {
+          if (!controller.signal.aborted) setMapBusy(false);
+        });
+    }, GEOCODE_DEBOUNCE_MS);
+
+    return () => {
+      controller.abort();
+      clearTimeout(timer);
+    };
+  }, [addressQuery, form.district, form.province, showForm]);
+
+  function handlePickOnMap(next: LatLng) {
+    pinSourceRef.current = 'manual';
+    setPoint(next);
+    setMapBusy(true);
+
+    void reverseGeocode(next)
+      .then((result) => {
+        if (!result) return;
+        setMapCaption(result.displayName || null);
+        // Only offer to fill a street the buyer has not written yet.
+        setForm((f) =>
+          f.streetAddress.trim() || !result.street ? f : { ...f, streetAddress: result.street },
+        );
+      })
+      .catch(() => undefined)
+      .finally(() => setMapBusy(false));
+  }
 
   function resetForm() {
     setForm(emptyForm);
     setEditingId(null);
     setShowForm(false);
     setFormError(null);
+    setLocationsTouched(false);
+    resetLocations();
+    setPoint(null);
+    setMapCaption(null);
+    pinSourceRef.current = 'auto';
   }
 
   function startAdd() {
@@ -83,6 +194,21 @@ export function AddressesPage() {
     });
   }
 
+  function toUpsert(a: Address): AddressUpsert {
+    return {
+      addressId: a.addressId,
+      receiverName: a.receiverName,
+      phone: a.phone,
+      province: a.province,
+      district: a.district,
+      ward: a.ward,
+      streetAddress: a.streetAddress,
+      latitude: a.latitude ?? null,
+      longitude: a.longitude ?? null,
+      isDefault: a.isDefault,
+    };
+  }
+
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     if (!profile) return;
@@ -99,17 +225,10 @@ export function AddressesPage() {
         district: validateRequired(form.district, 'District'),
         ward: validateRequired(form.ward, 'Ward'),
         streetAddress: validateRequired(form.streetAddress, 'Street address'),
+        latitude: point?.lat ?? null,
+        longitude: point?.lng ?? null,
       };
-      const base = addresses.map<AddressUpsert>((a) => ({
-        addressId: a.addressId,
-        receiverName: a.receiverName,
-        phone: a.phone,
-        province: a.province,
-        district: a.district,
-        ward: a.ward,
-        streetAddress: a.streetAddress,
-        isDefault: a.isDefault,
-      }));
+      const base = addresses.map(toUpsert);
 
       let next: AddressUpsert[];
 
@@ -148,18 +267,7 @@ export function AddressesPage() {
     setFormSuccess(null);
 
     try {
-      const next = addresses
-        .filter((a) => a.addressId !== addressId)
-        .map<AddressUpsert>((a) => ({
-          addressId: a.addressId,
-          receiverName: a.receiverName,
-          phone: a.phone,
-          province: a.province,
-          district: a.district,
-          ward: a.ward,
-          streetAddress: a.streetAddress,
-          isDefault: a.isDefault,
-        }));
+      const next = addresses.filter((a) => a.addressId !== addressId).map(toUpsert);
 
       await persistAddresses(next);
       setFormSuccess('Address deleted.');
@@ -177,13 +285,7 @@ export function AddressesPage() {
 
     try {
       const next = addresses.map<AddressUpsert>((a) => ({
-        addressId: a.addressId,
-        receiverName: a.receiverName,
-        phone: a.phone,
-        province: a.province,
-        district: a.district,
-        ward: a.ward,
-        streetAddress: a.streetAddress,
+        ...toUpsert(a),
         isDefault: a.addressId === addressId,
       }));
 
@@ -203,56 +305,76 @@ export function AddressesPage() {
   }
 
   return (
-    <div className="account-address-content-box">
-      {error && !profile && <div className="auth-alert auth-alert--error">{error}</div>}
-
-      <div className="account-address-content-header">
-        <p>
-          These addresses will be used by default at checkout. Maximum of {MAX_ADDRESSES} addresses.
+    <div className="account-page account-address-content-box">
+      <div className="account-toolbar">
+        <p className="account-toolbar__lead">
+          These addresses will be used by default at checkout. Maximum of {MAX_ADDRESSES}{' '}
+          addresses — {sortedAddresses.length} saved.
         </p>
         {canAddMore && (
-          <button type="button" className="btn-default btn-accent" onClick={startAdd} disabled={saving}>
+          <button
+            type="button"
+            className="account-btn account-btn--primary"
+            onClick={startAdd}
+            disabled={saving}
+          >
+            <i className="fa-solid fa-plus" aria-hidden />
             Add address
           </button>
         )}
       </div>
 
-      {formError && <div className="auth-alert auth-alert--error">{formError}</div>}
-      {formSuccess && <div className="auth-alert auth-alert--success">{formSuccess}</div>}
-
-      <div className="account-address-item-list">
-        {sortedAddresses.length === 0 ? (
-          <p className="account-muted">No addresses yet.</p>
-        ) : (
-          sortedAddresses.map((address) => (
-            <div key={address.addressId} className="account-address-item">
-              <div className="account-address-item-title">
-                <h2>
-                  {address.isDefault ? 'Default address' : 'Shipping address'}
-                  {address.isDefault && <span className="account-badge">Default</span>}
-                </h2>
-                <p>
-                  <button
-                    type="button"
-                    className="account-link-btn"
-                    onClick={() => setEditingId(address.addressId)}
-                    disabled={saving}
-                  >
-                    Edit <img src="/theme/images/icon-pen.svg" alt="" />
-                  </button>
+      {sortedAddresses.length === 0 ? (
+        <div className="account-empty">
+          <p>No addresses yet. Add one so checkout can deliver your orders.</p>
+          <button
+            type="button"
+            className="account-btn account-btn--primary"
+            onClick={startAdd}
+            disabled={saving}
+          >
+            Add address
+          </button>
+        </div>
+      ) : (
+        <div className="address-grid">
+          {sortedAddresses.map((address) => (
+            <article
+              key={address.addressId}
+              className={`address-card${address.isDefault ? ' address-card--default' : ''}${
+                editingId === address.addressId ? ' address-card--editing' : ''
+              }`}
+            >
+              <div className="address-card__head">
+                <p className="address-card__name">
+                  {address.receiverName}
+                  {address.isDefault && <span className="address-card__badge">Default</span>}
                 </p>
+                <button
+                  type="button"
+                  className="account-btn account-btn--ghost account-btn--sm"
+                  onClick={() => setEditingId(address.addressId)}
+                  disabled={saving}
+                >
+                  <i className="fa-solid fa-pen-to-square" aria-hidden />
+                  Edit
+                </button>
               </div>
-              <div className="account-address-item-info-list">
-                <ul>
-                  <li>{address.receiverName} · {address.phone}</li>
-                  <li>{formatAddressLine(address)}</li>
-                </ul>
-              </div>
-              <div className="account-address-actions">
+
+              <p className="address-card__row">
+                <i className="fa-solid fa-location-dot" aria-hidden />
+                <span>{formatAddressLine(address)}</span>
+              </p>
+              <p className="address-card__row">
+                <i className="fa-solid fa-phone" aria-hidden />
+                <span>{address.phone}</span>
+              </p>
+
+              <div className="address-card__actions">
                 {!address.isDefault && (
                   <button
                     type="button"
-                    className="btn-default btn-border"
+                    className="account-btn account-btn--secondary account-btn--sm"
                     onClick={() => handleSetDefault(address.addressId)}
                     disabled={saving}
                   >
@@ -261,122 +383,224 @@ export function AddressesPage() {
                 )}
                 <button
                   type="button"
-                  className="btn-default btn-border account-btn-danger"
+                  className="account-btn account-btn--danger account-btn--sm"
                   onClick={() => handleDelete(address.addressId)}
                   disabled={saving}
                 >
+                  <i className="fa-regular fa-trash-can" aria-hidden />
                   Delete
                 </button>
               </div>
-            </div>
-          ))
-        )}
-      </div>
+            </article>
+          ))}
+        </div>
+      )}
 
       {showForm && (
-        <div className="account-addresses-content-box account-form-panel">
-          <div className="checkout-bill-address-title">
-            <h2>{editingId ? 'Edit address' : 'Add new address'}</h2>
-          </div>
+        <section className="address-form-panel">
+          <header className="address-form-panel__head">
+            <div>
+              <h2 className="address-form-panel__title">
+                {editingId ? 'Edit address' : 'Add new address'}
+              </h2>
+              <p className="address-form-panel__sub">
+                Province, district and ward come from the courier's own list, so your
+                parcel is never rejected for an address it cannot read.
+              </p>
+            </div>
+            <button
+              type="button"
+              className="account-btn account-btn--ghost account-btn--sm"
+              onClick={resetForm}
+              disabled={saving}
+              aria-label="Close address form"
+            >
+              <i className="fa-solid fa-xmark" aria-hidden />
+              Close
+            </button>
+          </header>
 
-          <form className="checkout-bill-address-form" onSubmit={handleSubmit}>
-            <div className="row">
-              <div className="form-group col-md-6">
-                <label htmlFor="receiverName">Recipient *</label>
-                <input
-                  id="receiverName"
-                  type="text"
-                  className="form-control"
-                  value={form.receiverName}
-                  onChange={(e) => setForm((f) => ({ ...f, receiverName: e.target.value }))}
-                  required
-                />
-              </div>
+          <form className="address-form" onSubmit={handleSubmit} noValidate>
+            <div className="address-form__grid">
+              <div className="address-form__fields">
+                <div className="address-form__row">
+                  <div className="address-field">
+                    <label htmlFor="receiverName">Recipient *</label>
+                    <input
+                      id="receiverName"
+                      type="text"
+                      className="form-control"
+                      value={form.receiverName}
+                      onChange={(e) => setForm((f) => ({ ...f, receiverName: e.target.value }))}
+                      required
+                    />
+                  </div>
 
-              <div className="form-group col-md-6">
-                <label htmlFor="addrPhone">Phone number *</label>
-                <input
-                  id="addrPhone"
-                  type="text"
-                  className="form-control"
-                  value={form.phone}
-                  onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))}
-                  required
-                />
-              </div>
+                  <div className="address-field">
+                    <label htmlFor="addrPhone">Phone number *</label>
+                    <input
+                      id="addrPhone"
+                      type="tel"
+                      className="form-control"
+                      value={form.phone}
+                      onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))}
+                      required
+                    />
+                  </div>
+                </div>
 
-              <div className="form-group col-lg-12">
-                <label htmlFor="province">Province / City *</label>
-                <input
-                  id="province"
-                  type="text"
-                  className="form-control"
-                  value={form.province}
-                  onChange={(e) => setForm((f) => ({ ...f, province: e.target.value }))}
-                  required
-                />
-              </div>
+                <div className="address-form__row">
+                  <div className="address-field">
+                    <label htmlFor="province">Province / City *</label>
+                    <select
+                      id="province"
+                      className="form-select"
+                      value={provinceId}
+                      disabled={locations.loadingProvinces}
+                      onChange={(e) => {
+                        setLocationsTouched(true);
+                        pinSourceRef.current = 'auto';
+                        locations.selectProvince(e.target.value);
+                      }}
+                    >
+                      <option value="">
+                        {locations.loadingProvinces ? 'Loading…' : 'Select province / city'}
+                      </option>
+                      {locations.provinces.map((p) => (
+                        <option key={p.id} value={p.id}>
+                          {p.name}
+                        </option>
+                      ))}
+                    </select>
+                    {!provinceId && form.province ? (
+                      <p className="address-field__hint">Saved as “{form.province}”</p>
+                    ) : null}
+                  </div>
 
-              <div className="form-group col-lg-12">
-                <label htmlFor="district">District *</label>
-                <input
-                  id="district"
-                  type="text"
-                  className="form-control"
-                  value={form.district}
-                  onChange={(e) => setForm((f) => ({ ...f, district: e.target.value }))}
-                  required
-                />
-              </div>
+                  <div className="address-field">
+                    <label htmlFor="district">District *</label>
+                    <select
+                      id="district"
+                      className="form-select"
+                      value={districtId}
+                      disabled={!provinceId || locations.loadingDistricts}
+                      onChange={(e) => {
+                        setLocationsTouched(true);
+                        pinSourceRef.current = 'auto';
+                        locations.selectDistrict(e.target.value);
+                      }}
+                    >
+                      <option value="">
+                        {!provinceId
+                          ? 'Pick a province first'
+                          : locations.loadingDistricts
+                            ? 'Loading…'
+                            : locations.districts.length === 0
+                              ? 'No districts listed'
+                              : 'Select district'}
+                      </option>
+                      {locations.districts.map((d) => (
+                        <option key={d.id} value={d.id}>
+                          {d.name}
+                        </option>
+                      ))}
+                    </select>
+                    {!districtId && form.district ? (
+                      <p className="address-field__hint">Saved as “{form.district}”</p>
+                    ) : null}
+                  </div>
+                </div>
 
-              <div className="form-group col-lg-12">
-                <label htmlFor="ward">Ward *</label>
-                <input
-                  id="ward"
-                  type="text"
-                  className="form-control"
-                  value={form.ward}
-                  onChange={(e) => setForm((f) => ({ ...f, ward: e.target.value }))}
-                  required
-                />
-              </div>
+                <div className="address-form__row">
+                  <div className="address-field">
+                    <label htmlFor="ward">Ward *</label>
+                    <select
+                      id="ward"
+                      className="form-select"
+                      value={wardId}
+                      disabled={!districtId || locations.loadingWards}
+                      onChange={(e) => {
+                        setLocationsTouched(true);
+                        pinSourceRef.current = 'auto';
+                        locations.selectWard(e.target.value);
+                      }}
+                    >
+                      <option value="">
+                        {!districtId
+                          ? 'Pick a district first'
+                          : locations.loadingWards
+                            ? 'Loading…'
+                            : locations.wards.length === 0
+                              ? 'No wards listed'
+                              : 'Select ward'}
+                      </option>
+                      {locations.wards.map((w) => (
+                        <option key={w.id} value={w.id}>
+                          {w.name}
+                        </option>
+                      ))}
+                    </select>
+                    {!wardId && form.ward ? (
+                      <p className="address-field__hint">Saved as “{form.ward}”</p>
+                    ) : null}
+                  </div>
 
-              <div className="form-group col-lg-12">
-                <label htmlFor="streetAddress">Street address *</label>
-                <input
-                  id="streetAddress"
-                  type="text"
-                  className="form-control"
-                  placeholder="House number, street name"
-                  value={form.streetAddress}
-                  onChange={(e) => setForm((f) => ({ ...f, streetAddress: e.target.value }))}
-                  required
-                />
-              </div>
+                  <div className="address-field">
+                    <label htmlFor="streetAddress">Street address *</label>
+                    <input
+                      id="streetAddress"
+                      type="text"
+                      className="form-control"
+                      placeholder="House number, street name"
+                      value={form.streetAddress}
+                      onChange={(e) =>
+                        setForm((f) => ({ ...f, streetAddress: e.target.value }))
+                      }
+                      required
+                    />
+                  </div>
+                </div>
 
-              <div className="form-group col-lg-12">
-                <div className="checkout-form-checkbox">
+                <label className="address-toggle">
                   <input
                     type="checkbox"
-                    id="isDefault"
                     checked={form.isDefault}
                     onChange={(e) => setForm((f) => ({ ...f, isDefault: e.target.checked }))}
                   />
-                  <label htmlFor="isDefault">Set as default address</label>
-                </div>
+                  <span className="address-toggle__text">
+                    <span className="address-toggle__title">Set as default address</span>
+                    <span className="address-toggle__sub">
+                      Checkout will pick this one first.
+                    </span>
+                  </span>
+                </label>
               </div>
 
-              <div className="form-group col-lg-12 account-form-actions">
-                <button type="submit" className="btn-default btn-accent" disabled={saving}>
-                  {saving ? 'Saving…' : 'Save address'}
-                </button>
-                <button type="button" className="btn-default btn-border" onClick={resetForm} disabled={saving}>
-                  Cancel
-                </button>
-              </div>
+              <aside className="address-form__map">
+                <AddressMapPicker
+                  point={point}
+                  onPick={handlePickOnMap}
+                  caption={mapCaption}
+                  busy={mapBusy}
+                />
+              </aside>
+            </div>
+
+            <div className="address-form__actions">
+              <button type="submit" className="account-btn account-btn--primary" disabled={saving}>
+                {saving ? 'Saving…' : editingId ? 'Save changes' : 'Save address'}
+              </button>
+              <button
+                type="button"
+                className="account-btn account-btn--secondary"
+                onClick={resetForm}
+                disabled={saving}
+              >
+                Cancel
+              </button>
             </div>
           </form>
-        </div>
+        </section>
       )}
     </div>
   );

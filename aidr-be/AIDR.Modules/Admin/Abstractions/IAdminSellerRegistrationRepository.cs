@@ -16,6 +16,24 @@ public sealed class AdminSellerRegistrationRecord
     public DateTime? ReviewedAt { get; init; }
     public DateTime CreatedAt { get; init; }
     public Guid? ShopId { get; init; }
+
+    /// <summary>The check this application was submitted with, if any.</summary>
+    public Guid? KycVerificationId { get; init; }
+
+    /// <summary>
+    /// The applicant's most recent check, whichever application it came from.
+    /// Identity belongs to the person, not to one submission — an application
+    /// filed before the user verified would otherwise look unverified forever.
+    /// </summary>
+    public Guid? LatestKycVerificationId { get; init; }
+
+    public string? LatestKycStatus { get; init; }
+    public string? BusinessType { get; init; }
+    public string? TaxCode { get; init; }
+    public string? BusinessAddress { get; init; }
+    public string? ContactPhone { get; init; }
+    public string? ContactEmail { get; init; }
+    public string? LicenseImageUrl { get; init; }
 }
 
 public sealed class ApproveSellerRegistrationResult
@@ -51,6 +69,13 @@ public interface IAdminSellerRegistrationRepository
         Guid adminUserId,
         string shopSlug,
         string? shortDescription,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>Send a thin application back to the applicant instead of rejecting it.</summary>
+    Task<AdminSellerRegistrationRecord> RequestMoreInfoAsync(
+        Guid requestId,
+        Guid adminUserId,
+        string adminNote,
         CancellationToken cancellationToken = default);
 
     Task<AdminSellerRegistrationRecord> RejectAsync(

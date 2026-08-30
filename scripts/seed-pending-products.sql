@@ -58,7 +58,7 @@ BEGIN
         N'{"ram":"12GB","storage":"512GB"}', N'["pending","moderation"]', N'Pending'
     );
     INSERT INTO dbo.ProductImages (ProductId, ImageUrl, SortOrder, IsPrimary)
-    VALUES (@P1, N'/theme/images/product-image-2.png', 0, 1);
+    VALUES (@P1, N'/theme/images/product-image-1.png', 0, 1);
 END;
 
 IF NOT EXISTS (SELECT 1 FROM dbo.Products WHERE ProductId = @P2)
@@ -76,7 +76,7 @@ BEGIN
         5, 24, N'Vietnam', N'Pending'
     );
     INSERT INTO dbo.ProductImages (ProductId, ImageUrl, SortOrder, IsPrimary)
-    VALUES (@P2, N'/theme/images/product-image-3.png', 0, 1);
+    VALUES (@P2, N'/theme/images/product-image-1.png', 0, 1);
 END;
 
 IF NOT EXISTS (SELECT 1 FROM dbo.Products WHERE ProductId = @P3)
@@ -92,7 +92,7 @@ BEGIN
         N'Sony', N'New', 8990000, 'VND', 12, N'Pending'
     );
     INSERT INTO dbo.ProductImages (ProductId, ImageUrl, SortOrder, IsPrimary)
-    VALUES (@P3, N'/theme/images/product-image-4.png', 0, 1);
+    VALUES (@P3, N'/theme/images/product-image-1.png', 0, 1);
 END;
 
 IF NOT EXISTS (SELECT 1 FROM dbo.Products WHERE ProductId = @P4)
@@ -108,7 +108,7 @@ BEGIN
         N'OPPO', N'New', 9990000, 9490000, 'VND', 10, N'Pending'
     );
     INSERT INTO dbo.ProductImages (ProductId, ImageUrl, SortOrder, IsPrimary)
-    VALUES (@P4, N'/theme/images/product-image-5.png', 0, 1);
+    VALUES (@P4, N'/theme/images/product-image-1.png', 0, 1);
 END;
 
 /* One Rejected sample for filter tabs */
@@ -182,3 +182,4 @@ END;
 
 PRINT N'Pending product moderation seed completed.';
 GO
+

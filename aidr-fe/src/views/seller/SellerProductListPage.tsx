@@ -3,10 +3,13 @@ import { Link } from 'react-router-dom';
 import { AdminConfirmModal } from '../../components/admin/AdminConfirmModal';
 import { AdminSelect } from '../../components/admin/AdminSelect';
 import { IconifyIcon } from '../../components/admin/IconifyIcon';
+import { ProductImportModal } from '../../components/seller/ProductImportModal';
 import { SELLER_PRODUCT_STATUS_FILTERS } from '../../components/seller/sellerProductFormConstants';
 import { useSellerProducts } from '../../hooks/useSellerProducts';
+import { exportSellerProducts } from '../../services/sellerProductExcelApi';
 import { useToast } from '../../hooks/useToast';
 import type { SellerProductListItem, SellerProductStatusFilter } from '../../types/seller';
+import { getApiErrorMessage } from '../../utils/apiError';
 import { formatVnd, sellerProductStatusBadgeClass } from '../../utils/sellerProductUi';
 
 export function SellerProductListPage() {
@@ -17,6 +20,8 @@ export function SellerProductListPage() {
   const [page, setPage] = useState(1);
   const [deleteTarget, setDeleteTarget] = useState<SellerProductListItem | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
+  const [importOpen, setImportOpen] = useState(false);
+  const [exporting, setExporting] = useState(false);
 
   useEffect(() => {
     void loadList({
@@ -58,6 +63,34 @@ export function SellerProductListPage() {
     }
   }
 
+  function reloadCurrentPage() {
+    void loadList({
+      status: status || undefined,
+      q: q.trim() || undefined,
+      page,
+      pageSize: 20,
+    });
+  }
+
+  async function handleExport() {
+    setActionError(null);
+    setExporting(true);
+    try {
+      // The filters go along, the paging does not — the file is the whole result.
+      await exportSellerProducts({
+        status: status || undefined,
+        q: q.trim() || undefined,
+      });
+      toast.success('Export downloaded.');
+    } catch (err) {
+      const message = getApiErrorMessage(err);
+      setActionError(message);
+      toast.error(message);
+    } finally {
+      setExporting(false);
+    }
+  }
+
   const totalPages = Math.max(paging.totalPages, 1);
 
   return (
@@ -95,6 +128,23 @@ export function SellerProductListPage() {
                 />
                 <button type="submit" className="btn btn-sm btn-outline-light text-nowrap">
                   Search
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-sm btn-outline-light text-nowrap"
+                  disabled={exporting}
+                  onClick={handleExport}
+                >
+                  <IconifyIcon icon="solar:file-download-outline" className="me-1" />
+                  {exporting ? 'Exporting...' : 'Export Excel'}
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-sm btn-outline-light text-nowrap"
+                  onClick={() => setImportOpen(true)}
+                >
+                  <IconifyIcon icon="solar:file-send-outline" className="me-1" />
+                  Import Excel
                 </button>
                 <Link to="/seller/products/new" className="btn btn-sm btn-primary text-nowrap">
                   Add Product
@@ -276,6 +326,21 @@ export function SellerProductListPage() {
         Soft-delete <strong>{deleteTarget?.name}</strong>? It will be hidden from your active catalog
         (status Deleted).
       </AdminConfirmModal>
+
+      <ProductImportModal
+        open={importOpen}
+        onClose={() => setImportOpen(false)}
+        onImported={(result) => {
+          const written = result.created + result.updated;
+          if (written > 0) {
+            toast.success(`${result.created} created, ${result.updated} updated.`);
+            reloadCurrentPage();
+          }
+          if (result.failed > 0) {
+            toast.error(`${result.failed} row(s) were skipped — see the list in the dialog.`);
+          }
+        }}
+      />
     </>
   );
 }

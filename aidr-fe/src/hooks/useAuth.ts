@@ -6,6 +6,7 @@ import { clearProfile } from '../store/userSlice';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 import type { AuthTokenPayload } from '../types/auth';
 import { getApiErrorMessage } from '../utils/apiError';
+import { resolvePostLoginPath } from '../utils/postLoginRedirect';
 
 const googleRedirectUri =
   import.meta.env.VITE_AUTH_GOOGLE_REDIRECT_URI || `${window.location.origin}/auth/callback`;
@@ -34,9 +35,8 @@ export function useAuth() {
   }, [auth.refreshToken, dispatch]);
 
   const redirectAfterAuth = useCallback(
-    (returnUrl?: string | null) => {
-      const target = returnUrl && returnUrl.startsWith('/') ? returnUrl : '/';
-      navigate(target, { replace: true });
+    (roles: string[], returnUrl?: string | null) => {
+      navigate(resolvePostLoginPath(roles, returnUrl), { replace: true });
     },
     [navigate],
   );
@@ -48,7 +48,7 @@ export function useAuth() {
         throw new Error(result.message || 'Login failed.');
       }
       applySession(result.data);
-      redirectAfterAuth(returnUrl);
+      redirectAfterAuth(result.data.user.roles, returnUrl);
       return result;
     },
     [applySession, redirectAfterAuth],
@@ -61,7 +61,7 @@ export function useAuth() {
         throw new Error(result.message || 'Registration failed.');
       }
       applySession(result.data);
-      redirectAfterAuth(returnUrl);
+      redirectAfterAuth(result.data.user.roles, returnUrl);
       return result;
     },
     [applySession, redirectAfterAuth],
@@ -82,7 +82,7 @@ export function useAuth() {
         throw new Error(result.message || 'Google login failed.');
       }
       applySession(result.data);
-      redirectAfterAuth(returnUrl);
+      redirectAfterAuth(result.data.user.roles, returnUrl);
       return result;
     },
     [applySession, redirectAfterAuth],

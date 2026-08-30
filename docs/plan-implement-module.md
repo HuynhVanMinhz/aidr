@@ -16,7 +16,7 @@ Cập nhật cột **status**: `Todo` · `In Progress` · `Done` · `Blocked`.
 | 03 | Profile | Xem/sửa profile, avatar Cloudinary, địa chỉ, đổi MK. | UC-06, UC-07, UC-08 | Done |
 | 04 | Discovery (Catalog Read) | API + FE public: list/detail SP, category tree, search, filter/sort; Redis cache list. Chỉ hiện SP `Approved`. | UC-09, UC-10, UC-11, UC-26, UC-27 | Done |
 | 05 | Admin — Category | CRUD/activate category — **làm trước** để Seller gắn CategoryId khi tạo SP. | UC-22, UC-23, UC-24, UC-25 | Done |
-| 06 | Admin — Seller Onboarding | Duyệt đăng ký seller → tạo Shop + Wallet + role. Cần trước khi Seller Center thật. | UC-75, UC-76 | Done |
+| 06 | Admin — Seller Onboarding | Duyệt đăng ký seller → tạo Shop + Wallet + role. Cần trước khi Seller Center thật. Buyer apply (Become Seller). | UC-75, UC-76, UC-77 | Done |
 | 07 | SellerCenter — Product | CRUD SP seller, upload ảnh, my products; SP vào `Pending`. | UC-12, UC-13, UC-14, UC-15, UC-16 | Done |
 | 08 | SellerCenter — Inventory & Pricing | Nhập lô (UnitCost), quản lý tồn, đổi giá bán + price history. | UC-17, UC-91, UC-92 | Done |
 | 09 | Admin — Product Moderation | Queue duyệt/từ chối SP + history → SP lên kệ Discovery. **Khóa vertical slice bán hàng.** | UC-18, UC-19, UC-20, UC-21 | Done |
@@ -39,7 +39,7 @@ Cập nhật cột **status**: `Todo` · `In Progress` · `Done` · `Blocked`.
 | 26 | Admin — Governance | Account list, lock/unlock, customer insights. | UC-71, UC-72, UC-73, UC-74 | Done |
 | 27 | AI — Recommendation & Similar | Recommend + similar (rule/hybrid trước, LLM sau nếu cần). | UC-53, UC-54 | Done |
 | 28 | AI — NL Filter & Compare | Natural language → filter; so sánh SP. | UC-90, UC-28 | Done |
-| 29 | AI — Shopping Assistant | Chatbot mua sắm Ollama + lưu AiConversations. | UC-56 | Done |
+| 29 | AI — Shopping Assistant | Chatbot mua sắm Groq + slot memory + NL retrieve + lưu AiConversations. | UC-56 | Done |
 | 30 | Hardening & Observability | Grafana dashboards, rate-limit AI/login, E2E smoke, perf cache, docs API. | — (NFR) | Todo |
 
 ---

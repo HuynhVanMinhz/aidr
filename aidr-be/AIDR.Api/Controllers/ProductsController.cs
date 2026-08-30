@@ -43,6 +43,34 @@ public sealed class ProductsController : ControllerBase
         return Ok(ApiResult<PagedResult<ProductListItemDto>>.Ok(result));
     }
 
+    /// <summary>
+    /// Resolve several approved products by id for link previews (e.g. product cards in chat).
+    /// Records no view, so rendering a shared link never inflates product analytics.
+    /// </summary>
+    [HttpGet("lookup")]
+    public async Task<ActionResult<ApiResult<IReadOnlyList<ProductListItemDto>>>> Lookup(
+        [FromQuery] string? ids,
+        CancellationToken cancellationToken)
+    {
+        var parsed = (ids ?? string.Empty)
+            .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Select(part => Guid.TryParse(part, out var id) ? id : Guid.Empty)
+            .Where(id => id != Guid.Empty)
+            .ToList();
+
+        var result = await _discovery.LookupProductsAsync(parsed, cancellationToken);
+        return Ok(ApiResult<IReadOnlyList<ProductListItemDto>>.Ok(result));
+    }
+
+    /// <summary>Distinct brand filter options for catalog sidebar.</summary>
+    [HttpGet("brands")]
+    public async Task<ActionResult<ApiResult<IReadOnlyList<BrandFilterOptionDto>>>> Brands(
+        CancellationToken cancellationToken)
+    {
+        var result = await _discovery.GetBrandFilterOptionsAsync(cancellationToken);
+        return Ok(ApiResult<IReadOnlyList<BrandFilterOptionDto>>.Ok(result));
+    }
+
     /// <summary>Get approved product detail and record a view.</summary>
     [HttpGet("{id:guid}")]
     public async Task<ActionResult<ApiResult<ProductDetailDto>>> GetById(

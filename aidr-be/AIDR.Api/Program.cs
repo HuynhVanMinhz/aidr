@@ -1,3 +1,4 @@
+using AIDR.Api.BackgroundJobs;
 using AIDR.Api.Hubs;
 using AIDR.Api.Middleware;
 using AIDR.Api.Realtime;
@@ -20,6 +21,13 @@ builder.Services.AddOpenApi();
 builder.Services.AddSignalR();
 builder.Services.AddAidrInfrastructure(builder.Configuration);
 builder.Services.AddAidrModules();
+
+// Escrow pipeline: auto-complete delivered orders, release held settlements, poll payouts.
+builder.Services.AddHostedService<SettlementBackgroundService>();
+
+// Fulfillment pipeline: book a shipment per paid order, then let the carrier's
+// events carry it through Confirmed -> Shipping -> Delivered.
+builder.Services.AddHostedService<ShippingBackgroundService>();
 builder.Services.AddAidrJwtAuthentication(builder.Configuration);
 builder.Services.AddScoped<INotificationRealtimePublisher, SignalRNotificationRealtimePublisher>();
 builder.Services.AddScoped<IChatRealtimePublisher, SignalRChatRealtimePublisher>();
@@ -53,6 +61,15 @@ if (!useInMemoryCache)
 {
     var redisConnection = builder.Configuration.GetConnectionString("Redis") ?? "localhost:6379";
     healthChecks.AddRedis(redisConnection, name: "redis", tags: ["ready"]);
+}
+
+// A mock identity check that looks real is worse than no check at all — refuse
+// to start with it enabled anywhere but Development.
+if (!builder.Environment.IsDevelopment()
+    && builder.Configuration.GetValue("FptAi:UseMock", false))
+{
+    throw new InvalidOperationException(
+        "FptAi:UseMock must be false outside Development. Set a real FptAi:ApiKey.");
 }
 
 var app = builder.Build();

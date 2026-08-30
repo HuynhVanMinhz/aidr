@@ -1,4 +1,4 @@
-using System.Text;
+﻿using System.Text;
 using AIDR.Infrastructure.Admin;
 using AIDR.Infrastructure.AI;
 using AIDR.Infrastructure.Auth;
@@ -7,9 +7,12 @@ using AIDR.Infrastructure.Discovery;
 using AIDR.Infrastructure.Engagement;
 using AIDR.Infrastructure.Ordering;
 using AIDR.Infrastructure.PayOs;
+using AIDR.Infrastructure.Kyc;
 using AIDR.Infrastructure.Persistence;
 using AIDR.Infrastructure.Profile;
 using AIDR.Infrastructure.SellerCenter;
+using AIDR.Infrastructure.Settlement;
+using AIDR.Infrastructure.Shipping;
 using AIDR.Modules.Admin.Abstractions;
 using AIDR.Modules.AI.Abstractions;
 using AIDR.Modules.AI.Services;
@@ -17,11 +20,14 @@ using AIDR.Modules.Auth.Abstractions;
 using AIDR.Modules.Auth.Services;
 using AIDR.Modules.Discovery.Abstractions;
 using AIDR.Modules.Engagement.Abstractions;
+using AIDR.Modules.Kyc.Abstractions;
 using AIDR.Modules.Order.Abstractions;
 using AIDR.Modules.Payment.Abstractions;
 using AIDR.Modules.Payment.Services;
 using AIDR.Modules.Profile.Abstractions;
 using AIDR.Modules.SellerCenter.Abstractions;
+using AIDR.Modules.Settlement.Abstractions;
+using AIDR.Modules.Shipping.Abstractions;
 using AIDR.Shared.Caching;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
@@ -64,9 +70,16 @@ public static class InfrastructureServiceCollectionExtensions
         services.Configure<SmtpOptions>(configuration.GetSection(SmtpOptions.SectionName));
         services.Configure<PayOsOptions>(configuration.GetSection(PayOsOptions.SectionName));
         services.Configure<GroqOptions>(configuration.GetSection(GroqOptions.SectionName));
+        services.Configure<SettlementOptions>(configuration.GetSection(SettlementOptions.SectionName));
+        services.Configure<FptAiOptions>(configuration.GetSection(FptAiOptions.SectionName));
+        services.Configure<ShippingOptions>(configuration.GetSection(ShippingOptions.SectionName));
+
+        // Typed client: it both downloads the uploaded images and calls FPT.AI.
+        services.AddHttpClient<IFptAiEkycClient, FptAiEkycClient>();
 
         services.AddScoped<IAuthUserRepository, AuthUserRepository>();
         services.AddScoped<IProfileRepository, ProfileRepository>();
+        services.AddScoped<ISellerRegistrationRepository, SellerRegistrationRepository>();
         services.AddScoped<IDiscoveryRepository, DiscoveryRepository>();
         services.AddScoped<IRecommendationRepository, RecommendationRepository>();
         services.AddScoped<IAiCatalogRepository, AiCatalogRepository>();
@@ -78,16 +91,23 @@ public static class InfrastructureServiceCollectionExtensions
         services.AddScoped<IAdminReturnRepository, AdminReturnRepository>();
         services.AddScoped<IAdminAccountRepository, AdminAccountRepository>();
         services.AddScoped<IAdminCustomerInsightRepository, AdminCustomerInsightRepository>();
+        services.AddScoped<IAdminDashboardRepository, AdminDashboardRepository>();
+        services.AddScoped<IAdminOrderRepository, AdminOrderRepository>();
         services.AddScoped<ISellerProductRepository, SellerProductRepository>();
+        services.AddSingleton<ISellerProductWorkbook, ClosedXmlSellerProductWorkbook>();
         services.AddScoped<ISellerInventoryRepository, SellerInventoryRepository>();
         services.AddScoped<ISellerOrderRepository, SellerOrderRepository>();
         services.AddScoped<ISellerShopVoucherRepository, SellerShopVoucherRepository>();
         services.AddScoped<ISellerFinanceRepository, SellerFinanceRepository>();
+        services.AddScoped<ISettlementRepository, SettlementRepository>();
+        services.AddScoped<IKycRepository, KycRepository>();
+        services.AddScoped<ISellerShopRepository, SellerShopRepository>();
         services.AddScoped<ICartRepository, CartRepository>();
         services.AddScoped<IOrderRepository, OrderRepository>();
         services.AddScoped<IReturnRepository, ReturnRepository>();
         services.AddScoped<IVoucherRepository, VoucherRepository>();
         services.AddScoped<IPaymentRepository, PaymentRepository>();
+        services.AddScoped<IShipmentRepository, ShipmentRepository>();
         services.AddScoped<IWishlistRepository, WishlistRepository>();
         services.AddScoped<IProductReviewRepository, ProductReviewRepository>();
         services.AddScoped<ISellerRatingRepository, SellerRatingRepository>();
@@ -96,6 +116,13 @@ public static class InfrastructureServiceCollectionExtensions
         services.AddScoped<ILowStockNotifier, LowStockNotifier>();
         services.AddScoped<IChatRepository, ChatRepository>();
         services.AddSingleton<IPayOsClient, PayOsClient>();
+
+        // Carrier adapters. Registered as a collection so a second carrier
+        // (GHTK, Viettel Post) only needs its own AddHttpClient line here.
+        services.AddHttpClient<GhnShippingProvider>();
+        services.AddScoped<IShippingProvider>(sp => sp.GetRequiredService<GhnShippingProvider>());
+        services.AddHttpClient<GhnLocationDirectory>();
+        services.AddScoped<IShippingLocationDirectory>(sp => sp.GetRequiredService<GhnLocationDirectory>());
         services.AddScoped<IPasswordResetTokenStore, PasswordResetTokenStore>();
         services.AddScoped<ITokenService, JwtTokenService>();
         services.AddSingleton<IPasswordHasher, AspNetPasswordHasher>();

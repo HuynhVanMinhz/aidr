@@ -1,3 +1,5 @@
+﻿using AIDR.Shared.Dtos.Shipping;
+
 namespace AIDR.Shared.Dtos.Order;
 
 public sealed class CreateOrderRequest
@@ -44,6 +46,8 @@ public sealed class CreatedOrderItemDto
     public Guid OrderItemId { get; init; }
     public Guid ProductId { get; init; }
     public string ProductName { get; init; } = null!;
+    public string? Sku { get; init; }
+    public string? ImageUrl { get; init; }
     public int Quantity { get; init; }
     public decimal UnitPrice { get; init; }
     public decimal? UnitCostAvg { get; init; }
@@ -115,6 +119,9 @@ public sealed class BuyerOrderDetailDto
     public DateTime? CompletedAt { get; init; }
     public bool CanCancel { get; init; }
     public bool CanConfirmReceived { get; init; }
+
+    /// <summary>Carrier progress and the delivery route, for the tracking map.</summary>
+    public BuyerOrderTrackingDto? Tracking { get; init; }
 }
 
 public sealed class BuyerOrderShippingDto
@@ -126,6 +133,10 @@ public sealed class BuyerOrderShippingDto
     public string District { get; init; } = null!;
     public string Ward { get; init; } = null!;
     public string StreetAddress { get; init; } = null!;
+
+    /// <summary>Delivery point as pinned when the order was placed; null on older orders.</summary>
+    public double? Latitude { get; init; }
+    public double? Longitude { get; init; }
 }
 
 public sealed class BuyerOrderItemDto

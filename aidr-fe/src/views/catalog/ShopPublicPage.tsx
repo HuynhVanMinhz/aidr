@@ -5,6 +5,7 @@ import { ProductCard } from '../../components/catalog/ProductCard';
 import { SORT_OPTIONS } from '../../components/catalog/ProductFilters';
 import { useFollowShop } from '../../hooks/useFollow';
 import { useToast } from '../../hooks/useToast';
+import { useToastMessage } from '../../hooks/useToastMessage';
 import { useAppDispatch, useAppSelector } from '../../store/hooks';
 import {
   clearShop,
@@ -21,6 +22,7 @@ import {
   type ShopProductFilters,
 } from '../../store/shopSlice';
 import type { ProductSort } from '../../types/catalog';
+import { OPENING_HOURS_DAYS } from '../../utils/structuredJson';
 import type { ShopPublicAddress, ShopPublicContact } from '../../types/shop';
 
 type ShopTab = 'about' | 'policies' | 'rating';
@@ -70,13 +72,35 @@ function hasContact(contact: ShopPublicContact): boolean {
   );
 }
 
+const DAY_LABELS = new Map<string, string>(
+  OPENING_HOURS_DAYS.map((day) => [day.key, day.label]),
+);
+
+/**
+ * Sellers now pick days in a weekly grid, so the keys are `mon`..`sun` and can
+ * be shown as day names in week order. Anything older is still rendered, just
+ * with its raw key, after the days we recognise.
+ */
 function parseOpeningHours(json?: string | null): { day: string; hours: string }[] {
   if (!json?.trim()) return [];
   try {
     const parsed = JSON.parse(json) as Record<string, unknown>;
-    return Object.entries(parsed)
+    const rows = Object.entries(parsed)
       .filter(([, value]) => typeof value === 'string' && value.trim())
-      .map(([day, hours]) => ({ day, hours: String(hours) }));
+      .map(([key, hours]) => ({
+        key: key.trim().toLowerCase(),
+        day: DAY_LABELS.get(key.trim().toLowerCase()) ?? key,
+        hours: String(hours),
+      }));
+
+    const order = OPENING_HOURS_DAYS.map((d) => d.key as string);
+    return rows
+      .sort((a, b) => {
+        const ai = order.indexOf(a.key);
+        const bi = order.indexOf(b.key);
+        return (ai < 0 ? order.length : ai) - (bi < 0 ? order.length : bi);
+      })
+      .map(({ day, hours }) => ({ day, hours }));
   } catch {
     return [];
   }
@@ -94,6 +118,7 @@ export function ShopPublicPage() {
   const ratingLoading = useAppSelector(selectShopRatingLoading);
   const error = useAppSelector(selectShopError);
   const ratingError = useAppSelector(selectShopRatingError);
+  useToastMessage(error);
   const filters = useAppSelector(selectShopFilters);
   const [tab, setTab] = useState<ShopTab>('about');
   const [draftQ, setDraftQ] = useState('');
@@ -207,13 +232,16 @@ export function ShopPublicPage() {
       </div>
 
       {error && (
-        <div className="container py-5">
-          <div className="alert alert-danger" role="alert">
-            {error}
+        <div className="container">
+          <div className="page-state">
+            <p className="page-state__title">Shop not available</p>
+            <p className="page-state__text">
+              This shop could not be loaded. It may have been closed or the link is out of date.
+            </p>
+            <Link to="/products" className="btn-default">
+              Browse products
+            </Link>
           </div>
-          <Link to="/products" className="btn-default">
-            Browse products
-          </Link>
         </div>
       )}
 

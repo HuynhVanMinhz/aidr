@@ -180,3 +180,135 @@ a:hover {
   border-color: var(--accent);
   color: var(--accent);
 }
+
+/* Neutral page-level state (load failure, not found). Transient notifications
+   are shown as toasts; this only keeps the page from rendering blank. */
+.page-state {
+  padding: 3rem 0 4rem;
+  text-align: center;
+}
+
+.page-state__title {
+  margin: 0 0 0.5rem;
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+.page-state__text {
+  margin: 0 0 1.25rem;
+  color: var(--text-color, #707070);
+}
+
+.page-state .btn-default {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  text-decoration: none;
+}
+
+/* Shared dropdown — same look as the shop page sort control, reused by every
+   filter so native selects never leak a different style into a page. */
+.aidr-select-field {
+  min-width: 0;
+}
+
+.aidr-select-field__label {
+  display: block;
+  margin-bottom: 0.35rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: #5e6167;
+}
+
+.aidr-select {
+  position: relative;
+}
+
+.aidr-select__trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  min-width: 190px;
+  padding: 0.55rem 0.85rem;
+  border: 1px solid rgba(22, 24, 29, 0.1);
+  border-radius: 10px;
+  background: var(--secondary-color, #f3f3f3);
+  font-family: inherit;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--primary-color, #16181d);
+  cursor: pointer;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.aidr-select.is-open .aidr-select__trigger,
+.aidr-select__trigger:hover:not(:disabled) {
+  border-color: rgba(22, 24, 29, 0.2);
+  box-shadow: 0 4px 12px rgba(22, 24, 29, 0.06);
+}
+
+.aidr-select__trigger:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.aidr-select__trigger i {
+  font-size: 0.65rem;
+  color: #5e6167;
+}
+
+.aidr-select__menu {
+  position: absolute;
+  top: calc(100% + 0.35rem);
+  left: 0;
+  z-index: 30;
+  min-width: 100%;
+  list-style: none;
+  margin: 0;
+  padding: 0.35rem;
+  border: 1px solid rgba(22, 24, 29, 0.1);
+  border-radius: 10px;
+  background: var(--bg-color, #fff);
+  box-shadow: 0 8px 24px rgba(22, 24, 29, 0.12);
+}
+
+.aidr-select__menu--end {
+  left: auto;
+  right: 0;
+}
+
+.aidr-select__option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.5rem 0.65rem;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  font-family: inherit;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--primary-color, #16181d);
+  text-align: left;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.aidr-select__option:hover,
+.aidr-select__option.is-selected {
+  background: rgba(22, 24, 29, 0.05);
+}
+
+.aidr-select__option.is-selected {
+  font-weight: 700;
+}
+
+@media (max-width: 767.98px) {
+  .aidr-select,
+  .aidr-select__trigger {
+    width: 100%;
+  }
+}

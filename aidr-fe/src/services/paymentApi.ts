@@ -3,6 +3,8 @@ import type {
   CreatePayOsPaymentRequest,
   PayOsWebhookApiResult,
   PayOsWebhookRequest,
+  SyncPayOsPaymentApiResult,
+  SyncPayOsPaymentRequest,
 } from '../types/payment';
 import { apiClient } from './apiClient';
 
@@ -20,5 +22,15 @@ export async function postPayOsWebhook(request: PayOsWebhookRequest) {
     '/payments/payos/webhook',
     request,
   );
+  return data;
+}
+
+/**
+ * Ask the API to reconcile one order against payOS. Needed because the payOS
+ * webhook cannot reach a machine that is not publicly addressable, so a buyer
+ * returning from the checkout page would otherwise still see "pending".
+ */
+export async function syncPayOsPayment(request: SyncPayOsPaymentRequest) {
+  const { data } = await apiClient.post<SyncPayOsPaymentApiResult>('/payments/payos/sync', request);
   return data;
 }

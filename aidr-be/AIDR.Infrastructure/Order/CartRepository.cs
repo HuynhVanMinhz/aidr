@@ -79,7 +79,7 @@ public sealed class CartRepository : ICartRepository
             if (quantityToAdd > availableQuantity)
                 throw new AppException($"Only {availableQuantity} unit(s) available.");
 
-            cart.Items.Add(new CartItem
+            var item = new CartItem
             {
                 CartItemId = Guid.NewGuid(),
                 CartId = cart.CartId,
@@ -89,7 +89,9 @@ public sealed class CartRepository : ICartRepository
                 UnitPriceSnapshot = price,
                 CreatedAt = now,
                 UpdatedAt = now
-            });
+            };
+            // Use DbSet.Add so EF inserts; navigation-only Add was emitting UPDATE (0 rows) → 500.
+            _db.CartItems.Add(item);
         }
         else
         {

@@ -5,10 +5,20 @@ public sealed class ProductQueryRequest
     public string? Q { get; set; }
     public Guid? ShopId { get; set; }
     public int? CategoryId { get; set; }
+    /// <summary>Comma-separated category ids, e.g. 1,2,3</summary>
+    public string? CategoryIds { get; set; }
     public string? Brand { get; set; }
+    /// <summary>Comma-separated brand names</summary>
+    public string? Brands { get; set; }
     public decimal? MinPrice { get; set; }
     public decimal? MaxPrice { get; set; }
     public decimal? MinRating { get; set; }
+    public bool? OnSale { get; set; }
+    public bool? InStock { get; set; }
+    /// <summary>Comma-separated: New, LikeNew, Refurbished, Used</summary>
+    public string? Conditions { get; set; }
+    /// <summary>Comma-separated key:value pairs, e.g. ram:8GB,storage:256GB</summary>
+    public string? SpecFilters { get; set; }
     /// <summary>newest | price_asc | price_desc | popular | rating</summary>
     public string? Sort { get; set; }
     public int Page { get; set; } = 1;
@@ -126,5 +136,12 @@ public sealed class CategoryTreeNodeDto
     public string? Description { get; init; }
     public string? ImageUrl { get; init; }
     public int SortOrder { get; init; }
+    public int ProductCount { get; init; }
     public IReadOnlyList<CategoryTreeNodeDto> Children { get; init; } = Array.Empty<CategoryTreeNodeDto>();
+}
+
+public sealed class BrandFilterOptionDto
+{
+    public string Brand { get; init; } = null!;
+    public int ProductCount { get; init; }
 }

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { FormField } from '../../components/admin/FormField';
 import { IconifyIcon } from '../../components/admin/IconifyIcon';
+import { OrderTrackingMap } from '../../components/shipping/OrderTrackingMap';
 import { useSellerOrderDetail } from '../../hooks/useSellerOrders';
 import { useToast } from '../../hooks/useToast';
 import { formatOrderDate, formatOrderStatus, formatShippingLine } from '../../utils/orderUi';
@@ -10,8 +11,10 @@ import {
   MAX_SELLER_NOTE_LENGTH,
   MAX_STATUS_NOTE_LENGTH,
   MAX_TRACKING_CODE_LENGTH,
+  formatShipmentStatus,
   sellerOrderStatusBadgeClass,
   sellerOrderUpdateActionLabel,
+  shipmentStatusBadgeClass,
 } from '../../utils/sellerOrderUi';
 import {
   canSubmitSellerOrderUpdate,
@@ -19,6 +22,7 @@ import {
   type SellerOrderUpdateFieldErrors,
   type SellerOrderUpdateFormValues,
 } from '../../utils/sellerOrderValidation';
+import { routeProgress } from '../../types/tracking';
 
 const EMPTY_FORM: SellerOrderUpdateFormValues = {
   trackingCode: '',
@@ -137,6 +141,12 @@ export function SellerOrderDetailPage() {
   }
 
   const shippingLine = formatShippingLine(detail.shipping);
+  const fulfillment = detail.fulfillment;
+  const shipment = fulfillment?.shipment ?? null;
+  const automated = Boolean(fulfillment?.autoEnabled && !fulfillment.requiresSellerAction);
+  // A carrier-issued code is the shipment's identity — the seller must not retype it.
+  const carrierTracking = shipment?.trackingCode?.trim() || null;
+  const recentEvents = shipment?.events.slice(0, 4) ?? [];
 
   return (
     <div className="row">
@@ -245,6 +255,33 @@ export function SellerOrderDetailPage() {
           </div>
         </div>
 
+        {fulfillment ? (
+          <div className="card">
+            <div className="card-header d-flex align-items-center justify-content-between gap-2">
+              <h4 className="card-title mb-0">Delivery route</h4>
+              <span className={shipmentStatusBadgeClass(shipment?.status)}>
+                {shipment ? formatShipmentStatus(shipment.status) : 'No shipment yet'}
+              </span>
+            </div>
+            <div className="card-body">
+              <OrderTrackingMap
+                route={fulfillment.route}
+                progress={routeProgress(shipment?.status, detail.status)}
+                parcelLabel={
+                  shipment ? formatShipmentStatus(shipment.status) : formatOrderStatus(detail.status)
+                }
+                emptyHint="No map yet — pin this shop's pickup point in Shop settings; the buyer's address needs a pinned delivery point too."
+                height={340}
+              />
+              <p className="mb-0 mt-3 text-muted fs-13">
+                {fulfillment.provider} reports delivery milestones, not the driver's live
+                position — the parcel is drawn along the route at the point its latest
+                status implies.
+              </p>
+            </div>
+          </div>
+        ) : null}
+
         <div className="card">
           <div className="card-header">
             <h4 className="card-title">Status history</h4>
@@ -277,6 +314,86 @@ export function SellerOrderDetailPage() {
       </div>
 
       <div className="col-xl-3 col-lg-4">
+        {fulfillment ? (
+          <div className="card">
+            <div className="card-header d-flex align-items-center justify-content-between gap-2">
+              <h4 className="card-title mb-0">Fulfillment</h4>
+              <span
+                className={
+                  automated ? sellerOrderStatusBadgeClass('Paid') : sellerOrderStatusBadgeClass('PendingPayment')
+                }
+              >
+                {automated ? `Auto · ${fulfillment.provider}` : 'Needs attention'}
+              </span>
+            </div>
+            <div className="card-body">
+              {fulfillment.stalledReason ? (
+                <div className="alert alert-warning" role="alert">
+                  {fulfillment.stalledReason}
+                </div>
+              ) : null}
+
+              <p className="mb-2 text-muted">
+                Carrier: <span className="text-dark fw-medium">{fulfillment.provider}</span>
+              </p>
+
+              {shipment ? (
+                <>
+                  <p className="mb-2 text-muted">
+                    Shipment:{' '}
+                    <span className={shipmentStatusBadgeClass(shipment.status)}>
+                      {formatShipmentStatus(shipment.status)}
+                    </span>
+                  </p>
+                  <p className="mb-2 text-muted">
+                    Tracking:{' '}
+                    <span className={shipment.trackingCode ? 'text-dark fw-medium' : 'text-muted'}>
+                      {shipment.trackingCode?.trim() || 'Not issued yet'}
+                    </span>
+                  </p>
+                  {shipment.expectedDeliveryAt ? (
+                    <p className="mb-2 text-muted">
+                      Expected: {formatOrderDate(shipment.expectedDeliveryAt)}
+                    </p>
+                  ) : null}
+                  <p className="mb-0 text-muted fs-13">
+                    Last update: {formatOrderDate(shipment.lastSyncedAt ?? shipment.updatedAt)}
+                  </p>
+
+                  {recentEvents.length > 0 ? (
+                    <ul className="list-unstyled mb-0 mt-3">
+                      {recentEvents.map((event) => (
+                        <li key={event.shipmentEventId} className="mb-2">
+                          <p className="mb-0 fw-medium text-dark fs-14">
+                            {formatShipmentStatus(event.mappedStatus)}
+                          </p>
+                          <p className="mb-0 text-muted fs-13">
+                            {formatOrderDate(event.occurredAt)}
+                            {event.description ? ` · ${event.description}` : ''}
+                          </p>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : null}
+                </>
+              ) : (
+                <p className="mb-0 text-muted">
+                  {automated
+                    ? `No shipment yet. ${fulfillment.provider} is booked automatically once the payment settles.`
+                    : 'No shipment booked for this order.'}
+                </p>
+              )}
+
+              {automated ? (
+                <p className="mb-0 mt-3 text-muted fs-13">
+                  {fulfillment.provider} updates this order automatically — you can still
+                  move it forward yourself below if you need to.
+                </p>
+              ) : null}
+            </div>
+          </div>
+        ) : null}
+
         {detail.canUpdateStatus && detail.nextStatus ? (
           <div className="card">
             <div className="card-header">
@@ -306,10 +423,15 @@ export function SellerOrderDetailPage() {
                     className="form-control"
                     value={form.trackingCode}
                     maxLength={MAX_TRACKING_CODE_LENGTH}
+                    readOnly={Boolean(carrierTracking)}
                     placeholder={
-                      detail.nextStatus === 'Shipping'
-                        ? 'Required for shipping'
-                        : 'Optional'
+                      carrierTracking
+                        ? carrierTracking
+                        : automated
+                          ? `${fulfillment?.provider} will issue one`
+                          : detail.nextStatus === 'Shipping'
+                            ? 'Required for shipping'
+                            : 'Optional'
                     }
                     onChange={(e) => updateField('trackingCode', e.target.value)}
                     onBlur={() => {
@@ -323,6 +445,17 @@ export function SellerOrderDetailPage() {
                     }}
                   />
                 </FormField>
+
+                {carrierTracking ? (
+                  <p className="text-muted fs-13 mt-n2 mb-3">
+                    Issued by {shipment?.provider} — nothing to type here.
+                  </p>
+                ) : automated ? (
+                  <p className="text-muted fs-13 mt-n2 mb-3">
+                    {fulfillment?.provider} issues the tracking code when it books this
+                    shipment. Only fill this in if you are shipping the order yourself.
+                  </p>
+                ) : null}
 
                 <FormField
                   label="Seller note"

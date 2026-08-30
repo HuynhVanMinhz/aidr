@@ -5,6 +5,8 @@ public static class DiscoveryConstants
     public const int DefaultPage = 1;
     public const int DefaultPageSize = 20;
     public const int MaxPageSize = 100;
+    /// <summary>Upper bound for the batch product lookup used by link previews.</summary>
+    public const int MaxLookupIds = 30;
     public const int MaxSearchQueryLength = 200;
     public const int MaxBrandLength = 100;
     public const int MaxSessionIdLength = 64;
@@ -24,6 +26,16 @@ public static class DiscoveryConstants
     public static readonly TimeSpan CategoryTreeCacheTtl = TimeSpan.FromMinutes(30);
     public static readonly TimeSpan ShopDetailCacheTtl = TimeSpan.FromMinutes(3);
     public static readonly TimeSpan ShopRatingCacheTtl = TimeSpan.FromMinutes(5);
+    public static readonly TimeSpan ShopListCacheTtl = TimeSpan.FromMinutes(3);
 
     public const string CacheKeyCategoriesTree = "categories:tree";
+
+    public static (int Page, int PageSize) NormalizePaging(int page, int pageSize)
+    {
+        var normalizedPage = page < 1 ? DefaultPage : page;
+        var normalizedSize = pageSize < 1
+            ? DefaultPageSize
+            : Math.Min(pageSize, MaxPageSize);
+        return (normalizedPage, normalizedSize);
+    }
 }

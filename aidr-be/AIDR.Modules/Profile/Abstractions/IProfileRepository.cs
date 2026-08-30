@@ -1,4 +1,4 @@
-using AIDR.Shared.Dtos.Profile;
+﻿using AIDR.Shared.Dtos.Profile;
 
 namespace AIDR.Modules.Profile.Abstractions;
 
@@ -23,6 +23,8 @@ public sealed class AddressRecord
     public string District { get; init; } = null!;
     public string Ward { get; init; } = null!;
     public string StreetAddress { get; init; } = null!;
+    public double? Latitude { get; init; }
+    public double? Longitude { get; init; }
     public bool IsDefault { get; init; }
 }
 

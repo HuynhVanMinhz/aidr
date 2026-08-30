@@ -34,6 +34,8 @@ export type BuyerReturnItem = {
   orderItemId: string;
   productId: string;
   productName: string;
+  sku?: string | null;
+  imageUrl?: string | null;
   quantity: number;
   unitPrice: number;
   lineTotal: number;

@@ -111,6 +111,10 @@ function upsertListItem(state: SellerOrdersState, detail: SellerOrderDetail) {
     completedAt: detail.completedAt,
     canUpdateStatus: detail.canUpdateStatus,
     nextStatus: detail.nextStatus,
+    autoFulfillment: detail.fulfillment
+      ? detail.fulfillment.autoEnabled && !detail.fulfillment.requiresSellerAction
+      : prev.autoFulfillment,
+    shipmentStatus: detail.fulfillment?.shipment?.status ?? prev.shipmentStatus,
   };
 }
 

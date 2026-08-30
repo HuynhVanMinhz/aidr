@@ -310,6 +310,21 @@ export const rejectSellerRegistration = createAsyncThunk(
   },
 );
 
+export const requestMoreInfoOnSellerRegistration = createAsyncThunk(
+  'admin/requestMoreInfoOnSellerRegistration',
+  async (
+    { id, payload }: { id: string; payload: RejectSellerRegistrationPayload },
+    { rejectWithValue },
+  ) => {
+    try {
+      const result = await adminApi.requestMoreInfoOnSellerRegistration(id, payload);
+      return unwrap(result, 'Unable to send this application back.');
+    } catch (error) {
+      return rejectWithValue(getApiErrorMessage(error, 'Unable to send this application back.'));
+    }
+  },
+);
+
 export const fetchAdminProducts = createAsyncThunk(
   'admin/fetchProducts',
   async (query: AdminProductListQuery | undefined, { rejectWithValue }) => {
@@ -571,6 +586,19 @@ export const adminSlice = createSlice({
         state.sellerRegistrationsMutating = false;
         state.sellerRegistrationsError =
           (action.payload as string) || 'Unable to reject seller registration.';
+      })
+      .addCase(requestMoreInfoOnSellerRegistration.pending, (state) => {
+        state.sellerRegistrationsMutating = true;
+        state.sellerRegistrationsError = null;
+      })
+      .addCase(requestMoreInfoOnSellerRegistration.fulfilled, (state, action) => {
+        state.sellerRegistrationsMutating = false;
+        applySellerRegistrationUpdate(state, action.payload);
+      })
+      .addCase(requestMoreInfoOnSellerRegistration.rejected, (state, action) => {
+        state.sellerRegistrationsMutating = false;
+        state.sellerRegistrationsError =
+          (action.payload as string) || 'Unable to send this application back.';
       })
       .addCase(fetchAdminProducts.pending, (state) => {
         state.productsLoading = true;

@@ -6,10 +6,16 @@ export type ProductQuery = {
   q?: string;
   shopId?: string;
   categoryId?: number;
+  categoryIds?: number[];
   brand?: string;
+  brands?: string[];
   minPrice?: number;
   maxPrice?: number;
   minRating?: number;
+  onSale?: boolean;
+  inStock?: boolean;
+  conditions?: string[];
+  specFilters?: Record<string, string>;
   sort?: ProductSort;
   page?: number;
   pageSize?: number;
@@ -118,7 +124,13 @@ export type CategoryTreeNode = {
   description?: string | null;
   imageUrl?: string | null;
   sortOrder: number;
+  productCount?: number;
   children: CategoryTreeNode[];
+};
+
+export type BrandFilterOption = {
+  brand: string;
+  productCount: number;
 };
 
 export type { ApiResult };

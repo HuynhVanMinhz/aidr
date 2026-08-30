@@ -4,6 +4,7 @@ import {
   fetchSellerRegistration,
   fetchSellerRegistrations,
   rejectSellerRegistration,
+  requestMoreInfoOnSellerRegistration,
   selectSellerRegistrationById,
   selectSellerRegistrations,
   selectSellerRegistrationsError,
@@ -100,6 +101,17 @@ export function useAdminSellerRegistrations(
     [dispatch],
   );
 
+  const requestMoreInfo = useCallback(
+    async (id: string, payload: RejectSellerRegistrationPayload) => {
+      const result = await dispatch(requestMoreInfoOnSellerRegistration({ id, payload }));
+      if (requestMoreInfoOnSellerRegistration.rejected.match(result)) {
+        throw new Error((result.payload as string) || 'Unable to send this application back.');
+      }
+      return result.payload;
+    },
+    [dispatch],
+  );
+
   return {
     items,
     page,
@@ -115,6 +127,7 @@ export function useAdminSellerRegistrations(
     loadOne,
     approve,
     reject,
+    requestMoreInfo,
   };
 }
 

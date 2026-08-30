@@ -13,6 +13,7 @@ public sealed class CompareProductCardDto
     public string Slug { get; init; } = null!;
     public string? Brand { get; init; }
     public string? ModelNumber { get; init; }
+    public string ConditionType { get; init; } = "New";
     public decimal BasePrice { get; init; }
     public decimal? SalePrice { get; init; }
     public decimal EffectivePrice { get; init; }
@@ -20,11 +21,15 @@ public sealed class CompareProductCardDto
     public decimal AvgRating { get; init; }
     public int ReviewCount { get; init; }
     public int? WarrantyMonths { get; init; }
+    public string? OriginCountry { get; init; }
+    public int AvailableQuantity { get; init; }
+    public int SoldCount { get; init; }
     public string? PrimaryImageUrl { get; init; }
     public int CategoryId { get; init; }
     public string CategoryName { get; init; } = null!;
     public Guid ShopId { get; init; }
     public string ShopName { get; init; } = null!;
+    public IReadOnlyList<string> Tags { get; init; } = Array.Empty<string>();
     public IReadOnlyDictionary<string, string> Specs { get; init; } =
         new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 }

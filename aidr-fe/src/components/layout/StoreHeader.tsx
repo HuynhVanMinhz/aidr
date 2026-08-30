@@ -1,12 +1,20 @@
-import { useState, type FormEvent } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ThemeToggle } from '../ThemeToggle';
+import { StoreNotificationDropdown } from './StoreNotificationDropdown';
+import { StoreUserDropdown } from './StoreUserDropdown';
+import { WorkspaceSwitcher } from './WorkspaceSwitcher';
 import { useAuth } from '../../hooks/useAuth';
+import { useRoles } from '../../hooks/useRoles';
 import { useCart } from '../../hooks/useCart';
 import { useCategories } from '../../hooks/useCatalog';
-import { useUnreadNotifications } from '../../hooks/useNotifications';
 import { useWishlistMembership } from '../../hooks/useWishlist';
+import * as voucherApi from '../../services/voucherApi';
 import type { CategoryTreeNode } from '../../types/catalog';
+import { formatMoney } from '../../utils/formatCatalog';
+
+const DEFAULT_TOPBAR =
+  'Shop genuine electronics — secure checkout and fast delivery';
 
 function flattenCategories(nodes: CategoryTreeNode[]): CategoryTreeNode[] {
   const result: CategoryTreeNode[] = [];
@@ -17,24 +25,59 @@ function flattenCategories(nodes: CategoryTreeNode[]): CategoryTreeNode[] {
   return result;
 }
 
+function formatVoucherPromo(item: {
+  code: string;
+  name: string;
+  discountType: string;
+  discountValue: number;
+}): string {
+  const discount =
+    item.discountType.toLowerCase() === 'percent'
+      ? `${item.discountValue}% off`
+      : `${formatMoney(item.discountValue)} off`;
+  return `${item.name}: ${discount} with code ${item.code}`;
+}
+
 export function StoreHeader() {
   const navigate = useNavigate();
-  const { isAuthenticated, roles } = useAuth();
+  const { isAuthenticated } = useAuth();
+  const { canBecomeSeller, workspaces } = useRoles();
   const { totalQuantity } = useCart({ autoLoad: isAuthenticated });
   const { totalCount: wishlistCount } = useWishlistMembership({ autoLoad: isAuthenticated });
-  const { unreadCount } = useUnreadNotifications({ autoLoad: isAuthenticated });
   const { categories } = useCategories();
   const [q, setQ] = useState('');
   const [categoriesOpen, setCategoriesOpen] = useState(false);
-  const isAdmin = roles.some((r) => r.toUpperCase() === 'ADMIN');
-  const isSeller = roles.some((r) => r.toUpperCase() === 'SELLER');
+  const [topbarText, setTopbarText] = useState(DEFAULT_TOPBAR);
   const cartTo = isAuthenticated ? '/cart' : `/login?returnUrl=${encodeURIComponent('/cart')}`;
   const wishlistTo = isAuthenticated
     ? '/wishlist'
     : `/login?returnUrl=${encodeURIComponent('/wishlist')}`;
-  const notificationsTo = isAuthenticated
-    ? '/account/notifications'
-    : `/login?returnUrl=${encodeURIComponent('/account/notifications')}`;
+
+  useEffect(() => {
+    if (!isAuthenticated) {
+      setTopbarText(DEFAULT_TOPBAR);
+      return;
+    }
+
+    let cancelled = false;
+    void voucherApi
+      .listVouchers({ scope: 'System', page: 1, pageSize: 5 })
+      .then((res) => {
+        if (cancelled || !res.success || !res.data?.items?.length) {
+          if (!cancelled) setTopbarText(DEFAULT_TOPBAR);
+          return;
+        }
+        const best = res.data.items.find((v) => v.isEligible) ?? res.data.items[0];
+        setTopbarText(formatVoucherPromo(best));
+      })
+      .catch(() => {
+        if (!cancelled) setTopbarText(DEFAULT_TOPBAR);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isAuthenticated]);
 
   function handleSearch(e: FormEvent) {
     e.preventDefault();
@@ -52,7 +95,7 @@ export function StoreHeader() {
             <div className="col-lg-12">
               <div className="topbar-content-box">
                 <div className="topbar-content-info">
-                  <p>Get a Flat 10% Off on All Products — Limited Time Only</p>
+                  <p>{topbarText}</p>
                 </div>
                 <div className="topbar-menu">
                   <ul>
@@ -63,7 +106,7 @@ export function StoreHeader() {
                       <Link to="/categories">Categories</Link>
                     </li>
                     <li>
-                      <Link to="/login">Support</Link>
+                      <Link to="/help">Support</Link>
                     </li>
                   </ul>
                 </div>
@@ -105,49 +148,46 @@ export function StoreHeader() {
                     <ThemeToggle iconOnly />
                   </li>
                   <li>
-                    <Link to={notificationsTo} aria-label="Notifications" title="Notifications">
-                      <i className="fa-regular fa-bell" aria-hidden="true" />
-                      {isAuthenticated && unreadCount > 0 ? (
-                        <span
-                          className="store-header-cart-count"
-                          aria-label={`${unreadCount} unread notifications`}
-                        >
-                          {unreadCount > 99 ? '99+' : unreadCount}
-                        </span>
-                      ) : null}
+                    <StoreNotificationDropdown isAuthenticated={isAuthenticated} />
+                  </li>
+                  <li>
+                    <Link to={wishlistTo} className="store-header-icon-btn" aria-label="Wishlist">
+                      <span className="store-header-icon-wrap">
+                        <img src="/theme/images/icon-wishlist-primary.svg" alt="" />
+                        {isAuthenticated && wishlistCount > 0 ? (
+                          <span
+                            className="store-header-badge"
+                            aria-label={`${wishlistCount} items in wishlist`}
+                          >
+                            {wishlistCount > 99 ? '99+' : wishlistCount}
+                          </span>
+                        ) : null}
+                      </span>
                     </Link>
                   </li>
                   <li>
-                    <Link to={wishlistTo} aria-label="Wishlist">
-                      <img src="/theme/images/icon-wishlist-primary.svg" alt="" />
-                      {isAuthenticated && wishlistCount > 0 ? (
-                        <span
-                          className="store-header-cart-count"
-                          aria-label={`${wishlistCount} items in wishlist`}
-                        >
-                          {wishlistCount > 99 ? '99+' : wishlistCount}
-                        </span>
-                      ) : null}
+                    <Link to={cartTo} className="store-header-cart-link">
+                      <span className="store-header-icon-wrap">
+                        <img src="/theme/images/icon-cart-primary.svg" alt="" />
+                        {isAuthenticated && totalQuantity > 0 ? (
+                          <span
+                            className="store-header-badge"
+                            aria-label={`${totalQuantity} items in cart`}
+                          >
+                            {totalQuantity > 99 ? '99+' : totalQuantity}
+                          </span>
+                        ) : null}
+                      </span>
                     </Link>
                   </li>
-                  <li>
-                    <Link to={cartTo}>
-                      <img src="/theme/images/icon-cart-primary.svg" alt="" />
-                      My Cart
-                      {isAuthenticated && totalQuantity > 0 ? (
-                        <span className="store-header-cart-count" aria-label={`${totalQuantity} items in cart`}>
-                          {totalQuantity > 99 ? '99+' : totalQuantity}
-                        </span>
-                      ) : null}
-                    </Link>
-                  </li>
-                  {isAuthenticated ? (
-                    <li>
-                      <Link to="/account/profile" aria-label="My Account">
-                        <img src="/theme/images/icon-user-primary.svg" alt="" />
-                      </Link>
+                  {workspaces.length > 0 ? (
+                    <li className="store-header-workspace-item">
+                      <WorkspaceSwitcher workspaces={workspaces} />
                     </li>
                   ) : null}
+                  <li>
+                    <StoreUserDropdown isAuthenticated={isAuthenticated} />
+                  </li>
                 </ul>
               </div>
             </div>
@@ -170,7 +210,10 @@ export function StoreHeader() {
                   <ul className="popular-categories-list">
                     {flatCategories.slice(0, 8).map((cat) => (
                       <li key={cat.categoryId}>
-                        <Link to={`/products?categoryId=${cat.categoryId}`} onClick={() => setCategoriesOpen(false)}>
+                        <Link
+                          to={`/products?categoryId=${cat.categoryId}`}
+                          onClick={() => setCategoriesOpen(false)}
+                        >
                           {cat.name}
                         </Link>
                       </li>
@@ -201,18 +244,11 @@ export function StoreHeader() {
                       </Link>
                     </li>
                     {isAuthenticated ? (
-                      <>
-                        <li className="nav-item">
-                          <Link className="nav-link" to="/chat">
-                            Messages
-                          </Link>
-                        </li>
-                        <li className="nav-item">
-                          <Link className="nav-link" to="/account/profile">
-                            My Account
-                          </Link>
-                        </li>
-                      </>
+                      <li className="nav-item">
+                        <Link className="nav-link" to="/account/orders">
+                          My Orders
+                        </Link>
+                      </li>
                     ) : (
                       <li className="nav-item">
                         <Link className="nav-link" to="/login">
@@ -220,17 +256,22 @@ export function StoreHeader() {
                         </Link>
                       </li>
                     )}
-                    {isAdmin ? (
-                      <li className="nav-item">
-                        <Link className="nav-link" to="/admin/categories">
-                          Admin
+                    {/* On desktop the workspaces live in the switcher beside the
+                        account menu. That whole action row is hidden below lg,
+                        so they come back into the nav there — otherwise a seller
+                        on a phone has no way out of the storefront. */}
+                    {workspaces.map((workspace) => (
+                      <li className="nav-item nav-item--workspace" key={workspace.to}>
+                        <Link className="nav-link nav-link--workspace" to={workspace.to}>
+                          <i className={workspace.icon} aria-hidden />
+                          {workspace.label}
                         </Link>
                       </li>
-                    ) : null}
-                    {isSeller ? (
+                    ))}
+                    {canBecomeSeller ? (
                       <li className="nav-item">
-                        <Link className="nav-link" to="/seller">
-                          Seller
+                        <Link className="nav-link nav-link--cta" to="/account/become-seller">
+                          Become a Seller
                         </Link>
                       </li>
                     ) : null}

@@ -81,9 +81,23 @@ public interface IChatRepository
 
 public interface IChatRealtimePublisher
 {
+    /// <summary>
+    /// Fan a new message out to every connection of both participants. Each recipient gets the
+    /// payload with <see cref="ChatMessageDto.IsMine"/> resolved from their own perspective.
+    /// </summary>
     Task PublishMessageAsync(
-        Guid threadId,
         ChatMessageDto message,
+        IReadOnlyCollection<Guid> recipientUserIds,
+        CancellationToken cancellationToken = default);
+
+    Task PublishThreadReadAsync(
+        ChatThreadReadEvent readEvent,
+        IReadOnlyCollection<Guid> recipientUserIds,
+        CancellationToken cancellationToken = default);
+
+    Task PublishTypingAsync(
+        ChatTypingEvent typingEvent,
+        IReadOnlyCollection<Guid> recipientUserIds,
         CancellationToken cancellationToken = default);
 }
 
@@ -126,5 +140,12 @@ public interface IChatService
     Task EnsureThreadParticipantAsync(
         Guid userId,
         Guid threadId,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>Relay a typing signal to the other participant of the thread.</summary>
+    Task NotifyTypingAsync(
+        Guid userId,
+        Guid threadId,
+        bool isTyping,
         CancellationToken cancellationToken = default);
 }

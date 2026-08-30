@@ -1,4 +1,4 @@
-using System.Text.Json.Serialization;
+﻿using System.Text.Json.Serialization;
 
 namespace AIDR.Shared.Dtos.Payment;
 
@@ -19,6 +19,30 @@ public sealed class CreatePayOsPaymentResponse
     public string OrderStatus { get; init; } = null!;
     public decimal Amount { get; init; }
     public string Currency { get; init; } = "VND";
+}
+
+public sealed class SyncPayOsPaymentRequest
+{
+    public Guid OrderId { get; set; }
+}
+
+/// <summary>
+/// What payOS says about an order right now, after the API has reconciled it.
+/// </summary>
+public sealed class SyncPayOsPaymentResponse
+{
+    public Guid OrderId { get; init; }
+    public string OrderCode { get; init; } = null!;
+    public string PaymentStatus { get; init; } = null!;
+    public string OrderStatus { get; init; } = null!;
+
+    /// <summary>Raw payOS payment-link state (PENDING / PAID / CANCELLED / EXPIRED ...).</summary>
+    public string ProviderStatus { get; init; } = null!;
+
+    /// <summary>True when this call is what moved the order to Paid.</summary>
+    public bool Reconciled { get; init; }
+
+    public string Message { get; init; } = null!;
 }
 
 public sealed class PayOsWebhookRequest

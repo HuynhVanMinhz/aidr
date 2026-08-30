@@ -1,4 +1,4 @@
-namespace AIDR.Infrastructure.Persistence.Entities;
+﻿namespace AIDR.Infrastructure.Persistence.Entities;
 
 public class Role
 {
@@ -43,6 +43,11 @@ public class Address
     public string District { get; set; } = null!;
     public string Ward { get; set; } = null!;
     public string StreetAddress { get; set; } = null!;
+
+    /// <summary>Delivery point the buyer pinned on the map. Null on addresses saved before the map existed.</summary>
+    public double? Latitude { get; set; }
+    public double? Longitude { get; set; }
+
     public bool IsDefault { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
@@ -107,6 +112,11 @@ public class Shop
     public string? District { get; set; }
     public string? Ward { get; set; }
     public string? StreetAddress { get; set; }
+
+    /// <summary>Pickup point the seller pinned in Shop settings; the start of the tracking map.</summary>
+    public double? Latitude { get; set; }
+    public double? Longitude { get; set; }
+
     public string CostingMethod { get; set; } = "FIFO";
     public string? ReturnPolicy { get; set; }
     public string? ShippingPolicy { get; set; }
@@ -137,8 +147,52 @@ public class SellerRegistrationRequest
     public DateTime? ReviewedAt { get; set; }
     public DateTime CreatedAt { get; set; }
 
+    /* Identity + legal profile — see docs/solution-seller-onboarding-ekyc.md */
+    public Guid? KycVerificationId { get; set; }
+    public string? BusinessType { get; set; }
+    public string? TaxCode { get; set; }
+    public string? BusinessAddress { get; set; }
+    public string? ContactPhone { get; set; }
+    public string? ContactEmail { get; set; }
+    public string? LicenseImageUrl { get; set; }
+    public DateTime? UpdatedAt { get; set; }
+
     public User User { get; set; } = null!;
     public User? Reviewer { get; set; }
+    public KycVerification? KycVerification { get; set; }
+}
+
+/// <summary>One identity check attempt against the eKYC provider.</summary>
+public class KycVerification
+{
+    public Guid KycVerificationId { get; set; }
+    public Guid UserId { get; set; }
+    public string Provider { get; set; } = "FPTAI";
+    public string? DocumentType { get; set; }
+    /// <summary>Only the last four digits stay readable.</summary>
+    public string? DocumentNumberMask { get; set; }
+    /// <summary>SHA-256 of the full number; used to stop one identity opening many shops.</summary>
+    public string? DocumentNumberHash { get; set; }
+    public string? FullName { get; set; }
+    public string? DateOfBirth { get; set; }
+    public string? Gender { get; set; }
+    public string? HomeTown { get; set; }
+    public string? PermanentAddress { get; set; }
+    public string? IssueDate { get; set; }
+    public string? ExpiryDate { get; set; }
+    public string? FrontImageUrl { get; set; }
+    public string? BackImageUrl { get; set; }
+    public string? SelfieImageUrl { get; set; }
+    public decimal? FaceMatchSimilarity { get; set; }
+    public bool FaceMatched { get; set; }
+    public string Status { get; set; } = "Pending";
+    public string? FailureReason { get; set; }
+    public string? RawOcrJson { get; set; }
+    public string? RawFaceJson { get; set; }
+    public DateTime CreatedAt { get; set; }
+    public DateTime? VerifiedAt { get; set; }
+
+    public User User { get; set; } = null!;
 }
 
 public class Wallet
@@ -161,12 +215,89 @@ public class WalletTransaction
     public string TxType { get; set; } = null!;
     public decimal Amount { get; set; }
     public decimal BalanceAfter { get; set; }
+    /// <summary>Pending balance after this movement; null on rows written before escrow existed.</summary>
+    public decimal? PendingAfter { get; set; }
     public string? ReferenceType { get; set; }
     public Guid? ReferenceId { get; set; }
     public string? Note { get; set; }
     public DateTime CreatedAt { get; set; }
 
     public Wallet Wallet { get; set; } = null!;
+}
+
+public class ShopBankAccount
+{
+    public Guid ShopBankAccountId { get; set; }
+    public Guid ShopId { get; set; }
+    public string BankBin { get; set; } = null!;
+    public string? BankName { get; set; }
+    public string AccountNumber { get; set; } = null!;
+    public string AccountName { get; set; } = null!;
+    public string Status { get; set; } = "Unverified";
+    public bool IsDefault { get; set; } = true;
+    public Guid? VerifiedBy { get; set; }
+    public DateTime? VerifiedAt { get; set; }
+    public string? RejectReason { get; set; }
+    public DateTime CreatedAt { get; set; }
+    public DateTime UpdatedAt { get; set; }
+
+    public Shop Shop { get; set; } = null!;
+}
+
+/// <summary>One row per order: what the platform owes the shop, and when.</summary>
+public class SettlementEntry
+{
+    public Guid SettlementEntryId { get; set; }
+    public Guid OrderId { get; set; }
+    public Guid ShopId { get; set; }
+    public decimal GrossAmount { get; set; }
+    public decimal SubsidyAmount { get; set; }
+    public decimal CommissionRate { get; set; }
+    public decimal CommissionAmount { get; set; }
+    public decimal NetAmount { get; set; }
+    public string Currency { get; set; } = "VND";
+    public string Status { get; set; } = "Holding";
+    public DateTime HoldUntil { get; set; }
+    public DateTime? EligibleAt { get; set; }
+    public Guid? PayoutBatchId { get; set; }
+    public string? HoldReason { get; set; }
+    public string? ReversedReason { get; set; }
+    public DateTime CreatedAt { get; set; }
+    public DateTime UpdatedAt { get; set; }
+
+    public Order Order { get; set; } = null!;
+    public Shop Shop { get; set; } = null!;
+    public PayoutBatch? PayoutBatch { get; set; }
+}
+
+/// <summary>One admin approval = one transfer to one shop.</summary>
+public class PayoutBatch
+{
+    public Guid PayoutBatchId { get; set; }
+    public string BatchCode { get; set; } = null!;
+    public Guid ShopId { get; set; }
+    public Guid ShopBankAccountId { get; set; }
+    public DateTime PeriodTo { get; set; }
+    public int EntryCount { get; set; }
+    public decimal GrossAmount { get; set; }
+    public decimal CommissionAmount { get; set; }
+    public decimal NetAmount { get; set; }
+    public string Currency { get; set; } = "VND";
+    public string Status { get; set; } = "Draft";
+    public Guid? ApprovedBy { get; set; }
+    public DateTime? ApprovedAt { get; set; }
+    public string? ProviderPayoutId { get; set; }
+    public string? ProviderState { get; set; }
+    public DateTime? PaidAt { get; set; }
+    public string? FailureReason { get; set; }
+    public int AttemptCount { get; set; }
+    public string? RawResponseJson { get; set; }
+    public DateTime CreatedAt { get; set; }
+    public DateTime UpdatedAt { get; set; }
+
+    public Shop Shop { get; set; } = null!;
+    public ShopBankAccount ShopBankAccount { get; set; } = null!;
+    public ICollection<SettlementEntry> Entries { get; set; } = new List<SettlementEntry>();
 }
 
 public class Product
@@ -664,4 +795,48 @@ public class AiMessage
     public DateTime CreatedAt { get; set; }
 
     public AiConversation Conversation { get; set; } = null!;
+}
+
+public class Shipment
+{
+    public Guid ShipmentId { get; set; }
+    public Guid OrderId { get; set; }
+    public string Provider { get; set; } = null!;
+    public string? ProviderShipmentId { get; set; }
+    public string? TrackingCode { get; set; }
+    public string Status { get; set; } = "Pending";
+    public string? ProviderStatus { get; set; }
+    public decimal? ShippingFeeQuoted { get; set; }
+    public DateTime? ExpectedDeliveryAt { get; set; }
+
+    /// <summary>Mock: when the simulator steps forward. Real carrier: when to poll again.</summary>
+    public DateTime? NextActionAt { get; set; }
+    public DateTime? LastSyncedAt { get; set; }
+    public int AttemptCount { get; set; }
+    public string? LastError { get; set; }
+    public string? RawCreateJson { get; set; }
+    public DateTime CreatedAt { get; set; }
+    public DateTime UpdatedAt { get; set; }
+
+    public Order Order { get; set; } = null!;
+    public ICollection<ShipmentEvent> Events { get; set; } = new List<ShipmentEvent>();
+}
+
+public class ShipmentEvent
+{
+    public Guid ShipmentEventId { get; set; }
+    public Guid ShipmentId { get; set; }
+
+    /// <summary>Idempotency key — unique per shipment, so a replayed webhook is a no-op.</summary>
+    public string ExternalEventId { get; set; } = null!;
+    public string ProviderStatus { get; set; } = null!;
+    public string MappedStatus { get; set; } = null!;
+    public string? Description { get; set; }
+    public string Source { get; set; } = null!;
+    public bool AppliedToOrder { get; set; }
+    public DateTime OccurredAt { get; set; }
+    public DateTime ReceivedAt { get; set; }
+    public string? RawJson { get; set; }
+
+    public Shipment Shipment { get; set; } = null!;
 }
