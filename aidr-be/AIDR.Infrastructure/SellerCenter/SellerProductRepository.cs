@@ -303,6 +303,58 @@ public sealed class SellerProductRepository : ISellerProductRepository
     public Task<int> GetImageCountAsync(Guid productId, CancellationToken cancellationToken = default) =>
         _db.ProductImages.AsNoTracking().CountAsync(i => i.ProductId == productId, cancellationToken);
 
+    public async Task<Guid?> FindIdBySlugAsync(
+        Guid shopId,
+        string slug,
+        CancellationToken cancellationToken = default)
+    {
+        // A deleted product still owns its slug, so an import row that matches one
+        // must resolve to it rather than fail on the unique index later.
+        var match = await _db.Products.AsNoTracking()
+            .Where(p => p.ShopId == shopId && p.Slug == slug)
+            .Select(p => (Guid?)p.ProductId)
+            .FirstOrDefaultAsync(cancellationToken);
+
+        return match;
+    }
+
+    public async Task<IReadOnlyDictionary<Guid, IReadOnlyList<string>>> ListImageUrlsAsync(
+        IReadOnlyCollection<Guid> productIds,
+        CancellationToken cancellationToken = default)
+    {
+        if (productIds.Count == 0)
+            return new Dictionary<Guid, IReadOnlyList<string>>();
+
+        var rows = await _db.ProductImages.AsNoTracking()
+            .Where(i => productIds.Contains(i.ProductId))
+            .OrderByDescending(i => i.IsPrimary)
+            .ThenBy(i => i.SortOrder)
+            .Select(i => new { i.ProductId, i.ImageUrl })
+            .ToListAsync(cancellationToken);
+
+        return rows
+            .GroupBy(r => r.ProductId)
+            .ToDictionary(
+                g => g.Key,
+                g => (IReadOnlyList<string>)g.Select(r => r.ImageUrl).ToList());
+    }
+
+    public async Task<IReadOnlyList<SellerCategoryOptionRecord>> ListActiveCategoryOptionsAsync(
+        CancellationToken cancellationToken = default)
+    {
+        return await _db.Categories.AsNoTracking()
+            .Where(c => c.IsActive)
+            .OrderBy(c => c.SortOrder)
+            .ThenBy(c => c.Name)
+            .Select(c => new SellerCategoryOptionRecord
+            {
+                CategoryId = c.CategoryId,
+                ParentId = c.ParentId,
+                Name = c.Name
+            })
+            .ToListAsync(cancellationToken);
+    }
+
     private static SellerProductRecord MapDetail(Product product)
     {
         var images = product.Images

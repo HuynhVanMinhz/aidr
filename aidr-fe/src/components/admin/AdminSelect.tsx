@@ -3,6 +3,10 @@ import { useEffect, useId, useMemo, useRef, useState } from 'react';
 export type AdminSelectOption = {
   value: string;
   label: string;
+  /** Nesting level in a tree. 0 reads as a heading, deeper levels are indented. */
+  depth?: number;
+  /** Shown only on the closed trigger, to tell same-named children apart. */
+  groupLabel?: string;
 };
 
 type AdminSelectProps = {
@@ -102,7 +106,18 @@ export function AdminSelect({
           });
         }}
       >
-        <span className="text-truncate">{selected?.label || placeholder}</span>
+        <span className="text-truncate">
+          {selected ? (
+            <>
+              {selected.groupLabel ? (
+                <span className="aidr-admin-select__trail">{selected.groupLabel} › </span>
+              ) : null}
+              {selected.label}
+            </>
+          ) : (
+            placeholder
+          )}
+        </span>
       </button>
       <div
         className={[
@@ -119,7 +134,13 @@ export function AdminSelect({
           <button
             key={option.value || '__empty'}
             type="button"
-            className={`dropdown-item${option.value === value ? ' active' : ''}`}
+            className={[
+              'dropdown-item',
+              option.depth === undefined ? '' : `aidr-admin-select__opt--d${Math.min(option.depth, 3)}`,
+              option.value === value ? 'active' : '',
+            ]
+              .filter(Boolean)
+              .join(' ')}
             role="option"
             aria-selected={option.value === value}
             onClick={() => {

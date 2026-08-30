@@ -94,6 +94,7 @@ public static class InfrastructureServiceCollectionExtensions
         services.AddScoped<IAdminDashboardRepository, AdminDashboardRepository>();
         services.AddScoped<IAdminOrderRepository, AdminOrderRepository>();
         services.AddScoped<ISellerProductRepository, SellerProductRepository>();
+        services.AddSingleton<ISellerProductWorkbook, ClosedXmlSellerProductWorkbook>();
         services.AddScoped<ISellerInventoryRepository, SellerInventoryRepository>();
         services.AddScoped<ISellerOrderRepository, SellerOrderRepository>();
         services.AddScoped<ISellerShopVoucherRepository, SellerShopVoucherRepository>();
