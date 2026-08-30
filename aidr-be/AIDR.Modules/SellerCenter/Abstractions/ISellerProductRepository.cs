@@ -80,6 +80,14 @@ public sealed class SellerProductWriteModel
     public IReadOnlyList<SellerProductImageWriteModel>? Images { get; init; }
 }
 
+/// <summary>A category as the seller may pick it, flattened for a dropdown or a sheet.</summary>
+public sealed class SellerCategoryOptionRecord
+{
+    public int CategoryId { get; init; }
+    public int? ParentId { get; init; }
+    public string Name { get; init; } = null!;
+}
+
 public interface ISellerProductRepository
 {
     Task<SellerShopRecord?> GetActiveShopByOwnerAsync(Guid ownerUserId, CancellationToken cancellationToken = default);
@@ -128,4 +136,25 @@ public interface ISellerProductRepository
         CancellationToken cancellationToken = default);
 
     Task<int> GetImageCountAsync(Guid productId, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// The slug is what a spreadsheet row is matched against, so an import needs
+    /// the id behind it, not just whether one exists.
+    /// </summary>
+    Task<Guid?> FindIdBySlugAsync(
+        Guid shopId,
+        string slug,
+        CancellationToken cancellationToken = default);
+
+    Task<IReadOnlyList<SellerCategoryOptionRecord>> ListActiveCategoryOptionsAsync(
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Image URLs for many products at once. The list projection only carries the
+    /// primary one, and loading the rest per row would slow the list screen down
+    /// for the sake of an export nobody runs on every page view.
+    /// </summary>
+    Task<IReadOnlyDictionary<Guid, IReadOnlyList<string>>> ListImageUrlsAsync(
+        IReadOnlyCollection<Guid> productIds,
+        CancellationToken cancellationToken = default);
 }

@@ -112,6 +112,21 @@ export function validateSellerShopForm(values: SellerShopFormValues) {
     }
   }
 
+  // The weekly grid can only ever emit valid JSON, but its raw escape hatch is a
+  // free textarea; an unparseable value would be stored and then silently
+  // ignored by the shop page, so catch it here instead.
+  const openingHours = values.openingHoursJson.trim();
+  if (openingHours && !errors.openingHoursJson) {
+    try {
+      const parsed: unknown = JSON.parse(openingHours);
+      if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+        errors.openingHoursJson = 'Opening hours must be a JSON object of day → hours.';
+      }
+    } catch {
+      errors.openingHoursJson = 'Opening hours must be valid JSON.';
+    }
+  }
+
   const email = values.email.trim();
   if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
     errors.email = 'Email address is invalid.';

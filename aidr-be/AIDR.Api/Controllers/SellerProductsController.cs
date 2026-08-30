@@ -2,6 +2,7 @@ using AIDR.Api.Extensions;
 using AIDR.Modules.SellerCenter.Abstractions;
 using AIDR.Shared.Dtos.Discovery;
 using AIDR.Shared.Dtos.Seller;
+using AIDR.Shared.Exceptions;
 using AIDR.Shared.Results;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -13,13 +14,24 @@ namespace AIDR.Api.Controllers;
 [Authorize(Policy = "Seller")]
 public sealed class SellerProductsController : ControllerBase
 {
+    /// <summary>Excel refuses to open anything much larger, and so should we.</summary>
+    private const long MaxImportBytes = 10 * 1024 * 1024;
+
+    private const string XlsxContentType =
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+
     private readonly ISellerProductService _products;
     private readonly ISellerInventoryService _inventory;
+    private readonly ISellerProductExcelService _excel;
 
-    public SellerProductsController(ISellerProductService products, ISellerInventoryService inventory)
+    public SellerProductsController(
+        ISellerProductService products,
+        ISellerInventoryService inventory,
+        ISellerProductExcelService excel)
     {
         _products = products;
         _inventory = inventory;
+        _excel = excel;
     }
 
     /// <summary>List products belonging to the current seller's shop.</summary>
@@ -40,6 +52,74 @@ public sealed class SellerProductsController : ControllerBase
     {
         var result = await _products.GetByIdAsync(User.GetUserId(), id, cancellationToken);
         return Ok(ApiResult<SellerProductDetailDto>.Ok(result));
+    }
+
+    /// <summary>Download the seller's catalogue as .xlsx, using the same filters as the list.</summary>
+    [HttpGet("export")]
+    public async Task<IActionResult> Export(
+        [FromQuery] SellerProductQueryRequest request,
+        CancellationToken cancellationToken)
+    {
+        var bytes = await _excel.ExportAsync(User.GetUserId(), request, cancellationToken);
+        return File(bytes, XlsxContentType, $"products-{DateTime.UtcNow:yyyyMMdd-HHmm}.xlsx");
+    }
+
+    /// <summary>Download an empty workbook with the headers, an example row and the category list.</summary>
+    [HttpGet("import-template")]
+    public async Task<IActionResult> ImportTemplate(CancellationToken cancellationToken)
+    {
+        var bytes = await _excel.BuildTemplateAsync(User.GetUserId(), cancellationToken);
+        return File(bytes, XlsxContentType, "product-import-template.xlsx");
+    }
+
+    /// <summary>
+    /// Check a workbook without writing anything: what each row would do, and what
+    /// is wrong with it. The seller confirms this before <see cref="Import"/> runs.
+    /// </summary>
+    [HttpPost("import/preview")]
+    [RequestSizeLimit(MaxImportBytes)]
+    public async Task<ActionResult<ApiResult<SellerProductImportPreviewDto>>> PreviewImport(
+        IFormFile file,
+        CancellationToken cancellationToken)
+    {
+        await using var stream = await ReadUploadAsync(file, cancellationToken);
+        var result = await _excel.PreviewImportAsync(User.GetUserId(), stream, cancellationToken);
+        return Ok(ApiResult<SellerProductImportPreviewDto>.Ok(result));
+    }
+
+    /// <summary>Create or update products from a workbook. Rows with errors are skipped and reported.</summary>
+    [HttpPost("import")]
+    [RequestSizeLimit(MaxImportBytes)]
+    public async Task<ActionResult<ApiResult<SellerProductImportResultDto>>> Import(
+        IFormFile file,
+        CancellationToken cancellationToken)
+    {
+        await using var stream = await ReadUploadAsync(file, cancellationToken);
+        var result = await _excel.ImportAsync(User.GetUserId(), stream, cancellationToken);
+
+        return Ok(ApiResult<SellerProductImportResultDto>.Ok(
+            result,
+            $"{result.Created} created, {result.Updated} updated, {result.Failed} skipped."));
+    }
+
+    /// <summary>
+    /// The workbook reader needs to seek, which an upload stream cannot do, so the
+    /// file is buffered, bounded by the request size limit above.
+    /// </summary>
+    private static async Task<MemoryStream> ReadUploadAsync(
+        IFormFile? file,
+        CancellationToken cancellationToken)
+    {
+        if (file is null || file.Length == 0)
+            throw new AppException("Choose an .xlsx file to import.");
+
+        if (file.Length > MaxImportBytes)
+            throw new AppException($"The file must be smaller than {MaxImportBytes / (1024 * 1024)} MB.");
+
+        var buffer = new MemoryStream();
+        await file.CopyToAsync(buffer, cancellationToken);
+        buffer.Position = 0;
+        return buffer;
     }
 
     /// <summary>Create a product in Pending status for admin moderation.</summary>
