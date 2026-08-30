@@ -1,7 +1,127 @@
-.my-account-sidebar-item ul li a.active,
-.my-account-sidebar-item ul li a.active:hover {
-  color: var(--accent-color, var(--accent));
+/* ---------------------------------------------------------------- account nav (sidebar) */
+
+.account-nav {
+  padding: 10px;
+}
+
+.account-nav__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.account-nav__list--secondary {
+  margin-top: 0;
+}
+
+.account-nav__divider {
+  height: 1px;
+  margin: 8px 4px;
+  background: var(--acc-border, rgba(22, 24, 29, 0.1));
+}
+
+.account-nav__link {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  width: 100%;
+  padding: 0.55rem 0.65rem;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  font-family: inherit;
+  font-size: 0.875rem;
+  font-weight: 500;
+  line-height: 1.35;
+  color: var(--primary-color, #16181d);
+  text-decoration: none;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.account-nav__link i {
+  width: 1rem;
+  flex-shrink: 0;
+  font-size: 0.8125rem;
+  color: var(--acc-muted, #5e6167);
+  text-align: center;
+  transition: color 0.15s ease;
+}
+
+.account-nav__link span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.account-nav__link:hover {
+  background: rgba(22, 24, 29, 0.05);
+  color: var(--primary-color, #16181d);
+  text-decoration: none;
+}
+
+.account-nav__link:hover i {
+  color: var(--primary-color, #16181d);
+}
+
+.account-nav__link.is-active {
+  background: rgba(22, 24, 29, 0.08);
   font-weight: 600;
+  color: var(--primary-color, #16181d);
+}
+
+.account-nav__link.is-active i {
+  color: var(--primary-color, #16181d);
+}
+
+.account-nav__footer {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--acc-border, rgba(22, 24, 29, 0.1));
+}
+
+.account-nav__link--logout {
+  color: var(--acc-muted, #5e6167);
+}
+
+.account-nav__link--logout:hover {
+  background: rgba(192, 57, 43, 0.06);
+  color: #c0392b;
+}
+
+.account-nav__link--logout:hover i {
+  color: #c0392b;
+}
+
+@media (max-width: 991.98px) {
+  .account-nav {
+    margin-bottom: 16px;
+  }
+
+  .account-nav__list {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 4px;
+  }
+
+  .account-nav__list--secondary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .account-nav__divider,
+  .account-nav__footer {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 575.98px) {
+  .account-nav__list,
+  .account-nav__list--secondary {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 
 /* Bootstrap theme gốc dùng URL awaikenthemes làm divider — override */
@@ -21,24 +141,6 @@
   opacity: 0.45;
   cursor: not-allowed;
   pointer-events: none;
-}
-
-.account-sidebar-logout {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  width: 100%;
-  padding: 0;
-  border: none;
-  background: none;
-  font: inherit;
-  color: inherit;
-  cursor: pointer;
-  text-align: left;
-}
-
-.account-sidebar-logout:hover {
-  color: var(--accent-color, var(--accent));
 }
 
 .account-muted {
@@ -3595,6 +3697,13 @@
  * 232px fits the longest label ("Shipping addresses") on two lines and
  * hands the rest back to the content.
  * ------------------------------------------------------------------ */
+
+.account-shell {
+  --acc-border: rgba(22, 24, 29, 0.1);
+  --acc-border-strong: rgba(22, 24, 29, 0.18);
+  --acc-muted: #5e6167;
+  --acc-radius: 12px;
+}
 
 @media (min-width: 992px) {
   .account-shell__nav {

@@ -471,6 +471,118 @@ public class DevController : ControllerBase
         });
     }
 
+    /// <summary>Seed tables not covered by other demo scripts (dev only).</summary>
+    [HttpPost("seed-table-coverage")]
+    public async Task<IActionResult> SeedTableCoverage(
+        [FromServices] AidrDbContext db,
+        [FromServices] IWebHostEnvironment env,
+        CancellationToken ct)
+    {
+        if (!env.IsDevelopment())
+            return NotFound();
+
+        await TableCoverageDemoSeeder.SeedAsync(db, env.ContentRootPath, ct);
+        await DataIntegritySeeder.ReconcileAsync(db, env.ContentRootPath, ct);
+        var report = await DataIntegritySeeder.ValidateAsync(db, env.ContentRootPath, ct);
+
+        return Ok(new
+        {
+            message = "Table coverage seed completed.",
+            isHealthy = report.IsHealthy,
+            issueCount = report.IssueCount,
+            tableCounts = report.TableCounts
+        });
+    }
+
+    /// <summary>Backfill opening InventoryLots for products missing lot coverage (dev only).</summary>
+    [HttpPost("seed-inventory-lots")]
+    public async Task<IActionResult> SeedInventoryLots(
+        [FromServices] AidrDbContext db,
+        [FromServices] IWebHostEnvironment env,
+        CancellationToken ct)
+    {
+        if (!env.IsDevelopment())
+            return NotFound();
+
+        await InventoryLotsDemoSeeder.SeedAsync(db, env.ContentRootPath, ct);
+
+        var report = await DataIntegritySeeder.ValidateAsync(db, env.ContentRootPath, ct);
+        var gaps = report.Issues.Count(i => i.Issue == "StockLotMismatch");
+
+        return Ok(new
+        {
+            message = "Inventory lots backfill completed.",
+            stockLotMismatchCount = gaps,
+            isHealthy = report.IsHealthy,
+            issueCount = report.IssueCount
+        });
+    }
+
+    /// <summary>Re-sync denormalized counters and fix common seed drift (dev only).</summary>
+    [HttpPost("seed-reconcile-data")]
+    public async Task<IActionResult> SeedReconcileData(
+        [FromServices] AidrDbContext db,
+        [FromServices] IWebHostEnvironment env,
+        CancellationToken ct)
+    {
+        if (!env.IsDevelopment())
+            return NotFound();
+
+        await DataIntegritySeeder.ReconcileAsync(db, env.ContentRootPath, ct);
+        var report = await DataIntegritySeeder.ValidateAsync(db, env.ContentRootPath, ct);
+
+        return Ok(new
+        {
+            message = "Data reconcile completed.",
+            isHealthy = report.IsHealthy,
+            issueCount = report.IssueCount,
+            rulesChecked = report.RulesChecked,
+            tablesChecked = report.TablesChecked,
+            tableCounts = report.TableCounts,
+            issuesByType = report.IssuesByType,
+            issues = report.Issues
+        });
+    }
+
+    /// <summary>Check denormalized counters and referential drift (dev only).</summary>
+    [HttpGet("validate-data")]
+    public async Task<IActionResult> ValidateData(
+        [FromServices] AidrDbContext db,
+        [FromServices] IWebHostEnvironment env,
+        CancellationToken ct)
+    {
+        if (!env.IsDevelopment())
+            return NotFound();
+
+        var report = await DataIntegritySeeder.ValidateAsync(db, env.ContentRootPath, ct);
+        return Ok(report);
+    }
+
+    /// <summary>Run all demo seeds in order, then reconcile and validate (dev only).</summary>
+    [HttpPost("seed-all")]
+    public async Task<IActionResult> SeedAll(
+        [FromServices] AidrDbContext db,
+        [FromServices] IPasswordHasher passwordHasher,
+        [FromServices] IWebHostEnvironment env,
+        CancellationToken ct)
+    {
+        if (!env.IsDevelopment())
+            return NotFound();
+
+        var result = await FullDevSeedSeeder.SeedAsync(db, passwordHasher, env.ContentRootPath, ct);
+
+        return Ok(new
+        {
+            message = result.Validation.IsHealthy
+                ? "Full dev seed completed. All integrity checks passed."
+                : "Full dev seed completed with data integrity warnings.",
+            stepsCompleted = result.StepsCompleted,
+            isHealthy = result.Validation.IsHealthy,
+            issueCount = result.Validation.IssueCount,
+            issues = result.Validation.Issues.Take(100)
+        });
+    }
+
     /// <summary>Add the map coordinate columns to Addresses / Shops (dev only).</summary>
     [HttpPost("address-geo-schema")]
     public async Task<IActionResult> ApplyAddressGeoSchema(
