@@ -3,7 +3,9 @@ import { Link, useNavigate } from 'react-router-dom';
 import { ThemeToggle } from '../ThemeToggle';
 import { StoreNotificationDropdown } from './StoreNotificationDropdown';
 import { StoreUserDropdown } from './StoreUserDropdown';
+import { WorkspaceSwitcher } from './WorkspaceSwitcher';
 import { useAuth } from '../../hooks/useAuth';
+import { useRoles } from '../../hooks/useRoles';
 import { useCart } from '../../hooks/useCart';
 import { useCategories } from '../../hooks/useCatalog';
 import { useWishlistMembership } from '../../hooks/useWishlist';
@@ -38,15 +40,14 @@ function formatVoucherPromo(item: {
 
 export function StoreHeader() {
   const navigate = useNavigate();
-  const { isAuthenticated, roles } = useAuth();
+  const { isAuthenticated } = useAuth();
+  const { canBecomeSeller, workspaces } = useRoles();
   const { totalQuantity } = useCart({ autoLoad: isAuthenticated });
   const { totalCount: wishlistCount } = useWishlistMembership({ autoLoad: isAuthenticated });
   const { categories } = useCategories();
   const [q, setQ] = useState('');
   const [categoriesOpen, setCategoriesOpen] = useState(false);
   const [topbarText, setTopbarText] = useState(DEFAULT_TOPBAR);
-  const isAdmin = roles.some((r) => r.toUpperCase() === 'ADMIN');
-  const isSeller = roles.some((r) => r.toUpperCase() === 'SELLER');
   const cartTo = isAuthenticated ? '/cart' : `/login?returnUrl=${encodeURIComponent('/cart')}`;
   const wishlistTo = isAuthenticated
     ? '/wishlist'
@@ -179,12 +180,13 @@ export function StoreHeader() {
                       </span>
                     </Link>
                   </li>
+                  {workspaces.length > 0 ? (
+                    <li className="store-header-workspace-item">
+                      <WorkspaceSwitcher workspaces={workspaces} />
+                    </li>
+                  ) : null}
                   <li>
-                    <StoreUserDropdown
-                      isAuthenticated={isAuthenticated}
-                      isSeller={isSeller}
-                      isAdmin={isAdmin}
-                    />
+                    <StoreUserDropdown isAuthenticated={isAuthenticated} />
                   </li>
                 </ul>
               </div>
@@ -243,8 +245,8 @@ export function StoreHeader() {
                     </li>
                     {isAuthenticated ? (
                       <li className="nav-item">
-                        <Link className="nav-link" to="/account/profile">
-                          My Account
+                        <Link className="nav-link" to="/account/orders">
+                          My Orders
                         </Link>
                       </li>
                     ) : (
@@ -254,24 +256,22 @@ export function StoreHeader() {
                         </Link>
                       </li>
                     )}
-                    {isAuthenticated && !isSeller ? (
+                    {/* On desktop the workspaces live in the switcher beside the
+                        account menu. That whole action row is hidden below lg,
+                        so they come back into the nav there — otherwise a seller
+                        on a phone has no way out of the storefront. */}
+                    {workspaces.map((workspace) => (
+                      <li className="nav-item nav-item--workspace" key={workspace.to}>
+                        <Link className="nav-link nav-link--workspace" to={workspace.to}>
+                          <i className={workspace.icon} aria-hidden />
+                          {workspace.label}
+                        </Link>
+                      </li>
+                    ))}
+                    {canBecomeSeller ? (
                       <li className="nav-item">
-                        <Link className="nav-link" to="/account/become-seller">
+                        <Link className="nav-link nav-link--cta" to="/account/become-seller">
                           Become a Seller
-                        </Link>
-                      </li>
-                    ) : null}
-                    {isSeller ? (
-                      <li className="nav-item">
-                        <Link className="nav-link" to="/seller">
-                          Seller Center
-                        </Link>
-                      </li>
-                    ) : null}
-                    {isAdmin ? (
-                      <li className="nav-item">
-                        <Link className="nav-link" to="/admin">
-                          Admin
                         </Link>
                       </li>
                     ) : null}
