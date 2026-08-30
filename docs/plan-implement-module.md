@@ -1,46 +1,59 @@
 # AIDR — Plan Implement Module
 
 Thứ tự implement theo **dependency** (nền tảng → catalog → mua bán → vận hành → AI).  
-Cập nhật cột **status**: `Todo` · `In Progress` · `Done` · `Blocked`.
+Cập nhật cột **status**: `Todo` · `In Progress` · `Done` · `Blocked`.  
+Cột **assign**: GitHub username — owner module (maintain, demo, bugfix).
 
 **Gợi ý sprint:** mỗi module P0 xong mới sang module phụ thuộc nặng (Order cần Product Approved + Auth).
 
 ---
 
+## Team
+
+| GitHub | Họ tên / ghi chú | Email |
+|--------|------------------|-------|
+| `thuandn03` | Thuận | Vanthuan03042003@gmail.com |
+| `Ha20203` | Hà | tranthiphuongha20022003@gmail.com |
+| `manhisme10` | Mạnh | manhisme10@gmail.com |
+| `hoang2211` | Hoàng | Hoangnntde170445@fpt.edu.vn |
+| `minhvanhuynh` | Minh | huynhvanminh17082003@gmail.com |
+
+---
+
 ## Implementation Order
 
-| no | name | Description | usecase (module) | status |
-|----|------|-------------|------------------|--------|
-| 01 | Foundation / Infrastructure | Solution .NET + React scaffold; Docker; EF Core map `database.sql`; Redis client; NGINX; Keycloak realm; config env; health checks; Shared DTOs. **Chưa có UI nghiệp vụ** nhưng unblock mọi module sau. | — (tech enabler) | Done |
-| 02 | Auth | Đăng ký, login email, Google OIDC, logout, quên MK, JWT/role guard FE+BE. | UC-01, UC-02, UC-03, UC-04, UC-05 | Done |
-| 03 | Profile | Xem/sửa profile, avatar Cloudinary, địa chỉ, đổi MK. | UC-06, UC-07, UC-08 | Done |
-| 04 | Discovery (Catalog Read) | API + FE public: list/detail SP, category tree, search, filter/sort; Redis cache list. Chỉ hiện SP `Approved`. | UC-09, UC-10, UC-11, UC-26, UC-27 | Done |
-| 05 | Admin — Category | CRUD/activate category — **làm trước** để Seller gắn CategoryId khi tạo SP. | UC-22, UC-23, UC-24, UC-25 | Done |
-| 06 | Admin — Seller Onboarding | Duyệt đăng ký seller → tạo Shop + Wallet + role. Cần trước khi Seller Center thật. Buyer apply (Become Seller). | UC-75, UC-76, UC-77 | Done |
-| 07 | SellerCenter — Product | CRUD SP seller, upload ảnh, my products; SP vào `Pending`. | UC-12, UC-13, UC-14, UC-15, UC-16 | Done |
-| 08 | SellerCenter — Inventory & Pricing | Nhập lô (UnitCost), quản lý tồn, đổi giá bán + price history. | UC-17, UC-91, UC-92 | Done |
-| 09 | Admin — Product Moderation | Queue duyệt/từ chối SP + history → SP lên kệ Discovery. **Khóa vertical slice bán hàng.** | UC-18, UC-19, UC-20, UC-21 | Done |
-| 10 | Shop Public Page | Trang chi tiết seller cho buyer (trust). | UC-62b, UC-64 | Done |
-| 11 | Order — Cart | Giỏ hàng add/view/remove. | UC-29, UC-30, UC-31 | Done |
-| 12 | Order — Checkout | Tạo đơn (split shop), snapshot địa chỉ/giá, reserve stock FIFO lot allocation. | UC-34 | Done |
-| 13 | Payment | payOS create link + webhook → Paid; gắn UC-35. | UC-35 | Done |
-| 14 | Order — Buyer Lifecycle | List/detail đơn, hủy, xác nhận nhận hàng. | UC-39, UC-40, UC-41, UC-42 | Done |
-| 15 | SellerCenter — Orders | Seller xem đơn & cập nhật status + tracking. | UC-46, UC-47 | Done |
-| 16 | Voucher (Buyer apply) | Xem & apply voucher (cần có data voucher — seed hoặc làm song song Admin/Seller voucher). | UC-32, UC-33 | Done |
-| 17 | Admin — System Voucher | CRUD/activate voucher toàn sàn. | UC-78, UC-79, UC-80, UC-81 | Done |
-| 18 | SellerCenter — Shop Voucher | CRUD voucher của shop. | UC-87, UC-88, UC-89 | Done |
-| 19 | Engagement — Wishlist | Wishlist CRUD. | UC-36, UC-37, UC-38 | Done |
-| 20 | Engagement — Reviews & Ratings | Review SP + rate seller. | UC-59, UC-60, UC-61, UC-62a, UC-63 | Done |
-| 21 | Engagement — Follow | Follow / unfollow / list. | UC-65, UC-66, UC-67 | Done |
-| 22 | Return & Refund | Buyer request **Trả hàng+Hoàn tiền** (video Unboxing/Testing); Admin duyệt; **không Exchange**; refund buyer rồi debit seller wallet. | UC-43, UC-48, UC-49, UC-50, UC-52 | Done |
-| 23 | Notifications | REST inbox + SignalR push (order/payment/moderation). | UC-44, UC-45 | Done |
-| 24 | Chat | Thread list + gửi tin SignalR. | UC-57, UC-58 | Done |
-| 25 | SellerCenter — Finance & Insights | Wallet, dashboard, sales reports (dùng cost lot → margin). | UC-69, UC-70, UC-85 | Done |
-| 26 | Admin — Governance | Account list, lock/unlock, customer insights. | UC-71, UC-72, UC-73, UC-74 | Done |
-| 27 | AI — Recommendation & Similar | Recommend + similar (rule/hybrid trước, LLM sau nếu cần). | UC-53, UC-54 | Done |
-| 28 | AI — NL Filter & Compare | Natural language → filter; so sánh SP. | UC-90, UC-28 | Done |
-| 29 | AI — Shopping Assistant | Chatbot mua sắm Groq + slot memory + NL retrieve + lưu AiConversations. | UC-56 | Done |
-| 30 | Hardening & Observability | Grafana dashboards, rate-limit AI/login, E2E smoke, perf cache, docs API. | — (NFR) | Todo |
+| no | name | Description | usecase (module) | status | assign |
+|----|------|-------------|------------------|--------|--------|
+| 01 | Foundation / Infrastructure | Solution .NET + React scaffold; Docker; EF Core map `database.sql`; Redis client; NGINX; Keycloak realm; config env; health checks; Shared DTOs. **Chưa có UI nghiệp vụ** nhưng unblock mọi module sau. | — (tech enabler) | Done | thuandn03 |
+| 02 | Auth | Đăng ký, login email, Google OIDC, logout, quên MK, JWT/role guard FE+BE. | UC-01, UC-02, UC-03, UC-04, UC-05 | Done | thuandn03 |
+| 03 | Profile | Xem/sửa profile, avatar Cloudinary, địa chỉ, đổi MK. | UC-06, UC-07, UC-08 | Done | thuandn03 |
+| 04 | Discovery (Catalog Read) | API + FE public: list/detail SP, category tree, search, filter/sort; Redis cache list. Chỉ hiện SP `Approved`. | UC-09, UC-10, UC-11, UC-26, UC-27 | Done | thuandn03 |
+| 05 | Admin — Category | CRUD/activate category — **làm trước** để Seller gắn CategoryId khi tạo SP. | UC-22, UC-23, UC-24, UC-25 | Done | Ha20203 |
+| 06 | Admin — Seller Onboarding | Duyệt đăng ký seller → tạo Shop + Wallet + role. Cần trước khi Seller Center thật. Buyer apply (Become Seller). | UC-75, UC-76, UC-77 | Done | Ha20203 |
+| 07 | SellerCenter — Product | CRUD SP seller, upload ảnh, my products; SP vào `Pending`. | UC-12, UC-13, UC-14, UC-15, UC-16 | Done | manhisme10 |
+| 08 | SellerCenter — Inventory & Pricing | Nhập lô (UnitCost), quản lý tồn, đổi giá bán + price history. | UC-17, UC-91, UC-92 | Done | manhisme10 |
+| 09 | Admin — Product Moderation | Queue duyệt/từ chối SP + history → SP lên kệ Discovery. **Khóa vertical slice bán hàng.** | UC-18, UC-19, UC-20, UC-21 | Done | Ha20203 |
+| 10 | Shop Public Page | Trang chi tiết seller cho buyer (trust). | UC-62b, UC-64 | Done | manhisme10 |
+| 11 | Order — Cart | Giỏ hàng add/view/remove. | UC-29, UC-30, UC-31 | Done | hoang2211 |
+| 12 | Order — Checkout | Tạo đơn (split shop), snapshot địa chỉ/giá, reserve stock FIFO lot allocation. | UC-34 | Done | hoang2211 |
+| 13 | Payment | payOS create link + webhook → Paid; gắn UC-35. | UC-35 | Done | hoang2211 |
+| 14 | Order — Buyer Lifecycle | List/detail đơn, hủy, xác nhận nhận hàng. | UC-39, UC-40, UC-41, UC-42 | Done | hoang2211 |
+| 15 | SellerCenter — Orders | Seller xem đơn & cập nhật status + tracking. | UC-46, UC-47 | Done | manhisme10 |
+| 16 | Voucher (Buyer apply) | Xem & apply voucher (cần có data voucher — seed hoặc làm song song Admin/Seller voucher). | UC-32, UC-33 | Done | hoang2211 |
+| 17 | Admin — System Voucher | CRUD/activate voucher toàn sàn. | UC-78, UC-79, UC-80, UC-81 | Done | Ha20203 |
+| 18 | SellerCenter — Shop Voucher | CRUD voucher của shop. | UC-87, UC-88, UC-89 | Done | manhisme10 |
+| 19 | Engagement — Wishlist | Wishlist CRUD. | UC-36, UC-37, UC-38 | Done | minhvanhuynh |
+| 20 | Engagement — Reviews & Ratings | Review SP + rate seller. | UC-59, UC-60, UC-61, UC-62a, UC-63 | Done | minhvanhuynh |
+| 21 | Engagement — Follow | Follow / unfollow / list. | UC-65, UC-66, UC-67 | Done | minhvanhuynh |
+| 22 | Return & Refund | Buyer request **Trả hàng+Hoàn tiền** (video Unboxing/Testing); Admin duyệt; **không Exchange**; refund buyer rồi debit seller wallet. | UC-43, UC-48, UC-49, UC-50, UC-52 | Done | Ha20203 |
+| 23 | Notifications | REST inbox + SignalR push (order/payment/moderation). | UC-44, UC-45 | Done | thuandn03 |
+| 24 | Chat | Thread list + gửi tin SignalR. | UC-57, UC-58 | Done | hoang2211 |
+| 25 | SellerCenter — Finance & Insights | Wallet, dashboard, sales reports (dùng cost lot → margin). | UC-69, UC-70, UC-85 | Done | manhisme10 |
+| 26 | Admin — Governance | Account list, lock/unlock, customer insights. | UC-71, UC-72, UC-73, UC-74 | Done | Ha20203 |
+| 27 | AI — Recommendation & Similar | Recommend + similar (rule/hybrid trước, LLM sau nếu cần). | UC-53, UC-54 | Done | minhvanhuynh |
+| 28 | AI — NL Filter & Compare | Natural language → filter; so sánh SP. | UC-90, UC-28 | Done | minhvanhuynh |
+| 29 | AI — Shopping Assistant | Chatbot mua sắm Groq + slot memory + NL retrieve + lưu AiConversations. | UC-56 | Done | minhvanhuynh |
+| 30 | Hardening & Observability | Grafana dashboards, rate-limit AI/login, E2E smoke, perf cache, docs API. | — (NFR) | Todo | thuandn03 |
 
 ---
 
@@ -55,6 +68,18 @@ Cập nhật cột **status**: `Todo` · `In Progress` · `Done` · `Blocked`.
 | **M5 — Realtime & money** | 23 → 26 | Notify, chat, wallet, admin lock |
 | **M6 — AI differentiator** | 27 → 29 | Recommend, NL filter, compare, chatbot |
 | **M7 — Release** | 30 | Ổn định, monitor, checklist Report |
+
+---
+
+## Phân công theo thành viên
+
+| assign | Modules | Số module | Vai trò chính |
+|--------|---------|-----------|---------------|
+| `thuandn03` | 01, 02, 03, 04, 23, 30 | 6 | Nền tảng, Auth, Profile, Discovery, Notifications, Hardening |
+| `Ha20203` | 05, 06, 09, 17, 22, 26 | 6 | Admin: Category, Onboarding, Moderation, Voucher, Return, Governance |
+| `manhisme10` | 07, 08, 10, 15, 18, 25 | 6 | SellerCenter: Product, Inventory, Shop page, Orders, Voucher, Finance |
+| `hoang2211` | 11, 12, 13, 14, 16, 24 | 6 | Order/Payment: Cart → Checkout → payOS, Buyer lifecycle, Chat |
+| `minhvanhuynh` | 19, 20, 21, 27, 28, 29 | 6 | Engagement + AI: Wishlist, Review, Follow, Recommend, NL, Assistant |
 
 ---
 
@@ -89,6 +114,7 @@ flowchart LR
 2. Module **Blocked** phải ghi chú phụ thuộc (VD: `13 Payment` blocked bởi tài khoản payOS sandbox).
 3. Khi module `Done`, đánh `Done` các UC tương ứng trong `usecase.md`.
 4. Không nhảy sang AI (27–29) nếu M3 (buy path) chưa demo được.
+5. **assign** = owner chính; PR liên quan module nên tag đúng người hoặc request review từ assignee.
 
 ---
 
