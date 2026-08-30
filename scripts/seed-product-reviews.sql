@@ -47,7 +47,7 @@ INSERT INTO @Reviewers (UserId, FullName, Idx) VALUES
 (N'A1111111-1111-1111-1111-111111111118', N'Robin Chau', 18),
 (N'A1111111-1111-1111-1111-111111111119', N'Sage Dinh', 19);
 
-DECLARE @BuyerRoleId INT = (SELECT TOP 1 RoleId FROM dbo.Roles WHERE Name = N'Buyer');
+DECLARE @BuyerRoleId INT = (SELECT TOP 1 RoleId FROM dbo.Roles WHERE RoleCode = N'BUYER');
 
 INSERT INTO dbo.Users (
     UserId, Email, PasswordHash, FullName, Status, EmailConfirmed, CreatedAt, UpdatedAt
