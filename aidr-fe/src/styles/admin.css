@@ -334,3 +334,239 @@ html[data-aidr-shell='admin'] .wrapper .page-content > .container-xxl {
   font-size: 0.75rem;
   color: var(--bs-secondary-color, #6c757d);
 }
+
+/* ------------------------------------------------------------------ *
+ * Structured editors that replaced the raw JSON textareas. Everything
+ * uses Bootstrap tokens so both themes follow the shell automatically.
+ * ------------------------------------------------------------------ */
+
+/* Chips sit inside a real .form-control so focus and invalid states match
+   every other field on the page. */
+.tag-field {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  min-height: 38px;
+  height: auto;
+  padding: 6px 8px;
+  cursor: text;
+}
+
+.tag-field__chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 6px 2px 10px;
+  border-radius: 999px;
+  background: var(--bs-primary-bg-subtle, #e7f1ff);
+  color: var(--bs-primary-text-emphasis, #0a58ca);
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  white-space: nowrap;
+}
+
+.tag-field__remove {
+  display: inline-flex;
+  align-items: center;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  opacity: 0.65;
+  font-size: 0.95rem;
+}
+
+.tag-field__remove:hover {
+  opacity: 1;
+}
+
+.tag-field__input {
+  flex: 1 1 120px;
+  min-width: 120px;
+  border: 0;
+  outline: 0;
+  padding: 2px 0;
+  background: transparent;
+  color: inherit;
+}
+
+.tag-field__suggestion {
+  padding: 1px 8px;
+  border: 1px dashed var(--bs-border-color, #e5e7eb);
+  border-radius: 999px;
+  background: none;
+  color: var(--bs-secondary-color, #6c757d);
+  font-size: 0.75rem;
+}
+
+.tag-field__suggestion:hover {
+  border-style: solid;
+  color: var(--bs-primary, #0d6efd);
+}
+
+/* Name / value / remove — the header row labels the columns once instead of
+   repeating a placeholder on every line. */
+.kv-field__head,
+.kv-field__row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 38px;
+  gap: 8px;
+  align-items: center;
+}
+
+.kv-field__head {
+  margin-bottom: 4px;
+  color: var(--bs-secondary-color, #6c757d);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.kv-field__row + .kv-field__row {
+  margin-top: 8px;
+}
+
+.kv-field__remove {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 38px;
+}
+
+.kv-field--invalid .form-control {
+  border-color: var(--bs-form-invalid-border-color, #dc3545);
+}
+
+.hours-field__row {
+  display: grid;
+  grid-template-columns: minmax(140px, 1fr) minmax(0, 2fr);
+  gap: 12px;
+  align-items: center;
+  padding: 6px 0;
+}
+
+.hours-field__row + .hours-field__row {
+  border-top: 1px solid var(--bs-border-color, #e5e7eb);
+}
+
+.hours-field__toggle {
+  margin-bottom: 0;
+}
+
+.hours-field__times {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 280px;
+}
+
+.hours-field__dash {
+  color: var(--bs-secondary-color, #6c757d);
+}
+
+.hours-field__closed {
+  color: var(--bs-secondary-color, #6c757d);
+  font-size: 0.8125rem;
+}
+
+.hours-field--invalid {
+  border-left: 2px solid var(--bs-form-invalid-border-color, #dc3545);
+  padding-left: 10px;
+}
+
+@media (max-width: 575.98px) {
+  .kv-field__head {
+    display: none;
+  }
+
+  .kv-field__row {
+    grid-template-columns: minmax(0, 1fr) 38px;
+    grid-template-areas: 'key remove' 'value value';
+  }
+
+  .kv-field__row > .form-control:first-of-type {
+    grid-area: key;
+  }
+
+  .kv-field__row > .form-control:nth-of-type(2) {
+    grid-area: value;
+  }
+
+  .kv-field__remove {
+    grid-area: remove;
+  }
+
+  .hours-field__row {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ------------------------------------------------------------------ *
+ * Tree options inside AdminSelect. Depth used to be a run of em-dashes
+ * glued to the label, which read as punctuation and followed the label
+ * onto the closed trigger. Indentation plus weight says the same thing
+ * without touching the text.
+ *
+ * The theme's own `.dropdown-item` sets a `padding` shorthand and loads
+ * after this file, so these rules need the extra specificity to land.
+ * ------------------------------------------------------------------ */
+
+.aidr-admin-select .dropdown-menu .dropdown-item.aidr-admin-select__opt--d0 {
+  font-weight: 600;
+  color: var(--bs-emphasis-color, #1f2937);
+}
+
+.aidr-admin-select .dropdown-menu .dropdown-item[class*='aidr-admin-select__opt--d'] {
+  position: relative;
+}
+
+.aidr-admin-select .dropdown-menu .dropdown-item.aidr-admin-select__opt--d1,
+.aidr-admin-select .dropdown-menu .dropdown-item.aidr-admin-select__opt--d2,
+.aidr-admin-select .dropdown-menu .dropdown-item.aidr-admin-select__opt--d3 {
+  font-weight: 400;
+  opacity: 0.9;
+}
+
+.aidr-admin-select .dropdown-menu .dropdown-item.aidr-admin-select__opt--d1 {
+  padding-left: 2.1rem;
+}
+
+.aidr-admin-select .dropdown-menu .dropdown-item.aidr-admin-select__opt--d2 {
+  padding-left: 3.2rem;
+}
+
+.aidr-admin-select .dropdown-menu .dropdown-item.aidr-admin-select__opt--d3 {
+  padding-left: 4.3rem;
+}
+
+/* A short guide line where the dash used to be: it marks the child without
+   being mistaken for part of the name. */
+.aidr-admin-select .dropdown-menu .dropdown-item.aidr-admin-select__opt--d1::before,
+.aidr-admin-select .dropdown-menu .dropdown-item.aidr-admin-select__opt--d2::before,
+.aidr-admin-select .dropdown-menu .dropdown-item.aidr-admin-select__opt--d3::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  width: 11px;
+  height: 1px;
+  background: var(--bs-border-color, #d1d5db);
+}
+
+.aidr-admin-select .dropdown-menu .dropdown-item.aidr-admin-select__opt--d1::before {
+  left: 1.1rem;
+}
+
+.aidr-admin-select .dropdown-menu .dropdown-item.aidr-admin-select__opt--d2::before {
+  left: 2.2rem;
+}
+
+.aidr-admin-select .dropdown-menu .dropdown-item.aidr-admin-select__opt--d3::before {
+  left: 3.3rem;
+}
+
+/* The parent name only qualifies the selection, so it must not compete with it. */
+.aidr-admin-select__trail {
+  color: var(--bs-secondary-color, #6c757d);
+  font-weight: 400;
+}

@@ -22,6 +22,7 @@ import {
   type ShopProductFilters,
 } from '../../store/shopSlice';
 import type { ProductSort } from '../../types/catalog';
+import { OPENING_HOURS_DAYS } from '../../utils/structuredJson';
 import type { ShopPublicAddress, ShopPublicContact } from '../../types/shop';
 
 type ShopTab = 'about' | 'policies' | 'rating';
@@ -71,13 +72,35 @@ function hasContact(contact: ShopPublicContact): boolean {
   );
 }
 
+const DAY_LABELS = new Map<string, string>(
+  OPENING_HOURS_DAYS.map((day) => [day.key, day.label]),
+);
+
+/**
+ * Sellers now pick days in a weekly grid, so the keys are `mon`..`sun` and can
+ * be shown as day names in week order. Anything older is still rendered, just
+ * with its raw key, after the days we recognise.
+ */
 function parseOpeningHours(json?: string | null): { day: string; hours: string }[] {
   if (!json?.trim()) return [];
   try {
     const parsed = JSON.parse(json) as Record<string, unknown>;
-    return Object.entries(parsed)
+    const rows = Object.entries(parsed)
       .filter(([, value]) => typeof value === 'string' && value.trim())
-      .map(([day, hours]) => ({ day, hours: String(hours) }));
+      .map(([key, hours]) => ({
+        key: key.trim().toLowerCase(),
+        day: DAY_LABELS.get(key.trim().toLowerCase()) ?? key,
+        hours: String(hours),
+      }));
+
+    const order = OPENING_HOURS_DAYS.map((d) => d.key as string);
+    return rows
+      .sort((a, b) => {
+        const ai = order.indexOf(a.key);
+        const bi = order.indexOf(b.key);
+        return (ai < 0 ? order.length : ai) - (bi < 0 ? order.length : bi);
+      })
+      .map(({ day, hours }) => ({ day, hours }));
   } catch {
     return [];
   }

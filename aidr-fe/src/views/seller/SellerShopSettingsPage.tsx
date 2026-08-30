@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { Link } from 'react-router-dom';
 import { AddressMapPicker } from '../../components/address/AddressMapPicker';
 import { FormField } from '../../components/admin/FormField';
+import { OpeningHoursField } from '../../components/admin/OpeningHoursField';
 import { useToast } from '../../hooks/useToast';
 import { getMyShop, requireSellerShop, updateMyShop } from '../../services/sellerApi';
 import type { SellerShop } from '../../types/sellerShop';
@@ -401,18 +402,12 @@ export function SellerShopSettingsPage() {
                   </FormField>
                 </div>
                 <div className="col-lg-12">
-                  <FormField
-                    label="Opening hours (JSON)"
-                    htmlFor="shop-opening-hours"
-                    error={visibleErrors.openingHoursJson}
-                  >
-                    <textarea
+                  <FormField label="Opening hours" error={visibleErrors.openingHoursJson}>
+                    <OpeningHoursField
                       id="shop-opening-hours"
-                      className="form-control"
-                      rows={3}
-                      placeholder='e.g. {"mon":"9:00-18:00","tue":"9:00-18:00"}'
                       value={form.openingHoursJson}
-                      onChange={(e) => updateField('openingHoursJson', e.target.value)}
+                      invalid={Boolean(visibleErrors.openingHoursJson)}
+                      onChange={(json) => updateField('openingHoursJson', json)}
                       onBlur={() => markTouched('openingHoursJson')}
                     />
                   </FormField>

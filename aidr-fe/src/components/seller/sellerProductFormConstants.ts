@@ -11,6 +11,34 @@ export const SELLER_PRODUCT_DEFAULT_PAGE_SIZE = 20;
 
 export const SELLER_PRODUCT_CONDITIONS = ['New', 'LikeNew', 'Refurbished', 'Used'] as const;
 
+/**
+ * Starting points for the tag and spec editors. They are hints, not a closed
+ * list — anything typed is accepted, these just save the common cases.
+ */
+export const PRODUCT_TAG_SUGGESTIONS = [
+  'flagship',
+  'new-arrival',
+  'best-seller',
+  'limited',
+  'gaming',
+  'genuine',
+];
+
+export const PRODUCT_SPEC_SUGGESTIONS = [
+  'CPU',
+  'RAM',
+  'Storage',
+  'Screen',
+  'Battery',
+  'Camera',
+  'Weight',
+  'Color',
+  'Material',
+  'Size',
+  'Ports',
+  'Operating system',
+];
+
 export const SELLER_PRODUCT_STATUS_FILTERS = [
   { value: '', label: 'Active (hide deleted)' },
   { value: 'all', label: 'All statuses' },
