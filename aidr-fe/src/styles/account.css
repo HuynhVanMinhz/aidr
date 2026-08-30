@@ -2472,6 +2472,213 @@
   font-weight: 600;
 }
 
+/* -------------------------------------------------------- order reviews */
+
+.order-review__intro {
+  margin: -6px 0 0;
+  font-size: 0.8125rem;
+}
+
+.order-review__block {
+  margin-top: 18px;
+  padding-top: 18px;
+  border-top: 1px solid var(--acc-border);
+}
+
+.order-review__block:first-of-type {
+  margin-top: 14px;
+  padding-top: 0;
+  border-top: 0;
+}
+
+.order-review__step {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.65rem;
+  margin-bottom: 14px;
+}
+
+.order-review__step-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+  border-radius: 999px;
+  background: var(--primary-color, #16181d);
+  color: var(--bg-color, #fff);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.order-review__step.is-done .order-review__step-badge {
+  background: #15803d;
+}
+
+.order-review__step-title {
+  margin: 0 0 2px;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--primary-color, #16181d);
+}
+
+.order-review__step-copy .account-muted {
+  margin: 0;
+  font-size: 0.8125rem;
+}
+
+.order-review__item-head {
+  margin-bottom: 12px;
+}
+
+.order-review__shop-thumb {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(22, 24, 29, 0.06);
+  color: var(--primary-color, #16181d);
+  font-size: 1.125rem;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.order-review__shop-thumb span {
+  line-height: 1;
+}
+
+.order-review__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.order-review__item {
+  padding: 14px;
+  border: 1px solid var(--acc-border);
+  border-radius: 10px;
+  background: rgba(22, 24, 29, 0.015);
+}
+
+.order-review__form .form-group {
+  margin: 0 0 14px;
+}
+
+.order-review__form .form-group:last-of-type {
+  margin-bottom: 0;
+}
+
+.order-review__form label {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin-bottom: 6px;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--primary-color, #16181d);
+}
+
+.order-review__optional {
+  font-size: 0.6875rem;
+  font-weight: 500;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--acc-muted);
+}
+
+.order-review__field-footer {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 4px;
+}
+
+.order-review__count {
+  font-size: 0.75rem;
+  color: var(--acc-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.order-review__count.is-near {
+  color: #b45309;
+  font-weight: 600;
+}
+
+.order-review__actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--acc-border);
+}
+
+.order-review__hint {
+  font-size: 0.8125rem;
+}
+
+.order-review__done {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.55rem;
+  margin-top: 12px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: rgba(21, 128, 61, 0.08);
+  border: 1px solid rgba(21, 128, 61, 0.22);
+  color: #15803d;
+}
+
+.order-review__done i {
+  margin-top: 2px;
+  font-size: 0.9rem;
+  flex-shrink: 0;
+}
+
+.order-review__done p {
+  margin: 0;
+  font-size: 0.8125rem;
+  line-height: 1.5;
+}
+
+.order-review .review-star-field {
+  min-height: 0;
+  gap: 0.65rem;
+}
+
+.order-review .review-star-input__btn {
+  width: 2.25rem;
+  height: 2.25rem;
+  font-size: 1.65rem;
+  border-radius: 6px;
+}
+
+.order-review .review-star-caption {
+  font-size: 0.8125rem;
+  color: var(--acc-muted);
+  opacity: 1;
+  font-weight: 400;
+}
+
+.order-review .review-star-caption.is-set {
+  font-weight: 600;
+  color: #b45309;
+}
+
+.order-review .account-btn--primary:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+@media (max-width: 575.98px) {
+  .order-review__actions .account-btn {
+    width: 100%;
+  }
+}
+
 @media (max-width: 991.98px) {
   .order-detail__grid {
     grid-template-columns: minmax(0, 1fr);
@@ -3377,4 +3584,26 @@
    Only the tile pane is filtered — markers and route lines keep their colours. */
 .leaflet-tiles-dark .leaflet-tile-pane {
   filter: invert(1) hue-rotate(180deg) brightness(0.92) contrast(0.9);
+}
+
+
+/* ------------------------------------------------------------------ *
+ * Account shell: a narrower nav column.
+ *
+ * col-xl-3 gave the sidebar a quarter of the page for a list of one and
+ * two-word labels, while order and review pages ran out of room. A fixed
+ * 232px fits the longest label ("Shipping addresses") on two lines and
+ * hands the rest back to the content.
+ * ------------------------------------------------------------------ */
+
+@media (min-width: 992px) {
+  .account-shell__nav {
+    flex: 0 0 232px;
+    max-width: 232px;
+  }
+
+  .account-shell__main {
+    flex: 1 1 auto;
+    max-width: calc(100% - 232px);
+  }
 }
