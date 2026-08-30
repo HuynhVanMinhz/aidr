@@ -1,5 +1,6 @@
 import type { ApiResult } from './auth';
 import type { OrderPaymentLink } from './payment';
+import type { BuyerOrderTracking } from './tracking';
 
 export type CreateOrderRequest = {
   shippingAddressId: string;
@@ -12,6 +13,8 @@ export type CreatedOrderItem = {
   orderItemId: string;
   productId: string;
   productName: string;
+  sku?: string | null;
+  imageUrl?: string | null;
   quantity: number;
   unitPrice: number;
   unitCostAvg?: number | null;
@@ -116,6 +119,8 @@ export type BuyerOrderShipping = {
   district: string;
   ward: string;
   streetAddress: string;
+  latitude?: number | null;
+  longitude?: number | null;
 };
 
 export type BuyerOrderItem = {
@@ -173,6 +178,8 @@ export type BuyerOrderDetail = {
   completedAt?: string | null;
   canCancel: boolean;
   canConfirmReceived: boolean;
+  /** Carrier progress and the delivery route, for the tracking map. */
+  tracking?: BuyerOrderTracking | null;
 };
 
 export type CancelOrderRequest = {

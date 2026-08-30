@@ -1,6 +1,7 @@
-using AIDR.Infrastructure.Persistence;
+﻿using AIDR.Infrastructure.Persistence;
 using AIDR.Infrastructure.Seeding;
 using AIDR.Modules.Auth.Abstractions;
+using AIDR.Modules.Shipping.Abstractions;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -46,6 +47,72 @@ public class DevController : ControllerBase
         {
             message = "Catalog demo seed completed.",
             approvedProductCount = count
+        });
+    }
+
+    /// <summary>Normalize shops/categories/products for electronics storefront + mock image URLs (dev only).</summary>
+    [HttpPost("seed-electronics-refresh")]
+    public async Task<IActionResult> SeedElectronicsRefresh(
+        [FromServices] AidrDbContext db,
+        [FromServices] IWebHostEnvironment env,
+        CancellationToken ct)
+    {
+        if (!env.IsDevelopment())
+            return NotFound();
+
+        await ElectronicsCatalogRefreshSeeder.SeedAsync(db, env.ContentRootPath, ct);
+
+        var activeCategories = await db.Categories.CountAsync(c => c.IsActive, ct);
+        var approvedProducts = await db.Products.CountAsync(p => p.Status == "Approved", ct);
+        var shops = await db.Shops.CountAsync(s => s.Status == "Active", ct);
+
+        return Ok(new
+        {
+            message = "Electronics catalog refresh completed. Prefer POST /api/dev/seed-catalog-images for theme image URLs.",
+            activeCategoryCount = activeCategories,
+            approvedProductCount = approvedProducts,
+            activeShopCount = shops
+        });
+    }
+
+    /// <summary>Map category/product images to local /theme/images assets (dev only).</summary>
+    [HttpPost("seed-catalog-images")]
+    public async Task<IActionResult> SeedCatalogImages(
+        [FromServices] AidrDbContext db,
+        [FromServices] IWebHostEnvironment env,
+        CancellationToken ct)
+    {
+        if (!env.IsDevelopment())
+            return NotFound();
+
+        await CatalogImagesSeeder.SeedAsync(db, env.ContentRootPath, ct);
+
+        var categories = await db.Categories.CountAsync(c => c.ImageUrl != null && c.ImageUrl.StartsWith("/theme/"), ct);
+        var productImages = await db.ProductImages.CountAsync(i => i.ImageUrl.StartsWith("/theme/"), ct);
+
+        return Ok(new
+        {
+            message = "Catalog images mapped to /theme/images assets.",
+            categoryImageCount = categories,
+            productImageCount = productImages
+        });
+    }
+
+    /// <summary>Normalize users/shops/categories/products/reviews/registrations text to English (dev only).</summary>
+    [HttpPost("seed-english-refresh")]
+    public async Task<IActionResult> SeedEnglishRefresh(
+        [FromServices] AidrDbContext db,
+        [FromServices] IWebHostEnvironment env,
+        CancellationToken ct)
+    {
+        if (!env.IsDevelopment())
+            return NotFound();
+
+        await EnglishDbRefreshSeeder.SeedAsync(db, env.ContentRootPath, ct);
+
+        return Ok(new
+        {
+            message = "English DB refresh completed."
         });
     }
 
@@ -281,6 +348,35 @@ public class DevController : ControllerBase
         });
     }
 
+    /// <summary>Seed storefront product reviews + sync AvgRating/ReviewCount (dev only).</summary>
+    [HttpPost("seed-product-reviews")]
+    public async Task<IActionResult> SeedProductReviews(
+        [FromServices] AidrDbContext db,
+        [FromServices] IWebHostEnvironment env,
+        CancellationToken ct)
+    {
+        if (!env.IsDevelopment())
+            return NotFound();
+
+        await ProductReviewsDemoSeeder.SeedAsync(db, env.ContentRootPath, ct);
+
+        var airPodsId = Guid.Parse("11111111-1111-1111-1111-111111111106");
+        var airPods = await db.Products.AsNoTracking()
+            .Where(p => p.ProductId == airPodsId)
+            .Select(p => new { p.Name, p.ReviewCount, p.AvgRating })
+            .FirstOrDefaultAsync(ct);
+        var airPodsVisible = await db.ProductReviews.CountAsync(
+            r => r.ProductId == airPodsId && r.IsVisible,
+            ct);
+
+        return Ok(new
+        {
+            message = "Product reviews demo seed completed.",
+            airPodsProduct = airPods,
+            airPodsVisibleReviewCount = airPodsVisible
+        });
+    }
+
     /// <summary>Enrich SpecsJson on demo products for NL filter / compare testing (dev only).</summary>
     [HttpPost("seed-nl-compare")]
     public async Task<IActionResult> SeedNlCompare(
@@ -347,5 +443,179 @@ public class DevController : ControllerBase
                 "What vouchers can I use at checkout?"
             }
         });
+    }
+
+    /// <summary>Seed orders at every stage of the carrier pipeline (dev only).</summary>
+    [HttpPost("seed-shipping")]
+    public async Task<IActionResult> SeedShipping(
+        [FromServices] AidrDbContext db,
+        [FromServices] IWebHostEnvironment env,
+        CancellationToken ct)
+    {
+        if (!env.IsDevelopment())
+            return NotFound();
+
+        await ShippingDemoSeeder.SeedAsync(db, env.ContentRootPath, ct);
+
+        var shipments = await db.Shipments.CountAsync(ct);
+        var awaitingDispatch = await db.Orders.CountAsync(
+            o => o.Status == "Paid" && !db.Shipments.Any(s => s.OrderId == o.OrderId),
+            ct);
+
+        return Ok(new
+        {
+            message = "Shipping demo seed completed. The sweep books these with GHN on its next tick.",
+            shipmentCount = shipments,
+            ordersAwaitingDispatch = awaitingDispatch,
+            orderCodes = new[] { "SHIP-GHN-OK", "SHIP-GHN-FAIL" }
+        });
+    }
+
+    /// <summary>Seed tables not covered by other demo scripts (dev only).</summary>
+    [HttpPost("seed-table-coverage")]
+    public async Task<IActionResult> SeedTableCoverage(
+        [FromServices] AidrDbContext db,
+        [FromServices] IWebHostEnvironment env,
+        CancellationToken ct)
+    {
+        if (!env.IsDevelopment())
+            return NotFound();
+
+        await TableCoverageDemoSeeder.SeedAsync(db, env.ContentRootPath, ct);
+        await DataIntegritySeeder.ReconcileAsync(db, env.ContentRootPath, ct);
+        var report = await DataIntegritySeeder.ValidateAsync(db, env.ContentRootPath, ct);
+
+        return Ok(new
+        {
+            message = "Table coverage seed completed.",
+            isHealthy = report.IsHealthy,
+            issueCount = report.IssueCount,
+            tableCounts = report.TableCounts
+        });
+    }
+
+    /// <summary>Backfill opening InventoryLots for products missing lot coverage (dev only).</summary>
+    [HttpPost("seed-inventory-lots")]
+    public async Task<IActionResult> SeedInventoryLots(
+        [FromServices] AidrDbContext db,
+        [FromServices] IWebHostEnvironment env,
+        CancellationToken ct)
+    {
+        if (!env.IsDevelopment())
+            return NotFound();
+
+        await InventoryLotsDemoSeeder.SeedAsync(db, env.ContentRootPath, ct);
+
+        var report = await DataIntegritySeeder.ValidateAsync(db, env.ContentRootPath, ct);
+        var gaps = report.Issues.Count(i => i.Issue == "StockLotMismatch");
+
+        return Ok(new
+        {
+            message = "Inventory lots backfill completed.",
+            stockLotMismatchCount = gaps,
+            isHealthy = report.IsHealthy,
+            issueCount = report.IssueCount
+        });
+    }
+
+    /// <summary>Re-sync denormalized counters and fix common seed drift (dev only).</summary>
+    [HttpPost("seed-reconcile-data")]
+    public async Task<IActionResult> SeedReconcileData(
+        [FromServices] AidrDbContext db,
+        [FromServices] IWebHostEnvironment env,
+        CancellationToken ct)
+    {
+        if (!env.IsDevelopment())
+            return NotFound();
+
+        await DataIntegritySeeder.ReconcileAsync(db, env.ContentRootPath, ct);
+        var report = await DataIntegritySeeder.ValidateAsync(db, env.ContentRootPath, ct);
+
+        return Ok(new
+        {
+            message = "Data reconcile completed.",
+            isHealthy = report.IsHealthy,
+            issueCount = report.IssueCount,
+            rulesChecked = report.RulesChecked,
+            tablesChecked = report.TablesChecked,
+            tableCounts = report.TableCounts,
+            issuesByType = report.IssuesByType,
+            issues = report.Issues
+        });
+    }
+
+    /// <summary>Check denormalized counters and referential drift (dev only).</summary>
+    [HttpGet("validate-data")]
+    public async Task<IActionResult> ValidateData(
+        [FromServices] AidrDbContext db,
+        [FromServices] IWebHostEnvironment env,
+        CancellationToken ct)
+    {
+        if (!env.IsDevelopment())
+            return NotFound();
+
+        var report = await DataIntegritySeeder.ValidateAsync(db, env.ContentRootPath, ct);
+        return Ok(report);
+    }
+
+    /// <summary>Run all demo seeds in order, then reconcile and validate (dev only).</summary>
+    [HttpPost("seed-all")]
+    public async Task<IActionResult> SeedAll(
+        [FromServices] AidrDbContext db,
+        [FromServices] IPasswordHasher passwordHasher,
+        [FromServices] IWebHostEnvironment env,
+        CancellationToken ct)
+    {
+        if (!env.IsDevelopment())
+            return NotFound();
+
+        var result = await FullDevSeedSeeder.SeedAsync(db, passwordHasher, env.ContentRootPath, ct);
+
+        return Ok(new
+        {
+            message = result.Validation.IsHealthy
+                ? "Full dev seed completed. All integrity checks passed."
+                : "Full dev seed completed with data integrity warnings.",
+            stepsCompleted = result.StepsCompleted,
+            isHealthy = result.Validation.IsHealthy,
+            issueCount = result.Validation.IssueCount,
+            issues = result.Validation.Issues.Take(100)
+        });
+    }
+
+    /// <summary>Add the map coordinate columns to Addresses / Shops (dev only).</summary>
+    [HttpPost("address-geo-schema")]
+    public async Task<IActionResult> ApplyAddressGeoSchema(
+        [FromServices] AidrDbContext db,
+        [FromServices] IWebHostEnvironment env,
+        CancellationToken ct)
+    {
+        if (!env.IsDevelopment())
+            return NotFound();
+
+        await SqlScriptSeeder.ExecuteFileAsync(
+            db,
+            env.ContentRootPath,
+            Path.Combine("scripts", "address-geo-schema.sql"),
+            ct);
+
+        return Ok(new
+        {
+            message = "Latitude / Longitude columns are in place on Addresses and Shops."
+        });
+    }
+
+    /// <summary>Run the fulfillment sweep once, on demand (dev only).</summary>
+    [HttpPost("shipping/sweep")]
+    public async Task<IActionResult> RunShippingSweep(
+        [FromServices] IShippingService shipping,
+        [FromServices] IWebHostEnvironment env,
+        CancellationToken ct)
+    {
+        if (!env.IsDevelopment())
+            return NotFound();
+
+        var result = await shipping.RunSweepAsync(ct);
+        return Ok(result);
     }
 }

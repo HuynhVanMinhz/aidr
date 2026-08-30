@@ -29,3 +29,12 @@ public class ForbiddenAppException : AppException
 {
     public ForbiddenAppException(string message = "Forbidden") : base(message, 403) { }
 }
+
+/// <summary>
+/// An upstream provider could not be reached, or refused us — as opposed to the
+/// user's input being wrong. Callers may fall back to a manual path.
+/// </summary>
+public class ProviderUnavailableException : AppException
+{
+    public ProviderUnavailableException(string message) : base(message, 503) { }
+}

@@ -1,4 +1,4 @@
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 
 namespace AIDR.Shared.Dtos.Profile;
 
@@ -24,6 +24,11 @@ public sealed class AddressDto
     public string District { get; set; } = null!;
     public string Ward { get; set; } = null!;
     public string StreetAddress { get; set; } = null!;
+
+    /// <summary>Pinned delivery point; null until the buyer places the pin.</summary>
+    public double? Latitude { get; set; }
+    public double? Longitude { get; set; }
+
     public bool IsDefault { get; set; }
 }
 
@@ -65,6 +70,12 @@ public sealed class AddressUpsertDto
 
     [Required, MaxLength(256)]
     public string StreetAddress { get; set; } = null!;
+
+    [Range(-90, 90)]
+    public double? Latitude { get; set; }
+
+    [Range(-180, 180)]
+    public double? Longitude { get; set; }
 
     public bool IsDefault { get; set; }
 }

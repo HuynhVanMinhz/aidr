@@ -1,11 +1,24 @@
-import { useEffect, useRef, useState, type FormEvent } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
+import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
-import { useShoppingAssistant } from '../../hooks/useAi';
+import { useCompare, useShoppingAssistant } from '../../hooks/useAi';
 import { useToast } from '../../hooks/useToast';
 import { selectCompareSelection } from '../../store/aiSlice';
 import { useAppSelector } from '../../store/hooks';
-import type { AiSuggestedProduct } from '../../types/ai';
+import type {
+  AiChatAction,
+  AiChatContext,
+  AiConsultState,
+  AiQuickReply,
+  AiSuggestedProduct,
+} from '../../types/ai';
+import { AI_SKIP_QUESTIONS_VALUE } from '../../types/ai';
+import {
+  catalogFiltersToSearchParams,
+  formatSlotChips,
+  slotsOrNlToCatalogFilters,
+  stripRatingFromReason,
+} from '../../utils/aiChatUi';
 import { formatChatTime, formatMessageTime } from '../../utils/chatUi';
 import { formatMoney } from '../../utils/formatCatalog';
 import '../../styles/chat.css';
@@ -13,44 +26,163 @@ import '../../styles/chat.css';
 const PLACEHOLDER = '/theme/images/product-image-1.png';
 const OPEN_STORAGE_KEY = 'aidr.assistant.open';
 
-const QUICK_PROMPTS = [
+const DEFAULT_PROMPTS = [
+  'Help me choose a laptop',
+  'I need a phone with a good camera',
   'How do returns and refunds work?',
-  'Recommend a Samsung phone for me',
+  'What vouchers can I use at checkout?',
+];
+
+const PDP_PROMPTS = [
+  'How long is the warranty on this item?',
+  'Suggest similar alternatives',
+  'Compare this with similar products',
+];
+
+const CART_PROMPTS = [
   'What vouchers can I use at checkout?',
   'How does shipping and delivery work?',
+  'How do returns and refunds work?',
 ];
 
 function SuggestedProducts({
   products,
   onNavigate,
+  onAddCompare,
+  isInCompare,
 }: {
   products: AiSuggestedProduct[];
   onNavigate?: () => void;
+  onAddCompare?: (product: AiSuggestedProduct) => void;
+  isInCompare?: (productId: string) => boolean;
 }) {
   if (products.length === 0) return null;
 
   return (
     <div className="aidr-assistant__products">
-      {products.map((p) => (
-        <Link
-          key={p.productId}
-          to={`/products/${p.productId}`}
-          className="aidr-assistant__product-card"
-          onClick={onNavigate}
-        >
-          <img src={p.primaryImageUrl || PLACEHOLDER} alt="" />
-          <div className="aidr-assistant__product-meta">
-            <span className="aidr-assistant__product-name">{p.name}</span>
-            <span className="aidr-assistant__product-price">
-              {formatMoney(p.effectivePrice, p.currency)}
-            </span>
-            {p.reviewCount > 0 ? (
-              <span className="aidr-assistant__product-rating text-muted">
-                {p.avgRating.toFixed(1)} · {p.reviewCount} reviews
-              </span>
+      {products.map((p) => {
+        const showsRating = p.reviewCount > 0;
+        // Keep the rating on its own line only; drop it from the reason so it is not repeated.
+        const reason = showsRating ? stripRatingFromReason(p.reason) : (p.reason ?? '');
+        return (
+          <div key={p.productId} className="aidr-assistant__product-row">
+            <Link
+              to={`/products/${p.productId}`}
+              className="aidr-assistant__product-card"
+              onClick={onNavigate}
+            >
+              <img src={p.primaryImageUrl || PLACEHOLDER} alt="" />
+              <div className="aidr-assistant__product-meta">
+                <span className="aidr-assistant__product-name">{p.name}</span>
+                {p.badge ? (
+                  <span className="aidr-assistant__product-badge">{p.badge}</span>
+                ) : null}
+                <span className="aidr-assistant__product-price">
+                  {formatMoney(p.effectivePrice, p.currency)}
+                </span>
+                {reason ? (
+                  <span className="aidr-assistant__product-reason text-muted">{reason}</span>
+                ) : null}
+                {showsRating ? (
+                  <span className="aidr-assistant__product-rating text-muted">
+                    {p.avgRating.toFixed(1)} · {p.reviewCount} reviews
+                  </span>
+                ) : null}
+              </div>
+            </Link>
+            {onAddCompare ? (
+              <button
+                type="button"
+                className="btn btn-sm btn-outline-secondary aidr-assistant__product-compare"
+                disabled={isInCompare?.(p.productId)}
+                onClick={() => onAddCompare(p)}
+              >
+                {isInCompare?.(p.productId) ? 'In compare' : 'Compare'}
+              </button>
             ) : null}
           </div>
-        </Link>
+        );
+      })}
+    </div>
+  );
+}
+
+/** Tap-to-answer chips for the current consultation question. */
+function QuickReplies({
+  replies,
+  consult,
+  disabled,
+  onPick,
+  onSkip,
+}: {
+  replies: AiQuickReply[];
+  consult: AiConsultState | null;
+  disabled?: boolean;
+  onPick: (reply: AiQuickReply) => void;
+  onSkip: () => void;
+}) {
+  if (replies.length === 0) return null;
+
+  const asked = consult?.askedCount ?? 0;
+  const max = consult?.maxQuestions ?? 0;
+  const showProgress = consult?.stage === 'collecting' && asked > 0 && max > 0;
+
+  return (
+    <div className="aidr-assistant__quick">
+      {showProgress ? (
+        <span className="aidr-assistant__quick-progress text-muted">
+          Question {asked}/{max}
+        </span>
+      ) : null}
+      <div className="aidr-assistant__quick-chips">
+        {replies.map((reply) => (
+          <button
+            key={`${reply.key}-${reply.value}`}
+            type="button"
+            className="aidr-assistant__quick-chip"
+            disabled={disabled}
+            onClick={() => onPick(reply)}
+          >
+            {reply.label}
+          </button>
+        ))}
+      </div>
+      <button
+        type="button"
+        className="aidr-assistant__quick-skip"
+        disabled={disabled}
+        onClick={onSkip}
+      >
+        Skip questions &amp; show options
+      </button>
+    </div>
+  );
+}
+
+function ActionButtons({
+  actions,
+  onAction,
+  disabled,
+}: {
+  actions: AiChatAction[];
+  onAction: (action: AiChatAction) => void;
+  disabled?: boolean;
+}) {
+  const usable = actions.filter((a) => a.type && a.type !== 'none');
+  if (usable.length === 0) return null;
+
+  return (
+    <div className="aidr-assistant__actions">
+      {usable.map((action, index) => (
+        <button
+          key={`${action.type}-${index}`}
+          type="button"
+          className="btn btn-sm btn-outline-secondary"
+          disabled={disabled}
+          onClick={() => onAction(action)}
+        >
+          {action.label?.trim() || action.type}
+        </button>
       ))}
     </div>
   );
@@ -59,9 +191,15 @@ function SuggestedProducts({
 /** Floating shopping-assistant chatbot — available on all storefront pages. */
 export function ShoppingAssistantWidget() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const params = useParams<{ id?: string }>();
   const toast = useToast();
   const { isAuthenticated } = useAuth();
-  const compareCount = useAppSelector(selectCompareSelection).length;
+  const compareSelection = useAppSelector(selectCompareSelection);
+  const compareCount = compareSelection.length;
+  const { toggle: toggleCompare, isSelected, compare } = useCompare();
+  /** Quieter FAB on PDP so it does not compete with reviews / purchase CTAs. */
+  const quietFab = /^\/products\/[^/]+\/?$/.test(location.pathname);
 
   const [open, setOpen] = useState(() => {
     try {
@@ -88,13 +226,38 @@ export function ShoppingAssistantWidget() {
     sending,
     chatError,
     lastSource,
+    lastSlots,
+    lastActions,
+    lastQuickReplies,
+    lastConsult,
     maxLength,
     loadConversations,
     openConversation,
     startNew,
+    clearSlots,
     send,
     getErrorMessage,
   } = useShoppingAssistant();
+
+  const pageContext = useMemo((): AiChatContext => {
+    const productMatch = location.pathname.match(/^\/products\/([^/]+)\/?$/);
+    const productId = productMatch?.[1] && productMatch[1] !== 'compare' ? productMatch[1] : params.id;
+    return {
+      path: location.pathname + location.search,
+      productId: productId || null,
+      compareProductIds: compareSelection.map((x) => x.productId),
+    };
+  }, [compareSelection, location.pathname, location.search, params.id]);
+
+  const quickPrompts = useMemo(() => {
+    if (quietFab) return PDP_PROMPTS;
+    if (location.pathname.startsWith('/cart') || location.pathname.startsWith('/checkout')) {
+      return CART_PROMPTS;
+    }
+    return DEFAULT_PROMPTS;
+  }, [location.pathname, quietFab]);
+
+  const slotChips = useMemo(() => formatSlotChips(lastSlots), [lastSlots]);
 
   function persistOpen(next: boolean) {
     setOpen(next);
@@ -157,7 +320,7 @@ export function ShoppingAssistantWidget() {
     }
   }
 
-  async function submitMessage(text: string) {
+  async function submitMessage(text: string, quickReplyValue?: string) {
     const content = text.trim();
     if (!content || sending) return;
     if (content.length > maxLength) {
@@ -166,7 +329,7 @@ export function ShoppingAssistantWidget() {
     }
 
     try {
-      await send(content);
+      await send(content, undefined, pageContext, quickReplyValue ?? null);
       setDraft('');
       setView('chat');
     } catch (err) {
@@ -177,6 +340,59 @@ export function ShoppingAssistantWidget() {
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
     await submitMessage(draft);
+  }
+
+  function handleAddCompare(product: AiSuggestedProduct) {
+    const wasSelected = isSelected(product.productId);
+    const result = toggleCompare({
+      productId: product.productId,
+      name: product.name,
+      primaryImageUrl: product.primaryImageUrl,
+      effectivePrice: product.effectivePrice,
+      currency: product.currency,
+    });
+    if (!result.ok) {
+      toast.error('Compare list is full (max 5).');
+      return;
+    }
+    toast.success(wasSelected ? 'Removed from compare.' : 'Added to compare.');
+  }
+
+  async function handleAction(action: AiChatAction) {
+    const type = (action.type || '').toLowerCase();
+    if (type === 'open_catalog') {
+      const filters = slotsOrNlToCatalogFilters(lastSlots);
+      navigate(catalogFiltersToSearchParams(filters));
+      handleClose();
+      return;
+    }
+    if (type === 'open_product') {
+      const id = action.productIds?.[0];
+      if (id) {
+        navigate(`/products/${id}`);
+        handleClose();
+      }
+      return;
+    }
+    if (type === 'open_compare') {
+      const ids = (action.productIds ?? []).filter(Boolean);
+      if (ids.length >= 2) {
+        try {
+          await compare(ids);
+          navigate('/compare');
+          handleClose();
+        } catch (err) {
+          toast.error(getErrorMessage(err, 'Unable to compare products.'));
+        }
+        return;
+      }
+      if (compareCount >= 2) {
+        navigate('/compare');
+        handleClose();
+      } else {
+        toast.error('Add at least 2 products to compare.');
+      }
+    }
   }
 
   const headerTitle = activeTitle?.trim() || 'Shopping Assistant';
@@ -295,6 +511,27 @@ export function ShoppingAssistantWidget() {
             </div>
           ) : (
             <>
+              {slotChips.length > 0 ? (
+                <div className="aidr-assistant__slots" aria-label="Active preferences">
+                  {slotChips.map((chip) => (
+                    <span key={chip} className="aidr-assistant__slot-chip">
+                      {chip}
+                    </span>
+                  ))}
+                  <button
+                    type="button"
+                    className="aidr-assistant__slot-clear"
+                    onClick={() => {
+                      clearSlots();
+                      handleNewChat();
+                    }}
+                    title="Clear preferences and start a new chat"
+                  >
+                    Clear
+                  </button>
+                </div>
+              ) : null}
+
               <div className="aidr-assistant-widget__messages">
                 {messagesLoading ? <p className="text-muted mb-2">Loading messages…</p> : null}
                 {messagesError ? <p className="text-danger mb-2">{messagesError}</p> : null}
@@ -305,7 +542,7 @@ export function ShoppingAssistantWidget() {
                       Hi! I can help with product picks and shopping FAQs.
                     </p>
                     <div className="aidr-assistant__prompts">
-                      {QUICK_PROMPTS.map((prompt) => (
+                      {quickPrompts.map((prompt) => (
                         <button
                           key={prompt}
                           type="button"
@@ -321,8 +558,10 @@ export function ShoppingAssistantWidget() {
                 ) : null}
 
                 <ul className="list-unstyled mb-0">
-                  {messages.map((m) => {
+                  {messages.map((m, index) => {
                     const isUser = m.role === 'user';
+                    const isLastAssistant =
+                      !isUser && index === messages.length - 1 && m.role === 'assistant';
                     return (
                       <li
                         key={m.aiMessageId}
@@ -334,6 +573,26 @@ export function ShoppingAssistantWidget() {
                             <SuggestedProducts
                               products={m.suggestedProducts}
                               onNavigate={handleClose}
+                              onAddCompare={handleAddCompare}
+                              isInCompare={isSelected}
+                            />
+                          ) : null}
+                          {isLastAssistant ? (
+                            <ActionButtons
+                              actions={lastActions}
+                              onAction={(a) => void handleAction(a)}
+                              disabled={sending}
+                            />
+                          ) : null}
+                          {isLastAssistant ? (
+                            <QuickReplies
+                              replies={lastQuickReplies}
+                              consult={lastConsult}
+                              disabled={sending}
+                              onPick={(reply) => void submitMessage(reply.label, reply.value)}
+                              onSkip={() =>
+                                void submitMessage('Show me options', AI_SKIP_QUESTIONS_VALUE)
+                              }
                             />
                           ) : null}
                           <div className="aidr-assistant__bubble-time text-muted">
@@ -391,12 +650,12 @@ export function ShoppingAssistantWidget() {
 
       <button
         type="button"
-        className={`aidr-assistant-widget__fab${open ? ' is-open' : ''}`}
+        className={`aidr-assistant-widget__fab${open ? ' is-open' : ''}${quietFab && !open ? ' is-quiet' : ''}`}
         onClick={handleToggle}
         aria-expanded={open}
-        aria-label={open ? 'Close shopping assistant' : 'Open shopping assistant'}
+        aria-label={open ? 'Close shopping assistant' : 'Ask AI — shopping assistant'}
       >
-        {open ? '×' : 'AI'}
+        {open ? '×' : quietFab ? '✨' : '✨ Ask AI'}
       </button>
     </div>
   );

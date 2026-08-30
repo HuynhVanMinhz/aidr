@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type ChangeEvent, type FormEvent } from 'react';
 import { useProfile } from '../../hooks/useProfile';
+import { useToastMessage } from '../../hooks/useToastMessage';
 import {
   isCloudinaryConfigured,
   uploadAvatarToCloudinary,
@@ -17,9 +18,12 @@ export function ProfilePage() {
   const [avatarPublicId, setAvatarPublicId] = useState<string | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
-
   const [formError, setFormError] = useState<string | null>(null);
   const [formSuccess, setFormSuccess] = useState<string | null>(null);
+
+  useToastMessage(error);
+  useToastMessage(formError);
+  useToastMessage(formSuccess, 'success');
 
   useEffect(() => {
     if (!profile) return;
@@ -100,16 +104,11 @@ export function ProfilePage() {
 
   return (
     <div className="account-details-content-box">
-      {error && !profile && <div className="auth-alert auth-alert--error">{error}</div>}
-
       <form className="checkout-bill-address-form" onSubmit={handleProfileSubmit} noValidate>
         <div className="account-details-content-item">
           <div className="checkout-bill-address-title">
             <h2>Personal information</h2>
           </div>
-
-          {formError && <div className="auth-alert auth-alert--error">{formError}</div>}
-          {formSuccess && <div className="auth-alert auth-alert--success">{formSuccess}</div>}
 
           <div className="account-avatar-row">
             <div className="account-avatar-preview">

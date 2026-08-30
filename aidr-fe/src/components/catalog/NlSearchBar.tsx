@@ -2,39 +2,17 @@ import { useState, type FormEvent } from 'react';
 import { useNlFilter } from '../../hooks/useAi';
 import { useToast } from '../../hooks/useToast';
 import type { CatalogFilters } from '../../store/catalogSlice';
-import { defaultCatalogFilters } from '../../store/catalogSlice';
-import type { NlFilterResult } from '../../types/ai';
-import type { ProductSort } from '../../types/catalog';
+import { slotsOrNlToCatalogFilters } from '../../utils/aiChatUi';
 
 type Props = {
   onApplyFilters: (filters: CatalogFilters) => void;
 };
 
-const ALLOWED_SORTS: ProductSort[] = ['newest', 'price_asc', 'price_desc', 'popular', 'rating'];
-
-export function nlResultToCatalogFilters(result: NlFilterResult): CatalogFilters {
-  const sortRaw = (result.sort ?? 'newest').toString().toLowerCase();
-  const sort = ALLOWED_SORTS.includes(sortRaw as ProductSort)
-    ? (sortRaw as ProductSort)
-    : 'newest';
-
-  let minRating: number | null = null;
-  if (result.minRating != null && !Number.isNaN(Number(result.minRating))) {
-    const n = Number(result.minRating);
-    minRating = n >= 4 ? 4 : n >= 3 ? 3 : Math.min(5, Math.max(0, Math.round(n)));
-  }
-
-  return {
-    ...defaultCatalogFilters,
-    q: (result.q ?? '').trim(),
-    categoryId: result.categoryId ?? null,
-    brand: (result.brand ?? '').trim(),
-    minPrice: result.minPrice != null ? String(Math.round(result.minPrice)) : '',
-    maxPrice: result.maxPrice != null ? String(Math.round(result.maxPrice)) : '',
-    minRating,
-    sort,
-    page: 1,
-  };
+/** @deprecated Prefer slotsOrNlToCatalogFilters from utils/aiChatUi */
+export function nlResultToCatalogFilters(
+  result: Parameters<typeof slotsOrNlToCatalogFilters>[0],
+): CatalogFilters {
+  return slotsOrNlToCatalogFilters(result);
 }
 
 /** Natural-language search bar — maps AI filter DSL into the catalog filter panel. */
@@ -54,7 +32,7 @@ export function NlSearchBar({ onApplyFilters }: Props) {
 
     try {
       const result = await parse(trimmed);
-      onApplyFilters(nlResultToCatalogFilters(result));
+      onApplyFilters(slotsOrNlToCatalogFilters(result));
       const bits: string[] = [];
       if (result.categoryName) bits.push(result.categoryName);
       if (result.brand) bits.push(result.brand);

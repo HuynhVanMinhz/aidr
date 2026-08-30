@@ -1,6 +1,9 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { SelectField } from '../../components/common/SelectField';
 import { useBuyerOrders } from '../../hooks/useBuyerOrders';
+import { useToastMessage } from '../../hooks/useToastMessage';
+import { PRODUCT_IMAGE_PLACEHOLDER, resolveProductImageUrl } from '../../utils/catalogImage';
 import { formatMoney } from '../../utils/formatCatalog';
 import {
   BUYER_ORDER_STATUS_FILTERS,
@@ -25,8 +28,10 @@ export function OrdersPage() {
   );
 
   const { list, loading, error, refresh } = useBuyerOrders(query);
+  useToastMessage(error);
 
   const totalPages = list?.totalPages ?? 0;
+  const totalCount = list?.totalCount ?? 0;
   const items = list?.items ?? [];
 
   function handleStatusChange(next: string) {
@@ -35,47 +40,40 @@ export function OrdersPage() {
   }
 
   return (
-    <div className="account-order-detail-box">
-      <div className="buyer-orders-toolbar">
-        <div className="buyer-orders-filters">
-          <label htmlFor="buyer-order-status">Status</label>
-          <select
-            id="buyer-order-status"
-            className="form-control"
-            value={status}
-            onChange={(event) => handleStatusChange(event.target.value)}
+    <div className="account-page">
+      <div className="account-toolbar">
+        <SelectField
+          label="Status"
+          value={status}
+          options={BUYER_ORDER_STATUS_FILTERS}
+          onChange={handleStatusChange}
+        />
+        <div className="d-flex align-items-center gap-3">
+          {totalCount > 0 ? (
+            <p className="account-count">
+              {totalCount} order{totalCount === 1 ? '' : 's'}
+            </p>
+          ) : null}
+          <button
+            type="button"
+            className="account-btn account-btn--secondary account-btn--sm"
+            onClick={() => void refresh()}
+            disabled={loading}
           >
-            {BUYER_ORDER_STATUS_FILTERS.map((filter) => (
-              <option key={filter.value || 'all'} value={filter.value}>
-                {filter.label}
-              </option>
-            ))}
-          </select>
+            <i className="fa-solid fa-rotate-right" aria-hidden />
+            Refresh
+          </button>
         </div>
-        <button
-          type="button"
-          className="btn-default btn-accent btn-border"
-          onClick={() => void refresh()}
-          disabled={loading}
-        >
-          Refresh
-        </button>
       </div>
-
-      {error ? (
-        <div className="alert alert-danger buyer-orders-alert" role="alert">
-          {error}
-        </div>
-      ) : null}
 
       {loading && items.length === 0 ? (
         <p className="account-muted">Loading orders…</p>
       ) : null}
 
       {!loading && items.length === 0 ? (
-        <div className="buyer-orders-empty">
+        <div className="account-empty">
           <p>You have no orders{status ? ` with status “${formatOrderStatus(status)}”` : ''} yet.</p>
-          <Link to="/products" className="btn-default">
+          <Link to="/products" className="account-btn account-btn--primary">
             Browse products
           </Link>
         </div>
@@ -83,62 +81,63 @@ export function OrdersPage() {
 
       {items.length > 0 ? (
         <>
-          <div className="account-order-table-box">
-            <table>
-              <thead>
-                <tr>
-                  <th>Order</th>
-                  <th>Date</th>
-                  <th>Shop</th>
-                  <th>Status</th>
-                  <th>Quantity</th>
-                  <th>Total</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {items.map((order) => (
-                  <tr key={order.orderId}>
-                    <td className="account-order-table-no">
-                      <div className="buyer-order-code-cell">
-                        {order.thumbnailUrl ? (
-                          <img src={order.thumbnailUrl} alt="" className="buyer-order-thumb" />
-                        ) : null}
-                        <span>{order.orderCode}</span>
-                      </div>
-                    </td>
-                    <td>{formatOrderDate(order.createdAt)}</td>
-                    <td>
-                      <Link to={`/shops/${order.shopId}`}>{order.shopName}</Link>
-                    </td>
-                    <td>
-                      <span className={orderStatusClass(order.status)}>
-                        {formatOrderStatus(order.status)}
-                      </span>
-                    </td>
-                    <td>
-                      {order.itemCount} {order.itemCount === 1 ? 'item' : 'items'}
-                    </td>
-                    <td>{formatMoney(order.totalAmount, order.currency)}</td>
-                    <td>
-                      <Link
-                        to={`/account/orders/${order.orderId}`}
-                        className="btn-default btn-accent btn-border"
-                      >
-                        View
-                      </Link>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          {/*
+            Cards, not a table: seven columns did not fit the account column and
+            pushed the action off screen.
+          */}
+          <ul className="account-stack">
+            {items.map((order, index) => (
+              <li key={order.orderId}>
+                <Link to={`/account/orders/${order.orderId}`} className="account-row">
+                  <div className="account-row__lead">
+                    <span className="account-row__thumb">
+                      <img
+                        src={resolveProductImageUrl(order.thumbnailUrl, index)}
+                        alt=""
+                        loading="lazy"
+                        onError={(e) => {
+                          const img = e.currentTarget;
+                          if (img.dataset.fallback === '1') return;
+                          img.dataset.fallback = '1';
+                          img.src = PRODUCT_IMAGE_PLACEHOLDER;
+                        }}
+                      />
+                    </span>
+                    <div className="account-row__main">
+                      <p className="account-row__code">
+                        {order.orderCode}
+                        <span className={orderStatusClass(order.status)}>
+                          {formatOrderStatus(order.status)}
+                        </span>
+                      </p>
+                      <p className="account-row__meta">
+                        <span>{formatOrderDate(order.createdAt)}</span>
+                        <span>{order.shopName}</span>
+                        <span>
+                          {order.itemCount} {order.itemCount === 1 ? 'item' : 'items'}
+                        </span>
+                      </p>
+                    </div>
+                  </div>
+                  <div className="account-row__side">
+                    <p className="account-row__amount">
+                      {formatMoney(order.totalAmount, order.currency)}
+                    </p>
+                    <span className="account-row__cta">
+                      View details
+                      <i className="fa-solid fa-arrow-right" aria-hidden />
+                    </span>
+                  </div>
+                </Link>
+              </li>
+            ))}
+          </ul>
 
           {totalPages > 1 ? (
-            <div className="buyer-orders-pagination">
+            <div className="account-pagination">
               <button
                 type="button"
-                className="btn-default btn-accent btn-border"
+                className="account-btn account-btn--secondary account-btn--sm"
                 disabled={page <= 1 || loading}
                 onClick={() => setPage((current) => Math.max(1, current - 1))}
               >
@@ -149,7 +148,7 @@ export function OrdersPage() {
               </span>
               <button
                 type="button"
-                className="btn-default btn-accent btn-border"
+                className="account-btn account-btn--secondary account-btn--sm"
                 disabled={page >= totalPages || loading}
                 onClick={() => setPage((current) => current + 1)}
               >
@@ -159,12 +158,6 @@ export function OrdersPage() {
           ) : null}
         </>
       ) : null}
-
-      <div className="account-order-button">
-        <Link to="/products" className="btn-default">
-          Back to Shop
-        </Link>
-      </div>
     </div>
   );
 }

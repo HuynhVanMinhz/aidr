@@ -1,4 +1,5 @@
 import type { ApiResult } from './auth';
+import type { OrderRoute } from './tracking';
 
 export type SellerOrderStatus =
   | 'PendingPayment'
@@ -11,6 +12,55 @@ export type SellerOrderStatus =
   | 'ReturnRequested'
   | 'Returned'
   | string;
+
+export type ShipmentStatus =
+  | 'Pending'
+  | 'Created'
+  | 'PickedUp'
+  | 'InTransit'
+  | 'Delivered'
+  | 'Failed'
+  | 'Returned'
+  | 'Cancelled'
+  | string;
+
+export type ShipmentEvent = {
+  shipmentEventId: string;
+  providerStatus: string;
+  mappedStatus: ShipmentStatus;
+  description?: string | null;
+  source: string;
+  occurredAt: string;
+};
+
+export type Shipment = {
+  shipmentId: string;
+  orderId: string;
+  provider: string;
+  providerShipmentId?: string | null;
+  trackingCode?: string | null;
+  status: ShipmentStatus;
+  providerStatus?: string | null;
+  shippingFeeQuoted?: number | null;
+  expectedDeliveryAt?: string | null;
+  lastSyncedAt?: string | null;
+  attemptCount: number;
+  lastError?: string | null;
+  createdAt: string;
+  updatedAt: string;
+  events: ShipmentEvent[];
+};
+
+/** Who is moving this order forward — the carrier, or the seller. */
+export type OrderFulfillment = {
+  autoEnabled: boolean;
+  provider: string;
+  requiresSellerAction: boolean;
+  stalledReason?: string | null;
+  shipment?: Shipment | null;
+  /** Pickup and delivery points, for the tracking map. */
+  route: OrderRoute;
+};
 
 export type SellerOrderListQuery = {
   status?: string | null;
@@ -40,6 +90,8 @@ export type SellerOrderListItem = {
   completedAt?: string | null;
   canUpdateStatus: boolean;
   nextStatus?: string | null;
+  autoFulfillment: boolean;
+  shipmentStatus?: string | null;
 };
 
 export type SellerOrderListResult = {
@@ -58,6 +110,8 @@ export type SellerOrderShipping = {
   district: string;
   ward: string;
   streetAddress: string;
+  latitude?: number | null;
+  longitude?: number | null;
 };
 
 export type SellerOrderItem = {
@@ -117,6 +171,7 @@ export type SellerOrderDetail = {
   completedAt?: string | null;
   canUpdateStatus: boolean;
   nextStatus?: string | null;
+  fulfillment: OrderFulfillment;
 };
 
 export type UpdateSellerOrderRequest = {

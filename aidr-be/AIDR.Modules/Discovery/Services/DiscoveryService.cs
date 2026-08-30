@@ -45,6 +45,31 @@ public sealed class DiscoveryService : IDiscoveryService
         CancellationToken cancellationToken = default)
         => QueryProductsAsync(request, requireKeyword: true, cancellationToken);
 
+    public async Task<IReadOnlyList<ProductListItemDto>> LookupProductsAsync(
+        IReadOnlyList<Guid> productIds,
+        CancellationToken cancellationToken = default)
+    {
+        var ids = (productIds ?? Array.Empty<Guid>())
+            .Where(id => id != Guid.Empty)
+            .Distinct()
+            .Take(DiscoveryConstants.MaxLookupIds)
+            .ToList();
+
+        if (ids.Count == 0)
+            return Array.Empty<ProductListItemDto>();
+
+        var (items, _) = await _repository.QueryApprovedProductsAsync(
+            new ProductListQuery
+            {
+                ProductIds = ids,
+                Page = 1,
+                PageSize = ids.Count
+            },
+            cancellationToken);
+
+        return items.Select(MapListItem).ToList();
+    }
+
     public async Task<ProductDetailDto> GetProductAsync(
         Guid productId,
         Guid? viewerUserId,
@@ -92,23 +117,81 @@ public sealed class DiscoveryService : IDiscoveryService
     public async Task<IReadOnlyList<CategoryTreeNodeDto>> GetCategoryTreeAsync(
         CancellationToken cancellationToken = default)
     {
-        var cached = await _cache.GetAsync<List<CategoryTreeNodeDto>>(
-            DiscoveryConstants.CacheKeyCategoriesTree,
-            cancellationToken);
+        var flat = await _repository.GetActiveCategoriesAsync(cancellationToken);
+        var counts = await _repository.GetApprovedProductCountsByCategoryAsync(cancellationToken);
+        var tree = BuildCategoryTree(flat, counts);
 
+        return tree;
+    }
+
+    public async Task<IReadOnlyList<BrandFilterOptionDto>> GetBrandFilterOptionsAsync(
+        CancellationToken cancellationToken = default)
+    {
+        const string cacheKey = "catalog:brands:filter-options";
+        var cached = await _cache.GetAsync<List<BrandFilterOptionDto>>(cacheKey, cancellationToken);
         if (cached is not null)
             return cached;
 
-        var flat = await _repository.GetActiveCategoriesAsync(cancellationToken);
-        var tree = BuildCategoryTree(flat);
+        var records = await _repository.GetApprovedBrandOptionsAsync(cancellationToken);
+        var result = records
+            .Select(b => new BrandFilterOptionDto
+            {
+                Brand = b.Brand,
+                ProductCount = b.ProductCount
+            })
+            .ToList();
 
-        await _cache.SetAsync(
-            DiscoveryConstants.CacheKeyCategoriesTree,
-            tree,
-            DiscoveryConstants.CategoryTreeCacheTtl,
+        await _cache.SetAsync(cacheKey, result, DiscoveryConstants.ProductListCacheTtl, cancellationToken);
+        return result;
+    }
+
+    public async Task<PagedResult<ShopListItemDto>> ListShopsAsync(
+        int page,
+        int pageSize,
+        string? sort = null,
+        CancellationToken cancellationToken = default)
+    {
+        var (normalizedPage, normalizedSize) = DiscoveryConstants.NormalizePaging(page, pageSize);
+        var normalizedSort = string.IsNullOrWhiteSpace(sort)
+            ? DiscoveryConstants.SortRating
+            : sort.Trim().ToLowerInvariant();
+
+        if (normalizedSort is not ("rating" or "followers" or "newest"))
+            normalizedSort = DiscoveryConstants.SortRating;
+
+        var cacheKey = $"shops:list:{normalizedPage}:{normalizedSize}:{normalizedSort}";
+        var cached = await _cache.GetAsync<PagedResult<ShopListItemDto>>(cacheKey, cancellationToken);
+        if (cached is not null)
+            return cached;
+
+        var (items, total) = await _repository.ListActiveShopsAsync(
+            normalizedPage,
+            normalizedSize,
+            normalizedSort,
             cancellationToken);
 
-        return tree;
+        var result = new PagedResult<ShopListItemDto>
+        {
+            Items = items.Select(s => new ShopListItemDto
+            {
+                ShopId = s.ShopId,
+                ShopName = s.ShopName,
+                Slug = s.Slug,
+                Tagline = s.Tagline,
+                LogoUrl = s.LogoUrl,
+                IsVerified = s.IsVerified,
+                AvgRating = s.AvgRating,
+                RatingCount = s.RatingCount,
+                FollowerCount = s.FollowerCount,
+                ProductCount = s.ProductCount
+            }).ToList(),
+            Page = normalizedPage,
+            PageSize = normalizedSize,
+            TotalCount = total
+        };
+
+        await _cache.SetAsync(cacheKey, result, DiscoveryConstants.ShopListCacheTtl, cancellationToken);
+        return result;
     }
 
     public async Task<ShopPublicDetailDto> GetShopAsync(
@@ -187,7 +270,8 @@ public sealed class DiscoveryService : IDiscoveryService
         bool requireKeyword,
         CancellationToken cancellationToken)
     {
-        var query = NormalizeQuery(request, requireKeyword);
+        var flatCategories = await _repository.GetActiveCategoriesAsync(cancellationToken);
+        var query = NormalizeQuery(request, requireKeyword, flatCategories);
         var cacheKey = BuildListCacheKey(query);
 
         var cached = await _cache.GetAsync<PagedResult<ProductListItemDto>>(cacheKey, cancellationToken);
@@ -207,7 +291,10 @@ public sealed class DiscoveryService : IDiscoveryService
         return result;
     }
 
-    private static ProductListQuery NormalizeQuery(ProductQueryRequest request, bool requireKeyword)
+    private static ProductListQuery NormalizeQuery(
+        ProductQueryRequest request,
+        bool requireKeyword,
+        IReadOnlyList<CategoryRecord> flatCategories)
     {
         var page = request.Page <= 0 ? DiscoveryConstants.DefaultPage : request.Page;
         var pageSize = request.PageSize <= 0
@@ -225,6 +312,23 @@ public sealed class DiscoveryService : IDiscoveryService
         if (brand is not null && brand.Length > DiscoveryConstants.MaxBrandLength)
             throw new AppException($"Brand must not exceed {DiscoveryConstants.MaxBrandLength} characters.");
 
+        var brands = ParseBrands(request, brand);
+        foreach (var b in brands)
+        {
+            if (b.Length > DiscoveryConstants.MaxBrandLength)
+                throw new AppException($"Brand must not exceed {DiscoveryConstants.MaxBrandLength} characters.");
+        }
+
+        var categoryIds = ParseCategoryIds(request);
+        foreach (var id in categoryIds)
+        {
+            if (id <= 0)
+                throw new AppException("Category id must be a positive number.");
+        }
+
+        if (categoryIds.Count > 0)
+            categoryIds = ExpandCategoryIds(categoryIds, flatCategories);
+
         if (request.CategoryId is <= 0)
             throw new AppException("Category id must be a positive number.");
 
@@ -236,6 +340,9 @@ public sealed class DiscoveryService : IDiscoveryService
 
         if (request.MinRating is < 0 or > 5)
             throw new AppException("MinRating must be between 0 and 5.");
+
+        var conditions = ParseConditions(request.Conditions);
+        var specFilters = ParseSpecFilters(request.SpecFilters);
 
         var sort = string.IsNullOrWhiteSpace(request.Sort)
             ? DiscoveryConstants.SortNewest
@@ -249,15 +356,130 @@ public sealed class DiscoveryService : IDiscoveryService
         {
             Q = q,
             ShopId = request.ShopId == Guid.Empty ? null : request.ShopId,
-            CategoryId = request.CategoryId,
-            Brand = brand,
+            CategoryId = categoryIds.Count == 1 ? categoryIds[0] : null,
+            CategoryIds = categoryIds,
+            Brand = brands.Count == 1 ? brands[0] : brand,
+            Brands = brands,
             MinPrice = request.MinPrice,
             MaxPrice = request.MaxPrice,
             MinRating = request.MinRating,
+            OnSale = request.OnSale,
+            InStock = request.InStock,
+            Conditions = conditions,
+            SpecFilters = specFilters,
             Sort = sort,
             Page = page,
             PageSize = pageSize
         };
+    }
+
+    private static List<int> ParseCategoryIds(ProductQueryRequest request)
+    {
+        var ids = new HashSet<int>();
+        if (request.CategoryId is > 0)
+            ids.Add(request.CategoryId.Value);
+
+        if (!string.IsNullOrWhiteSpace(request.CategoryIds))
+        {
+            foreach (var part in request.CategoryIds.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+            {
+                if (int.TryParse(part, out var id) && id > 0)
+                    ids.Add(id);
+            }
+        }
+
+        return ids.ToList();
+    }
+
+    private static List<string> ParseBrands(ProductQueryRequest request, string? legacyBrand)
+    {
+        var brands = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        if (!string.IsNullOrWhiteSpace(legacyBrand))
+            brands.Add(legacyBrand);
+
+        if (!string.IsNullOrWhiteSpace(request.Brands))
+        {
+            foreach (var part in request.Brands.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+                brands.Add(part);
+        }
+
+        return brands.OrderBy(b => b, StringComparer.OrdinalIgnoreCase).ToList();
+    }
+
+    private static readonly HashSet<string> AllowedConditions = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "New", "LikeNew", "Refurbished", "Used"
+    };
+
+    private static List<string> ParseConditions(string? raw)
+    {
+        if (string.IsNullOrWhiteSpace(raw)) return [];
+
+        var list = new List<string>();
+        foreach (var part in raw.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+        {
+            var match = AllowedConditions.FirstOrDefault(c =>
+                c.Equals(part, StringComparison.OrdinalIgnoreCase));
+            if (match is not null && !list.Contains(match, StringComparer.OrdinalIgnoreCase))
+                list.Add(match);
+        }
+
+        return list;
+    }
+
+    private static Dictionary<string, string> ParseSpecFilters(string? raw)
+    {
+        var result = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        if (string.IsNullOrWhiteSpace(raw)) return result;
+
+        foreach (var part in raw.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+        {
+            var colon = part.IndexOf(':');
+            if (colon <= 0 || colon >= part.Length - 1) continue;
+
+            var key = part[..colon].Trim().ToLowerInvariant();
+            var value = part[(colon + 1)..].Trim();
+            if (key.Length == 0 || value.Length > 80) continue;
+            result[key] = value;
+        }
+
+        return result;
+    }
+
+    private static List<int> ExpandCategoryIds(
+        IReadOnlyList<int> selectedIds,
+        IReadOnlyList<CategoryRecord> flatCategories)
+    {
+        var childrenByParent = flatCategories
+            .Where(c => c.ParentId is not null)
+            .GroupBy(c => c.ParentId!.Value)
+            .ToDictionary(g => g.Key, g => g.Select(c => c.CategoryId).ToList());
+
+        var expanded = new HashSet<int>();
+        foreach (var id in selectedIds)
+            CollectCategoryDescendants(id, childrenByParent, expanded);
+
+        return expanded.OrderBy(id => id).ToList();
+    }
+
+    private static void CollectCategoryDescendants(
+        int categoryId,
+        IReadOnlyDictionary<int, List<int>> childrenByParent,
+        HashSet<int> target)
+    {
+        if (!target.Add(categoryId))
+            return;
+
+        if (!childrenByParent.TryGetValue(categoryId, out var children))
+            return;
+
+        foreach (var childId in children)
+            CollectCategoryDescendants(childId, childrenByParent, target);
+    }
+
+    private static ProductListQuery NormalizeQuery(ProductQueryRequest request, bool requireKeyword)
+    {
+        return NormalizeQuery(request, requireKeyword, Array.Empty<CategoryRecord>());
     }
 
     private static ProductListQuery NormalizeShopProductsQuery(ShopProductsQueryRequest? request)
@@ -310,10 +532,16 @@ public sealed class DiscoveryService : IDiscoveryService
             query.Q,
             query.ShopId,
             query.CategoryId,
+            query.CategoryIds,
             query.Brand,
+            query.Brands,
             query.MinPrice,
             query.MaxPrice,
             query.MinRating,
+            query.OnSale,
+            query.InStock,
+            query.Conditions,
+            query.SpecFilters,
             query.Sort,
             query.Page,
             query.PageSize
@@ -343,7 +571,9 @@ public sealed class DiscoveryService : IDiscoveryService
         return $"shop:detail:{hash}";
     }
 
-    private static List<CategoryTreeNodeDto> BuildCategoryTree(IReadOnlyList<CategoryRecord> flat)
+    private static List<CategoryTreeNodeDto> BuildCategoryTree(
+        IReadOnlyList<CategoryRecord> flat,
+        IReadOnlyDictionary<int, int> directCounts)
     {
         var lookup = flat.ToDictionary(
             c => c.CategoryId,
@@ -356,6 +586,7 @@ public sealed class DiscoveryService : IDiscoveryService
                 Description = c.Description,
                 ImageUrl = c.ImageUrl,
                 SortOrder = c.SortOrder,
+                ProductCount = directCounts.GetValueOrDefault(c.CategoryId),
                 Children = new List<CategoryTreeNodeDto>()
             });
 
@@ -373,7 +604,25 @@ public sealed class DiscoveryService : IDiscoveryService
             }
         }
 
-        return roots;
+        return roots.Select(root => WithRolledUpProductCount(root)).ToList();
+    }
+
+    private static CategoryTreeNodeDto WithRolledUpProductCount(CategoryTreeNodeDto node)
+    {
+        var children = node.Children.Select(WithRolledUpProductCount).ToList();
+        var childTotal = children.Sum(c => c.ProductCount);
+        return new CategoryTreeNodeDto
+        {
+            CategoryId = node.CategoryId,
+            ParentId = node.ParentId,
+            Name = node.Name,
+            Slug = node.Slug,
+            Description = node.Description,
+            ImageUrl = node.ImageUrl,
+            SortOrder = node.SortOrder,
+            ProductCount = node.ProductCount + childTotal,
+            Children = children
+        };
     }
 
     private static ProductListItemDto MapListItem(ProductListRecord r)

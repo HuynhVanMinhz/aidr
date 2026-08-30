@@ -33,13 +33,20 @@ public sealed class DiscoveryRepository : IDiscoveryRepository
                 || (p.ModelNumber != null && p.ModelNumber.Contains(keyword)));
         }
 
-        if (query.CategoryId is { } categoryId)
+        if (query.CategoryIds is { Count: > 0 })
+            q = q.Where(p => query.CategoryIds.Contains(p.CategoryId));
+        else if (query.CategoryId is { } categoryId)
             q = q.Where(p => p.CategoryId == categoryId);
 
         if (query.ShopId is { } shopId)
             q = q.Where(p => p.ShopId == shopId);
 
-        if (!string.IsNullOrWhiteSpace(query.Brand))
+        if (query.ProductIds is { Count: > 0 })
+            q = q.Where(p => query.ProductIds.Contains(p.ProductId));
+
+        if (query.Brands is { Count: > 0 })
+            q = q.Where(p => p.Brand != null && query.Brands.Contains(p.Brand));
+        else if (!string.IsNullOrWhiteSpace(query.Brand))
         {
             var brand = query.Brand.Trim();
             q = q.Where(p => p.Brand != null && p.Brand == brand);
@@ -53,6 +60,27 @@ public sealed class DiscoveryRepository : IDiscoveryRepository
 
         if (query.MinRating is { } minRating)
             q = q.Where(p => p.AvgRating >= minRating);
+
+        if (query.OnSale == true)
+            q = q.Where(p => p.SalePrice != null && p.SalePrice < p.BasePrice);
+
+        if (query.InStock == true)
+            q = q.Where(p => p.StockQuantity - p.ReservedQuantity > 0);
+
+        if (query.Conditions is { Count: > 0 })
+            q = q.Where(p => query.Conditions.Contains(p.ConditionType));
+
+        if (query.SpecFilters is { Count: > 0 })
+        {
+            foreach (var pair in query.SpecFilters)
+            {
+                var token = $"\"{pair.Key}\":\"{pair.Value}\"";
+                var tokenSpaced = $"\"{pair.Key}\": \"{pair.Value}\"";
+                q = q.Where(p =>
+                    p.SpecsJson != null
+                    && (p.SpecsJson.Contains(token) || p.SpecsJson.Contains(tokenSpaced)));
+            }
+        }
 
         q = ApplySort(q, query.Sort);
 
@@ -254,6 +282,30 @@ public sealed class DiscoveryRepository : IDiscoveryRepository
             .ToListAsync(cancellationToken);
     }
 
+    public async Task<IReadOnlyDictionary<int, int>> GetApprovedProductCountsByCategoryAsync(
+        CancellationToken cancellationToken = default)
+    {
+        return await BuildApprovedQuery()
+            .GroupBy(p => p.CategoryId)
+            .Select(g => new { CategoryId = g.Key, Count = g.Count() })
+            .ToDictionaryAsync(x => x.CategoryId, x => x.Count, cancellationToken);
+    }
+
+    public async Task<IReadOnlyList<BrandFilterRecord>> GetApprovedBrandOptionsAsync(
+        CancellationToken cancellationToken = default)
+    {
+        return await BuildApprovedQuery()
+            .Where(p => p.Brand != null && p.Brand != "")
+            .GroupBy(p => p.Brand!)
+            .Select(g => new BrandFilterRecord
+            {
+                Brand = g.Key,
+                ProductCount = g.Count()
+            })
+            .OrderBy(b => b.Brand)
+            .ToListAsync(cancellationToken);
+    }
+
     public async Task<ShopPublicRecord?> GetActiveShopByKeyAsync(
         string shopKey,
         CancellationToken cancellationToken = default)
@@ -341,11 +393,84 @@ public sealed class DiscoveryRepository : IDiscoveryRepository
         };
     }
 
+    public async Task<(IReadOnlyList<ShopListRecord> Items, int TotalCount)> ListActiveShopsAsync(
+        int page,
+        int pageSize,
+        string sort,
+        CancellationToken cancellationToken = default)
+    {
+        var query = _db.Shops.AsNoTracking()
+            .Where(s => s.Status == ActiveShopStatus);
+
+        var total = await query.CountAsync(cancellationToken);
+
+        query = sort.ToLowerInvariant() switch
+        {
+            "followers" => query
+                .OrderByDescending(s => s.FollowerCount)
+                .ThenByDescending(s => s.AvgRating)
+                .ThenBy(s => s.ShopName),
+            "newest" => query
+                .OrderByDescending(s => s.CreatedAt)
+                .ThenBy(s => s.ShopName),
+            _ => query
+                .OrderByDescending(s => s.AvgRating)
+                .ThenByDescending(s => s.RatingCount)
+                .ThenByDescending(s => s.FollowerCount)
+                .ThenBy(s => s.ShopName)
+        };
+
+        var pageRows = await query
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .Select(s => new
+            {
+                s.ShopId,
+                s.ShopName,
+                s.Slug,
+                s.Tagline,
+                s.LogoUrl,
+                s.IsVerified,
+                s.AvgRating,
+                s.RatingCount,
+                s.FollowerCount
+            })
+            .ToListAsync(cancellationToken);
+
+        var shopIds = pageRows.Select(s => s.ShopId).ToList();
+        var productCounts = await _db.Products.AsNoTracking()
+            .Where(p => shopIds.Contains(p.ShopId)
+                        && p.Status == ApprovedStatus
+                        && p.Category.IsActive)
+            .GroupBy(p => p.ShopId)
+            .Select(g => new { ShopId = g.Key, Count = g.Count() })
+            .ToDictionaryAsync(x => x.ShopId, x => x.Count, cancellationToken);
+
+        var items = pageRows
+            .Select(s => new ShopListRecord
+            {
+                ShopId = s.ShopId,
+                ShopName = s.ShopName,
+                Slug = s.Slug,
+                Tagline = s.Tagline,
+                LogoUrl = s.LogoUrl,
+                IsVerified = s.IsVerified,
+                AvgRating = s.AvgRating,
+                RatingCount = s.RatingCount,
+                FollowerCount = s.FollowerCount,
+                ProductCount = productCounts.GetValueOrDefault(s.ShopId)
+            })
+            .ToList();
+
+        return (items, total);
+    }
+
     private IQueryable<Product> BuildApprovedQuery()
         => _db.Products.AsNoTracking()
             .Where(p => p.Status == ApprovedStatus
                         && p.Category.IsActive
                         && p.Shop.Status == ActiveShopStatus);
+
 
     private static IQueryable<Product> ApplySort(IQueryable<Product> query, string sort)
         => sort.ToLowerInvariant() switch

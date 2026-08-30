@@ -6,9 +6,8 @@ import { useCart } from '../../hooks/useCart';
 import { useToast } from '../../hooks/useToast';
 import { useWishlistProduct } from '../../hooks/useWishlist';
 import type { ProductListItem } from '../../types/catalog';
+import { resolveProductImageUrl } from '../../utils/catalogImage';
 import { discountPercent, formatMoney } from '../../utils/formatCatalog';
-
-const PLACEHOLDER = '/theme/images/product-image-1.png';
 
 type Props = {
   product: ProductListItem;
@@ -19,7 +18,7 @@ type Props = {
 export function ProductCard({ product, variant = 'list' }: Props) {
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
-  const { addItem, getErrorMessage } = useCart();
+  const { addItem, buyNow, getErrorMessage } = useCart();
   const { toggle: toggleCompare, isSelected } = useCompare();
   const inCompare = isSelected(product.productId);
   const {
@@ -30,10 +29,11 @@ export function ProductCard({ product, variant = 'list' }: Props) {
   } = useWishlistProduct(product.productId);
   const toast = useToast();
   const [adding, setAdding] = useState(false);
+  const [buying, setBuying] = useState(false);
   const [wishlistPending, setWishlistPending] = useState(false);
 
   const off = discountPercent(product.basePrice, product.salePrice);
-  const imageUrl = product.primaryImageUrl || PLACEHOLDER;
+  const imageUrl = resolveProductImageUrl(product.primaryImageUrl, product.name?.length ?? 0);
   const detailTo = `/products/${product.productId}`;
   const outOfStock = product.availableQuantity < 1;
 
@@ -58,6 +58,30 @@ export function ProductCard({ product, variant = 'list' }: Props) {
       toast.error(getErrorMessage(err, 'Unable to add item to cart.'));
     } finally {
       setAdding(false);
+    }
+  }
+
+  async function handleBuyNow(e: MouseEvent) {
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (!isAuthenticated) {
+      navigate(`/login?returnUrl=${encodeURIComponent(detailTo)}`);
+      return;
+    }
+    if (outOfStock) {
+      toast.error('Product is out of stock.');
+      return;
+    }
+
+    setBuying(true);
+    try {
+      await buyNow(product.productId, 1);
+      navigate('/checkout');
+    } catch (err) {
+      toast.error(getErrorMessage(err, 'Unable to start checkout.'));
+    } finally {
+      setBuying(false);
     }
   }
 
@@ -98,6 +122,34 @@ export function ProductCard({ product, variant = 'list' }: Props) {
     toast.success(inCompare ? 'Removed from compare.' : 'Added to compare.');
   }
 
+  const ratingBlock = (
+    <p className="product-item-rating">
+      <span className="product-item-rating__score">
+        <i className="fa-solid fa-star" aria-hidden />
+        {product.avgRating > 0 ? product.avgRating.toFixed(1) : 'New'}
+      </span>
+      {product.reviewCount > 0 ? (
+        <span className="product-item-rating__count">
+          ({product.reviewCount} {product.reviewCount === 1 ? 'review' : 'reviews'})
+        </span>
+      ) : null}
+      {product.soldCount > 0 ? (
+        <span className="product-item-rating__sold">{product.soldCount} sold</span>
+      ) : null}
+    </p>
+  );
+
+  const buyNowBtn = (
+    <button
+      type="button"
+      className="product-item-buy-now"
+      disabled={buying || adding || outOfStock}
+      onClick={(e) => void handleBuyNow(e)}
+    >
+      {outOfStock ? 'Out of stock' : buying ? 'Starting…' : 'Buy Now'}
+    </button>
+  );
+
   const priceBlock = (
     <h3>
       {formatMoney(product.effectivePrice, product.currency)}
@@ -117,7 +169,15 @@ export function ProductCard({ product, variant = 'list' }: Props) {
       <div className="product-item-image">
         <Link to={detailTo}>
           <figure>
-            <img src={imageUrl} alt={product.name} loading="lazy" />
+            <img
+              src={imageUrl}
+              alt={product.name}
+              loading="lazy"
+              onError={(e) => {
+                e.currentTarget.onerror = null;
+                e.currentTarget.src = resolveProductImageUrl(null, 0);
+              }}
+            />
           </figure>
         </Link>
       </div>
@@ -174,12 +234,14 @@ export function ProductCard({ product, variant = 'list' }: Props) {
             <h2>
               <Link to={detailTo}>{product.name}</Link>
             </h2>
+            {ratingBlock}
             {priceBlock}
           </div>
-          <div className="product-item-btn">
+          <div className="product-item-btn product-item-btn--split">
             <Link to={detailTo} className="btn-default">
               View details
             </Link>
+            {buyNowBtn}
           </div>
         </div>
       </div>
@@ -196,7 +258,20 @@ export function ProductCard({ product, variant = 'list' }: Props) {
         <h2 className="product-item-title">
           <Link to={detailTo}>{product.name}</Link>
         </h2>
+        {ratingBlock}
         {priceBlock}
+        <div className="product-item-cta-row">
+          <button
+            type="button"
+            className="product-item-add-cart"
+            disabled={adding || buying || outOfStock}
+            onClick={(e) => void handleQuickAdd(e)}
+          >
+            <i className="fa-solid fa-cart-plus" aria-hidden />
+            {adding ? 'Adding…' : 'Add to Cart'}
+          </button>
+          {buyNowBtn}
+        </div>
       </div>
     </div>
   );

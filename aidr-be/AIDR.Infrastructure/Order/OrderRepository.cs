@@ -1,12 +1,18 @@
-using System.Text.Json;
+﻿using System.Text.Json;
 using AIDR.Infrastructure.Persistence;
 using AIDR.Infrastructure.Persistence.Entities;
 using AIDR.Modules.Engagement.Abstractions;
 using AIDR.Modules.Order.Abstractions;
+using AIDR.Modules.Shipping.Abstractions;
+using AIDR.Modules.Shipping.Services;
 using AIDR.Shared.Constants;
 using AIDR.Shared.Dtos.Order;
+using AIDR.Shared.Dtos.Shipping;
 using AIDR.Shared.Exceptions;
 using Microsoft.EntityFrameworkCore;
+using AIDR.Modules.Settlement.Abstractions;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace AIDR.Infrastructure.Ordering;
 
@@ -19,11 +25,22 @@ public sealed class OrderRepository : IOrderRepository
 
     private readonly AidrDbContext _db;
     private readonly ILowStockNotifier _lowStockNotifier;
+    private readonly SettlementOptions _settlementOptions;
+    private readonly ShippingOptions _shippingOptions;
+    private readonly ILogger<OrderRepository> _logger;
 
-    public OrderRepository(AidrDbContext db, ILowStockNotifier lowStockNotifier)
+    public OrderRepository(
+        AidrDbContext db,
+        ILowStockNotifier lowStockNotifier,
+        IOptions<SettlementOptions> settlementOptions,
+        IOptions<ShippingOptions> shippingOptions,
+        ILogger<OrderRepository> logger)
     {
         _db = db;
         _lowStockNotifier = lowStockNotifier;
+        _settlementOptions = settlementOptions.Value;
+        _shippingOptions = shippingOptions.Value;
+        _logger = logger;
     }
 
     public async Task<CreateOrderResponse> CreateOrdersFromCartAsync(
@@ -209,8 +226,93 @@ public sealed class OrderRepository : IOrderRepository
                 o => o.OrderId == orderId && o.BuyerUserId == buyerUserId,
                 cancellationToken);
 
-        return order is null ? null : MapDetail(order);
+        return order is null ? null : MapDetail(order, await BuildTrackingAsync(order, cancellationToken));
     }
+
+    /// <summary>
+    /// Where the parcel is going and what the carrier has said about it.
+    ///
+    /// The carrier reports a status, never a courier position, so this carries
+    /// the two ends of the route and lets the map place the parcel between them.
+    /// Retry counts and raw carrier errors are deliberately left out — those are
+    /// the seller's to act on.
+    /// </summary>
+    private async Task<BuyerOrderTrackingDto> BuildTrackingAsync(
+        Order order,
+        CancellationToken cancellationToken)
+    {
+        var shipment = await _db.Shipments.AsNoTracking()
+            .Where(s => s.OrderId == order.OrderId)
+            .Select(s => new
+            {
+                s.ShipmentId,
+                s.Provider,
+                s.TrackingCode,
+                s.Status,
+                s.ExpectedDeliveryAt,
+                s.LastSyncedAt,
+                s.UpdatedAt
+            })
+            .FirstOrDefaultAsync(cancellationToken);
+
+        var events = shipment is null
+            ? new List<ShipmentEventDto>()
+            : await _db.ShipmentEvents.AsNoTracking()
+                .Where(e => e.ShipmentId == shipment.ShipmentId)
+                .OrderByDescending(e => e.OccurredAt)
+                .Select(e => new ShipmentEventDto
+                {
+                    ShipmentEventId = e.ShipmentEventId,
+                    ProviderStatus = e.ProviderStatus,
+                    MappedStatus = e.MappedStatus,
+                    Description = e.Description,
+                    Source = e.Source,
+                    OccurredAt = e.OccurredAt
+                })
+                .ToListAsync(cancellationToken);
+
+        var shop = await _db.Shops.AsNoTracking()
+            .Where(s => s.ShopId == order.ShopId)
+            .Select(s => new
+            {
+                s.ShopName,
+                s.Province,
+                s.District,
+                s.Ward,
+                s.StreetAddress,
+                s.Latitude,
+                s.Longitude
+            })
+            .FirstOrDefaultAsync(cancellationToken);
+
+        var destination = ParseShippingSnapshot(order.ShippingSnapshotJson, order.ShippingAddressId);
+
+        return new BuyerOrderTrackingDto
+        {
+            Carrier = shipment?.Provider ?? _shippingOptions.NormalizedProvider,
+            TrackingCode = shipment?.TrackingCode ?? order.TrackingCode,
+            ShipmentStatus = shipment?.Status,
+            ExpectedDeliveryAt = shipment?.ExpectedDeliveryAt,
+            LastUpdateAt = shipment?.LastSyncedAt ?? shipment?.UpdatedAt,
+            Route = ShippingService.BuildRoute(
+                shop?.Latitude,
+                shop?.Longitude,
+                JoinAddress(shop?.ShopName, shop?.StreetAddress, shop?.Ward, shop?.District, shop?.Province),
+                destination.Latitude,
+                destination.Longitude,
+                JoinAddress(
+                    destination.ReceiverName,
+                    destination.StreetAddress,
+                    destination.Ward,
+                    destination.District,
+                    destination.Province)),
+            Events = events
+        };
+    }
+
+    /// <summary>One readable line for a map marker; blank parts simply drop out.</summary>
+    private static string JoinAddress(params string?[] parts) =>
+        string.Join(", ", parts.Where(p => !string.IsNullOrWhiteSpace(p)).Select(p => p!.Trim()));
 
     public async Task<BuyerOrderDetailDto> CancelBuyerOrderAsync(
         Guid buyerUserId,
@@ -269,7 +371,7 @@ public sealed class OrderRepository : IOrderRepository
         await _db.SaveChangesAsync(cancellationToken);
         await transaction.CommitAsync(cancellationToken);
 
-        return MapDetail(order);
+        return MapDetail(order, await BuildTrackingAsync(order, cancellationToken));
     }
 
     public async Task<BuyerOrderDetailDto> ConfirmReceivedAsync(
@@ -294,7 +396,7 @@ public sealed class OrderRepository : IOrderRepository
         if (string.Equals(order.Status, OrderConstants.StatusCompleted, StringComparison.OrdinalIgnoreCase))
         {
             await transaction.CommitAsync(cancellationToken);
-            return MapDetail(order);
+            return MapDetail(order, await BuildTrackingAsync(order, cancellationToken));
         }
 
         if (!string.Equals(order.Status, OrderConstants.StatusDelivered, StringComparison.OrdinalIgnoreCase))
@@ -321,12 +423,62 @@ public sealed class OrderRepository : IOrderRepository
         foreach (var item in order.Items)
             item.Product.SoldCount += item.Quantity;
 
-        await CreditSellerWalletAsync(order, now, cancellationToken);
+        await HoldSettlementAsync(order, now, cancellationToken);
 
         await _db.SaveChangesAsync(cancellationToken);
         await transaction.CommitAsync(cancellationToken);
 
-        return MapDetail(order);
+        return MapDetail(order, await BuildTrackingAsync(order, cancellationToken));
+    }
+
+    public async Task<bool> AutoCompleteDeliveredOrderAsync(
+        Guid orderId,
+        CancellationToken cancellationToken = default)
+    {
+        await using var transaction = await _db.Database.BeginTransactionAsync(cancellationToken);
+
+        var order = await _db.Orders
+            .Include(o => o.Items)
+                .ThenInclude(i => i.Product)
+            .Include(o => o.StatusHistories)
+            .FirstOrDefaultAsync(o => o.OrderId == orderId, cancellationToken);
+
+        if (order is null)
+            return false;
+
+        if (!string.Equals(order.Status, OrderConstants.StatusDelivered, StringComparison.OrdinalIgnoreCase))
+        {
+            await transaction.CommitAsync(cancellationToken);
+            return false;
+        }
+
+        var now = DateTime.UtcNow;
+        var fromStatus = order.Status;
+
+        order.Status = OrderConstants.StatusCompleted;
+        order.CompletedAt = now;
+        order.UpdatedAt = now;
+
+        order.StatusHistories.Add(new OrderStatusHistory
+        {
+            OrderId = order.OrderId,
+            FromStatus = fromStatus,
+            ToStatus = OrderConstants.StatusCompleted,
+            ChangedBy = null,
+            Note = "Auto-completed after the confirmation window elapsed",
+            CreatedAt = now
+        });
+
+        foreach (var item in order.Items)
+            item.Product.SoldCount += item.Quantity;
+
+        await HoldSettlementAsync(order, now, cancellationToken);
+
+        await _db.SaveChangesAsync(cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
+
+        _logger.LogInformation("Auto-completed delivered order {OrderCode}", order.OrderCode);
+        return true;
     }
 
     private async Task ReleaseReservedStockAsync(
@@ -378,24 +530,56 @@ public sealed class OrderRepository : IOrderRepository
         }
     }
 
-    private async Task CreditSellerWalletAsync(Order order, DateTime now, CancellationToken cancellationToken)
+    /// <summary>
+    /// Money does not go straight to the seller. The platform holds the shop's net
+    /// for <c>Settlement:HoldDays</c> (covering the return window) and keeps the
+    /// commission; an admin releases it later. See docs/solution-escrow-settlement.md.
+    /// </summary>
+    private async Task HoldSettlementAsync(Order order, DateTime now, CancellationToken cancellationToken)
     {
-        var alreadyCredited = await _db.WalletTransactions.AnyAsync(
-            t => t.ReferenceType == OrderConstants.WalletReferenceTypeOrder
-                 && t.ReferenceId == order.OrderId
-                 && t.TxType == OrderConstants.WalletTxTypeOrderCredit,
-            cancellationToken);
+        // UQ_Settle_Order also guards this at the DB level.
+        var alreadyHeld = await _db.SettlementEntries
+            .AnyAsync(e => e.OrderId == order.OrderId, cancellationToken);
 
-        if (alreadyCredited)
+        if (alreadyHeld)
             return;
 
         var wallet = await _db.Wallets
             .FirstOrDefaultAsync(w => w.ShopId == order.ShopId, cancellationToken)
             ?? throw new AppException("Seller wallet was not found for this shop.");
 
-        var creditAmount = decimal.Round(order.TotalAmount, 2, MidpointRounding.AwayFromZero);
-        wallet.AvailableBalance = decimal.Round(
-            wallet.AvailableBalance + creditAmount,
+        var rate = _settlementOptions.CommissionRate;
+        var gross = decimal.Round(order.TotalAmount, 2, MidpointRounding.AwayFromZero);
+
+        // Shipping is excluded from the fee base — charging commission on the
+        // courier fee would be wrong once shipping is no longer free.
+        var commissionable = SettlementConstants.CommissionableAmount(
+            order.SubtotalAmount,
+            order.DiscountAmount);
+        var commission = SettlementConstants.RoundVnd(commissionable * rate);
+        if (commission > gross)
+            commission = gross;
+        var net = gross - commission;
+
+        _db.SettlementEntries.Add(new SettlementEntry
+        {
+            SettlementEntryId = Guid.NewGuid(),
+            OrderId = order.OrderId,
+            ShopId = order.ShopId,
+            GrossAmount = gross,
+            SubsidyAmount = 0m,
+            CommissionRate = rate,
+            CommissionAmount = commission,
+            NetAmount = net,
+            Currency = order.Currency,
+            Status = SettlementConstants.EntryStatusHolding,
+            HoldUntil = now.AddDays(_settlementOptions.HoldDays),
+            CreatedAt = now,
+            UpdatedAt = now
+        });
+
+        wallet.PendingBalance = decimal.Round(
+            wallet.PendingBalance + net,
             2,
             MidpointRounding.AwayFromZero);
         wallet.UpdatedAt = now;
@@ -403,17 +587,32 @@ public sealed class OrderRepository : IOrderRepository
         _db.WalletTransactions.Add(new WalletTransaction
         {
             WalletId = wallet.WalletId,
-            TxType = OrderConstants.WalletTxTypeOrderCredit,
-            Amount = creditAmount,
+            TxType = SettlementConstants.TxSettlementHold,
+            Amount = net,
             BalanceAfter = wallet.AvailableBalance,
+            PendingAfter = wallet.PendingBalance,
             ReferenceType = OrderConstants.WalletReferenceTypeOrder,
             ReferenceId = order.OrderId,
-            Note = $"Order credit for {order.OrderCode}",
+            Note = $"Settlement held for {order.OrderCode}",
+            CreatedAt = now
+        });
+
+        // Informational row so the platform fee is visible in the shop's ledger.
+        _db.WalletTransactions.Add(new WalletTransaction
+        {
+            WalletId = wallet.WalletId,
+            TxType = SettlementConstants.TxCommissionFee,
+            Amount = -commission,
+            BalanceAfter = wallet.AvailableBalance,
+            PendingAfter = wallet.PendingBalance,
+            ReferenceType = OrderConstants.WalletReferenceTypeOrder,
+            ReferenceId = order.OrderId,
+            Note = $"Platform fee {rate:P2} on {order.OrderCode}",
             CreatedAt = now
         });
     }
 
-    private static BuyerOrderDetailDto MapDetail(Order order)
+    private static BuyerOrderDetailDto MapDetail(Order order, BuyerOrderTrackingDto? tracking = null)
     {
         var payment = order.Payments
             .OrderByDescending(p => p.CreatedAt)
@@ -494,7 +693,8 @@ public sealed class OrderRepository : IOrderRepository
             CanConfirmReceived = string.Equals(
                 order.Status,
                 OrderConstants.StatusDelivered,
-                StringComparison.OrdinalIgnoreCase)
+                StringComparison.OrdinalIgnoreCase),
+            Tracking = tracking
         };
     }
 
@@ -512,7 +712,9 @@ public sealed class OrderRepository : IOrderRepository
                 Province = TryGetString(root, "province") ?? string.Empty,
                 District = TryGetString(root, "district") ?? string.Empty,
                 Ward = TryGetString(root, "ward") ?? string.Empty,
-                StreetAddress = TryGetString(root, "streetAddress") ?? string.Empty
+                StreetAddress = TryGetString(root, "streetAddress") ?? string.Empty,
+                Latitude = TryGetDouble(root, "latitude"),
+                Longitude = TryGetDouble(root, "longitude")
             };
         }
         catch (JsonException)
@@ -533,6 +735,11 @@ public sealed class OrderRepository : IOrderRepository
     private static string? TryGetString(JsonElement root, string propertyName) =>
         root.TryGetProperty(propertyName, out var value) && value.ValueKind == JsonValueKind.String
             ? value.GetString()
+            : null;
+
+    private static double? TryGetDouble(JsonElement root, string propertyName) =>
+        root.TryGetProperty(propertyName, out var value) && value.ValueKind == JsonValueKind.Number
+            ? value.GetDouble()
             : null;
 
     private static Guid? TryGetGuid(JsonElement root, string propertyName)
@@ -641,11 +848,21 @@ public sealed class OrderRepository : IOrderRepository
             };
 
             orderItems.Add(orderItem);
+
+            var primaryImageUrl = await _db.ProductImages
+                .Where(img => img.ProductId == product.ProductId)
+                .OrderByDescending(img => img.IsPrimary)
+                .ThenBy(img => img.SortOrder)
+                .Select(img => img.ImageUrl)
+                .FirstOrDefaultAsync(cancellationToken);
+
             itemDtos.Add(new CreatedOrderItemDto
             {
                 OrderItemId = orderItemId,
                 ProductId = product.ProductId,
                 ProductName = product.Name,
+                Sku = product.ModelNumber,
+                ImageUrl = primaryImageUrl,
                 Quantity = cartItem.Quantity,
                 UnitPrice = unitPrice,
                 UnitCostAvg = unitCostAvg,
@@ -883,7 +1100,20 @@ public sealed class OrderRepository : IOrderRepository
         }
 
         if (remaining > 0)
-            throw new ConflictException($"Insufficient stock for '{product.Name}'.");
+        {
+            // StockQuantity is denormalised from the lots; when they disagree the product
+            // was stocked without an inventory lot (see scripts/seed-inventory-lots.sql).
+            _logger.LogWarning(
+                "Lot allocation short for product {ProductId} ({ProductName}): needed {Needed}, lots hold {Allocated}, StockQuantity says {StockQuantity}",
+                product.ProductId,
+                product.Name,
+                quantity,
+                quantity - remaining,
+                product.StockQuantity);
+
+            throw new ConflictException(
+                $"Insufficient stock for '{product.Name}'. Only {quantity - remaining} unit(s) are backed by inventory lots.");
+        }
 
         return allocations;
     }
@@ -1000,7 +1230,11 @@ public sealed class OrderRepository : IOrderRepository
             province = address.Province,
             district = address.District,
             ward = address.Ward,
-            streetAddress = address.StreetAddress
+            streetAddress = address.StreetAddress,
+            // Snapshotted with the rest of the address: editing the address book
+            // later must not move where a past order was delivered.
+            latitude = address.Latitude,
+            longitude = address.Longitude
         };
 
         return JsonSerializer.Serialize(snapshot, SnapshotJsonOptions);

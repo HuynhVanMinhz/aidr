@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useToast } from '../../hooks/useToast';
+import { useToastMessage } from '../../hooks/useToastMessage';
 import { useVouchers } from '../../hooks/useVouchers';
 import { formatMoney } from '../../utils/formatCatalog';
 
@@ -55,6 +56,9 @@ export function VoucherApplyPanel({
     getErrorMessage,
   } = useVouchers({ autoLoad: true, cartItemIds });
 
+  // Apply/remove outcomes already toast from the handlers; this covers list load failures.
+  useToastMessage(error);
+
   const defaultShopId = useMemo(() => {
     if (shopOptions.length === 0) return '';
     if (shopOptions.length === 1) return shopOptions[0].shopId;
@@ -62,12 +66,16 @@ export function VoucherApplyPanel({
   }, [shopOptions]);
 
   const [selectedShopId, setSelectedShopId] = useState(defaultShopId);
+  const [promoSuccess, setPromoSuccess] = useState<string | null>(null);
   const effectiveShopId = selectedShopId || defaultShopId;
   const needsShopPicker = shopOptions.length > 1;
+  const promoInvalid = Boolean(previewError || error);
 
   async function handleApplyCode() {
+    setPromoSuccess(null);
     try {
       const appliedResult = await applyCode(codeInput, effectiveShopId || null);
+      setPromoSuccess(`Voucher ${appliedResult.code} applied.`);
       toast.success(`Applied ${appliedResult.code} (−${formatMoney(appliedResult.discountAmount, currency)}).`);
     } catch (err) {
       toast.error(getErrorMessage(err, 'Unable to apply voucher.'));
@@ -77,12 +85,12 @@ export function VoucherApplyPanel({
   async function handleApplyItem(voucherId: string) {
     const item = items.find((v) => v.voucherId === voucherId);
     if (!item) return;
+    setPromoSuccess(null);
     try {
       const shopId =
-        item.scope.toLowerCase() === 'shop'
-          ? item.shopId
-          : effectiveShopId || null;
+        item.scope.toLowerCase() === 'shop' ? item.shopId : effectiveShopId || null;
       const appliedResult = await applyVoucher(item, shopId);
+      setPromoSuccess(`Voucher ${appliedResult.code} applied.`);
       toast.success(`Applied ${appliedResult.code}.`);
     } catch (err) {
       toast.error(getErrorMessage(err, 'Unable to apply voucher.'));
@@ -97,11 +105,11 @@ export function VoucherApplyPanel({
   const formBlock = (
     <>
       {needsShopPicker && (
-        <div className="voucher-shop-picker form-group">
-          <label htmlFor={`voucher-shop-${variant}`}>Apply system voucher to shop</label>
+        <div className="voucher-shop-picker">
+          <label htmlFor={`voucher-shop-${variant}`}>Apply platform voucher to shop</label>
           <select
             id={`voucher-shop-${variant}`}
-            className="form-control"
+            className="catalog-filter-field voucher-shop-picker__select"
             value={effectiveShopId}
             onChange={(e) => setSelectedShopId(e.target.value)}
             disabled={previewing}
@@ -115,17 +123,25 @@ export function VoucherApplyPanel({
         </div>
       )}
 
-      <div className={variant === 'cart' ? 'order-summary-promocode-form' : 'coupon-apply-form'}>
-        <div className="form-group">
+      <div
+        className={`voucher-promo-row${
+          promoInvalid ? ' voucher-promo-row--error' : promoSuccess ? ' voucher-promo-row--success' : ''
+        }`}
+      >
+        <div className="voucher-promo-row__field">
+          <i className="fa-solid fa-tag voucher-promo-row__icon" aria-hidden />
           <input
             type="text"
-            name="promo"
-            className="form-control"
-            placeholder="Add promo code"
+            className="voucher-promo-row__input"
+            placeholder="Promo code"
             value={codeInput}
-            onChange={(e) => setCodeInput(e.target.value.toUpperCase())}
+            onChange={(e) => {
+              setPromoSuccess(null);
+              setCodeInput(e.target.value.toUpperCase());
+            }}
             disabled={previewing}
             aria-label="Voucher code"
+            aria-invalid={promoInvalid}
             autoComplete="off"
             onKeyDown={(e) => {
               if (e.key === 'Enter') {
@@ -134,94 +150,99 @@ export function VoucherApplyPanel({
               }
             }}
           />
-          {variant === 'cart' && (
-            <button
-              type="button"
-              className="btn-default btn-accent"
-              disabled={previewing || !codeInput.trim()}
-              onClick={() => void handleApplyCode()}
-            >
-              {previewing ? 'Applying…' : 'Apply'}
-            </button>
-          )}
         </div>
-        {variant === 'checkout' && (
-          <div className="coupon-apply-btn">
-            <button
-              type="button"
-              className="btn-default btn-accent"
-              disabled={previewing || !codeInput.trim()}
-              onClick={() => void handleApplyCode()}
-            >
-              {previewing ? 'Applying…' : 'Apply Coupon'}
-            </button>
-          </div>
-        )}
+        <button
+          type="button"
+          className="voucher-promo-row__apply"
+          disabled={previewing || !codeInput.trim()}
+          onClick={() => void handleApplyCode()}
+        >
+          {previewing ? '…' : 'Apply'}
+        </button>
       </div>
 
-      {(previewError || error) && (
-        <p className="form-field-error voucher-panel-error" role="alert">
-          {previewError || error}
-        </p>
-      )}
-
-      {applied.length > 0 && (
+      {applied.length > 0 ? (
         <ul className="voucher-applied-list">
           {applied.map((v) => (
-            <li key={v.shopId} className="voucher-applied-item">
-              <div>
+            <li key={v.shopId} className="voucher-applied-card">
+              <div className="voucher-applied-card__main">
+                <span className="voucher-applied-card__badge">
+                  <i className="fa-solid fa-check" aria-hidden />
+                  Applied
+                </span>
                 <strong>{v.code}</strong>
-                <span>
+                <span className="voucher-applied-card__amount">
                   −{formatMoney(v.discountAmount, v.currency || currency)}
                   {v.shopName ? ` · ${v.shopName}` : ''}
                 </span>
               </div>
               <button
                 type="button"
-                className="voucher-remove-btn"
-                onClick={() => remove(v.shopId)}
+                className="voucher-applied-card__remove"
+                onClick={() => {
+                  setPromoSuccess(null);
+                  remove(v.shopId);
+                }}
                 disabled={previewing}
+                aria-label={`Remove voucher ${v.code}`}
               >
-                Remove
+                <i className="fa-solid fa-xmark" aria-hidden />
               </button>
             </li>
           ))}
         </ul>
-      )}
+      ) : null}
 
-      <div className="voucher-available-list">
+      <div className="voucher-available-section">
+        <p className="voucher-available-section__title">Available vouchers</p>
         {loading && items.length === 0 ? (
-          <p className="voucher-available-hint">Loading vouchers…</p>
+          <p className="voucher-available-section__hint">Loading vouchers…</p>
         ) : items.length === 0 ? (
-          <p className="voucher-available-hint">No vouchers available for this cart.</p>
+          <p className="voucher-available-section__hint">No vouchers available for this cart.</p>
         ) : (
-          <ul>
+          <ul className="voucher-card-list">
             {items.map((item) => {
               const isApplied = appliedIds.has(item.voucherId);
+              const disabled = previewing || !item.isEligible;
               return (
-                <li key={item.voucherId} className={!item.isEligible ? 'voucher-item--ineligible' : ''}>
-                  <div className="voucher-item-main">
-                    <strong>{item.code}</strong>
-                    <span>{item.name}</span>
-                    <span className="voucher-item-meta">
+                <li key={item.voucherId}>
+                  <div
+                    className={`voucher-card${
+                      isApplied ? ' voucher-card--applied' : ''
+                    }${!item.isEligible ? ' voucher-card--ineligible' : ''}`}
+                  >
+                    <div className="voucher-card__head">
+                      <span className="voucher-card__code">{item.code}</span>
+                      {isApplied ? (
+                        <span className="voucher-card__status">
+                          <i className="fa-solid fa-check" aria-hidden />
+                          Applied
+                        </span>
+                      ) : (
+                        <button
+                          type="button"
+                          className="voucher-card__apply"
+                          disabled={disabled}
+                          onClick={() => void handleApplyItem(item.voucherId)}
+                        >
+                          Apply
+                        </button>
+                      )}
+                    </div>
+                    <p className="voucher-card__name">{item.name}</p>
+                    <p className="voucher-card__meta">
                       {formatDiscountLabel({ ...item, currency })}
                       {item.scope === 'Shop' && item.shopName ? ` · ${item.shopName}` : ' · Platform'}
-                      {item.minOrderAmount > 0
-                        ? ` · Min ${formatMoney(item.minOrderAmount, currency)}`
-                        : ''}
-                    </span>
-                    {!item.isEligible && item.ineligibilityReason && (
-                      <span className="voucher-item-reason">{item.ineligibilityReason}</span>
-                    )}
+                    </p>
+                    {item.minOrderAmount > 0 ? (
+                      <p className="voucher-card__condition">
+                        Min order {formatMoney(item.minOrderAmount, currency)}
+                      </p>
+                    ) : null}
+                    {!item.isEligible && item.ineligibilityReason ? (
+                      <p className="voucher-card__reason">{item.ineligibilityReason}</p>
+                    ) : null}
                   </div>
-                  <button
-                    type="button"
-                    className="btn-default btn-accent btn-border voucher-item-apply"
-                    disabled={previewing || !item.isEligible || isApplied}
-                    onClick={() => void handleApplyItem(item.voucherId)}
-                  >
-                    {isApplied ? 'Applied' : 'Apply'}
-                  </button>
                 </li>
               );
             })}

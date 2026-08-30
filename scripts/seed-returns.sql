@@ -23,7 +23,7 @@ DECLARE
     @ProductId UNIQUEIDENTIFIER,
     @ProductName NVARCHAR(256),
     @UnitPrice DECIMAL(18,2),
-    @ShippingJson NVARCHAR(MAX) = N'{"receiverName":"Tran Thi Buyer","phone":"0900000003","province":"Ha Noi","district":"Cau Giay","ward":"Dich Vong","streetAddress":"88 Xuan Thuy"}',
+    @ShippingJson NVARCHAR(MAX) = N'{"receiverName":"Jamie Buyer","phone":"0900000003","province":"Hanoi","district":"Cau Giay","ward":"Dich Vong","streetAddress":"88 Xuan Thuy"}',
     @Now DATETIME2(3) = SYSUTCDATETIME(),
     @UnboxUrl NVARCHAR(512) = N'https://res.cloudinary.com/demo/video/upload/v1680000000/aidr-demo-unboxing.mp4',
     @TestUrl  NVARCHAR(512) = N'https://res.cloudinary.com/demo/video/upload/v1680000000/aidr-demo-testing.mp4',
@@ -97,7 +97,7 @@ BEGIN
         AddressId, UserId, ReceiverName, Phone, Province, District, Ward, StreetAddress, IsDefault, CreatedAt, UpdatedAt
     )
     VALUES (
-        @AddressId, @BuyerId, N'Tran Thi Buyer', N'0900000003',
+        @AddressId, @BuyerId, N'Jamie Buyer', N'0900000003',
         N'Ha Noi', N'Cau Giay', N'Dich Vong', N'88 Xuan Thuy', 1, @Now, @Now
     );
 END;
@@ -464,3 +464,4 @@ END;
 
 PRINT N'Return & Refund demo seed completed.';
 GO
+

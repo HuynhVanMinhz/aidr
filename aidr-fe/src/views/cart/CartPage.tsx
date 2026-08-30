@@ -1,25 +1,37 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { CatalogBreadcrumb } from '../../components/catalog/CatalogBreadcrumb';
-import { VoucherApplyPanel } from '../../components/cart/VoucherApplyPanel';
+import { CartItemRow } from '../../components/cart/CartItemRow';
+import { CartOrderSummary } from '../../components/cart/CartOrderSummary';
 import { useCart } from '../../hooks/useCart';
 import { useToast } from '../../hooks/useToast';
+import { useToastMessage } from '../../hooks/useToastMessage';
 import { useAppSelector } from '../../store/hooks';
 import { selectAppliedDiscountTotal, selectAppliedVouchers } from '../../store/voucherSlice';
-import { formatMoney } from '../../utils/formatCatalog';
 
-const PLACEHOLDER = '/theme/images/product-image-1.png';
 const MAX_QTY = 99;
+const DESKTOP_SUMMARY_MQ = '(min-width: 1200px)';
 
-function formatQty(value: number) {
-  return String(value).padStart(2, '0');
+function useDesktopSummary() {
+  const [isDesktop, setIsDesktop] = useState(
+    () => typeof window !== 'undefined' && window.matchMedia(DESKTOP_SUMMARY_MQ).matches,
+  );
+
+  useEffect(() => {
+    const mql = window.matchMedia(DESKTOP_SUMMARY_MQ);
+    const onChange = () => setIsDesktop(mql.matches);
+    mql.addEventListener('change', onChange);
+    setIsDesktop(mql.matches);
+    return () => mql.removeEventListener('change', onChange);
+  }, []);
+
+  return isDesktop;
 }
 
 export function CartPage() {
   const toast = useToast();
   const {
     items,
-    subtotal,
     currency,
     loading,
     mutating,
@@ -28,16 +40,35 @@ export function CartPage() {
     setItemQuantity,
     removeItem,
     clearAll,
+    selectedItems,
+    selectableCount,
+    isSelected,
+    toggleSelected,
+    selectAll,
+    clearSelection,
     getErrorMessage,
   } = useCart({ autoLoad: true });
   const applied = useAppSelector(selectAppliedVouchers);
   const discountTotal = useAppSelector(selectAppliedDiscountTotal);
   const [busyItemId, setBusyItemId] = useState<string | null>(null);
+  useToastMessage(error);
 
-  const cartItemIds = useMemo(() => items.map((i) => i.cartItemId), [items]);
+  // Vouchers, totals and checkout all follow the ticked lines, not the whole cart.
+  const cartItemIds = useMemo(
+    () => selectedItems.map((i) => i.cartItemId),
+    [selectedItems],
+  );
+  const itemCount = useMemo(
+    () => selectedItems.reduce((sum, item) => sum + item.quantity, 0),
+    [selectedItems],
+  );
+  const selectedSubtotal = useMemo(
+    () => selectedItems.reduce((sum, item) => sum + item.lineTotal, 0),
+    [selectedItems],
+  );
   const shopOptions = useMemo(() => {
     const map = new Map<string, { shopId: string; shopName: string; subtotal: number }>();
-    for (const item of items) {
+    for (const item of selectedItems) {
       const existing = map.get(item.shopId);
       if (existing) {
         existing.subtotal += item.lineTotal;
@@ -50,9 +81,25 @@ export function CartPage() {
       }
     }
     return [...map.values()];
-  }, [items]);
+  }, [selectedItems]);
 
-  const payableTotal = Math.max(0, subtotal - discountTotal);
+  const payableTotal = Math.max(0, selectedSubtotal - discountTotal);
+  const selectedCount = selectedItems.length;
+  const allSelected = selectableCount > 0 && selectedCount === selectableCount;
+  const busy = mutating || busyItemId != null;
+  const isDesktopSummary = useDesktopSummary();
+
+  const orderSummaryProps = {
+    itemCount,
+    subtotal: selectedSubtotal,
+    discountTotal,
+    appliedCount: applied.length,
+    payableTotal,
+    currency,
+    cartItemIds,
+    shopOptions,
+    checkoutDisabled: selectedCount === 0,
+  };
 
   async function changeQty(cartItemId: string, nextQty: number, maxAvailable: number) {
     const qty = Math.min(Math.max(1, nextQty), Math.min(MAX_QTY, Math.max(1, maxAvailable)));
@@ -91,8 +138,6 @@ export function CartPage() {
     }
   }
 
-  const busy = mutating || busyItemId != null;
-
   return (
     <>
       <div className="page-header light-section">
@@ -110,196 +155,106 @@ export function CartPage() {
 
       <div className="page-cart">
         <div className="container">
-          {error && (
-            <div className="alert alert-danger" role="alert">
-              {error}
-            </div>
-          )}
-
           {loading && !loaded ? (
-            <p>Loading cart…</p>
+            <p className="cart-loading">Loading cart…</p>
           ) : items.length === 0 ? (
             <div className="cart-empty-state">
               <h2>Your cart is empty</h2>
               <p>Browse products and add items to start checkout.</p>
               <Link to="/products" className="btn-default btn-accent">
+                <i className="fa-solid fa-arrow-left" aria-hidden />
                 Continue Shopping
               </Link>
             </div>
           ) : (
-            <div className="row">
-              <div className="col-xl-8">
-                <div className="cart-content-box">
-                  <div className="cart-item-table-box">
-                    <div className="cart-item-table">
-                      <div className="cart-item-header">
-                        <span className="product-header-tag">Product</span>
-                        <span className="price-header-tag">Price</span>
-                        <span className="quantity-header-tag">Quantity</span>
-                        <span className="subtotal-header-tag">Subtotal</span>
+            <>
+              <div className="row cart-page-layout">
+                <div className="col-xl-8">
+                  <div className="cart-items-panel">
+                    <header className="cart-items-panel__head">
+                      <div>
+                        <h2>Your items</h2>
+                        <p>
+                          {selectedCount} of {items.length}{' '}
+                          {items.length === 1 ? 'item' : 'items'} selected for checkout
+                        </p>
                       </div>
+                    </header>
 
-                      {items.map((item) => {
-                        const maxQty = Math.min(MAX_QTY, Math.max(1, item.availableQuantity));
+                    <div className="cart-select-bar">
+                      <input
+                        type="checkbox"
+                        id="cart-select-all"
+                        checked={allSelected}
+                        ref={(el) => {
+                          if (el) el.indeterminate = selectedCount > 0 && !allSelected;
+                        }}
+                        disabled={busy || selectableCount === 0}
+                        onChange={() => (allSelected ? clearSelection() : selectAll())}
+                      />
+                      <label htmlFor="cart-select-all">
+                        {allSelected ? 'Deselect all' : 'Select all'}
+                      </label>
+                      <span className="cart-select-bar__count">
+                        {selectedCount} selected
+                      </span>
+                    </div>
+
+                    <div className="cart-list-header" aria-hidden>
+                      <span />
+                      <span>Product</span>
+                      <span>Price</span>
+                      <span>Quantity</span>
+                      <span>Subtotal</span>
+                    </div>
+
+                    <div className="cart-list">
+                      {items.map((item, index) => {
                         const itemBusy = busyItemId === item.cartItemId || busyItemId === '__clear__';
                         return (
-                          <div
+                          <CartItemRow
                             key={item.cartItemId}
-                            className={`cart-item${!item.isAvailable ? ' cart-item--unavailable' : ''}`}
-                          >
-                            <div className="cart-item-image-content">
-                              <div className="cart-item-image">
-                                <Link to={`/products/${item.productId}`}>
-                                  <figure>
-                                    <img
-                                      src={item.primaryImageUrl || PLACEHOLDER}
-                                      alt={item.productName}
-                                    />
-                                  </figure>
-                                </Link>
-                              </div>
-                              <div className="cart-item-info-content">
-                                <div className="cart-item-title">
-                                  <p>
-                                    <Link to={`/products/${item.productId}`}>{item.productName}</Link>
-                                  </p>
-                                  <p className="cart-item-shop">
-                                    <Link to={`/shops/${encodeURIComponent(item.shopSlug || item.shopId)}`}>
-                                      {item.shopName}
-                                    </Link>
-                                  </p>
-                                  {!item.isAvailable && (
-                                    <p className="cart-item-unavailable-note">Unavailable or out of stock</p>
-                                  )}
-                                  <button
-                                    type="button"
-                                    className="cart-item-remove"
-                                    disabled={itemBusy || busy}
-                                    onClick={() => void handleRemove(item.cartItemId)}
-                                  >
-                                    Remove
-                                  </button>
-                                </div>
-                                <div className="cart-item-price">
-                                  <p>{formatMoney(item.unitPriceSnapshot, item.currency)}</p>
-                                  {item.currentPrice !== item.unitPriceSnapshot && (
-                                    <p className="cart-item-current-price">
-                                      Now {formatMoney(item.currentPrice, item.currency)}
-                                    </p>
-                                  )}
-                                </div>
-                              </div>
-                            </div>
-                            <div className="cart-item-quantity-total">
-                              <div className="cart-item-quantity">
-                                <div className="qty-box">
-                                  <button
-                                    type="button"
-                                    className="qty-btn minus"
-                                    aria-label="Decrease quantity"
-                                    disabled={itemBusy || busy || item.quantity <= 1}
-                                    onClick={() =>
-                                      void changeQty(item.cartItemId, item.quantity - 1, maxQty)
-                                    }
-                                  >
-                                    -
-                                  </button>
-                                  <input
-                                    type="text"
-                                    className="qty-input"
-                                    readOnly
-                                    value={formatQty(item.quantity)}
-                                    aria-label="Quantity"
-                                  />
-                                  <button
-                                    type="button"
-                                    className="qty-btn plus"
-                                    aria-label="Increase quantity"
-                                    disabled={
-                                      itemBusy || busy || item.quantity >= maxQty || !item.isAvailable
-                                    }
-                                    onClick={() =>
-                                      void changeQty(item.cartItemId, item.quantity + 1, maxQty)
-                                    }
-                                  >
-                                    +
-                                  </button>
-                                </div>
-                              </div>
-                              <div className="cart-item-subtotal">
-                                <p>{formatMoney(item.lineTotal, item.currency)}</p>
-                              </div>
-                            </div>
-                          </div>
+                            item={item}
+                            index={index}
+                            busy={itemBusy || busy}
+                            selected={isSelected(item.cartItemId)}
+                            onToggleSelected={toggleSelected}
+                            onChangeQty={(id, qty, max) => void changeQty(id, qty, max)}
+                            onRemove={(id) => void handleRemove(id)}
+                          />
                         );
                       })}
                     </div>
 
-                    <div className="cart-item-buttons">
-                      <Link to="/products" className="btn-default btn-update">
+                    <footer className="cart-actions-footer">
+                      <Link to="/products" className="cart-action-btn cart-action-btn--secondary">
+                        <i className="fa-solid fa-arrow-left" aria-hidden />
                         Continue Shopping
                       </Link>
                       <button
                         type="button"
-                        className="btn-default btn-clear"
+                        className="cart-action-btn cart-action-btn--danger"
                         disabled={busy}
                         onClick={() => void handleClear()}
                       >
+                        <i className="fa-regular fa-trash-can" aria-hidden />
                         Clear Cart
                       </button>
-                    </div>
+                    </footer>
                   </div>
+                </div>
+
+                <div className="col-xl-4 cart-summary-col">
+                  {isDesktopSummary ? (
+                    <CartOrderSummary {...orderSummaryProps} variant="sidebar" />
+                  ) : null}
                 </div>
               </div>
 
-              <div className="col-xl-4">
-                <div className="page-single-sidebar right-side-sidebar">
-                  <div className="order-summary-box">
-                    <div className="order-summary-content-box">
-                      <div className="order-summary-box-title">
-                        <h2>Order Summary</h2>
-                      </div>
-                      <div className="order-summary-promocode-box">
-                        <VoucherApplyPanel
-                          variant="cart"
-                          cartItemIds={cartItemIds}
-                          shopOptions={shopOptions}
-                          currency={currency}
-                        />
-                        <div className="order-summary-total">
-                          <h3>Subtotal</h3>
-                          <h3>{formatMoney(subtotal, currency)}</h3>
-                        </div>
-                        {discountTotal > 0 && (
-                          <div className="order-summary-total order-summary-discount">
-                            <h3>Discount{applied.length > 1 ? ` (${applied.length})` : ''}</h3>
-                            <h3>−{formatMoney(discountTotal, currency)}</h3>
-                          </div>
-                        )}
-                      </div>
-                      <div className="order-summary-total">
-                        <h3>Total</h3>
-                        <h3>{formatMoney(payableTotal, currency)}</h3>
-                      </div>
-                    </div>
-                    <div className="order-checkout-button">
-                      <Link
-                        to="/checkout"
-                        className={`btn-default btn-accent${
-                          items.some((i) => i.isAvailable) ? '' : ' disabled'
-                        }`}
-                        aria-disabled={!items.some((i) => i.isAvailable)}
-                        onClick={(e) => {
-                          if (!items.some((i) => i.isAvailable)) e.preventDefault();
-                        }}
-                      >
-                        Proceed to Checkout
-                      </Link>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
+              {!isDesktopSummary ? (
+                <CartOrderSummary {...orderSummaryProps} variant="mobile" />
+              ) : null}
+            </>
           )}
         </div>
       </div>

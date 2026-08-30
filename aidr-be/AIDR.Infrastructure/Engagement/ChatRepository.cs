@@ -46,9 +46,15 @@ public sealed class ChatRepository : IChatRepository
                 ProductName = t.Product != null ? t.Product.Name : null,
                 t.LastMessageAt,
                 t.CreatedAt,
-                LastMessagePreview = t.Messages
+                LastMessage = t.Messages
                     .OrderByDescending(m => m.CreatedAt)
-                    .Select(m => m.Content)
+                    .ThenByDescending(m => m.MessageId)
+                    .Select(m => new
+                    {
+                        m.Content,
+                        m.AttachmentUrl,
+                        m.SenderUserId
+                    })
                     .FirstOrDefault(),
                 UnreadCount = t.Messages.Count(m => !m.IsRead && m.SenderUserId != userId)
             })
@@ -66,7 +72,8 @@ public sealed class ChatRepository : IChatRepository
             ShopOwnerUserId = t.ShopOwnerUserId,
             ProductId = t.ProductId,
             ProductName = t.ProductName,
-            LastMessagePreview = TruncatePreview(t.LastMessagePreview),
+            LastMessagePreview = BuildPreview(t.LastMessage?.Content, t.LastMessage?.AttachmentUrl),
+            LastMessageIsMine = t.LastMessage != null && t.LastMessage.SenderUserId == userId,
             LastMessageAt = t.LastMessageAt,
             UnreadCount = t.UnreadCount,
             MyRole = t.BuyerUserId == userId ? ChatConstants.RoleBuyer : ChatConstants.RoleSeller,
@@ -105,9 +112,15 @@ public sealed class ChatRepository : IChatRepository
                 ProductName = t.Product != null ? t.Product.Name : null,
                 t.LastMessageAt,
                 t.CreatedAt,
-                LastMessagePreview = t.Messages
+                LastMessage = t.Messages
                     .OrderByDescending(m => m.CreatedAt)
-                    .Select(m => m.Content)
+                    .ThenByDescending(m => m.MessageId)
+                    .Select(m => new
+                    {
+                        m.Content,
+                        m.AttachmentUrl,
+                        m.SenderUserId
+                    })
                     .FirstOrDefault(),
                 UnreadCount = t.Messages.Count(m => !m.IsRead && m.SenderUserId != userId)
             })
@@ -128,7 +141,8 @@ public sealed class ChatRepository : IChatRepository
             ShopOwnerUserId = row.ShopOwnerUserId,
             ProductId = row.ProductId,
             ProductName = row.ProductName,
-            LastMessagePreview = TruncatePreview(row.LastMessagePreview),
+            LastMessagePreview = BuildPreview(row.LastMessage?.Content, row.LastMessage?.AttachmentUrl),
+            LastMessageIsMine = row.LastMessage != null && row.LastMessage.SenderUserId == userId,
             LastMessageAt = row.LastMessageAt,
             UnreadCount = row.UnreadCount,
             MyRole = row.BuyerUserId == userId ? ChatConstants.RoleBuyer : ChatConstants.RoleSeller,
@@ -327,29 +341,21 @@ public sealed class ChatRepository : IChatRepository
         };
     }
 
-    public async Task<int> MarkThreadReadAsync(
+    public Task<int> MarkThreadReadAsync(
         Guid userId,
         Guid threadId,
         CancellationToken cancellationToken = default)
-    {
-        var unread = await _db.ChatMessages
+        => _db.ChatMessages
             .Where(m => m.ThreadId == threadId && !m.IsRead && m.SenderUserId != userId)
-            .ToListAsync(cancellationToken);
+            .ExecuteUpdateAsync(
+                setters => setters.SetProperty(m => m.IsRead, true),
+                cancellationToken);
 
-        if (unread.Count == 0)
-            return 0;
-
-        foreach (var message in unread)
-            message.IsRead = true;
-
-        await _db.SaveChangesAsync(cancellationToken);
-        return unread.Count;
-    }
-
-    private static string? TruncatePreview(string? content)
+    /// <summary>Thread previews fall back to a label when the last message was attachment-only.</summary>
+    private static string? BuildPreview(string? content, string? attachmentUrl)
     {
         if (string.IsNullOrWhiteSpace(content))
-            return null;
+            return string.IsNullOrWhiteSpace(attachmentUrl) ? null : ChatConstants.AttachmentPreview;
 
         var trimmed = content.Trim();
         return trimmed.Length <= ChatConstants.LastMessagePreviewLength

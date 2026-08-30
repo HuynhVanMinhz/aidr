@@ -9,9 +9,21 @@ public static class AdminConstants
 
     public const int MaxShopNameLength = 150;
     public const int MaxShopSlugLength = 160;
+    public const int MaxShopTaglineLength = 200;
     public const int MaxShopShortDescriptionLength = 500;
+    public const int MaxShopEmailLength = 256;
+    public const int MaxShopPhoneLength = 20;
+    public const int MaxShopProvinceLength = 100;
+    public const int MaxShopDistrictLength = 100;
+    public const int MaxShopWardLength = 100;
+    public const int MaxShopStreetAddressLength = 256;
+    public const int MaxShopPolicyLength = 2000;
+    public const int MaxShopOpeningHoursJsonLength = 1000;
+    public const int MaxShopUrlLength = 512;
     public const int MaxSellerAdminNoteLength = 500;
     public const int MaxSellerBusinessInfoLength = 1000;
+    public const int MaxSellerDocumentUrls = 10;
+    public const int MaxSellerDocumentUrlLength = 512;
 
     public const int DefaultListPage = 1;
     public const int DefaultListPageSize = 10;

@@ -10,5 +10,13 @@ export function useToast() {
     toast.error(message);
   }, []);
 
-  return useMemo(() => ({ success, error }), [success, error]);
+  const info = useCallback((message: string) => {
+    toast.info(message);
+  }, []);
+
+  const warning = useCallback((message: string) => {
+    toast.warning(message);
+  }, []);
+
+  return useMemo(() => ({ success, error, info, warning }), [success, error, info, warning]);
 }

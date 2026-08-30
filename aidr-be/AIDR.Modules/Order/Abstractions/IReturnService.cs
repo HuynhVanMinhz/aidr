@@ -14,6 +14,18 @@ public interface IReturnService
         Guid buyerUserId,
         Guid orderId,
         CancellationToken cancellationToken = default);
+
+    Task<BuyerReturnListResultDto> ListForBuyerAsync(
+        Guid buyerUserId,
+        string? status,
+        int page,
+        int pageSize,
+        CancellationToken cancellationToken = default);
+
+    Task<BuyerReturnRequestDto> GetByIdForBuyerAsync(
+        Guid buyerUserId,
+        Guid returnRequestId,
+        CancellationToken cancellationToken = default);
 }
 
 public interface IReturnRepository
@@ -30,5 +42,17 @@ public interface IReturnRepository
     Task<BuyerReturnRequestDto?> GetByOrderForBuyerAsync(
         Guid buyerUserId,
         Guid orderId,
+        CancellationToken cancellationToken = default);
+
+    Task<(IReadOnlyList<BuyerReturnRequestDto> Items, int TotalCount, int EffectivePage)> ListForBuyerAsync(
+        Guid buyerUserId,
+        string? status,
+        int page,
+        int pageSize,
+        CancellationToken cancellationToken = default);
+
+    Task<BuyerReturnRequestDto?> GetByIdForBuyerAsync(
+        Guid buyerUserId,
+        Guid returnRequestId,
         CancellationToken cancellationToken = default);
 }

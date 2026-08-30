@@ -2,10 +2,14 @@ import { adminBadgeClass } from './adminBadge';
 
 export const SELLER_WALLET_TX_FILTERS = [
   { value: '', label: 'All types' },
-  { value: 'OrderCredit', label: 'Order credit' },
+  { value: 'SettlementHold', label: 'Settlement held' },
+  { value: 'CommissionFee', label: 'Platform fee' },
+  { value: 'SettlementRelease', label: 'Settlement released' },
+  { value: 'Payout', label: 'Payout' },
+  { value: 'SettlementReversal', label: 'Settlement reversed' },
   { value: 'RefundDebit', label: 'Refund debit' },
-  { value: 'Withdrawal', label: 'Withdrawal' },
   { value: 'Adjustment', label: 'Adjustment' },
+  { value: 'OrderCredit', label: 'Order credit (legacy)' },
 ] as const;
 
 export const SELLER_REPORT_GRANULARITY_OPTIONS = [
@@ -23,6 +27,16 @@ export function formatPercent(value: number): string {
 
 export function formatWalletTxType(txType: string): string {
   switch (txType) {
+    case 'SettlementHold':
+      return 'Settlement held';
+    case 'CommissionFee':
+      return 'Platform fee';
+    case 'SettlementRelease':
+      return 'Settlement released';
+    case 'Payout':
+      return 'Payout';
+    case 'SettlementReversal':
+      return 'Settlement reversed';
     case 'OrderCredit':
       return 'Order credit';
     case 'RefundDebit':
@@ -38,6 +52,16 @@ export function formatWalletTxType(txType: string): string {
 
 export function walletTxTypeBadgeClass(txType: string): string {
   switch (txType) {
+    case 'SettlementHold':
+      return adminBadgeClass.outlineWarning;
+    case 'CommissionFee':
+      return adminBadgeClass.outlineSecondary;
+    case 'SettlementRelease':
+      return adminBadgeClass.outlineSuccess;
+    case 'Payout':
+      return adminBadgeClass.solidSuccess;
+    case 'SettlementReversal':
+      return adminBadgeClass.outlineDanger;
     case 'OrderCredit':
       return adminBadgeClass.solidSuccess;
     case 'RefundDebit':
@@ -69,4 +93,65 @@ export function defaultReportDateRange(): { from: string; to: string } {
 
 export function toIsoDate(date: Date): string {
   return date.toISOString().slice(0, 10);
+}
+
+export const SETTLEMENT_STATUS_FILTERS = [
+  { value: '', label: 'All statuses' },
+  { value: 'Holding', label: 'Holding' },
+  { value: 'OnHold', label: 'On hold' },
+  { value: 'Eligible', label: 'Eligible' },
+  { value: 'Approved', label: 'Approved' },
+  { value: 'Paid', label: 'Paid' },
+  { value: 'Reversed', label: 'Reversed' },
+] as const;
+
+export function formatSettlementStatus(status: string): string {
+  return status === 'OnHold' ? 'On hold' : status;
+}
+
+export function settlementStatusBadgeClass(status: string): string {
+  switch (status) {
+    case 'Holding':
+      return adminBadgeClass.outlineWarning;
+    case 'OnHold':
+      return adminBadgeClass.outlineDanger;
+    case 'Eligible':
+      return adminBadgeClass.outlinePrimary;
+    case 'Approved':
+      return adminBadgeClass.outlineSuccess;
+    case 'Paid':
+      return adminBadgeClass.solidSuccess;
+    case 'Reversed':
+      return adminBadgeClass.outlineSecondary;
+    default:
+      return adminBadgeClass.solidLight;
+  }
+}
+
+export function payoutBatchBadgeClass(status: string): string {
+  switch (status) {
+    case 'Draft':
+      return adminBadgeClass.outlineSecondary;
+    case 'Approved':
+      return adminBadgeClass.outlinePrimary;
+    case 'Processing':
+      return adminBadgeClass.outlineWarning;
+    case 'Paid':
+      return adminBadgeClass.solidSuccess;
+    case 'Failed':
+      return adminBadgeClass.outlineDanger;
+    default:
+      return adminBadgeClass.solidLight;
+  }
+}
+
+export function bankStatusBadgeClass(status: string): string {
+  switch (status) {
+    case 'Verified':
+      return adminBadgeClass.solidSuccess;
+    case 'Rejected':
+      return adminBadgeClass.outlineDanger;
+    default:
+      return adminBadgeClass.outlineWarning;
+  }
 }

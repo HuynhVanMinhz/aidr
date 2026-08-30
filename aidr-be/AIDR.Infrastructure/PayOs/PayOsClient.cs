@@ -1,3 +1,4 @@
+﻿using System.Globalization;
 using System.Text.Json;
 using AIDR.Modules.Payment.Abstractions;
 using AIDR.Modules.Payment.Services;
@@ -83,6 +84,58 @@ public sealed class PayOsClient : IPayOsClient
         {
             _logger.LogError(ex, "Unexpected payOS create payment link error");
             throw new AppException("Unable to create payOS payment link.", 502);
+        }
+    }
+
+    public async Task<PayOsPaymentLinkInfo> GetPaymentLinkAsync(
+        long payOsOrderCode,
+        CancellationToken cancellationToken = default)
+    {
+        if (UseMock)
+        {
+            // The mock checkout settles through the mockPayOs=1 return, so there
+            // is nothing to ask about here — report it as still pending.
+            return new PayOsPaymentLinkInfo
+            {
+                OrderCode = payOsOrderCode,
+                Status = "PENDING",
+                PaymentLinkId = $"mock_{payOsOrderCode}",
+                IsMock = true
+            };
+        }
+
+        var client = _client.Value
+            ?? throw new AppException("payOS credentials are missing.", 503);
+
+        try
+        {
+            var link = await client.PaymentRequests.GetAsync(payOsOrderCode);
+            cancellationToken.ThrowIfCancellationRequested();
+
+            return new PayOsPaymentLinkInfo
+            {
+                OrderCode = link.OrderCode,
+                Status = link.Status.ToString().ToUpperInvariant(),
+                PaymentLinkId = link.Id,
+                Amount = link.Amount,
+                AmountPaid = link.AmountPaid,
+                RawJson = JsonSerializer.Serialize(link),
+                IsMock = false
+            };
+        }
+        catch (AppException)
+        {
+            throw;
+        }
+        catch (PayOSException ex)
+        {
+            _logger.LogWarning(ex, "payOS get payment link {OrderCode} failed", payOsOrderCode);
+            throw new AppException($"Unable to read payOS payment status: {ex.Message}", 502);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Unexpected payOS get payment link error for {OrderCode}", payOsOrderCode);
+            throw new AppException("Unable to read payOS payment status.", 502);
         }
     }
 
@@ -358,6 +411,201 @@ public sealed class PayOsClient : IPayOsClient
         {
             _logger.LogError(ex, "Unexpected payOS refund payout error for {ReferenceId}", command.ReferenceId);
             throw new AppException("Unable to refund via payOS payout.", 502);
+        }
+    }
+
+    public async Task<PayOsPayoutBalance> GetPayoutBalanceAsync(
+        CancellationToken cancellationToken = default)
+    {
+        if (UseMock)
+        {
+            return new PayOsPayoutBalance
+            {
+                Balance = decimal.MaxValue / 2,
+                Currency = "VND",
+                IsMock = true,
+                RawJson = JsonSerializer.Serialize(new { mock = true })
+            };
+        }
+
+        if (!IsConfigured)
+            throw new AppException("payOS is not configured. Set PayOS credentials or enable UseMock.", 503);
+
+        var client = _client.Value
+            ?? throw new AppException("payOS credentials are missing.", 503);
+
+        try
+        {
+            var account = await client.PayoutsAccount.GetBalanceAsync();
+            cancellationToken.ThrowIfCancellationRequested();
+
+            // payOS returns the balance as a string.
+            if (!decimal.TryParse(
+                    account.Balance,
+                    NumberStyles.Number,
+                    CultureInfo.InvariantCulture,
+                    out var balance))
+            {
+                throw new AppException(
+                    $"payOS returned an unreadable payout balance '{account.Balance}'.", 502);
+            }
+
+            return new PayOsPayoutBalance
+            {
+                Balance = balance,
+                Currency = string.IsNullOrWhiteSpace(account.Currency) ? "VND" : account.Currency,
+                IsMock = false,
+                RawJson = JsonSerializer.Serialize(account)
+            };
+        }
+        catch (AppException)
+        {
+            throw;
+        }
+        catch (PayOSException ex)
+        {
+            _logger.LogWarning(ex, "payOS payout balance lookup failed");
+            throw new AppException($"Unable to read the payOS payout balance: {ex.Message}", 502);
+        }
+    }
+
+    public async Task<PayOsPayoutResult> CreatePayoutAsync(
+        PayOsPayoutCommand command,
+        CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(command.ReferenceId))
+            throw new AppException("Payout reference id is required.");
+        if (command.AmountVnd < 1)
+            throw new AppException("Payout amount must be at least 1 VND.");
+        if (string.IsNullOrWhiteSpace(command.ToBin))
+            throw new AppException("Seller bank BIN (toBin) is required for the payout.");
+        if (string.IsNullOrWhiteSpace(command.ToAccountNumber))
+            throw new AppException("Seller bank account number is required for the payout.");
+
+        if (UseMock)
+        {
+            var mockId = $"mock_payout_{command.ReferenceId}";
+            return new PayOsPayoutResult
+            {
+                PayoutId = mockId,
+                ReferenceId = command.ReferenceId,
+                ApprovalState = "SUCCEEDED",
+                IsMock = true,
+                RawJson = JsonSerializer.Serialize(new
+                {
+                    mock = true,
+                    payoutId = mockId,
+                    command.ReferenceId,
+                    amount = command.AmountVnd,
+                    toBin = command.ToBin,
+                    toAccountNumber = command.ToAccountNumber,
+                    description = command.Description
+                })
+            };
+        }
+
+        if (!IsConfigured)
+            throw new AppException("payOS is not configured. Set PayOS credentials or enable UseMock.", 503);
+
+        var client = _client.Value
+            ?? throw new AppException("payOS credentials are missing.", 503);
+
+        try
+        {
+            var request = new PayoutRequest
+            {
+                ReferenceId = command.ReferenceId.Trim(),
+                Amount = command.AmountVnd,
+                Description = TruncatePayoutDescription(command.Description),
+                ToBin = command.ToBin.Trim(),
+                ToAccountNumber = command.ToAccountNumber.Trim(),
+                Category = [command.Category]
+            };
+
+            // Same key on a retry -> payOS returns the existing payout, never a second transfer.
+            var payout = await client.Payouts.CreateAsync(
+                request,
+                idempotencyKey: command.ReferenceId.Trim());
+            cancellationToken.ThrowIfCancellationRequested();
+
+            if (string.IsNullOrWhiteSpace(payout.Id))
+                throw new AppException("payOS did not return a payout id.", 502);
+
+            _logger.LogInformation(
+                "Created payOS payout {PayoutId} ref {ReferenceId} amount {Amount}",
+                payout.Id,
+                payout.ReferenceId,
+                command.AmountVnd);
+
+            return new PayOsPayoutResult
+            {
+                PayoutId = payout.Id,
+                ReferenceId = payout.ReferenceId ?? command.ReferenceId,
+                ApprovalState = payout.ApprovalState.ToString(),
+                IsMock = false,
+                RawJson = JsonSerializer.Serialize(payout)
+            };
+        }
+        catch (AppException)
+        {
+            throw;
+        }
+        catch (PayOSException ex)
+        {
+            _logger.LogWarning(ex, "payOS payout failed for {ReferenceId}", command.ReferenceId);
+            throw new AppException($"payOS payout failed: {ex.Message}", 502);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Unexpected payOS payout error for {ReferenceId}", command.ReferenceId);
+            throw new AppException("Unable to send the payOS payout.", 502);
+        }
+    }
+
+    public async Task<PayOsPayoutResult> GetPayoutAsync(
+        string payoutId,
+        CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(payoutId))
+            throw new AppException("Payout id is required.");
+
+        if (UseMock)
+        {
+            return new PayOsPayoutResult
+            {
+                PayoutId = payoutId,
+                ReferenceId = payoutId,
+                ApprovalState = "SUCCEEDED",
+                IsMock = true,
+                RawJson = JsonSerializer.Serialize(new { mock = true, payoutId })
+            };
+        }
+
+        var client = _client.Value
+            ?? throw new AppException("payOS credentials are missing.", 503);
+
+        try
+        {
+            var payout = await client.Payouts.GetAsync(payoutId.Trim());
+            cancellationToken.ThrowIfCancellationRequested();
+
+            return new PayOsPayoutResult
+            {
+                PayoutId = payout.Id ?? payoutId,
+                ReferenceId = payout.ReferenceId ?? string.Empty,
+                ApprovalState = payout.ApprovalState.ToString(),
+                IsMock = false,
+                RawJson = JsonSerializer.Serialize(payout)
+            };
+        }
+        catch (AppException)
+        {
+            throw;
+        }
+        catch (PayOSException ex)
+        {
+            _logger.LogWarning(ex, "payOS payout lookup failed for {PayoutId}", payoutId);
+            throw new AppException($"Unable to read payOS payout status: {ex.Message}", 502);
         }
     }
 

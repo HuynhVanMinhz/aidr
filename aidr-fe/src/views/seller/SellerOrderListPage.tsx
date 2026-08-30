@@ -6,6 +6,7 @@ import { useSellerOrders } from '../../hooks/useSellerOrders';
 import { formatOrderDate, formatOrderStatus } from '../../utils/orderUi';
 import { formatVnd } from '../../utils/sellerProductUi';
 import {
+  formatShipmentStatus,
   SELLER_ORDER_STATUS_FILTERS,
   sellerOrderStatusBadgeClass,
   sellerOrderUpdateActionLabel,
@@ -120,6 +121,12 @@ export function SellerOrderListPage() {
                         <span className={sellerOrderStatusBadgeClass(order.status)}>
                           {formatOrderStatus(order.status)}
                         </span>
+                        {order.shipmentStatus ? (
+                          <p className="text-muted mb-0 fs-13">
+                            {formatShipmentStatus(order.shipmentStatus)}
+                            {order.autoFulfillment ? ' · auto' : ''}
+                          </p>
+                        ) : null}
                       </td>
                       <td>
                         <div className="d-flex gap-2">

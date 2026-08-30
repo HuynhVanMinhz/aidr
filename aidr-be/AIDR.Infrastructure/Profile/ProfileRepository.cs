@@ -1,4 +1,4 @@
-using AIDR.Infrastructure.Persistence;
+﻿using AIDR.Infrastructure.Persistence;
 using AIDR.Infrastructure.Persistence.Entities;
 using AIDR.Modules.Profile.Abstractions;
 using AIDR.Shared.Constants;
@@ -102,6 +102,10 @@ public sealed class ProfileRepository : IProfileRepository
         entity.District = dto.District.Trim();
         entity.Ward = dto.Ward.Trim();
         entity.StreetAddress = dto.StreetAddress.Trim();
+        // A pin is optional; sending none leaves whatever was already there alone
+        // only on create, so an address edited without the map clears it on purpose.
+        entity.Latitude = dto.Latitude;
+        entity.Longitude = dto.Longitude;
         entity.IsDefault = dto.IsDefault;
         entity.UpdatedAt = now;
     }
@@ -167,6 +171,8 @@ public sealed class ProfileRepository : IProfileRepository
                 District = a.District,
                 Ward = a.Ward,
                 StreetAddress = a.StreetAddress,
+                Latitude = a.Latitude,
+                Longitude = a.Longitude,
                 IsDefault = a.IsDefault
             })
             .ToList()

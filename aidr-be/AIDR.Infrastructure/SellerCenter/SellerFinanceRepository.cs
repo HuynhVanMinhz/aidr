@@ -54,10 +54,12 @@ public sealed class SellerFinanceRepository : ISellerFinanceRepository
         var revenueAllTime = await completedQuery
             .SumAsync(o => (decimal?)o.TotalAmount, cancellationToken) ?? 0m;
 
-        var pendingSettlement = await _db.Orders.AsNoTracking()
-            .Where(o => o.ShopId == shopId
-                        && SellerFinanceConstants.PendingSettlementStatuses.Contains(o.Status))
-            .SumAsync(o => (decimal?)o.TotalAmount, cancellationToken) ?? 0m;
+        // Real escrow balance, not a guess from order statuses: this is the shop's
+        // net (after the platform fee) that has been held but not released yet.
+        var pendingSettlement = await _db.Wallets.AsNoTracking()
+            .Where(w => w.ShopId == shopId)
+            .Select(w => (decimal?)w.PendingBalance)
+            .FirstOrDefaultAsync(cancellationToken) ?? 0m;
 
         var catalogQuery = _db.Products.AsNoTracking()
             .Where(p => p.ShopId == shopId && p.Status != SellerProductConstants.StatusDeleted);
@@ -216,11 +218,6 @@ public sealed class SellerFinanceRepository : ISellerFinanceRepository
             .FirstOrDefaultAsync(w => w.ShopId == shopId, cancellationToken)
             ?? throw new NotFoundException("Seller wallet was not found for this shop.");
 
-        var pendingSettlement = await _db.Orders.AsNoTracking()
-            .Where(o => o.ShopId == shopId
-                        && SellerFinanceConstants.PendingSettlementStatuses.Contains(o.Status))
-            .SumAsync(o => (decimal?)o.TotalAmount, cancellationToken) ?? 0m;
-
         var txQuery = _db.WalletTransactions.AsNoTracking()
             .Where(t => t.WalletId == wallet.WalletId);
 
@@ -254,7 +251,7 @@ public sealed class SellerFinanceRepository : ISellerFinanceRepository
             WalletId = wallet.WalletId,
             ShopId = wallet.ShopId,
             AvailableBalance = RoundMoney(wallet.AvailableBalance),
-            PendingBalance = RoundMoney(pendingSettlement),
+            PendingBalance = RoundMoney(wallet.PendingBalance),
             Currency = wallet.Currency,
             UpdatedAt = wallet.UpdatedAt,
             Transactions = transactions,

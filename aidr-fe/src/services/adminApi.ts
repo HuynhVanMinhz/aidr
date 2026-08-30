@@ -15,6 +15,12 @@ import type {
   RejectSellerRegistrationPayload,
   SellerRegistrationListQuery,
 } from '../types/admin';
+import type {
+  AdminDashboardApiResult,
+  AdminOrderDetailApiResult,
+  AdminOrderListApiResult,
+  AdminOrderListQuery,
+} from '../types/adminOps';
 import type { ApiResult } from '../types/catalog';
 import { apiClient } from './apiClient';
 
@@ -50,6 +56,21 @@ export async function approveSellerRegistration(id: string) {
 export async function rejectSellerRegistration(id: string, payload: RejectSellerRegistrationPayload) {
   const { data } = await apiClient.post<ApiResult<AdminSellerRegistration>>(
     `/admin/seller-registrations/${id}/reject`,
+    payload,
+  );
+  return data;
+}
+
+/**
+ * Send an application back for changes instead of rejecting it — the applicant
+ * keeps their identity check and can edit and resubmit.
+ */
+export async function requestMoreInfoOnSellerRegistration(
+  id: string,
+  payload: RejectSellerRegistrationPayload,
+) {
+  const { data } = await apiClient.post<ApiResult<AdminSellerRegistration>>(
+    `/admin/seller-registrations/${id}/request-info`,
     payload,
   );
   return data;
@@ -133,5 +154,27 @@ export async function getAdminCustomerInsights(query: AdminCustomerInsightsQuery
       },
     },
   );
+  return data;
+}
+
+export async function getAdminDashboard() {
+  const { data } = await apiClient.get<AdminDashboardApiResult>('/admin/dashboard');
+  return data;
+}
+
+export async function listAdminOrders(query: AdminOrderListQuery = {}) {
+  const { data } = await apiClient.get<AdminOrderListApiResult>('/admin/orders', {
+    params: {
+      status: query.status || undefined,
+      q: query.q || undefined,
+      page: query.page ?? 1,
+      pageSize: query.pageSize ?? 10,
+    },
+  });
+  return data;
+}
+
+export async function getAdminOrder(orderId: string) {
+  const { data } = await apiClient.get<AdminOrderDetailApiResult>(`/admin/orders/${orderId}`);
   return data;
 }

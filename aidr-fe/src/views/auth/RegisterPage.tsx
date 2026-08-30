@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { AuthLayout } from '../../components/auth/AuthLayout';
 import { useAuth } from '../../hooks/useAuth';
+import { useToastMessage } from '../../hooks/useToastMessage';
 
 export function RegisterPage() {
   const { register, getErrorMessage } = useAuth();
@@ -13,6 +14,7 @@ export function RegisterPage() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  useToastMessage(error);
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -42,7 +44,6 @@ export function RegisterPage() {
                         <p>Create a Buyer account to start shopping on AIDR.</p>
                       </div>
 
-                      {error && <div className="auth-alert auth-alert--error">{error}</div>}
 
                       <div className="checkout-login-form">
                         <div className="form-group">

@@ -5,6 +5,7 @@ import { VoucherApplyPanel } from '../../components/cart/VoucherApplyPanel';
 import { useCart } from '../../hooks/useCart';
 import { useProfile } from '../../hooks/useProfile';
 import { useToast } from '../../hooks/useToast';
+import { useToastMessage } from '../../hooks/useToastMessage';
 import {
   clearCheckoutError,
   createPayOsLinksForOrders,
@@ -61,6 +62,7 @@ export function CheckoutPage() {
     currency,
     loading: cartLoading,
     loaded: cartLoaded,
+    selectedItems,
     getErrorMessage,
   } = useCart({ autoLoad: true });
   const { profile, loading: profileLoading } = useProfile();
@@ -76,8 +78,17 @@ export function CheckoutPage() {
   const [buyerNote, setBuyerNote] = useState('');
   const [addressTouched, setAddressTouched] = useState(false);
 
-  const availableItems = useMemo(() => items.filter((i) => i.isAvailable), [items]);
-  const unavailableCount = items.length - availableItems.length;
+  // Only the lines ticked in the cart are ordered here.
+  const availableItems = selectedItems;
+  const excludedCount = items.length - availableItems.length;
+  const unavailableNotice =
+    excludedCount > 0
+      ? `${excludedCount} item(s) in your cart are not part of this order.`
+      : null;
+
+  useToastMessage(checkoutError);
+  useToastMessage(unavailableNotice, 'warning');
+
   const shopGroups = useMemo(() => groupByShop(availableItems), [availableItems]);
   const checkoutSubtotal = useMemo(
     () => availableItems.reduce((sum, item) => sum + item.lineTotal, 0),
@@ -94,6 +105,10 @@ export function CheckoutPage() {
     [shopGroups],
   );
   const payableTotal = Math.max(0, checkoutSubtotal - discountTotal);
+  const totalUnits = useMemo(
+    () => availableItems.reduce((sum, item) => sum + item.quantity, 0),
+    [availableItems],
+  );
 
   useEffect(() => {
     if (!addresses.length) {
@@ -204,7 +219,8 @@ export function CheckoutPage() {
     navigate('/order-received', { replace: true });
   }
 
-  if (cartLoaded && items.length === 0) {
+  // Nothing ticked (or an empty cart) means there is nothing to pay for.
+  if (cartLoaded && availableItems.length === 0) {
     return <Navigate to="/cart" replace />;
   }
 
@@ -237,237 +253,255 @@ export function CheckoutPage() {
             <p>Loading checkout…</p>
           ) : (
             <form onSubmit={(e) => void handlePlaceOrder(e)}>
-              {(checkoutError || unavailableCount > 0) && (
-                <div className="checkout-alerts">
-                  {checkoutError && (
-                    <div className="alert alert-danger" role="alert">
-                      {checkoutError}
-                    </div>
-                  )}
-                  {unavailableCount > 0 && (
-                    <div className="alert alert-warning" role="alert">
-                      {unavailableCount} item(s) are unavailable and will be skipped.{' '}
-                      <Link to="/cart">Review cart</Link>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              <div className="row">
-                <div className="col-xl-7">
-                  <div className="checkout-form-box">
-                    <div className="checkout-bill-address-box">
-                      <div className="checkout-bill-address-title">
-                        <h2>Shipping address</h2>
+              <div className="row checkout-layout">
+                <div className="col-xl-7 checkout-main-col">
+                  <section className="checkout-panel">
+                    <div className="checkout-panel__head">
+                      <div className="checkout-panel__heading">
+                        <h2 className="checkout-panel__title">Shipping address</h2>
+                        <p className="checkout-panel__hint">Where should we deliver this order?</p>
                       </div>
+                      {addresses.length > 0 && (
+                        <Link to="/account/addresses" className="checkout-panel__action">
+                          <i className="fa-solid fa-pen-to-square" aria-hidden />
+                          Add or edit
+                        </Link>
+                      )}
+                    </div>
 
-                      {addresses.length === 0 ? (
-                        <div className="checkout-empty-addresses">
-                          <p>You need at least one saved address to place an order.</p>
-                          <Link to="/account/addresses" className="btn-default btn-accent">
-                            Manage addresses
-                          </Link>
-                        </div>
-                      ) : (
-                        <div className="checkout-address-list" role="radiogroup" aria-label="Shipping address">
+                    {addresses.length === 0 ? (
+                      <div className="checkout-empty-addresses">
+                        <p>You need at least one saved address to place an order.</p>
+                        <Link to="/account/addresses" className="btn-default btn-accent">
+                          Manage addresses
+                        </Link>
+                      </div>
+                    ) : (
+                      <>
+                        <div
+                          className="checkout-address-list"
+                          role="radiogroup"
+                          aria-label="Shipping address"
+                        >
                           {addresses.map((address) => {
                             const inputId = `ship-addr-${address.addressId}`;
+                            const selected = shippingAddressId === address.addressId;
                             return (
                               <label
                                 key={address.addressId}
                                 htmlFor={inputId}
                                 className={`checkout-address-card${
-                                  shippingAddressId === address.addressId
-                                    ? ' checkout-address-card--selected'
-                                    : ''
+                                  selected ? ' checkout-address-card--selected' : ''
                                 }`}
                               >
                                 <input
                                   id={inputId}
                                   type="radio"
                                   name="shippingAddress"
+                                  className="checkout-address-card__radio"
                                   value={address.addressId}
-                                  checked={shippingAddressId === address.addressId}
+                                  checked={selected}
                                   onChange={() => {
                                     setShippingAddressId(address.addressId);
                                     setAddressTouched(true);
                                   }}
                                 />
-                                <span className="checkout-address-card-body">
-                                  <strong>
+                                <span className="checkout-address-card__body">
+                                  <span className="checkout-address-card__name">
                                     {address.receiverName}
-                                    {address.isDefault ? ' (Default)' : ''}
-                                  </strong>
-                                  <span>{formatAddressLine(address)}</span>
-                                  <span>{address.phone}</span>
+                                    {address.isDefault && (
+                                      <span className="checkout-address-card__badge">Default</span>
+                                    )}
+                                  </span>
+                                  <span className="checkout-address-card__row">
+                                    <i className="fa-solid fa-location-dot" aria-hidden />
+                                    <span>{formatAddressLine(address)}</span>
+                                  </span>
+                                  <span className="checkout-address-card__row">
+                                    <i className="fa-solid fa-phone" aria-hidden />
+                                    <span>{address.phone}</span>
+                                  </span>
                                 </span>
+                                <i
+                                  className="fa-solid fa-circle-check checkout-address-card__check"
+                                  aria-hidden
+                                />
                               </label>
                             );
                           })}
-                          <p className="checkout-manage-addresses">
-                            <Link to="/account/addresses">Add or edit addresses</Link>
-                          </p>
-                          {addressError && (
-                            <p className="form-field-error" role="alert">
-                              {addressError}
-                            </p>
-                          )}
                         </div>
-                      )}
+                        {addressError && (
+                          <p className="form-field-error" role="alert">
+                            {addressError}
+                          </p>
+                        )}
+                      </>
+                    )}
+                  </section>
 
-                      <div className="checkout-bill-address-form">
-                        <div className="form-group">
-                          <label htmlFor="checkout-notes">Order notes (optional)</label>
-                          <textarea
-                            id="checkout-notes"
-                            name="notes"
-                            className="form-control"
-                            rows={5}
-                            maxLength={MAX_NOTE}
-                            placeholder="Notes about your order, e.g. special notes for delivery."
-                            value={buyerNote}
-                            onChange={(e) => setBuyerNote(e.target.value)}
-                          />
-                          <p className="checkout-note-hint">
-                            {buyerNote.trim().length}/{MAX_NOTE}
-                          </p>
-                          {noteError && (
-                            <p className="form-field-error" role="alert">
-                              {noteError}
-                            </p>
-                          )}
-                        </div>
+                  <section className="checkout-panel">
+                    <div className="checkout-panel__head">
+                      <div className="checkout-panel__heading">
+                        <h2 className="checkout-panel__title">Order notes</h2>
+                        <p className="checkout-panel__hint">Optional — delivery instructions.</p>
                       </div>
                     </div>
-                  </div>
+
+                    <div className="checkout-note-group">
+                      <label className="checkout-visually-hidden" htmlFor="checkout-notes">
+                        Order notes (optional)
+                      </label>
+                      <textarea
+                        id="checkout-notes"
+                        name="notes"
+                        className="checkout-note-input"
+                        rows={3}
+                        maxLength={MAX_NOTE}
+                        placeholder="Notes about your order, e.g. special notes for delivery."
+                        value={buyerNote}
+                        onChange={(e) => setBuyerNote(e.target.value)}
+                      />
+                      <p className="checkout-note-hint">
+                        {buyerNote.trim().length}/{MAX_NOTE}
+                      </p>
+                      {noteError && (
+                        <p className="form-field-error" role="alert">
+                          {noteError}
+                        </p>
+                      )}
+                    </div>
+                  </section>
                 </div>
 
-                <div className="col-xl-5">
-                  <div className="page-single-sidebar right-side-sidebar">
-                    <div className="checkout-sidebar-box">
-                      <div className="product-total-order-box">
-                        <VoucherApplyPanel
-                          variant="checkout"
-                          cartItemIds={cartItemIds}
-                          shopOptions={shopOptions}
-                          currency={currency}
-                        />
+                <div className="col-xl-5 checkout-side-col">
+                  <div className="checkout-summary">
+                    <VoucherApplyPanel
+                      variant="checkout"
+                      cartItemIds={cartItemIds}
+                      shopOptions={shopOptions}
+                      currency={currency}
+                    />
 
-                        <div className="product-total-order-title">
-                          <h3>Your Order</h3>
-                        </div>
-
-                        <div className="product-total-order-list">
-                          <div className="product-total-item-tag-list">
-                            <span className="product-total-item-tag">Product</span>
-                            <span className="product-total-item-tag">Subtotal</span>
-                          </div>
-
-                          {shopGroups.map((group) => (
-                            <div key={group.shopId} className="checkout-shop-group">
-                              <p className="checkout-shop-group-title">
-                                <Link
-                                  to={`/shops/${encodeURIComponent(group.shopSlug || group.shopId)}`}
-                                >
-                                  {group.shopName}
-                                </Link>
-                              </p>
-                              {group.items.map((item) => (
-                                <div key={item.cartItemId} className="product-total-item">
-                                  <div className="product-total-item-header">
-                                    <div className="product-total-item-image">
-                                      <figure>
-                                        <img
-                                          src={item.primaryImageUrl || PLACEHOLDER}
-                                          alt={item.productName}
-                                        />
-                                      </figure>
-                                    </div>
-                                    <div className="product-total-item-title">
-                                      <p>
-                                        {item.productName}{' '}
-                                        <span className="checkout-item-qty">× {item.quantity}</span>
-                                      </p>
-                                    </div>
-                                  </div>
-                                  <div className="product-total-item-subtotal">
-                                    <p>{formatMoney(item.lineTotal, item.currency)}</p>
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                          ))}
-
-                          <div className="all-product-total-list">
-                            <div className="all-product-total">
-                              <p>
-                                Subtotal <span>{formatMoney(checkoutSubtotal, currency)}</span>
-                              </p>
-                            </div>
-                            {discountTotal > 0 && (
-                              <div className="all-product-total">
-                                <p>
-                                  Discount <span>−{formatMoney(discountTotal, currency)}</span>
-                                </p>
-                              </div>
-                            )}
-                            <div className="all-product-total">
-                              <p>
-                                Shipping <span>Free</span>
-                              </p>
-                            </div>
-                            <div className="all-product-total">
-                              <p>
-                                Total <span>{formatMoney(payableTotal, currency)}</span>
-                              </p>
-                            </div>
-                          </div>
-
-                          <div className="order-payment-info">
-                            <div className="order-payment-info-item">
-                              <span>
-                                <input
-                                  type="radio"
-                                  id="payos_online"
-                                  name="payment"
-                                  value="payos"
-                                  checked
-                                  readOnly
-                                />
-                                <label htmlFor="payos_online">Online payment (payOS)</label>
-                              </span>
-                              <p>
-                                After placing your order you will be redirected to payOS to complete
-                                payment securely.
-                              </p>
-                            </div>
-                          </div>
-
-                          {shopGroups.length > 1 && (
-                            <p className="checkout-split-note">
-                              Items from {shopGroups.length} shops will create {shopGroups.length}{' '}
-                              separate orders. Each order is paid separately.
-                            </p>
-                          )}
-                        </div>
+                    <section className="checkout-summary-section">
+                      <div className="checkout-summary-section__head">
+                        <h3 className="checkout-summary-section__title">Your order</h3>
+                        <span className="checkout-summary-section__count">
+                          {totalUnits} item{totalUnits === 1 ? '' : 's'}
+                        </span>
                       </div>
 
-                      <div className="place-order-button">
-                        <button
-                          type="submit"
-                          className="btn-default btn-accent"
-                          disabled={!canSubmit || addresses.length === 0}
-                        >
-                          {submitting
-                            ? 'Placing order…'
-                            : paying
-                              ? 'Starting payment…'
-                              : 'Place order & pay'}
-                        </button>
-                        <p className="checkout-back-to-cart">
-                          <Link to="/cart">Back to cart</Link>
+                      {shopGroups.map((group) => (
+                        <div key={group.shopId} className="checkout-shop-group">
+                          <p className="checkout-shop-group-title">
+                            <i className="fa-solid fa-store" aria-hidden />
+                            <Link to={`/shops/${encodeURIComponent(group.shopSlug || group.shopId)}`}>
+                              {group.shopName}
+                            </Link>
+                          </p>
+                          <ul className="checkout-line-list">
+                            {group.items.map((item) => (
+                              <li key={item.cartItemId} className="checkout-line">
+                                <span className="checkout-line__thumb">
+                                  <img
+                                    src={item.primaryImageUrl || PLACEHOLDER}
+                                    alt=""
+                                    loading="lazy"
+                                    onError={(e) => {
+                                      const img = e.currentTarget;
+                                      if (img.dataset.fallback === '1') return;
+                                      img.dataset.fallback = '1';
+                                      img.src = PLACEHOLDER;
+                                    }}
+                                  />
+                                </span>
+                                <span className="checkout-line__info">
+                                  <span className="checkout-line__name">{item.productName}</span>
+                                  <span className="checkout-line__qty">Qty {item.quantity}</span>
+                                </span>
+                                <span className="checkout-line__price">
+                                  {formatMoney(item.lineTotal, item.currency)}
+                                </span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      ))}
+                    </section>
+
+                    <section className="checkout-summary-section checkout-totals">
+                      <p className="checkout-totals__row">
+                        <span>Subtotal</span>
+                        <span>{formatMoney(checkoutSubtotal, currency)}</span>
+                      </p>
+                      {discountTotal > 0 && (
+                        <p className="checkout-totals__row checkout-totals__row--discount">
+                          <span>Discount</span>
+                          <span>−{formatMoney(discountTotal, currency)}</span>
                         </p>
+                      )}
+                      <p className="checkout-totals__row">
+                        <span>Shipping</span>
+                        <span>Free</span>
+                      </p>
+                      <p className="checkout-totals__row checkout-totals__row--grand">
+                        <span>Total</span>
+                        <span>{formatMoney(payableTotal, currency)}</span>
+                      </p>
+                    </section>
+
+                    <section className="checkout-summary-section">
+                      <div className="checkout-summary-section__head">
+                        <h3 className="checkout-summary-section__title">Payment method</h3>
                       </div>
+
+                      <label className="checkout-payment-option checkout-payment-option--selected">
+                        <input
+                          type="radio"
+                          id="payos_online"
+                          name="payment"
+                          value="payos"
+                          checked
+                          readOnly
+                        />
+                        <span className="checkout-payment-option__body">
+                          <span className="checkout-payment-option__title">
+                            Online payment (payOS)
+                          </span>
+                          <span className="checkout-payment-option__hint">
+                            After placing your order you will be redirected to payOS to complete
+                            payment securely.
+                          </span>
+                        </span>
+                      </label>
+
+                      {shopGroups.length > 1 && (
+                        <p className="checkout-split-note">
+                          <i className="fa-solid fa-circle-info" aria-hidden />
+                          <span>
+                            Items from {shopGroups.length} shops will create {shopGroups.length}{' '}
+                            separate orders, each paid separately.
+                          </span>
+                        </p>
+                      )}
+                    </section>
+
+                    <div className="place-order-button">
+                      <button
+                        type="submit"
+                        className="btn-default btn-accent"
+                        disabled={!canSubmit || addresses.length === 0}
+                      >
+                        {submitting
+                          ? 'Placing order…'
+                          : paying
+                            ? 'Starting payment…'
+                            : `Place order & pay · ${formatMoney(payableTotal, currency)}`}
+                      </button>
+                      <p className="checkout-back-to-cart">
+                        <Link to="/cart">
+                          <i className="fa-solid fa-arrow-left" aria-hidden /> Back to cart
+                        </Link>
+                      </p>
                     </div>
                   </div>
                 </div>

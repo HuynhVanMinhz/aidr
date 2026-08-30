@@ -6,11 +6,20 @@ public sealed class ProductListQuery
 {
     public string? Q { get; init; }
     public Guid? ShopId { get; init; }
+    /// <summary>Restrict the result to these ids — used by the batch lookup for link previews.</summary>
+    public IReadOnlyList<Guid> ProductIds { get; init; } = Array.Empty<Guid>();
     public int? CategoryId { get; init; }
+    public IReadOnlyList<int> CategoryIds { get; init; } = Array.Empty<int>();
     public string? Brand { get; init; }
+    public IReadOnlyList<string> Brands { get; init; } = Array.Empty<string>();
     public decimal? MinPrice { get; init; }
     public decimal? MaxPrice { get; init; }
     public decimal? MinRating { get; init; }
+    public bool? OnSale { get; init; }
+    public bool? InStock { get; init; }
+    public IReadOnlyList<string> Conditions { get; init; } = Array.Empty<string>();
+    public IReadOnlyDictionary<string, string> SpecFilters { get; init; }
+        = new Dictionary<string, string>();
     public string Sort { get; init; } = "newest";
     public int Page { get; init; } = 1;
     public int PageSize { get; init; } = 20;
@@ -108,6 +117,12 @@ public sealed class CategoryRecord
     public int SortOrder { get; init; }
 }
 
+public sealed class BrandFilterRecord
+{
+    public string Brand { get; init; } = null!;
+    public int ProductCount { get; init; }
+}
+
 public sealed class ShopPublicRecord
 {
     public Guid ShopId { get; init; }
@@ -139,6 +154,20 @@ public sealed class ShopPublicRecord
     public DateTime CreatedAt { get; init; }
 }
 
+public sealed class ShopListRecord
+{
+    public Guid ShopId { get; init; }
+    public string ShopName { get; init; } = null!;
+    public string Slug { get; init; } = null!;
+    public string? Tagline { get; init; }
+    public string? LogoUrl { get; init; }
+    public bool IsVerified { get; init; }
+    public decimal AvgRating { get; init; }
+    public int RatingCount { get; init; }
+    public int FollowerCount { get; init; }
+    public int ProductCount { get; init; }
+}
+
 public interface IDiscoveryRepository
 {
     Task<(IReadOnlyList<ProductListRecord> Items, int TotalCount)> QueryApprovedProductsAsync(
@@ -159,8 +188,20 @@ public interface IDiscoveryRepository
     Task<IReadOnlyList<CategoryRecord>> GetActiveCategoriesAsync(
         CancellationToken cancellationToken = default);
 
+    Task<IReadOnlyDictionary<int, int>> GetApprovedProductCountsByCategoryAsync(
+        CancellationToken cancellationToken = default);
+
+    Task<IReadOnlyList<BrandFilterRecord>> GetApprovedBrandOptionsAsync(
+        CancellationToken cancellationToken = default);
+
     Task<ShopPublicRecord?> GetActiveShopByKeyAsync(
         string shopKey,
+        CancellationToken cancellationToken = default);
+
+    Task<(IReadOnlyList<ShopListRecord> Items, int TotalCount)> ListActiveShopsAsync(
+        int page,
+        int pageSize,
+        string sort,
         CancellationToken cancellationToken = default);
 }
 
@@ -174,6 +215,14 @@ public interface IDiscoveryService
         ProductQueryRequest request,
         CancellationToken cancellationToken = default);
 
+    /// <summary>
+    /// Resolve a handful of approved products by id for link previews (chat cards, shared links).
+    /// Unlike <c>GetProductAsync</c> this records no view and returns only list-level fields.
+    /// </summary>
+    Task<IReadOnlyList<ProductListItemDto>> LookupProductsAsync(
+        IReadOnlyList<Guid> productIds,
+        CancellationToken cancellationToken = default);
+
     Task<ProductDetailDto> GetProductAsync(
         Guid productId,
         Guid? viewerUserId,
@@ -181,6 +230,15 @@ public interface IDiscoveryService
         CancellationToken cancellationToken = default);
 
     Task<IReadOnlyList<CategoryTreeNodeDto>> GetCategoryTreeAsync(
+        CancellationToken cancellationToken = default);
+
+    Task<IReadOnlyList<BrandFilterOptionDto>> GetBrandFilterOptionsAsync(
+        CancellationToken cancellationToken = default);
+
+    Task<PagedResult<ShopListItemDto>> ListShopsAsync(
+        int page,
+        int pageSize,
+        string? sort = null,
         CancellationToken cancellationToken = default);
 
     Task<ShopPublicDetailDto> GetShopAsync(

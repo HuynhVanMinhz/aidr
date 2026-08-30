@@ -261,7 +261,7 @@ export function AdminSystemVoucherListPage() {
                       <td>
                         <div className="d-flex gap-2">
                           <Link
-                            to={`/admin/vouchers/${item.voucherId}/edit`}
+                            to={`/admin/vouchers/${item.voucherId}`}
                             className="btn btn-soft-primary btn-sm"
                             title="Edit"
                           >

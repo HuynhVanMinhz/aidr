@@ -1,19 +1,12 @@
 import { Link } from 'react-router-dom';
 import { CatalogBreadcrumb } from '../../components/catalog/CatalogBreadcrumb';
 import { useCategories } from '../../hooks/useCatalog';
+import { useToastMessage } from '../../hooks/useToastMessage';
 import type { CategoryTreeNode } from '../../types/catalog';
-
-const CATEGORY_IMAGES = [
-  '/theme/images/category-item-image-1.png',
-  '/theme/images/category-item-image-2.png',
-  '/theme/images/category-item-image-3.png',
-  '/theme/images/category-item-image-4.png',
-  '/theme/images/category-item-image-5.png',
-  '/theme/images/category-item-image-6.png',
-];
+import { resolveCategoryImageUrl } from '../../utils/catalogImage';
 
 function CategoryCard({ node, index }: { node: CategoryTreeNode; index: number }) {
-  const image = node.imageUrl || CATEGORY_IMAGES[index % CATEGORY_IMAGES.length];
+  const image = resolveCategoryImageUrl(node.imageUrl, index);
 
   return (
     <div className="col-lg-4 col-md-6">
@@ -47,6 +40,7 @@ function CategoryCard({ node, index }: { node: CategoryTreeNode; index: number }
 
 export function CategoriesPage() {
   const { categories, loading, error } = useCategories();
+  useToastMessage(error);
 
   return (
     <>
@@ -71,12 +65,7 @@ export function CategoriesPage() {
       <div className="our-category catalog-categories-section">
         <div className="container">
           {loading && <p>Loading categories…</p>}
-          {error && (
-            <div className="alert alert-danger" role="alert">
-              {error}
-            </div>
-          )}
-          {!loading && !error && categories.length === 0 && (
+          {!loading && categories.length === 0 && (
             <p className="text-muted">No active categories yet.</p>
           )}
 

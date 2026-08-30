@@ -3,9 +3,13 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import { FormField } from '../../components/admin/FormField';
 import { AdminSelect } from '../../components/admin/AdminSelect';
 import { IconifyIcon } from '../../components/admin/IconifyIcon';
+import { KeyValueField } from '../../components/admin/KeyValueField';
+import { TagsField } from '../../components/admin/TagsField';
 import {
   emptySellerProductForm,
   SELLER_PRODUCT_CONDITIONS,
+  PRODUCT_SPEC_SUGGESTIONS,
+  PRODUCT_TAG_SUGGESTIONS,
   SELLER_PRODUCT_MAX_IMAGES,
   type SellerProductFormValues,
   type SellerProductStagedImage,
@@ -32,13 +36,22 @@ import { slugFromName } from '../../utils/validators';
 
 type Mode = 'create' | 'edit';
 
-function flattenCategories(nodes: CategoryTreeNode[], depth = 0): { id: number; label: string }[] {
-  const rows: { id: number; label: string }[] = [];
+type CategoryOption = { id: number; label: string; depth: number; groupLabel?: string };
+
+/**
+ * The dropdown shows depth with indentation and weight rather than a run of
+ * dashes, so the label stays clean everywhere else it is reused.
+ */
+function flattenCategories(
+  nodes: CategoryTreeNode[],
+  depth = 0,
+  parentName?: string,
+): CategoryOption[] {
+  const rows: CategoryOption[] = [];
   for (const node of nodes) {
-    const prefix = depth > 0 ? `${'—'.repeat(depth)} ` : '';
-    rows.push({ id: node.categoryId, label: `${prefix}${node.name}` });
+    rows.push({ id: node.categoryId, label: node.name, depth, groupLabel: parentName });
     if (node.children?.length) {
-      rows.push(...flattenCategories(node.children, depth + 1));
+      rows.push(...flattenCategories(node.children, depth + 1, node.name));
     }
   }
   return rows;
@@ -495,6 +508,8 @@ export function SellerProductFormPage() {
                         ...flatCategories.map((c) => ({
                           value: String(c.id),
                           label: c.label,
+                          depth: c.depth,
+                          groupLabel: c.groupLabel,
                         })),
                       ]}
                       onBlur={() => markTouched('categoryId')}
@@ -625,32 +640,36 @@ export function SellerProductFormPage() {
 
               <div className="row">
                 <div className="col-lg-6">
-                  <FormField label="Tags JSON" htmlFor="product-tags" error={displayErrors.tagsJson}>
-                    <textarea
+                  <FormField label="Tags" htmlFor="product-tags" error={displayErrors.tagsJson}>
+                    <TagsField
                       id="product-tags"
-                      className="form-control"
-                      rows={3}
-                      placeholder='["flagship","5g"]'
                       value={form.tagsJson}
+                      placeholder="e.g. flagship, 5g"
+                      suggestions={PRODUCT_TAG_SUGGESTIONS}
+                      invalid={Boolean(displayErrors.tagsJson)}
                       onBlur={() => markTouched('tagsJson')}
-                      onChange={(e) => patch('tagsJson', e.target.value)}
+                      onChange={(json) => patch('tagsJson', json)}
                     />
                   </FormField>
                 </div>
                 <div className="col-lg-6">
                   <FormField
-                    label="Specs JSON"
+                    label="Specifications"
                     htmlFor="product-specs"
                     error={displayErrors.specsJson}
                   >
-                    <textarea
+                    <KeyValueField
                       id="product-specs"
-                      className="form-control"
-                      rows={3}
-                      placeholder='{"ram":"12GB","storage":"256GB"}'
                       value={form.specsJson}
+                      keyLabel="Specification"
+                      valueLabel="Value"
+                      keyPlaceholder="RAM"
+                      valuePlaceholder="12GB"
+                      addLabel="Add specification"
+                      keySuggestions={PRODUCT_SPEC_SUGGESTIONS}
+                      invalid={Boolean(displayErrors.specsJson)}
                       onBlur={() => markTouched('specsJson')}
-                      onChange={(e) => patch('specsJson', e.target.value)}
+                      onChange={(json) => patch('specsJson', json)}
                     />
                   </FormField>
                 </div>

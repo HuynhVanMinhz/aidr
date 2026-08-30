@@ -1,6 +1,7 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { AuthLayout } from '../../components/auth/AuthLayout';
+import { useToastMessage } from '../../hooks/useToastMessage';
 import * as authApi from '../../services/authApi';
 import { getApiErrorMessage } from '../../utils/apiError';
 
@@ -10,6 +11,9 @@ export function ForgotPasswordPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+
+  useToastMessage(error);
+  useToastMessage(success, 'success');
 
   useEffect(() => {
     const fromQuery = searchParams.get('email');
@@ -48,9 +52,6 @@ export function ForgotPasswordPage() {
                         <h2>Forgot password</h2>
                         <p>Enter your registered email. You will receive a one-time, time-limited reset link.</p>
                       </div>
-
-                      {error && <div className="auth-alert auth-alert--error">{error}</div>}
-                      {success && <div className="auth-alert auth-alert--success">{success}</div>}
 
                       <div className="checkout-login-form">
                         <div className="form-group">

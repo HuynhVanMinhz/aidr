@@ -107,7 +107,8 @@ aidr-be/
 |----|----------|--------|
 | UC-09/10/11 | `GET /api/products`, `GET /api/products/{id}`, `GET /api/categories` | Discovery |
 | UC-26/27 | `GET /api/products/search?q=&filters=&sort=` | Discovery |
-| UC-62b | `GET /api/shops/{shopKey}` — shop profile, policies, rating, approved products (paged; `shopKey` = ShopId hoặc Slug) | Discovery |
+| UC-58 | `GET /api/products/lookup?ids=` — batch product summaries for link previews (chat product cards); records no view, unlike `GET /api/products/{id}` | Discovery |
+| UC-62b | `GET /api/shops/{shopKey}` — shop profile, policies, rating, approved products (paged; `shopKey` = ShopId hoặc Slug). Also `GET /api/shops?page=&pageSize=&sort=rating\|followers\|newest` — Active shops list (default rating desc) | Discovery |
 | UC-64 | `GET /api/shops/{shopKey}/rating` — AvgRating + RatingCount | Discovery |
 | UC-53/54 | `GET /api/recommendations`, `GET /api/products/{id}/similar` | AI + Discovery |
 
@@ -186,7 +187,7 @@ aidr-be/
 | UC-44 | `GET /api/notifications?page=&pageSize=&unreadOnly=` — inbox (paged, newest first); `GET /api/notifications/unread-count`; `POST /api/notifications/{id}/read`; `POST /api/notifications/read-all`; SignalR `NotificationHub` group `user:{userId}` event `ReceiveNotification` | Engagement |
 | UC-45 | `DELETE /api/notifications/{notificationId}` — owner hard-delete | Engagement |
 | UC-57 | `GET /api/chat/threads?page=&pageSize=` — thread list for buyer or shop owner (paged, by `LastMessageAt`); `GET /api/chat/threads/{threadId}`; `GET /api/chat/threads/{threadId}/messages?page=&pageSize=` — message window (page 1 = newest chunk, chronological within page) | Engagement |
-| UC-58 | `POST /api/chat/threads` — open/get-or-create `{ shopId, productId? }` (buyer); `POST /api/chat/threads/{threadId}/messages` — `{ content, attachmentUrl? }`; `POST /api/chat/threads/{threadId}/read`; SignalR `ChatHub` group `thread:{threadId}` event `ReceiveMessage` (+ `JoinThread`/`LeaveThread`) | Engagement |
+| UC-58 | `POST /api/chat/threads` — open/get-or-create `{ shopId, productId? }` (buyer); `POST /api/chat/threads/{threadId}/messages` — `{ content, attachmentUrl? }`; `POST /api/chat/threads/{threadId}/read`; SignalR `ChatHub` group `chat-user:{userId}` (joined on connect) events `ReceiveMessage` / `ThreadRead` / `Typing` (+ client calls `SendMessage`/`MarkRead`/`Typing`) | Engagement |
 
 ### 6.7 AI
 | UC | Endpoint | Module |
@@ -194,7 +195,7 @@ aidr-be/
 | UC-53 | `GET /api/recommendations?page=&pageSize=` — hybrid recommendations (stored + collaborative + content affinity + popular); personalized when authenticated, popular fallback for guests | AI |
 | UC-54 | `GET /api/products/{id}/similar?limit=` — content-similar Approved products (category/brand/tags/price) | AI |
 | UC-28 | `POST /api/ai/compare` — body `{ productIds: Guid[] }` (2–5); Buyer auth; returns product cards + dimensions table + summary/highlights (Groq or heuristic) | AI |
-| UC-56 | `POST /api/ai/chat` — body `{ conversationId?, message }`; Buyer auth; persists `AiConversations`/`AiMessages`; returns assistant reply + suggested product cards (Groq or heuristic). Also `GET /api/ai/conversations`, `GET /api/ai/conversations/{id}` | AI |
+| UC-56 | `POST /api/ai/chat` — body `{ conversationId?, message, context?, quickReplyValue? }`; Buyer auth; intent router + NL filter slots + Discovery retrieve; **guided consultation** (`AiConsultPlanner` hỏi tối đa 3 câu từ `AiConsultQuestionBank` trước khi gợi ý, chip ngân sách sinh từ `GetPriceBandsAsync`, xếp hạng bằng `AiProductRanker`); persists `AiConversations`/`AiMessages` (MetaJson: slots/consult/quickReplies/actions/reasons/badges); returns assistant reply + suggested product cards + actions + `quickReplies` + `consult`. Also `GET /api/ai/conversations`, `GET /api/ai/conversations/{id}` (hydrates cards from MetaJson) | AI |
 | UC-90 | `POST /api/ai/nl-filter` — body `{ query }`; Guest/Buyer; returns validated filter DSL (`q`, `categoryId`, `brand`, `minPrice`, `maxPrice`, `minRating`, `sort`, …) | AI |
 
 ---
@@ -221,13 +222,25 @@ Invalidate khi Seller/Admin mutate product/category.
 ### 7.3 SignalR (Pub/Sub)
 Hubs đề xuất:
 - `NotificationHub` — group `user:{userId}` (UC-44)
-- `ChatHub` — group `thread:{threadId}` (UC-57/58)
+- `ChatHub` — group `chat-user:{userId}`, joined on connect so both participants stay in sync on every device (UC-57/58)
 - `OrderHub` (optional) — buyer/seller nhận status change (UC-47)
 
 ### 7.4 payOS
 1. `CreateOrder` → `CreatePaymentLink` → trả `CheckoutUrl`.
 2. Webhook `POST /api/payments/payos/webhook` verify signature → `Payments.Status=Succeeded`, `Orders.Status=Paid`.
 3. Idempotent theo `ProviderPaymentId`.
+
+Ghi chú vận hành:
+- `PayOS:UseMock=false` → gọi payOS thật qua SDK `payOS 2.1.0`. `UseMock=true` chỉ sinh
+  link giả trỏ về `ReturnUrl` (dev offline). Kiểm tra nhanh credential:
+  `GET https://api-merchant.payos.vn/v2/payment-requests/999999999` kèm header
+  `x-client-id` / `x-api-key` — trả `{"code":"101"}` nghĩa là auth OK.
+- `orderCode` gửi payOS là số JSON nên phải nằm trong khoảng safe integer
+  (≤ 9007199254740991); `PaymentService.ToPayOsOrderCode` fold GUID payment id về khoảng này.
+- Webhook cần URL public. Ở local phải mở tunnel (ngrok) rồi gọi
+  `POST /api/payments/payos/confirm-webhook` (role Admin) để đăng ký URL với payOS.
+  Không có bước này thì thanh toán thật vẫn diễn ra ở phía payOS nhưng
+  `Payments.Status` / `Orders.Status` trong DB **không** tự cập nhật.
 
 ### 7.5 Groq (LLM)
 - HTTP client tới Groq OpenAI-compatible API (`https://api.groq.com/openai/v1`).
