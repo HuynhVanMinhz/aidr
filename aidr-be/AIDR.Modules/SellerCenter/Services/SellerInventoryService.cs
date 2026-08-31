@@ -128,6 +128,7 @@ public sealed class SellerInventoryService : ISellerInventoryService
             productId,
             new AdjustInventoryWriteModel
             {
+                VariantId = request.VariantId,
                 ChangeQty = request.ChangeQty,
                 LotId = request.LotId,
                 Note = note,
@@ -171,6 +172,7 @@ public sealed class SellerInventoryService : ISellerInventoryService
             productId,
             new ImportLotWriteModel
             {
+                VariantId = request.VariantId,
                 LotCode = lotCode,
                 Quantity = request.Quantity,
                 UnitCost = decimal.Round(request.UnitCost, 2, MidpointRounding.AwayFromZero),

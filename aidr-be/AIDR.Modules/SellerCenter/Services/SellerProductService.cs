@@ -104,7 +104,8 @@ public sealed class SellerProductService : ISellerProductService
             request.SpecsJson,
             status: SellerProductConstants.StatusPending,
             publishedAt: null,
-            images: NormalizeImages(request.Images, required: false));
+            images: NormalizeImages(request.Images, required: false),
+            variants: SellerProductVariantNormalizer.Normalize(request.VariantOptions, request.Variants));
 
         await EnsureCategoryActiveAsync(model.CategoryId, cancellationToken);
 
@@ -147,7 +148,8 @@ public sealed class SellerProductService : ISellerProductService
             request.SpecsJson,
             status: SellerProductConstants.StatusPending,
             publishedAt: null,
-            images: null);
+            images: null,
+            variants: SellerProductVariantNormalizer.Normalize(request.VariantOptions, request.Variants));
 
         await EnsureCategoryActiveAsync(model.CategoryId, cancellationToken);
 
@@ -280,7 +282,8 @@ public sealed class SellerProductService : ISellerProductService
         string? specsJson,
         string status,
         DateTime? publishedAt,
-        IReadOnlyList<SellerProductImageWriteModel>? images)
+        IReadOnlyList<SellerProductImageWriteModel>? images,
+        SellerProductVariantNormalizer.NormalizedVariants variants)
     {
         if (categoryId <= 0)
             throw new AppException("Category id is required.");
@@ -303,7 +306,9 @@ public sealed class SellerProductService : ISellerProductService
             SpecsJson = RequireJsonOptional(specsJson, "SpecsJson", SellerProductConstants.MaxSpecsJsonLength),
             Status = status,
             PublishedAt = publishedAt,
-            Images = images
+            Images = images,
+            VariantOptionsJson = variants.OptionsJson,
+            Variants = variants.Variants
         };
     }
 
@@ -481,9 +486,11 @@ public sealed class SellerProductService : ISellerProductService
         BasePrice = record.BasePrice,
         SalePrice = record.SalePrice,
         EffectivePrice = record.SalePrice ?? record.BasePrice,
+        MaxEffectivePrice = MaxEffectivePriceOf(record),
         Currency = record.Currency,
         StockQuantity = record.StockQuantity,
         ReservedQuantity = record.ReservedQuantity,
+        VariantCount = record.Variants.Count,
         Status = record.Status,
         PrimaryImageUrl = record.PrimaryImageUrl,
         CategoryId = record.CategoryId,
@@ -533,6 +540,38 @@ public sealed class SellerProductService : ISellerProductService
             PublicId = i.PublicId,
             SortOrder = i.SortOrder,
             IsPrimary = i.IsPrimary
-        }).ToList()
+        }).ToList(),
+        VariantOptions = SellerProductVariantNormalizer.ParseOptions(record.VariantOptionsJson),
+        Variants = record.Variants.Select(MapVariant).ToList()
     };
+
+    private static SellerProductVariantDto MapVariant(SellerProductVariantRecord v) => new()
+    {
+        VariantId = v.VariantId,
+        Sku = v.Sku,
+        VariantName = v.VariantName,
+        Attributes = SellerProductVariantNormalizer.ParseAttributes(v.AttributesJson),
+        Price = v.Price,
+        SalePrice = v.SalePrice,
+        EffectivePrice = v.SalePrice ?? v.Price,
+        StockQuantity = v.StockQuantity,
+        ReservedQuantity = v.ReservedQuantity,
+        AvailableQuantity = Math.Max(0, v.StockQuantity - v.ReservedQuantity),
+        ImageUrl = v.ImageUrl,
+        SortOrder = v.SortOrder,
+        IsActive = v.IsActive
+    };
+
+    /// <summary>
+    /// The top of the "from X to Y" range. Products.BasePrice already tracks the cheapest
+    /// variant, so only the upper bound has to be derived here; with no variants the range
+    /// collapses onto the single price.
+    /// </summary>
+    private static decimal MaxEffectivePriceOf(SellerProductRecord record)
+    {
+        var active = record.Variants.Where(v => v.IsActive).ToList();
+        return active.Count == 0
+            ? record.SalePrice ?? record.BasePrice
+            : active.Max(v => v.SalePrice ?? v.Price);
+    }
 }

@@ -103,6 +103,9 @@ public sealed class SellerOrderShippingDto
 
 public sealed class SellerOrderItemDto
 {
+    public Guid? VariantId { get; init; }
+    /// <summary>The configuration as it read at checkout; null for a single-configuration product.</summary>
+    public string? VariantName { get; init; }
     public Guid OrderItemId { get; init; }
     public Guid ProductId { get; init; }
     public string ProductName { get; init; } = null!;

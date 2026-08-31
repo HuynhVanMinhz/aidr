@@ -106,6 +106,12 @@ public sealed class DiscoveryRepository : IDiscoveryRepository
                 ReviewCount = p.ReviewCount,
                 SoldCount = p.SoldCount,
                 IsFeatured = p.IsFeatured,
+                // Aggregated in SQL so the card can say "from X to Y" without the repository
+                // dragging every variant row back for a page of results.
+                MaxVariantEffectivePrice = p.Variants
+                    .Where(v => v.IsActive)
+                    .Max(v => (decimal?)(v.SalePrice ?? v.Price)),
+                VariantCount = p.Variants.Count(v => v.IsActive),
                 PrimaryImageUrl = p.Images
                     .OrderByDescending(i => i.IsPrimary)
                     .ThenBy(i => i.SortOrder)
@@ -148,6 +154,7 @@ public sealed class DiscoveryRepository : IDiscoveryRepository
                 p.OriginCountry,
                 p.SpecsJson,
                 p.TagsJson,
+                p.VariantOptionsJson,
                 p.AvgRating,
                 p.ReviewCount,
                 p.SoldCount,
@@ -174,6 +181,26 @@ public sealed class DiscoveryRepository : IDiscoveryRepository
                         SortOrder = i.SortOrder,
                         IsPrimary = i.IsPrimary
                     })
+                    .ToList(),
+                // Inactive variants are filtered out here rather than on the client: a
+                // configuration the seller withdrew must not be selectable at all.
+                Variants = p.Variants
+                    .Where(v => v.IsActive)
+                    .OrderBy(v => v.SortOrder)
+                    .ThenBy(v => v.VariantName)
+                    .Select(v => new ProductVariantRecord
+                    {
+                        VariantId = v.VariantId,
+                        VariantName = v.VariantName,
+                        Sku = v.Sku,
+                        AttributesJson = v.AttributesJson,
+                        Price = v.Price,
+                        SalePrice = v.SalePrice,
+                        StockQuantity = v.StockQuantity,
+                        ReservedQuantity = v.ReservedQuantity,
+                        ImageUrl = v.ImageUrl,
+                        SortOrder = v.SortOrder
+                    })
                     .ToList()
             })
             .FirstOrDefaultAsync(cancellationToken);
@@ -198,6 +225,8 @@ public sealed class DiscoveryRepository : IDiscoveryRepository
 
         return new ProductDetailRecord
         {
+            VariantOptionsJson = product.VariantOptionsJson,
+            Variants = product.Variants,
             ProductId = product.ProductId,
             Name = product.Name,
             Slug = product.Slug,

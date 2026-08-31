@@ -18,6 +18,48 @@ export type SellerProductImage = {
   isPrimary: boolean;
 };
 
+/** One axis the seller declares, e.g. Color -> [Orange, White]. */
+export type SellerProductVariantOption = {
+  name: string;
+  values: string[];
+};
+
+export type SellerProductVariant = {
+  variantId: string;
+  sku?: string | null;
+  variantName: string;
+  attributes: Record<string, string>;
+  price: number;
+  salePrice?: number | null;
+  effectivePrice: number;
+  /** Summed from this variant's inventory lots — not editable on the product form. */
+  stockQuantity: number;
+  reservedQuantity: number;
+  availableQuantity: number;
+  imageUrl?: string | null;
+  sortOrder: number;
+  isActive: boolean;
+};
+
+export type SellerProductVariantOptionInput = {
+  name: string;
+  values: string[];
+};
+
+export type SellerProductVariantInput = {
+  /** Omit for a new row; supply to update the existing variant in place. */
+  variantId?: string | null;
+  sku?: string | null;
+  /** Derived from the attribute values when left blank. */
+  variantName?: string | null;
+  attributes: Record<string, string>;
+  price: number;
+  salePrice?: number | null;
+  imageUrl?: string | null;
+  sortOrder: number;
+  isActive: boolean;
+};
+
 export type SellerProductListItem = {
   productId: string;
   name: string;
@@ -28,9 +70,12 @@ export type SellerProductListItem = {
   basePrice: number;
   salePrice?: number | null;
   effectivePrice: number;
+  /** Dearest active variant; equals effectivePrice when there are none. */
+  maxEffectivePrice: number;
   currency: string;
   stockQuantity: number;
   reservedQuantity: number;
+  variantCount: number;
   status: string;
   primaryImageUrl?: string | null;
   categoryId: number;
@@ -73,6 +118,9 @@ export type SellerProductDetail = {
   createdAt: string;
   updatedAt: string;
   images: SellerProductImage[];
+  variantOptions: SellerProductVariantOption[];
+  /** Empty when the product is sold as a single configuration. */
+  variants: SellerProductVariant[];
 };
 
 export type SellerProductImageInput = {
@@ -106,6 +154,13 @@ export type CreateSellerProductPayload = {
   tagsJson?: string | null;
   specsJson?: string | null;
   images?: SellerProductImageInput[];
+  /**
+   * Send both together to sell the product in several configurations, or omit both to keep
+   * it single-price. On update, omitting them leaves the stored variants untouched while
+   * sending empty arrays clears them.
+   */
+  variantOptions?: SellerProductVariantOptionInput[];
+  variants?: SellerProductVariantInput[];
 };
 
 export type UpdateSellerProductPayload = {
@@ -123,6 +178,8 @@ export type UpdateSellerProductPayload = {
   originCountry?: string | null;
   tagsJson?: string | null;
   specsJson?: string | null;
+  variantOptions?: SellerProductVariantOptionInput[];
+  variants?: SellerProductVariantInput[];
 };
 
 export type UploadSellerProductImagesPayload = {

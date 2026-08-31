@@ -52,7 +52,20 @@ public sealed class CartRepository : ICartRepository
                     .OrderByDescending(i => i.IsPrimary)
                     .ThenBy(i => i.SortOrder)
                     .Select(i => i.ImageUrl)
-                    .FirstOrDefault()
+                    .FirstOrDefault(),
+                Variants = p.Variants
+                    .OrderBy(v => v.SortOrder)
+                    .Select(v => new CartVariantSnapshot
+                    {
+                        VariantId = v.VariantId,
+                        VariantName = v.VariantName,
+                        Price = v.Price,
+                        SalePrice = v.SalePrice,
+                        StockQuantity = v.StockQuantity,
+                        ReservedQuantity = v.ReservedQuantity,
+                        IsActive = v.IsActive
+                    })
+                    .ToList()
             })
             .FirstOrDefaultAsync(cancellationToken);
     }
@@ -60,6 +73,7 @@ public sealed class CartRepository : ICartRepository
     public async Task<CartResponse> AddOrMergeItemAsync(
         Guid userId,
         Guid productId,
+        Guid? variantId,
         int quantityToAdd,
         decimal unitPriceSnapshot,
         int availableQuantity,
@@ -68,8 +82,9 @@ public sealed class CartRepository : ICartRepository
         var cart = await FindCartTrackedAsync(userId, cancellationToken)
             ?? await CreateCartAsync(userId, cancellationToken);
 
+        // Two configurations of the same product are two lines; only the same one merges.
         var existing = cart.Items.FirstOrDefault(i =>
-            i.ProductId == productId && i.VariantId == null);
+            i.ProductId == productId && i.VariantId == variantId);
 
         var now = DateTime.UtcNow;
         var price = decimal.Round(unitPriceSnapshot, 2, MidpointRounding.AwayFromZero);
@@ -84,7 +99,7 @@ public sealed class CartRepository : ICartRepository
                 CartItemId = Guid.NewGuid(),
                 CartId = cart.CartId,
                 ProductId = productId,
-                VariantId = null,
+                VariantId = variantId,
                 Quantity = quantityToAdd,
                 UnitPriceSnapshot = price,
                 CreatedAt = now,
@@ -184,6 +199,28 @@ public sealed class CartRepository : ICartRepository
             .Include(c => c.Items)
             .FirstOrDefaultAsync(c => c.UserId == userId, cancellationToken);
 
+    /// <summary>
+    /// The line's price and availability come from the variant when it has one, and from
+    /// the product otherwise. Both callers need the same answer, so it is resolved once.
+    /// </summary>
+    private static (decimal CurrentPrice, int Available, string? VariantName) ResolveLinePricing(CartItem item)
+    {
+        var product = item.Product;
+
+        if (item.Variant is { } variant)
+        {
+            return (
+                variant.SalePrice ?? variant.Price,
+                Math.Max(0, variant.StockQuantity - variant.ReservedQuantity),
+                variant.VariantName);
+        }
+
+        return (
+            product.SalePrice ?? product.BasePrice,
+            Math.Max(0, product.StockQuantity - product.ReservedQuantity),
+            null);
+    }
+
     private Task<Cart?> FindCartWithItemsAsync(Guid userId, CancellationToken cancellationToken)
         => _db.Carts
             .AsNoTracking()
@@ -196,6 +233,8 @@ public sealed class CartRepository : ICartRepository
             .Include(c => c.Items)
                 .ThenInclude(i => i.Product)
                     .ThenInclude(p => p.Images)
+            .Include(c => c.Items)
+                .ThenInclude(i => i.Variant)
             .FirstOrDefaultAsync(c => c.UserId == userId, cancellationToken);
 
     private static CartResponse MapCart(Cart cart)
@@ -223,16 +262,17 @@ public sealed class CartRepository : ICartRepository
     private static CartItemDto MapItem(CartItem item)
     {
         var product = item.Product;
-        var currentPrice = product.SalePrice ?? product.BasePrice;
+        var (currentPrice, available, variantName) = ResolveLinePricing(item);
         var snapshot = item.UnitPriceSnapshot ?? currentPrice;
-        var available = Math.Max(0, product.StockQuantity - product.ReservedQuantity);
         var isAvailable =
             string.Equals(product.Status, CartConstants.ApprovedStatus, StringComparison.OrdinalIgnoreCase)
             && product.Category.IsActive
             && string.Equals(product.Shop.Status, CartConstants.ActiveShopStatus, StringComparison.OrdinalIgnoreCase)
+            // A deactivated variant is still in the cart but can no longer be bought.
+            && (item.Variant is null || item.Variant.IsActive)
             && available > 0;
 
-        var primaryImage = product.Images
+        var primaryImage = item.Variant?.ImageUrl ?? product.Images
             .OrderByDescending(i => i.IsPrimary)
             .ThenBy(i => i.SortOrder)
             .Select(i => i.ImageUrl)
@@ -242,6 +282,8 @@ public sealed class CartRepository : ICartRepository
         {
             CartItemId = item.CartItemId,
             ProductId = item.ProductId,
+            VariantId = item.VariantId,
+            VariantName = variantName,
             ProductName = product.Name,
             ProductSlug = product.Slug,
             PrimaryImageUrl = primaryImage,

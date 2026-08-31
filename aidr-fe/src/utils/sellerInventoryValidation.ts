@@ -19,6 +19,7 @@ export const SELLER_INV_MAX_THRESHOLD = 100_000;
 export const SELLER_INV_MAX_MONEY = 999_999_999_999.99;
 
 export type ImportLotFormValues = {
+  variantId: string;
   lotCode: string;
   quantity: string;
   unitCost: string;
@@ -32,6 +33,7 @@ export type ImportLotFormValues = {
 export type AdjustInventoryFormValues = {
   mode: 'increase' | 'decrease-fifo' | 'decrease-lot';
   quantity: string;
+  variantId: string;
   lotId: string;
   note: string;
 };
@@ -52,6 +54,7 @@ export type SellingPriceField = keyof SellingPriceFormValues;
 export type LowStockField = keyof LowStockFormValues;
 
 export const emptyImportLotForm = (): ImportLotFormValues => ({
+  variantId: '',
   lotCode: '',
   quantity: '',
   unitCost: '',
@@ -65,6 +68,7 @@ export const emptyImportLotForm = (): ImportLotFormValues => ({
 export const emptyAdjustForm = (): AdjustInventoryFormValues => ({
   mode: 'decrease-fifo',
   quantity: '',
+  variantId: '',
   lotId: '',
   note: '',
 });
@@ -109,8 +113,16 @@ function optionalDateIso(raw: string, fieldLabel: string): string | null {
   return date.toISOString();
 }
 
-export function validateImportLotForm(form: ImportLotFormValues): FieldErrors<ImportLotField> {
+export function validateImportLotForm(
+  form: ImportLotFormValues,
+  /** True when the product is sold in variants; stock then has to name one. */
+  requireVariant = false,
+): FieldErrors<ImportLotField> {
   const errors: FieldErrors<ImportLotField> = {};
+
+  if (requireVariant && !form.variantId.trim()) {
+    errors.variantId = 'Choose which variant this stock is for.';
+  }
 
   const quantityError = tryValidateField(() =>
     parsePositiveInt(form.quantity, 'Quantity', SELLER_INV_MAX_QTY),
@@ -172,6 +184,7 @@ export function canSubmitImportLotForm(
 
 export function buildImportLotPayload(form: ImportLotFormValues): ImportStockLotPayload {
   return {
+    variantId: form.variantId.trim() || null,
     lotCode: optionalBounded(form.lotCode, 'Lot code', SELLER_INV_MAX_LOT_CODE),
     quantity: parsePositiveInt(form.quantity, 'Quantity', SELLER_INV_MAX_QTY),
     unitCost: parseMoney(form.unitCost, 'Unit cost', true)!,
@@ -183,8 +196,17 @@ export function buildImportLotPayload(form: ImportLotFormValues): ImportStockLot
   };
 }
 
-export function validateAdjustForm(form: AdjustInventoryFormValues): FieldErrors<AdjustInventoryField> {
+export function validateAdjustForm(
+  form: AdjustInventoryFormValues,
+  requireVariant = false,
+): FieldErrors<AdjustInventoryField> {
   const errors: FieldErrors<AdjustInventoryField> = {};
+
+  // A named lot already belongs to one variant, so only the FIFO path needs the choice.
+  const picksLot = form.mode === 'increase' || form.mode === 'decrease-lot';
+  if (requireVariant && !picksLot && !form.variantId.trim()) {
+    errors.variantId = 'Choose which variant to adjust.';
+  }
 
   const quantityError = tryValidateField(() =>
     parsePositiveInt(form.quantity, 'Quantity', SELLER_INV_MAX_QTY),
@@ -209,12 +231,14 @@ export function isAdjustFormDirty(form: AdjustInventoryFormValues): boolean {
 export function canSubmitAdjustForm(
   form: AdjustInventoryFormValues,
   errors: FieldErrors<AdjustInventoryField>,
+  requireVariant = false,
 ): boolean {
   if (Object.keys(errors).length > 0) return false;
   if (!form.quantity.trim()) return false;
   if (form.mode === 'increase' || form.mode === 'decrease-lot') {
     return Boolean(form.lotId.trim());
   }
+  if (requireVariant && !form.variantId.trim()) return false;
   return true;
 }
 
@@ -223,6 +247,8 @@ export function buildAdjustPayload(form: AdjustInventoryFormValues): AdjustSelle
   const changeQty = form.mode === 'increase' ? qty : -qty;
   const needsLot = form.mode === 'increase' || form.mode === 'decrease-lot';
   return {
+    // A named lot already pins the variant, so it is only sent for the FIFO path.
+    variantId: needsLot ? null : form.variantId.trim() || null,
     changeQty,
     lotId: needsLot ? form.lotId.trim() : null,
     note: optionalBounded(form.note, 'Note', SELLER_INV_MAX_TX_NOTE),

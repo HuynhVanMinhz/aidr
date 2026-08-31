@@ -36,11 +36,20 @@ export function ProductCard({ product, variant = 'list' }: Props) {
   const imageUrl = resolveProductImageUrl(product.primaryImageUrl, product.name?.length ?? 0);
   const detailTo = `/products/${product.productId}`;
   const outOfStock = product.availableQuantity < 1;
+  // A card cannot say which colour or capacity the shopper wants, and the cart refuses a
+  // variant product without one — so these buttons open the picker instead of buying.
+  const needsConfiguring = product.variantCount > 0;
+  const priceRange =
+    product.maxEffectivePrice > product.effectivePrice ? product.maxEffectivePrice : null;
 
   async function handleQuickAdd(e: MouseEvent) {
     e.preventDefault();
     e.stopPropagation();
 
+    if (needsConfiguring) {
+      navigate(detailTo);
+      return;
+    }
     if (!isAuthenticated) {
       navigate(`/login?returnUrl=${encodeURIComponent(detailTo)}`);
       return;
@@ -65,6 +74,10 @@ export function ProductCard({ product, variant = 'list' }: Props) {
     e.preventDefault();
     e.stopPropagation();
 
+    if (needsConfiguring) {
+      navigate(detailTo);
+      return;
+    }
     if (!isAuthenticated) {
       navigate(`/login?returnUrl=${encodeURIComponent(detailTo)}`);
       return;
@@ -143,17 +156,25 @@ export function ProductCard({ product, variant = 'list' }: Props) {
     <button
       type="button"
       className="product-item-buy-now"
-      disabled={buying || adding || outOfStock}
+      disabled={buying || adding || (outOfStock && !needsConfiguring)}
       onClick={(e) => void handleBuyNow(e)}
     >
-      {outOfStock ? 'Out of stock' : buying ? 'Starting…' : 'Buy Now'}
+      {needsConfiguring
+        ? 'Choose Options'
+        : outOfStock
+          ? 'Out of stock'
+          : buying
+            ? 'Starting…'
+            : 'Buy Now'}
     </button>
   );
 
   const priceBlock = (
     <h3>
-      {formatMoney(product.effectivePrice, product.currency)}
-      {product.salePrice != null && product.salePrice < product.basePrice && (
+      {priceRange
+        ? `${formatMoney(product.effectivePrice, product.currency)} – ${formatMoney(priceRange, product.currency)}`
+        : formatMoney(product.effectivePrice, product.currency)}
+      {!priceRange && product.salePrice != null && product.salePrice < product.basePrice && (
         <span>{formatMoney(product.basePrice, product.currency)}</span>
       )}
     </h3>

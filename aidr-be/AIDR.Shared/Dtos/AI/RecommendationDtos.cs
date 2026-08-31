@@ -23,6 +23,9 @@ public sealed class RecommendedProductDto
     public decimal BasePrice { get; init; }
     public decimal? SalePrice { get; init; }
     public decimal EffectivePrice { get; init; }
+    /// <summary>Dearest active variant; equals EffectivePrice when the product has none.</summary>
+    public decimal MaxEffectivePrice { get; init; }
+    public int VariantCount { get; init; }
     public string Currency { get; init; } = "VND";
     public int StockQuantity { get; init; }
     public int AvailableQuantity { get; init; }
@@ -55,6 +58,9 @@ public sealed class SimilarProductDto
     public decimal BasePrice { get; init; }
     public decimal? SalePrice { get; init; }
     public decimal EffectivePrice { get; init; }
+    /// <summary>Dearest active variant; equals EffectivePrice when the product has none.</summary>
+    public decimal MaxEffectivePrice { get; init; }
+    public int VariantCount { get; init; }
     public string Currency { get; init; } = "VND";
     public int StockQuantity { get; init; }
     public int AvailableQuantity { get; init; }

@@ -41,11 +41,14 @@ public sealed class RecommendationService : IRecommendationService
 
         var merged = await BuildHybridRecommendationsAsync(userId, cancellationToken);
         var total = merged.Count;
-        var pageItems = merged
+        var pageRecords = merged
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
-            .Select(MapRecommended)
             .ToList();
+
+        // Only the records that survive paging need their price span looked up.
+        var ranges = await LoadVariantRangesAsync(pageRecords, cancellationToken);
+        var pageItems = pageRecords.Select(r => MapRecommended(r, ranges)).ToList();
 
         var result = new PagedResult<RecommendedProductDto>
         {
@@ -78,7 +81,8 @@ public sealed class RecommendationService : IRecommendationService
             ?? throw new NotFoundException("Product not found.");
 
         var candidates = await _repository.GetSimilarCandidatesAsync(source, limit, cancellationToken);
-        var items = candidates.Select(MapSimilar).ToList();
+        var ranges = await LoadVariantRangesAsync(candidates, cancellationToken);
+        var items = candidates.Select(r => MapSimilar(r, ranges)).ToList();
 
         await _cache.SetAsync(cacheKey, items, RecommendationConstants.SimilarCacheTtl, cancellationToken);
         return items;
@@ -176,11 +180,27 @@ public sealed class RecommendationService : IRecommendationService
             .ToList();
     }
 
-    private static RecommendedProductDto MapRecommended(RecommendationProductRecord r)
+    /// <summary>
+    /// One lookup for the whole page rather than a variant join in every candidate query.
+    /// A product with no variants is simply absent from the dictionary.
+    /// </summary>
+    private async Task<IReadOnlyDictionary<Guid, ProductVariantPriceRange>> LoadVariantRangesAsync(
+        IReadOnlyCollection<RecommendationProductRecord> records,
+        CancellationToken cancellationToken)
+        => await _repository.GetVariantPriceRangesAsync(
+            records.Select(r => r.ProductId).Distinct().ToList(),
+            cancellationToken);
+
+    private static RecommendedProductDto MapRecommended(
+        RecommendationProductRecord r,
+        IReadOnlyDictionary<Guid, ProductVariantPriceRange> ranges)
     {
         var effective = r.SalePrice ?? r.BasePrice;
+        var range = ranges.GetValueOrDefault(r.ProductId);
         return new RecommendedProductDto
         {
+            MaxEffectivePrice = range?.Max ?? effective,
+            VariantCount = range?.VariantCount ?? 0,
             ProductId = r.ProductId,
             Name = r.Name,
             Slug = r.Slug,
@@ -207,11 +227,16 @@ public sealed class RecommendationService : IRecommendationService
         };
     }
 
-    private static SimilarProductDto MapSimilar(RecommendationProductRecord r)
+    private static SimilarProductDto MapSimilar(
+        RecommendationProductRecord r,
+        IReadOnlyDictionary<Guid, ProductVariantPriceRange> ranges)
     {
         var effective = r.SalePrice ?? r.BasePrice;
+        var range = ranges.GetValueOrDefault(r.ProductId);
         return new SimilarProductDto
         {
+            MaxEffectivePrice = range?.Max ?? effective,
+            VariantCount = range?.VariantCount ?? 0,
             ProductId = r.ProductId,
             Name = r.Name,
             Slug = r.Slug,

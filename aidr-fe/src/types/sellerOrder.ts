@@ -117,6 +117,9 @@ export type SellerOrderShipping = {
 export type SellerOrderItem = {
   orderItemId: string;
   productId: string;
+  variantId?: string | null;
+  /** The configuration as it read at checkout; null for a single-configuration product. */
+  variantName?: string | null;
   productName: string;
   sku?: string | null;
   imageUrl?: string | null;

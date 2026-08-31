@@ -4,6 +4,8 @@ namespace AIDR.Modules.SellerCenter.Abstractions;
 
 public sealed class ImportLotWriteModel
 {
+    /// <summary>Required once the product has variants: stock belongs to a configuration, not a name.</summary>
+    public Guid? VariantId { get; init; }
     public string? LotCode { get; init; }
     public int Quantity { get; init; }
     public decimal UnitCost { get; init; }
@@ -17,6 +19,8 @@ public sealed class ImportLotWriteModel
 
 public sealed class AdjustInventoryWriteModel
 {
+    /// <summary>Required once the product has variants; ignored when a specific lot is named.</summary>
+    public Guid? VariantId { get; init; }
     public int ChangeQty { get; init; }
     public Guid? LotId { get; init; }
     public string? Note { get; init; }
