@@ -52,6 +52,8 @@ public sealed class SellerInventoryListResult
 public sealed class SellerInventoryLotDto
 {
     public Guid LotId { get; init; }
+    public Guid? VariantId { get; init; }
+    public string? VariantName { get; init; }
     public string LotCode { get; init; } = null!;
     public int QuantityReceived { get; init; }
     public int QuantityRemaining { get; init; }
@@ -81,6 +83,23 @@ public sealed class SellerInventoryTransactionDto
     public DateTime CreatedAt { get; init; }
 }
 
+/// <summary>Stock for one configuration, so the seller can see which colour ran out.</summary>
+public sealed class SellerInventoryVariantDto
+{
+    public Guid VariantId { get; init; }
+    public string VariantName { get; init; } = null!;
+    public string? Sku { get; init; }
+    public int StockQuantity { get; init; }
+    public int ReservedQuantity { get; init; }
+    public int AvailableQuantity { get; init; }
+    public decimal Price { get; init; }
+    public decimal? SalePrice { get; init; }
+    public decimal EffectivePrice { get; init; }
+    public decimal? AvgCostPrice { get; init; }
+    public decimal? EstimatedMarginPerUnit { get; init; }
+    public bool IsActive { get; init; }
+}
+
 public sealed class SellerInventoryDetailDto
 {
     public Guid ProductId { get; init; }
@@ -99,6 +118,9 @@ public sealed class SellerInventoryDetailDto
     public decimal? SalePrice { get; init; }
     public decimal EffectivePrice { get; init; }
     public string Currency { get; init; } = "VND";
+    /// <summary>Empty when the product is sold as a single configuration.</summary>
+    public IReadOnlyList<SellerInventoryVariantDto> Variants { get; init; } =
+        Array.Empty<SellerInventoryVariantDto>();
     public IReadOnlyList<SellerInventoryLotDto> Lots { get; init; } = Array.Empty<SellerInventoryLotDto>();
     public IReadOnlyList<SellerInventoryTransactionDto> RecentTransactions { get; init; } =
         Array.Empty<SellerInventoryTransactionDto>();
@@ -111,6 +133,8 @@ public sealed class UpdateSellerInventoryRequest
 
 public sealed class AdjustSellerInventoryRequest
 {
+    /// <summary>Which configuration to adjust. Required when the product has variants and no LotId is given.</summary>
+    public Guid? VariantId { get; set; }
     public int ChangeQty { get; set; }
     public Guid? LotId { get; set; }
     public string? Note { get; set; }
@@ -118,6 +142,8 @@ public sealed class AdjustSellerInventoryRequest
 
 public sealed class ImportStockLotRequest
 {
+    /// <summary>Which configuration the stock is for. Required when the product has variants.</summary>
+    public Guid? VariantId { get; set; }
     public string? LotCode { get; set; }
     public int Quantity { get; set; }
     public decimal UnitCost { get; set; }

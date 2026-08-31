@@ -13,6 +13,16 @@ public static class SellerProductConstants
     public const int MaxImagesPerProduct = 20;
     public const int MaxTagsJsonLength = 4000;
     public const int MaxSpecsJsonLength = 8000;
+
+    // Variants. The ceilings exist so one product cannot blow up the option matrix:
+    // 4 axes x 20 values already allows far more combinations than MaxVariantsPerProduct.
+    public const int MaxVariantOptions = 4;
+    public const int MaxVariantOptionValues = 20;
+    public const int MaxVariantOptionNameLength = 50;
+    public const int MaxVariantOptionValueLength = 80;
+    public const int MaxVariantsPerProduct = 100;
+    public const int MaxVariantNameLength = 150;
+    public const int MaxVariantSkuLength = 64;
     public const int DefaultPage = 1;
     public const int DefaultPageSize = 20;
     public const int MaxPageSize = 100;

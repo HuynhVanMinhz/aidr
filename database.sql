@@ -296,6 +296,9 @@ CREATE TABLE dbo.Products (
     OriginCountry   NVARCHAR(80)     NULL,
     TagsJson        NVARCHAR(MAX)    NULL,             -- ["flagship","5g"]
     SpecsJson       NVARCHAR(MAX)    NULL,             -- attrs cho filter / AI compare
+    -- Trục cấu hình sinh ra ProductVariants, giữ đúng thứ tự seller khai báo:
+    -- [{"name":"Color","values":["Orange","White"]},{"name":"Storage","values":["128GB","256GB"]}]
+    VariantOptionsJson NVARCHAR(MAX) NULL,
     MetaTitle       NVARCHAR(160)    NULL,
     MetaDescription NVARCHAR(320)    NULL,
     IsFeatured      BIT              NOT NULL CONSTRAINT DF_Products_IsFeatured DEFAULT (0),
@@ -345,16 +348,27 @@ CREATE TABLE dbo.ProductVariants (
     ProductId       UNIQUEIDENTIFIER NOT NULL,
     Sku             NVARCHAR(64)     NULL,
     VariantName     NVARCHAR(150)    NOT NULL,         -- e.g. "128GB / Black"
-    AttributesJson  NVARCHAR(MAX)    NULL,
+    AttributesJson  NVARCHAR(MAX)    NULL,             -- {"Color":"Orange","Storage":"128GB"}
     Price           DECIMAL(18,2)    NOT NULL,         -- giá bán variant (override)
+    SalePrice       DECIMAL(18,2)    NULL,             -- giá khuyến mãi riêng của variant
     LastCostPrice   DECIMAL(18,2)    NULL,
     AvgCostPrice    DECIMAL(18,2)    NULL,
     StockQuantity   INT              NOT NULL CONSTRAINT DF_Variants_Stock DEFAULT (0),
+    ReservedQuantity INT             NOT NULL CONSTRAINT DF_Variants_Reserved DEFAULT (0),
+    ImageUrl        NVARCHAR(512)    NULL,             -- ảnh đổi theo cấu hình đang chọn
+    SortOrder       INT              NOT NULL CONSTRAINT DF_Variants_SortOrder DEFAULT (0),
     IsActive        BIT              NOT NULL CONSTRAINT DF_Variants_IsActive DEFAULT (1),
     CreatedAt       DATETIME2(3)     NOT NULL CONSTRAINT DF_Variants_CreatedAt DEFAULT (SYSUTCDATETIME()),
     UpdatedAt       DATETIME2(3)     NOT NULL CONSTRAINT DF_Variants_UpdatedAt DEFAULT (SYSUTCDATETIME()),
-    CONSTRAINT FK_Variants_Products FOREIGN KEY (ProductId) REFERENCES dbo.Products (ProductId) ON DELETE CASCADE
+    CONSTRAINT FK_Variants_Products FOREIGN KEY (ProductId) REFERENCES dbo.Products (ProductId) ON DELETE CASCADE,
+    CONSTRAINT CK_Variants_Price CHECK (Price >= 0 AND (SalePrice IS NULL OR SalePrice >= 0)),
+    CONSTRAINT CK_Variants_Stock CHECK (StockQuantity >= 0 AND ReservedQuantity >= 0)
 );
+GO
+
+CREATE INDEX IX_ProductVariants_ProductId ON dbo.ProductVariants (ProductId, SortOrder);
+CREATE UNIQUE INDEX UQ_ProductVariants_Product_Sku
+    ON dbo.ProductVariants (ProductId, Sku) WHERE Sku IS NOT NULL;
 GO
 
 /*
@@ -597,6 +611,7 @@ CREATE TABLE dbo.OrderItems (
     ProductId       UNIQUEIDENTIFIER NOT NULL,
     VariantId       UNIQUEIDENTIFIER NULL,
     ProductNameSnapshot NVARCHAR(256) NOT NULL,
+    VariantNameSnapshot NVARCHAR(150) NULL,            -- "Orange / 128GB" lúc đặt hàng
     SkuSnapshot     NVARCHAR(64)     NULL,
     UnitPrice       DECIMAL(18,2)    NOT NULL,         -- giá BÁN lúc checkout (snapshot)
     UnitCostAvg     DECIMAL(18,2)    NULL,             -- COGS TB của dòng (từ các lô FIFO)

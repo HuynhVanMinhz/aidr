@@ -124,7 +124,24 @@ public sealed class SellerProductRepository : ISellerProductRepository
                     .OrderByDescending(i => i.IsPrimary)
                     .ThenBy(i => i.SortOrder)
                     .Select(i => i.ImageUrl)
-                    .FirstOrDefault()
+                    .FirstOrDefault(),
+                VariantOptionsJson = p.VariantOptionsJson,
+                // The list screen shows a price range, so it needs the variant prices;
+                // the heavier fields (attributes, image) stay out of the projection.
+                Variants = p.Variants
+                    .OrderBy(v => v.SortOrder)
+                    .Select(v => new SellerProductVariantRecord
+                    {
+                        VariantId = v.VariantId,
+                        VariantName = v.VariantName,
+                        Price = v.Price,
+                        SalePrice = v.SalePrice,
+                        StockQuantity = v.StockQuantity,
+                        ReservedQuantity = v.ReservedQuantity,
+                        SortOrder = v.SortOrder,
+                        IsActive = v.IsActive
+                    })
+                    .ToList()
             })
             .ToListAsync(cancellationToken);
 
@@ -139,6 +156,7 @@ public sealed class SellerProductRepository : ISellerProductRepository
         var product = await _db.Products.AsNoTracking()
             .Include(p => p.Category)
             .Include(p => p.Images)
+            .Include(p => p.Variants)
             .FirstOrDefaultAsync(p => p.ShopId == shopId && p.ProductId == productId, cancellationToken);
 
         return product is null ? null : MapDetail(product);
@@ -168,6 +186,7 @@ public sealed class SellerProductRepository : ISellerProductRepository
             OriginCountry = model.OriginCountry,
             TagsJson = model.TagsJson,
             SpecsJson = model.SpecsJson,
+            VariantOptionsJson = model.VariantOptionsJson,
             Status = model.Status,
             PublishedAt = model.PublishedAt,
             CreatedAt = now,
@@ -187,6 +206,34 @@ public sealed class SellerProductRepository : ISellerProductRepository
                     CreatedAt = now
                 });
             }
+        }
+
+        if (model.Variants is { Count: > 0 })
+        {
+            // Added through the navigation, like the images above: EF fills in ProductId,
+            // so this does not depend on the key being known before SaveChanges.
+            foreach (var variant in model.Variants)
+            {
+                entity.Variants.Add(new ProductVariant
+                {
+                    VariantId = Guid.NewGuid(),
+                    Sku = variant.Sku,
+                    VariantName = variant.VariantName,
+                    AttributesJson = variant.AttributesJson,
+                    Price = variant.Price,
+                    SalePrice = variant.SalePrice,
+                    // Stock arrives through inventory lots, so a new variant starts empty.
+                    StockQuantity = 0,
+                    ReservedQuantity = 0,
+                    ImageUrl = variant.ImageUrl,
+                    SortOrder = variant.SortOrder,
+                    IsActive = variant.IsActive,
+                    CreatedAt = now,
+                    UpdatedAt = now
+                });
+            }
+
+            SyncPricingFromVariants(entity, model.Variants, now);
         }
 
         _db.Products.Add(entity);
@@ -224,7 +271,17 @@ public sealed class SellerProductRepository : ISellerProductRepository
         entity.SpecsJson = model.SpecsJson;
         entity.Status = model.Status;
         entity.PublishedAt = model.PublishedAt;
-        entity.UpdatedAt = DateTime.UtcNow;
+
+        var now = DateTime.UtcNow;
+        entity.UpdatedAt = now;
+
+        // Null means the caller did not touch the variant editor; only a supplied list
+        // (empty included, which clears them) rewrites what is stored.
+        if (model.Variants is not null)
+        {
+            entity.VariantOptionsJson = model.VariantOptionsJson;
+            await ApplyVariantsAsync(entity, model.Variants, now, cancellationToken);
+        }
 
         await _db.SaveChangesAsync(cancellationToken);
 
@@ -402,7 +459,133 @@ public sealed class SellerProductRepository : ISellerProductRepository
             CreatedAt = product.CreatedAt,
             UpdatedAt = product.UpdatedAt,
             PrimaryImageUrl = images.FirstOrDefault()?.ImageUrl,
-            Images = images
+            VariantOptionsJson = product.VariantOptionsJson,
+            Images = images,
+            Variants = product.Variants
+                .OrderBy(v => v.SortOrder)
+                .ThenBy(v => v.VariantName)
+                .Select(v => new SellerProductVariantRecord
+                {
+                    VariantId = v.VariantId,
+                    Sku = v.Sku,
+                    VariantName = v.VariantName,
+                    AttributesJson = v.AttributesJson,
+                    Price = v.Price,
+                    SalePrice = v.SalePrice,
+                    StockQuantity = v.StockQuantity,
+                    ReservedQuantity = v.ReservedQuantity,
+                    ImageUrl = v.ImageUrl,
+                    SortOrder = v.SortOrder,
+                    IsActive = v.IsActive
+                })
+                .ToList()
         };
     }
+
+    /// <summary>
+    /// Applies the submitted variant set to <paramref name="product"/>: updates the rows the
+    /// seller kept, inserts the new ones, deletes the rest. A dropped variant that still holds
+    /// stock or appears on an order is refused rather than deleted — removing it would strand
+    /// its inventory lots and orphan the order history.
+    /// </summary>
+    private async Task ApplyVariantsAsync(
+        Product product,
+        IReadOnlyList<SellerProductVariantWriteModel> variants,
+        DateTime now,
+        CancellationToken cancellationToken)
+    {
+        var existing = await _db.ProductVariants
+            .Where(v => v.ProductId == product.ProductId)
+            .ToListAsync(cancellationToken);
+
+        var keptIds = variants
+            .Where(v => v.VariantId is not null)
+            .Select(v => v.VariantId!.Value)
+            .ToHashSet();
+
+        var removed = existing.Where(v => !keptIds.Contains(v.VariantId)).ToList();
+        if (removed.Count > 0)
+        {
+            var removedIds = removed.Select(v => v.VariantId).ToList();
+
+            var stocked = removed.FirstOrDefault(v => v.StockQuantity > 0);
+            if (stocked is not null)
+            {
+                throw new ConflictException(
+                    $"Variant '{stocked.VariantName}' still holds {stocked.StockQuantity} unit(s) in stock. "
+                    + "Write the stock off in Inventory before removing it.");
+            }
+
+            var orderedId = await _db.OrderItems.AsNoTracking()
+                .Where(i => i.VariantId != null && removedIds.Contains(i.VariantId!.Value))
+                .Select(i => i.VariantId)
+                .FirstOrDefaultAsync(cancellationToken);
+            if (orderedId is not null)
+            {
+                var name = removed.First(v => v.VariantId == orderedId.Value).VariantName;
+                throw new ConflictException(
+                    $"Variant '{name}' appears on past orders and cannot be deleted. Deactivate it instead.");
+            }
+
+            // A cart line is disposable in a way an order is not, so clear it rather than refuse.
+            var strandedCartItems = await _db.CartItems
+                .Where(i => i.VariantId != null && removedIds.Contains(i.VariantId!.Value))
+                .ToListAsync(cancellationToken);
+            if (strandedCartItems.Count > 0)
+                _db.CartItems.RemoveRange(strandedCartItems);
+
+            _db.ProductVariants.RemoveRange(removed);
+        }
+
+        var byId = existing.ToDictionary(v => v.VariantId);
+
+        foreach (var model in variants)
+        {
+            if (model.VariantId is { } id && byId.TryGetValue(id, out var target))
+            {
+                target.Sku = model.Sku;
+                target.VariantName = model.VariantName;
+                target.AttributesJson = model.AttributesJson;
+                target.Price = model.Price;
+                target.SalePrice = model.SalePrice;
+                target.ImageUrl = model.ImageUrl;
+                target.SortOrder = model.SortOrder;
+                target.IsActive = model.IsActive;
+                target.UpdatedAt = now;
+                continue;
+            }
+
+            _db.ProductVariants.Add(new ProductVariant
+            {
+                VariantId = Guid.NewGuid(),
+                ProductId = product.ProductId,
+                Sku = model.Sku,
+                VariantName = model.VariantName,
+                AttributesJson = model.AttributesJson,
+                Price = model.Price,
+                SalePrice = model.SalePrice,
+                // Stock arrives through inventory lots, so a fresh variant starts empty.
+                StockQuantity = 0,
+                ReservedQuantity = 0,
+                ImageUrl = model.ImageUrl,
+                SortOrder = model.SortOrder,
+                IsActive = model.IsActive,
+                CreatedAt = now,
+                UpdatedAt = now
+            });
+        }
+
+        SyncPricingFromVariants(product, variants, now);
+    }
+
+    private static void SyncPricingFromVariants(
+        Product product,
+        IReadOnlyList<SellerProductVariantWriteModel> variants,
+        DateTime now) =>
+        ProductVariantPricing.Apply(
+            product,
+            variants
+                .Select(v => new ProductVariantPricing.VariantPrice(v.Price, v.SalePrice, v.IsActive))
+                .ToList(),
+            now);
 }

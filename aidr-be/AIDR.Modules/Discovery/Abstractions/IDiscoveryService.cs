@@ -27,6 +27,9 @@ public sealed class ProductListQuery
 
 public sealed class ProductListRecord
 {
+    /// <summary>Dearest active variant; equal to the product price when there are none.</summary>
+    public decimal? MaxVariantEffectivePrice { get; init; }
+    public int VariantCount { get; init; }
     public Guid ProductId { get; init; }
     public string Name { get; init; } = null!;
     public string Slug { get; init; } = null!;
@@ -67,6 +70,20 @@ public sealed class ProductReviewRecord
     public DateTime CreatedAt { get; init; }
 }
 
+public sealed class ProductVariantRecord
+{
+    public Guid VariantId { get; init; }
+    public string VariantName { get; init; } = null!;
+    public string? Sku { get; init; }
+    public string? AttributesJson { get; init; }
+    public decimal Price { get; init; }
+    public decimal? SalePrice { get; init; }
+    public int StockQuantity { get; init; }
+    public int ReservedQuantity { get; init; }
+    public string? ImageUrl { get; init; }
+    public int SortOrder { get; init; }
+}
+
 public sealed class ProductDetailRecord
 {
     public Guid ProductId { get; init; }
@@ -102,8 +119,11 @@ public sealed class ProductDetailRecord
     public bool ShopIsVerified { get; init; }
     public decimal ShopAvgRating { get; init; }
     public int ShopRatingCount { get; init; }
+    public string? VariantOptionsJson { get; init; }
     public IReadOnlyList<ProductImageRecord> Images { get; init; } = Array.Empty<ProductImageRecord>();
     public IReadOnlyList<ProductReviewRecord> RecentReviews { get; init; } = Array.Empty<ProductReviewRecord>();
+    /// <summary>Active variants only — the storefront must not offer one that is off sale.</summary>
+    public IReadOnlyList<ProductVariantRecord> Variants { get; init; } = Array.Empty<ProductVariantRecord>();
 }
 
 public sealed class CategoryRecord

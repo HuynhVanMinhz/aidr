@@ -112,7 +112,12 @@ export function AdminOrderDetailPage() {
               <tbody>
                 {detail.items.map((item) => (
                   <tr key={item.orderItemId}>
-                    <td>{item.productName}</td>
+                    <td>
+                      {item.productName}
+                      {item.variantName && (
+                        <span className="d-block text-muted fs-13">{item.variantName}</span>
+                      )}
+                    </td>
                     <td>{item.sku || '—'}</td>
                     <td>{item.quantity}</td>
                     <td>{formatVnd(item.unitPrice)}</td>

@@ -85,11 +85,11 @@ export const fetchCart = createAsyncThunk<Cart, void, { rejectValue: string }>(
 
 export const addCartItem = createAsyncThunk<
   Cart,
-  { productId: string; quantity: number },
+  { productId: string; variantId?: string | null; quantity: number },
   { rejectValue: string }
->('cart/addItem', async ({ productId, quantity }, { rejectWithValue }) => {
+>('cart/addItem', async ({ productId, variantId, quantity }, { rejectWithValue }) => {
   try {
-    const result = await cartApi.addCartItem({ productId, quantity });
+    const result = await cartApi.addCartItem({ productId, variantId, quantity });
     return requireCartData(result);
   } catch (error) {
     return rejectWithValue(getApiErrorMessage(error, 'Unable to add item to cart.'));

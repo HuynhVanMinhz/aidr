@@ -66,6 +66,8 @@ public sealed class OrderRepository : IOrderRepository
             .Include(c => c.Items)
                 .ThenInclude(i => i.Product)
                     .ThenInclude(p => p.Category)
+            .Include(c => c.Items)
+                .ThenInclude(i => i.Variant)
             .FirstOrDefaultAsync(c => c.UserId == buyerUserId, cancellationToken)
             ?? throw new AppException("Your cart is empty.");
 
@@ -636,6 +638,8 @@ public sealed class OrderRepository : IOrderRepository
             {
                 OrderItemId = i.OrderItemId,
                 ProductId = i.ProductId,
+                VariantId = i.VariantId,
+                VariantName = i.VariantNameSnapshot,
                 ProductName = i.ProductNameSnapshot,
                 Sku = i.SkuSnapshot,
                 ImageUrl = i.Product.Images
@@ -806,15 +810,26 @@ public sealed class OrderRepository : IOrderRepository
 
             EnsureProductPurchasable(product, cartItem.Product.Category.IsActive, shop);
 
-            var available = Math.Max(0, product.StockQuantity - product.ReservedQuantity);
+            // The cart holds a VariantId, not the variant row from this unit of work, so the
+            // tracked entity is fetched here — it is the one the allocation will decrement.
+            var variant = await ResolveOrderVariantAsync(product, cartItem.VariantId, cancellationToken);
+
+            var available = variant is null
+                ? Math.Max(0, product.StockQuantity - product.ReservedQuantity)
+                : Math.Max(0, variant.StockQuantity - variant.ReservedQuantity);
+
             if (cartItem.Quantity > available)
-                throw new ConflictException(
-                    $"Only {available} unit(s) available for '{product.Name}'.");
+            {
+                var label = variant is null ? product.Name : $"{product.Name} ({variant.VariantName})";
+                throw new ConflictException($"Only {available} unit(s) available for '{label}'.");
+            }
 
             var wasLowStock = available <= product.LowStockThreshold;
 
             var unitPrice = decimal.Round(
-                product.SalePrice ?? product.BasePrice,
+                variant is null
+                    ? product.SalePrice ?? product.BasePrice
+                    : variant.SalePrice ?? variant.Price,
                 2,
                 MidpointRounding.AwayFromZero);
             var lineTotal = decimal.Round(unitPrice * cartItem.Quantity, 2, MidpointRounding.AwayFromZero);
@@ -823,6 +838,7 @@ public sealed class OrderRepository : IOrderRepository
             var orderItemId = Guid.NewGuid();
             var allocations = await AllocateLotsFifoAsync(
                 product,
+                variant,
                 shop.CostingMethod,
                 cartItem.Quantity,
                 orderId,
@@ -830,16 +846,17 @@ public sealed class OrderRepository : IOrderRepository
                 buyerUserId,
                 cancellationToken);
 
-            var unitCostAvg = ResolveUnitCostAvg(product, shop.CostingMethod, allocations);
+            var unitCostAvg = ResolveUnitCostAvg(product, variant, shop.CostingMethod, allocations);
 
             var orderItem = new OrderItem
             {
                 OrderItemId = orderItemId,
                 OrderId = orderId,
                 ProductId = product.ProductId,
-                VariantId = null,
+                VariantId = variant?.VariantId,
                 ProductNameSnapshot = product.Name,
-                SkuSnapshot = product.ModelNumber,
+                VariantNameSnapshot = variant?.VariantName,
+                SkuSnapshot = variant?.Sku ?? product.ModelNumber,
                 UnitPrice = unitPrice,
                 UnitCostAvg = unitCostAvg,
                 Quantity = cartItem.Quantity,
@@ -860,9 +877,11 @@ public sealed class OrderRepository : IOrderRepository
             {
                 OrderItemId = orderItemId,
                 ProductId = product.ProductId,
+                VariantId = variant?.VariantId,
+                VariantName = variant?.VariantName,
                 ProductName = product.Name,
-                Sku = product.ModelNumber,
-                ImageUrl = primaryImageUrl,
+                Sku = variant?.Sku ?? product.ModelNumber,
+                ImageUrl = variant?.ImageUrl ?? primaryImageUrl,
                 Quantity = cartItem.Quantity,
                 UnitPrice = unitPrice,
                 UnitCostAvg = unitCostAvg,
@@ -1041,6 +1060,7 @@ public sealed class OrderRepository : IOrderRepository
 
     private async Task<List<OrderItemLotAllocation>> AllocateLotsFifoAsync(
         Product product,
+        ProductVariant? variant,
         string costingMethod,
         int quantity,
         Guid orderId,
@@ -1048,11 +1068,24 @@ public sealed class OrderRepository : IOrderRepository
         Guid buyerUserId,
         CancellationToken cancellationToken)
     {
-        var lots = await _db.InventoryLots
+        // Lots carry the variant they stock, so buying the orange one must not deplete the
+        // white one's lots. With no variant this matches the lots that carry none either.
+        var variantId = variant?.VariantId;
+
+        var candidates = _db.InventoryLots
             .Where(l =>
                 l.ProductId == product.ProductId &&
                 l.Status == OrderConstants.LotStatusOpen &&
-                l.QuantityRemaining > 0)
+                l.QuantityRemaining > 0);
+
+        // Written as two branches rather than one comparison against a nullable variable:
+        // the null case has to reach SQL as IS NULL, and leaving that to the provider's
+        // parameter handling would silently allocate nothing if it emitted `= NULL`.
+        candidates = variantId is { } id
+            ? candidates.Where(l => l.VariantId == id)
+            : candidates.Where(l => l.VariantId == null);
+
+        var lots = await candidates
             .OrderBy(l => l.ReceivedAt)
             .ThenBy(l => l.CreatedAt)
             .ToListAsync(cancellationToken);
@@ -1085,6 +1118,7 @@ public sealed class OrderRepository : IOrderRepository
             _db.InventoryTransactions.Add(new InventoryTransaction
             {
                 ProductId = product.ProductId,
+                VariantId = variantId,
                 LotId = lot.LotId,
                 ChangeQty = -take,
                 UnitCost = lot.UnitCost,
@@ -1104,15 +1138,17 @@ public sealed class OrderRepository : IOrderRepository
             // StockQuantity is denormalised from the lots; when they disagree the product
             // was stocked without an inventory lot (see scripts/seed-inventory-lots.sql).
             _logger.LogWarning(
-                "Lot allocation short for product {ProductId} ({ProductName}): needed {Needed}, lots hold {Allocated}, StockQuantity says {StockQuantity}",
+                "Lot allocation short for product {ProductId} ({ProductName}) variant {VariantId}: needed {Needed}, lots hold {Allocated}, StockQuantity says {StockQuantity}",
                 product.ProductId,
                 product.Name,
+                variantId,
                 quantity,
                 quantity - remaining,
-                product.StockQuantity);
+                variant?.StockQuantity ?? product.StockQuantity);
 
+            var label = variant is null ? product.Name : $"{product.Name} ({variant.VariantName})";
             throw new ConflictException(
-                $"Insufficient stock for '{product.Name}'. Only {quantity - remaining} unit(s) are backed by inventory lots.");
+                $"Insufficient stock for '{label}'. Only {quantity - remaining} unit(s) are backed by inventory lots.");
         }
 
         return allocations;
@@ -1120,14 +1156,19 @@ public sealed class OrderRepository : IOrderRepository
 
     private static decimal? ResolveUnitCostAvg(
         Product product,
+        ProductVariant? variant,
         string costingMethod,
         IReadOnlyList<OrderItemLotAllocation> allocations)
     {
         if (allocations.Count == 0)
             return null;
 
+        // A variant keeps its own weighted average; the product's blends every configuration
+        // together and would misstate COGS on the line.
+        var weightedAverage = variant?.AvgCostPrice ?? product.AvgCostPrice;
+
         if (string.Equals(costingMethod, OrderConstants.CostingMethodWeightedAverage, StringComparison.OrdinalIgnoreCase)
-            && product.AvgCostPrice is { } avgCost)
+            && weightedAverage is { } avgCost)
         {
             return decimal.Round(avgCost, 2, MidpointRounding.AwayFromZero);
         }
@@ -1140,32 +1181,8 @@ public sealed class OrderRepository : IOrderRepository
         return decimal.Round(totalCost / totalQty, 2, MidpointRounding.AwayFromZero);
     }
 
-    private async Task RecalcStockAsync(Product product, CancellationToken cancellationToken)
-    {
-        var tracked = _db.ChangeTracker.Entries<InventoryLot>()
-            .Where(e => e.Entity.ProductId == product.ProductId && e.State != EntityState.Deleted)
-            .Select(e => e.Entity)
-            .ToList();
-        var trackedIds = tracked.Select(l => l.LotId).ToHashSet();
-
-        var others = await _db.InventoryLots
-            .Where(l => l.ProductId == product.ProductId && !trackedIds.Contains(l.LotId))
-            .ToListAsync(cancellationToken);
-
-        var lots = tracked.Concat(others)
-            .Where(l => l.Status != OrderConstants.LotStatusVoid)
-            .ToList();
-
-        var remaining = lots.Sum(l => l.QuantityRemaining);
-        product.StockQuantity = remaining;
-        product.AvgCostPrice = remaining == 0
-            ? null
-            : decimal.Round(
-                lots.Sum(l => l.QuantityRemaining * l.UnitCost) / remaining,
-                2,
-                MidpointRounding.AwayFromZero);
-        product.UpdatedAt = DateTime.UtcNow;
-    }
+    private Task RecalcStockAsync(Product product, CancellationToken cancellationToken) =>
+        InventoryStockRecalculator.RecalcAsync(_db, product, cancellationToken);
 
     private async Task<string> GenerateUniqueOrderCodeAsync(DateTime now, CancellationToken cancellationToken)
     {
@@ -1206,6 +1223,42 @@ public sealed class OrderRepository : IOrderRepository
 
             EnsureProductPurchasable(item.Product, item.Product.Category.IsActive, item.Product.Shop);
         }
+    }
+
+    /// <summary>
+    /// Re-checks at checkout what the cart decided earlier: the line still names a variant of
+    /// this product, and that variant is still for sale. A seller can deactivate one between
+    /// adding to the cart and paying.
+    /// </summary>
+    private async Task<ProductVariant?> ResolveOrderVariantAsync(
+        Product product,
+        Guid? variantId,
+        CancellationToken cancellationToken)
+    {
+        var hasVariants = await _db.ProductVariants
+            .AnyAsync(v => v.ProductId == product.ProductId, cancellationToken);
+
+        if (variantId is null || variantId == Guid.Empty)
+        {
+            if (hasVariants)
+            {
+                throw new ConflictException(
+                    $"'{product.Name}' is now sold in variants. Remove it from your cart and pick one.");
+            }
+
+            return null;
+        }
+
+        var variant = await _db.ProductVariants
+            .FirstOrDefaultAsync(
+                v => v.VariantId == variantId.Value && v.ProductId == product.ProductId,
+                cancellationToken)
+            ?? throw new ConflictException($"The selected variant of '{product.Name}' is no longer available.");
+
+        if (!variant.IsActive)
+            throw new ConflictException($"'{product.Name} ({variant.VariantName})' is no longer for sale.");
+
+        return variant;
     }
 
     private static void EnsureProductPurchasable(Product product, bool categoryIsActive, Shop shop)

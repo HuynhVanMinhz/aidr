@@ -324,6 +324,12 @@ public class Product
     public string? OriginCountry { get; set; }
     public string? TagsJson { get; set; }
     public string? SpecsJson { get; set; }
+    /// <summary>
+    /// The option axes variants are built from, in the order the seller declared them:
+    /// <c>[{"name":"Color","values":["Orange","White"]}]</c>. Null for a product sold
+    /// as a single configuration.
+    /// </summary>
+    public string? VariantOptionsJson { get; set; }
     public bool IsFeatured { get; set; }
     public DateTime? PublishedAt { get; set; }
     public string Status { get; set; } = "Pending";
@@ -338,6 +344,40 @@ public class Product
     public Category Category { get; set; } = null!;
     public ICollection<ProductImage> Images { get; set; } = new List<ProductImage>();
     public ICollection<ProductReview> Reviews { get; set; } = new List<ProductReview>();
+
+    /// <summary>
+    /// Empty for a product sold as one configuration. Once populated, a variant —
+    /// not the product — is what a buyer adds to the cart, and BasePrice /
+    /// StockQuantity above become rollups over these rows.
+    /// </summary>
+    public ICollection<ProductVariant> Variants { get; set; } = new List<ProductVariant>();
+}
+
+/// <summary>
+/// One purchasable configuration of a product ("Orange / 128GB"), with its own
+/// price and stock. <see cref="AttributesJson"/> holds the chosen value per axis
+/// declared in <see cref="Product.VariantOptionsJson"/>.
+/// </summary>
+public class ProductVariant
+{
+    public Guid VariantId { get; set; }
+    public Guid ProductId { get; set; }
+    public string? Sku { get; set; }
+    public string VariantName { get; set; } = null!;
+    public string? AttributesJson { get; set; }
+    public decimal Price { get; set; }
+    public decimal? SalePrice { get; set; }
+    public decimal? LastCostPrice { get; set; }
+    public decimal? AvgCostPrice { get; set; }
+    public int StockQuantity { get; set; }
+    public int ReservedQuantity { get; set; }
+    public string? ImageUrl { get; set; }
+    public int SortOrder { get; set; }
+    public bool IsActive { get; set; } = true;
+    public DateTime CreatedAt { get; set; }
+    public DateTime UpdatedAt { get; set; }
+
+    public Product Product { get; set; } = null!;
 }
 
 public class ProductImage
@@ -357,6 +397,8 @@ public class InventoryLot
 {
     public Guid LotId { get; set; }
     public Guid ProductId { get; set; }
+    /// <summary>Null for a product with no variants; otherwise the configuration this lot stocks.</summary>
+    public Guid? VariantId { get; set; }
     public string LotCode { get; set; } = null!;
     public int QuantityReceived { get; set; }
     public int QuantityRemaining { get; set; }
@@ -372,6 +414,7 @@ public class InventoryLot
     public DateTime CreatedAt { get; set; }
 
     public Product Product { get; set; } = null!;
+    public ProductVariant? Variant { get; set; }
 }
 
 public class ProductPriceHistory
@@ -393,6 +436,7 @@ public class InventoryTransaction
 {
     public long InventoryTxId { get; set; }
     public Guid ProductId { get; set; }
+    public Guid? VariantId { get; set; }
     public Guid? LotId { get; set; }
     public int ChangeQty { get; set; }
     public decimal? UnitCost { get; set; }
@@ -404,6 +448,7 @@ public class InventoryTransaction
     public DateTime CreatedAt { get; set; }
 
     public Product Product { get; set; } = null!;
+    public ProductVariant? Variant { get; set; }
     public InventoryLot? Lot { get; set; }
 }
 
@@ -543,6 +588,7 @@ public class CartItem
 
     public Cart Cart { get; set; } = null!;
     public Product Product { get; set; } = null!;
+    public ProductVariant? Variant { get; set; }
 }
 
 public class Order
@@ -627,6 +673,8 @@ public class OrderItem
     public Guid ProductId { get; set; }
     public Guid? VariantId { get; set; }
     public string ProductNameSnapshot { get; set; } = null!;
+    /// <summary>"Orange / 128GB" as it read at checkout; variants get renamed, invoices do not.</summary>
+    public string? VariantNameSnapshot { get; set; }
     public string? SkuSnapshot { get; set; }
     public decimal UnitPrice { get; set; }
     public decimal? UnitCostAvg { get; set; }
@@ -635,6 +683,7 @@ public class OrderItem
 
     public Order Order { get; set; } = null!;
     public Product Product { get; set; } = null!;
+    public ProductVariant? Variant { get; set; }
     public ICollection<OrderItemLotAllocation> LotAllocations { get; set; } = new List<OrderItemLotAllocation>();
 }
 

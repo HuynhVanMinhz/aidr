@@ -35,18 +35,30 @@ public sealed class CartService : ICartService
 
         EnsurePurchasable(product);
 
-        if (product.AvailableQuantity < 1)
-            throw new AppException("Product is out of stock.");
+        var variant = ResolveVariant(product, request.VariantId);
 
-        if (quantity > product.AvailableQuantity)
-            throw new AppException($"Only {product.AvailableQuantity} unit(s) available.");
+        // With a variant it is that configuration's price and stock that apply, not the
+        // product's — the product's figures only describe its cheapest variant.
+        var unitPrice = variant?.EffectivePrice ?? product.EffectivePrice;
+        var available = variant?.AvailableQuantity ?? product.AvailableQuantity;
+
+        if (available < 1)
+        {
+            throw new AppException(variant is null
+                ? "Product is out of stock."
+                : $"'{variant.VariantName}' is out of stock.");
+        }
+
+        if (quantity > available)
+            throw new AppException($"Only {available} unit(s) available.");
 
         return await _carts.AddOrMergeItemAsync(
             userId,
             product.ProductId,
+            variant?.VariantId,
             quantity,
-            product.EffectivePrice,
-            product.AvailableQuantity,
+            unitPrice,
+            available,
             cancellationToken);
     }
 
@@ -74,14 +86,17 @@ public sealed class CartService : ICartService
 
         EnsurePurchasable(product);
 
-        if (request.Quantity > product.AvailableQuantity)
-            throw new AppException($"Only {product.AvailableQuantity} unit(s) available.");
+        var variant = ResolveVariant(product, item.VariantId);
+        var available = variant?.AvailableQuantity ?? product.AvailableQuantity;
+
+        if (request.Quantity > available)
+            throw new AppException($"Only {available} unit(s) available.");
 
         return await _carts.UpdateItemQuantityAsync(
             userId,
             cartItemId,
             request.Quantity,
-            product.AvailableQuantity,
+            available,
             cancellationToken);
     }
 
@@ -94,6 +109,33 @@ public sealed class CartService : ICartService
             throw new AppException("Cart item id is required.");
 
         return await _carts.RemoveItemAsync(userId, cartItemId, cancellationToken);
+    }
+
+    /// <summary>
+    /// Pairs the requested configuration with the product. A product sold in variants has no
+    /// price of its own, so buying it without naming one has to be refused rather than quietly
+    /// falling back to the cheapest.
+    /// </summary>
+    private static CartVariantSnapshot? ResolveVariant(CartProductSnapshot product, Guid? variantId)
+    {
+        if (!product.HasVariants)
+        {
+            if (variantId is not null && variantId != Guid.Empty)
+                throw new AppException("This product is not sold in variants.");
+
+            return null;
+        }
+
+        if (variantId is null || variantId == Guid.Empty)
+            throw new AppException("Pick a variant before adding this product to the cart.");
+
+        var variant = product.Variants.FirstOrDefault(v => v.VariantId == variantId.Value)
+            ?? throw new NotFoundException("Variant is not available.");
+
+        if (!variant.IsActive)
+            throw new AppException($"'{variant.VariantName}' is no longer for sale.");
+
+        return variant;
     }
 
     private static void EnsurePurchasable(CartProductSnapshot product)

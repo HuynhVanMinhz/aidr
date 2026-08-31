@@ -14,6 +14,7 @@ import {
   type SellerProductFormValues,
   type SellerProductStagedImage,
 } from '../../components/seller/sellerProductFormConstants';
+import { SellerProductVariantsEditor } from '../../components/seller/SellerProductVariantsEditor';
 import { useCategories } from '../../hooks/useCatalog';
 import { useSellerProducts } from '../../hooks/useSellerProducts';
 import { useToast } from '../../hooks/useToast';
@@ -32,6 +33,13 @@ import {
   validateSellerProductFormFields,
 } from '../../utils/sellerProductValidation';
 import { formatVnd } from '../../utils/sellerProductUi';
+import {
+  detailToVariantDrafts,
+  draftsToPayload,
+  validateVariantDrafts,
+  type VariantDraft,
+  type VariantOptionDraft,
+} from '../../utils/sellerProductVariants';
 import { slugFromName } from '../../utils/validators';
 
 type Mode = 'create' | 'edit';
@@ -113,6 +121,11 @@ export function SellerProductFormPage() {
   const [initial, setInitial] = useState<SellerProductFormValues>(emptySellerProductForm());
   const [images, setImages] = useState<SellerProductStagedImage[]>([]);
   const [initialImages, setInitialImages] = useState<SellerProductStagedImage[]>([]);
+  const [variantOptions, setVariantOptions] = useState<VariantOptionDraft[]>([]);
+  const [variantRows, setVariantRows] = useState<VariantDraft[]>([]);
+  // Kept so an edit that never touches the variant editor can omit them from the payload,
+  // which the API reads as "leave the stored variants alone".
+  const [variantsTouched, setVariantsTouched] = useState(false);
   const [slugTouched, setSlugTouched] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -138,6 +151,10 @@ export function SellerProductFormPage() {
         setInitial(values);
         setImages(staged);
         setInitialImages(staged);
+        const drafts = detailToVariantDrafts(item);
+        setVariantOptions(drafts.options);
+        setVariantRows(drafts.rows);
+        setVariantsTouched(false);
         setSlugTouched(true);
       })
       .catch((err) => {
@@ -166,7 +183,16 @@ export function SellerProductFormPage() {
     () => visibleFieldErrors(errors, touched, submitted),
     [errors, touched, submitted],
   );
-  const canSubmit = canSubmitSellerProductForm(form, initial, images, initialImages, mode, errors);
+  const variantValidation = useMemo(
+    () => validateVariantDrafts(variantOptions, variantRows),
+    [variantOptions, variantRows],
+  );
+  const variantsValid =
+    variantValidation.formError === null &&
+    Object.keys(variantValidation.rowErrors).length === 0;
+
+  const canSubmit =
+    canSubmitSellerProductForm(form, initial, images, initialImages, mode, errors) && variantsValid;
 
   const previewImage = images.find((i) => i.isPrimary)?.imageUrl ?? images[0]?.imageUrl ?? null;
   const previewBasePrice = Number(form.basePrice);
@@ -275,7 +301,8 @@ export function SellerProductFormPage() {
     });
     if (
       Object.keys(nextErrors).length > 0 ||
-      !canSubmitSellerProductForm(form, initial, images, initialImages, mode, nextErrors)
+      !canSubmitSellerProductForm(form, initial, images, initialImages, mode, nextErrors) ||
+      !variantsValid
     ) {
       return;
     }
@@ -285,6 +312,12 @@ export function SellerProductFormPage() {
 
     try {
       const payload = buildSellerProductPayload(form);
+      // Omitted entirely when the seller never opened the editor, so an ordinary edit
+      // cannot wipe variants it was not shown.
+      const variantPayload =
+        mode === 'create' || variantsTouched
+          ? draftsToPayload(variantOptions, variantRows)
+          : {};
       const imagePayload = images.map((img, index) => ({
         imageUrl: img.imageUrl,
         publicId: img.publicId ?? null,
@@ -293,14 +326,14 @@ export function SellerProductFormPage() {
       }));
 
       if (mode === 'create') {
-        const created = await create({ ...payload, images: imagePayload });
+        const created = await create({ ...payload, ...variantPayload, images: imagePayload });
         toast.success('Product created and submitted for review.');
         navigate(`/seller/products/${created.productId}`);
         return;
       }
 
       if (!id) return;
-      await update(id, payload);
+      await update(id, { ...payload, ...variantPayload });
       if (!imagesEqual(images, initialImages)) {
         await uploadImages(id, { images: imagePayload, replaceExisting: true });
       }
@@ -742,6 +775,35 @@ export function SellerProductFormPage() {
                   </FormField>
                 </div>
               </div>
+            </div>
+          </div>
+
+          <div className="card">
+            <div className="card-header">
+              <h4 className="card-title mb-1">Variants</h4>
+              {/* Avoid Bootstrap .card-subtitle — its negative margin pulls this into the title. */}
+              <p className="text-muted fs-13 mb-0 mt-1">
+                Use these when the price depends on the configuration — colour, capacity, size.
+                Each combination gets its own price, SKU and stock.
+              </p>
+            </div>
+            <div className="card-body">
+              <SellerProductVariantsEditor
+                options={variantOptions}
+                rows={variantRows}
+                onOptionsChange={(next) => {
+                  setVariantOptions(next);
+                  setVariantsTouched(true);
+                }}
+                onRowsChange={(next) => {
+                  setVariantRows(next);
+                  setVariantsTouched(true);
+                }}
+                fallbackPrice={form.basePrice}
+                rowErrors={variantValidation.rowErrors}
+                formError={submitted || variantsTouched ? variantValidation.formError : null}
+                disabled={mutating || uploadingImage}
+              />
             </div>
           </div>
 
