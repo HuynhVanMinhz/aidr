@@ -1864,7 +1864,8 @@ html[data-theme='dark'] header.main-header .header-sticky {
 }
 
 html[data-theme='dark'] .navbar-brand img {
-  filter: brightness(0) invert(1);
+  /* Color emblem is already visible on charcoal; invert turned the PNG into a white box. */
+  filter: none;
 }
 
 html[data-theme='dark'] .header-action-details ul li a {
@@ -3015,4 +3016,95 @@ html[data-theme='dark'] .compare-card__media {
     flex: 1;
     text-align: center;
   }
+}
+
+/* ---------------------------------------------------------------------------
+   Variant picker (product detail)
+
+   The picker reuses the theme's own product-single blocks — .product-single-item-color
+   swatches and .product-single-item-size pills — so nothing here restyles them. What
+   follows only covers what the theme has no markup for: an arbitrary swatch colour, a
+   value no variant offers alongside the current selection, and one that is sold out.
+--------------------------------------------------------------------------- */
+
+/* The theme's first axis carries margin-top:30px, which is the gap we want under the
+   price; the axes after it sit closer together. */
+.variant-axis + .variant-axis {
+    margin-top: 16px;
+}
+
+/* A swatch cannot name itself, so the chosen value is spelled out beside the label. */
+.variant-axis__chosen {
+    margin-left: 6px;
+    font-size: 14px;
+    font-weight: 400;
+    color: var(--text-color);
+}
+
+/*
+  Every swatch gets a hairline boundary, not just the pale ones. The theme draws its
+  separating ring in --bg-color, so a swatch close to the page colour loses both its fill
+  and its ring: White disappears in light mode, Black in dark mode. --divider-color is
+  defined against the page in both themes, so one rule covers both directions.
+*/
+.product-item-variant-colors .color-variant {
+    box-shadow: 0 0 0 1px var(--divider-color);
+}
+
+/*
+  Sold out, and combinations that do not exist, are struck through the swatch. ::after is
+  the theme's ring, so the slash goes on ::before and is lifted above it.
+*/
+.product-item-variant-colors .color-variant.is-unavailable::before,
+.product-item-variant-colors .color-variant.is-out-of-stock::before {
+    content: "";
+    position: absolute;
+    inset: -1px;
+    z-index: 2;
+    border-radius: 50%;
+    background: linear-gradient(
+        to bottom right,
+        transparent calc(50% - 1px),
+        var(--error-color) calc(50% - 1px),
+        var(--error-color) calc(50% + 1px),
+        transparent calc(50% + 1px)
+    );
+}
+
+/* Unavailable is not a choice at all, so it reads as inert rather than merely warned. */
+.product-item-variant-colors .color-variant.is-unavailable {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+/*
+  The theme pairs a --primary-color background with --white-color text on the selected pill.
+  Those two are the same near-white in this app's dark theme, which leaves the label
+  unreadable. Keying the text off the page colour instead inverts correctly in both themes.
+*/
+.product-single-item-size ul li input[type="radio"]:checked + label {
+    color: var(--bg-color);
+}
+
+/* Sold out stays clickable — the shopper should still be able to see its price. */
+.product-single-item-size ul li label.is-out-of-stock {
+    color: var(--text-color);
+    text-decoration: line-through;
+}
+
+.product-single-item-size ul li input[type="radio"]:checked + label.is-out-of-stock {
+    color: var(--bg-color);
+}
+
+.product-single-item-size ul li label.is-unavailable {
+    opacity: 0.4;
+    cursor: not-allowed;
+    text-decoration: line-through;
+}
+
+/* Range under the headline price, e.g. "All configurations: 21,990,000 – 25,490,000". */
+.product-single-price__range {
+    margin: 6px 0 0;
+    font-size: 14px;
+    color: var(--text-color);
 }

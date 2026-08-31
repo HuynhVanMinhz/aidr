@@ -81,6 +81,7 @@ export function CartItemRow({
           <h3 className="cart-line__title">
             <Link to={`/products/${item.productId}`}>{item.productName}</Link>
           </h3>
+          {item.variantName && <p className="cart-line__variant">{item.variantName}</p>}
           <p className="cart-line__shop">
             <Link to={`/shops/${encodeURIComponent(item.shopSlug || item.shopId)}`}>
               {item.shopName}

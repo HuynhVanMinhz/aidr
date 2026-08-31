@@ -1,77 +1,96 @@
-import { Link } from 'react-router-dom';
-
-const FAQ_ITEMS = [
-  {
-    question: 'How do I track my order?',
-    answer:
-      'Sign in and open Account → Orders. Select an order to view its current status, items, and shipping details.',
-  },
-  {
-    question: 'How do I request a return?',
-    answer:
-      'From a completed or delivered order detail page, submit a return request with the required reason and evidence links. Track progress under Account → Returns.',
-  },
-  {
-    question: 'How do vouchers work?',
-    answer:
-      'Vouchers may apply at checkout when your cart meets minimum order and eligibility rules. View available offers under Account → Vouchers.',
-  },
-  {
-    question: 'How can I become a seller?',
-    answer:
-      'Submit a seller registration with your proposed shop name and supporting documents. Once approved, you will receive access to Seller Center.',
-  },
-  {
-    question: 'How do I change my password?',
-    answer:
-      'Go to Account → Security and follow the link to change or set your password. Use a strong, unique password for your account.',
-  },
-] as const;
+import { useEffect, useMemo, useState } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
+import { FaqAccordion } from '../components/support/FaqAccordion';
+import { FaqCategoryFilter } from '../components/support/FaqCategoryFilter';
+import { SupportCta } from '../components/support/SupportCta';
+import { SupportPageLayout } from '../components/support/SupportPageLayout';
+import { SupportSearch } from '../components/support/SupportSearch';
+import {
+  FAQ_ITEMS,
+  type FaqCategory,
+  filterFaqItems,
+} from '../data/supportContent';
 
 export function FaqPage() {
+  const [searchParams] = useSearchParams();
+  const [query, setQuery] = useState(() => searchParams.get('q') ?? '');
+  const [category, setCategory] = useState<FaqCategory | 'all'>('all');
+  const [openId, setOpenId] = useState<string | null>(null);
+
+  const showPopular = !query.trim() && category === 'all';
+
+  const popularItems = useMemo(
+    () => filterFaqItems(FAQ_ITEMS.filter((item) => item.popular), query, category),
+    [query, category],
+  );
+
+  const filteredItems = useMemo(() => {
+    const all = filterFaqItems(FAQ_ITEMS, query, category);
+    if (!showPopular) return all;
+    const popularIds = new Set(popularItems.map((item) => item.id));
+    return all.filter((item) => !popularIds.has(item.id));
+  }, [query, category, showPopular, popularItems]);
+
+  useEffect(() => {
+    const param = searchParams.get('q') ?? '';
+    setQuery((prev) => (prev === param ? prev : param));
+  }, [searchParams]);
+
+  function handleToggle(id: string) {
+    setOpenId((prev) => (prev === id ? null : id));
+  }
+
   return (
-    <>
-      <div className="page-header light-section">
-        <div className="container">
-          <div className="row">
-            <div className="col-lg-12">
-              <div className="page-header-box">
-                <h1>Frequently Asked Questions</h1>
-                <nav>
-                  <ol className="breadcrumb">
-                    <li className="breadcrumb-item">
-                      <Link to="/">Home</Link>
-                    </li>
-                    <li className="breadcrumb-item active" aria-current="page">
-                      FAQ
-                    </li>
-                  </ol>
-                </nav>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+    <SupportPageLayout
+      title="Frequently Asked Questions"
+      breadcrumbs={[
+        { label: 'Home', to: '/' },
+        { label: 'FAQ' },
+      ]}
+      search={
+        <SupportSearch
+          id="faq-search"
+          label="Search frequently asked questions"
+          placeholder="Search questions — tracking, returns, vouchers…"
+          value={query}
+          onChange={setQuery}
+        />
+      }
+    >
+      <FaqCategoryFilter value={category} onChange={setCategory} />
 
-      <div className="light-section">
-        <div className="container py-5">
-          <div className="row justify-content-center">
-            <div className="col-lg-8">
-              {FAQ_ITEMS.map((item) => (
-                <div key={item.question} className="mb-4">
-                  <h2 className="h5">{item.question}</h2>
-                  <p className="mb-0">{item.answer}</p>
-                </div>
-              ))}
+      {showPopular && popularItems.length > 0 ? (
+        <section className="support-faq-popular" aria-labelledby="popular-faq-heading">
+          <h2 id="popular-faq-heading" className="support-page__section-title">
+            Popular questions
+          </h2>
+          <FaqAccordion
+            items={popularItems}
+            openId={openId}
+            onToggle={handleToggle}
+            highlightPopular
+          />
+        </section>
+      ) : null}
 
-              <p className="mb-0">
-                Still need help? Visit the <Link to="/help">Help Center</Link> or read our{' '}
-                <Link to="/terms">Terms of service</Link>.
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-    </>
+      <section aria-labelledby="all-faq-heading">
+        <h2 id="all-faq-heading" className="support-page__section-title">
+          {showPopular ? 'All questions' : 'Questions'}
+        </h2>
+        <FaqAccordion
+          items={filteredItems}
+          openId={openId}
+          onToggle={handleToggle}
+          highlightPopular={showPopular}
+        />
+      </section>
+
+      <SupportCta />
+
+      <p className="support-links mb-0">
+        Still need help? Visit the <Link to="/help">Help Center</Link> or read our{' '}
+        <Link to="/terms">Terms of service</Link>.
+      </p>
+    </SupportPageLayout>
   );
 }

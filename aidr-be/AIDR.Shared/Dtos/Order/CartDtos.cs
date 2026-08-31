@@ -3,6 +3,8 @@ namespace AIDR.Shared.Dtos.Order;
 public sealed class AddCartItemRequest
 {
     public Guid ProductId { get; set; }
+    /// <summary>Which configuration to buy. Required when the product has variants.</summary>
+    public Guid? VariantId { get; set; }
     public int Quantity { get; set; } = 1;
 }
 
@@ -26,6 +28,9 @@ public sealed class CartItemDto
 {
     public Guid CartItemId { get; init; }
     public Guid ProductId { get; init; }
+    public Guid? VariantId { get; init; }
+    /// <summary>"Orange / 128GB", so the row reads as the thing that was actually chosen.</summary>
+    public string? VariantName { get; init; }
     public string ProductName { get; init; } = null!;
     public string ProductSlug { get; init; } = null!;
     public string? PrimaryImageUrl { get; init; }

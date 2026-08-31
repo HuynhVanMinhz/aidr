@@ -1553,3 +1553,12 @@ html[data-theme='dark'] .nav-menu-wrapper .nav-link--cta {
   color: #1a7f37;
 }
 
+
+/* The configuration sits between the product name and the shop: it is part of what
+   was bought, not metadata about it. */
+.cart-line__variant {
+  margin: 0 0 0.35rem;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--primary-color, #16181d);
+}

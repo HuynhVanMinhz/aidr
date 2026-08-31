@@ -323,6 +323,7 @@ export function OrderReceivedPage() {
                           <span className="receipt-line__info">
                             <span className="receipt-line__name">{item.productName}</span>
                             <span className="receipt-line__meta">
+                              {item.variantName ? <span>{item.variantName}</span> : null}
                               {item.sku ? <span>{item.sku}</span> : null}
                               <span>Qty {item.quantity}</span>
                               <span>{formatMoney(item.unitPrice, order.currency)} each</span>

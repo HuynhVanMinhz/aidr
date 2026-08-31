@@ -7,6 +7,39 @@ public sealed class SellerShopRecord
     public string Status { get; init; } = null!;
 }
 
+public sealed class SellerProductVariantRecord
+{
+    public Guid VariantId { get; init; }
+    public string? Sku { get; init; }
+    public string VariantName { get; init; } = null!;
+    public string? AttributesJson { get; init; }
+    public decimal Price { get; init; }
+    public decimal? SalePrice { get; init; }
+    public int StockQuantity { get; init; }
+    public int ReservedQuantity { get; init; }
+    public string? ImageUrl { get; init; }
+    public int SortOrder { get; init; }
+    public bool IsActive { get; init; }
+}
+
+/// <summary>
+/// A variant as the seller submitted it. Stock is absent on purpose: like the
+/// product's own StockQuantity it is summed from inventory lots, never typed in.
+/// </summary>
+public sealed class SellerProductVariantWriteModel
+{
+    /// <summary>Null for a row the seller just added.</summary>
+    public Guid? VariantId { get; init; }
+    public string? Sku { get; init; }
+    public string VariantName { get; init; } = null!;
+    public string? AttributesJson { get; init; }
+    public decimal Price { get; init; }
+    public decimal? SalePrice { get; init; }
+    public string? ImageUrl { get; init; }
+    public int SortOrder { get; init; }
+    public bool IsActive { get; init; }
+}
+
 public sealed class SellerProductImageRecord
 {
     public Guid ProductImageId { get; init; }
@@ -48,7 +81,9 @@ public sealed class SellerProductRecord
     public DateTime CreatedAt { get; init; }
     public DateTime UpdatedAt { get; init; }
     public string? PrimaryImageUrl { get; init; }
+    public string? VariantOptionsJson { get; init; }
     public IReadOnlyList<SellerProductImageRecord> Images { get; init; } = Array.Empty<SellerProductImageRecord>();
+    public IReadOnlyList<SellerProductVariantRecord> Variants { get; init; } = Array.Empty<SellerProductVariantRecord>();
 }
 
 public sealed class SellerProductImageWriteModel
@@ -78,6 +113,14 @@ public sealed class SellerProductWriteModel
     public string Status { get; init; } = null!;
     public DateTime? PublishedAt { get; init; }
     public IReadOnlyList<SellerProductImageWriteModel>? Images { get; init; }
+    /// <summary>Serialised option axes; null leaves the stored value alone on update.</summary>
+    public string? VariantOptionsJson { get; init; }
+    /// <summary>
+    /// Null leaves the existing variants untouched. A non-null list replaces them:
+    /// rows carrying a VariantId are updated, the rest inserted, and anything the
+    /// seller dropped is deleted.
+    /// </summary>
+    public IReadOnlyList<SellerProductVariantWriteModel>? Variants { get; init; }
 }
 
 /// <summary>A category as the seller may pick it, flattened for a dropdown or a sheet.</summary>

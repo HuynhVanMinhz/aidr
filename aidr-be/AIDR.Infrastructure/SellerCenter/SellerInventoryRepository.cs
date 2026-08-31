@@ -138,6 +138,7 @@ public sealed class SellerInventoryRepository : ISellerInventoryRepository
     {
         await using var tx = await _db.Database.BeginTransactionAsync(cancellationToken);
         var product = await LoadOwnedProductAsync(shopId, productId, cancellationToken);
+        var variant = await ResolveVariantAsync(productId, model.VariantId, cancellationToken);
 
         var lotCode = string.IsNullOrWhiteSpace(model.LotCode)
             ? await NextLotCodeAsync(productId, model.ReceivedAt, cancellationToken)
@@ -152,6 +153,7 @@ public sealed class SellerInventoryRepository : ISellerInventoryRepository
         {
             LotId = Guid.NewGuid(),
             ProductId = productId,
+            VariantId = variant?.VariantId,
             LotCode = lotCode,
             QuantityReceived = model.Quantity,
             QuantityRemaining = model.Quantity,
@@ -171,6 +173,7 @@ public sealed class SellerInventoryRepository : ISellerInventoryRepository
         _db.InventoryTransactions.Add(new InventoryTransaction
         {
             ProductId = productId,
+            VariantId = variant?.VariantId,
             LotId = lot.LotId,
             ChangeQty = model.Quantity,
             UnitCost = model.UnitCost,
@@ -183,6 +186,9 @@ public sealed class SellerInventoryRepository : ISellerInventoryRepository
         });
 
         product.LastCostPrice = model.UnitCost;
+        if (variant is not null)
+            variant.LastCostPrice = model.UnitCost;
+
         await RecalcStockAsync(product, cancellationToken);
         await _db.SaveChangesAsync(cancellationToken);
         await tx.CommitAsync(cancellationToken);
@@ -199,15 +205,26 @@ public sealed class SellerInventoryRepository : ISellerInventoryRepository
         await using var tx = await _db.Database.BeginTransactionAsync(cancellationToken);
         var product = await LoadOwnedProductAsync(shopId, productId, cancellationToken);
 
+        // A named lot already pins the variant, so only the lot-less path needs one resolved.
+        var variant = model.LotId is null || model.LotId == Guid.Empty
+            ? await ResolveVariantAsync(productId, model.VariantId, cancellationToken)
+            : null;
+
         if (model.ChangeQty > 0)
             await ApplyIncreaseAsync(product, model, cancellationToken);
         else
-            await ApplyDecreaseAsync(product, model, cancellationToken);
+            await ApplyDecreaseAsync(product, variant, model, cancellationToken);
 
         await RecalcStockAsync(product, cancellationToken);
 
         if (product.StockQuantity < product.ReservedQuantity)
             throw new ConflictException("Cannot reduce stock below the reserved quantity.");
+
+        if (variant is not null && variant.StockQuantity < variant.ReservedQuantity)
+        {
+            throw new ConflictException(
+                $"Cannot reduce '{variant.VariantName}' below its reserved quantity.");
+        }
 
         await _db.SaveChangesAsync(cancellationToken);
         await tx.CommitAsync(cancellationToken);
@@ -236,6 +253,15 @@ public sealed class SellerInventoryRepository : ISellerInventoryRepository
         CancellationToken cancellationToken = default)
     {
         var product = await LoadOwnedProductAsync(shopId, productId, cancellationToken);
+
+        // With variants the product's price is a rollup of the cheapest one, maintained when
+        // the variants are saved. Editing it here would put a price in the catalogue that no
+        // variant actually sells at.
+        if (await _db.ProductVariants.AnyAsync(v => v.ProductId == productId, cancellationToken))
+        {
+            throw new AppException(
+                "This product is sold in variants. Change the price on the variant itself, in the product form.");
+        }
 
         if (product.BasePrice == model.BasePrice && product.SalePrice == model.SalePrice)
             throw new AppException("Selling price is unchanged.");
@@ -298,6 +324,7 @@ public sealed class SellerInventoryRepository : ISellerInventoryRepository
         _db.InventoryTransactions.Add(new InventoryTransaction
         {
             ProductId = product.ProductId,
+            VariantId = lot.VariantId,
             LotId = lot.LotId,
             ChangeQty = model.ChangeQty,
             UnitCost = lot.UnitCost,
@@ -312,11 +339,18 @@ public sealed class SellerInventoryRepository : ISellerInventoryRepository
 
     private async Task ApplyDecreaseAsync(
         Product product,
+        ProductVariant? variant,
         AdjustInventoryWriteModel model,
         CancellationToken cancellationToken)
     {
         var reduceQty = Math.Abs(model.ChangeQty);
-        var available = Math.Max(0, product.StockQuantity - product.ReservedQuantity);
+
+        // Against a variant the product-wide total says nothing useful: 50 units in stock
+        // across four colours must not let the seller write 50 off the one that holds 3.
+        var available = variant is null
+            ? Math.Max(0, product.StockQuantity - product.ReservedQuantity)
+            : Math.Max(0, variant.StockQuantity - variant.ReservedQuantity);
+
         if (reduceQty > available)
             throw new ConflictException("Insufficient available stock for this adjustment.");
 
@@ -336,11 +370,18 @@ public sealed class SellerInventoryRepository : ISellerInventoryRepository
             return;
         }
 
-        var lots = await _db.InventoryLots
+        var candidates = _db.InventoryLots
             .Where(l =>
                 l.ProductId == product.ProductId &&
                 l.Status == SellerInventoryConstants.LotStatusOpen &&
-                l.QuantityRemaining > 0)
+                l.QuantityRemaining > 0);
+
+        // Same reason as the checkout allocation: the null case must reach SQL as IS NULL.
+        candidates = variant is { } target
+            ? candidates.Where(l => l.VariantId == target.VariantId)
+            : candidates.Where(l => l.VariantId == null);
+
+        var lots = await candidates
             .OrderBy(l => l.ReceivedAt)
             .ThenBy(l => l.CreatedAt)
             .ToListAsync(cancellationToken);
@@ -369,6 +410,7 @@ public sealed class SellerInventoryRepository : ISellerInventoryRepository
         _db.InventoryTransactions.Add(new InventoryTransaction
         {
             ProductId = productId,
+            VariantId = lot.VariantId,
             LotId = lot.LotId,
             ChangeQty = -qty,
             UnitCost = lot.UnitCost,
@@ -381,32 +423,37 @@ public sealed class SellerInventoryRepository : ISellerInventoryRepository
         });
     }
 
-    private async Task RecalcStockAsync(Product product, CancellationToken cancellationToken)
+    /// <summary>
+    /// Ties a stock movement to one configuration. A product with variants has no stock of
+    /// its own — every unit belongs to a variant — so leaving it unset there would create a
+    /// lot nothing can ever be sold from.
+    /// </summary>
+    private async Task<ProductVariant?> ResolveVariantAsync(
+        Guid productId,
+        Guid? variantId,
+        CancellationToken cancellationToken)
     {
-        var tracked = _db.ChangeTracker.Entries<InventoryLot>()
-            .Where(e => e.Entity.ProductId == product.ProductId && e.State != EntityState.Deleted)
-            .Select(e => e.Entity)
-            .ToList();
-        var trackedIds = tracked.Select(l => l.LotId).ToHashSet();
+        var hasVariants = await _db.ProductVariants
+            .AnyAsync(v => v.ProductId == productId, cancellationToken);
 
-        var others = await _db.InventoryLots
-            .Where(l => l.ProductId == product.ProductId && !trackedIds.Contains(l.LotId))
-            .ToListAsync(cancellationToken);
+        if (variantId is null || variantId == Guid.Empty)
+        {
+            if (hasVariants)
+                throw new AppException("This product is sold in variants. Pick which one the stock is for.");
 
-        var lots = tracked.Concat(others)
-            .Where(l => l.Status != SellerInventoryConstants.LotStatusVoid)
-            .ToList();
+            return null;
+        }
 
-        var remaining = lots.Sum(l => l.QuantityRemaining);
-        product.StockQuantity = remaining;
-        product.AvgCostPrice = remaining == 0
-            ? null
-            : decimal.Round(
-                lots.Sum(l => l.QuantityRemaining * l.UnitCost) / remaining,
-                2,
-                MidpointRounding.AwayFromZero);
-        product.UpdatedAt = DateTime.UtcNow;
+        if (!hasVariants)
+            throw new AppException("This product has no variants.");
+
+        return await _db.ProductVariants
+            .FirstOrDefaultAsync(v => v.VariantId == variantId.Value && v.ProductId == productId, cancellationToken)
+            ?? throw new NotFoundException("Variant not found for this product.");
     }
+
+    private Task RecalcStockAsync(Product product, CancellationToken cancellationToken) =>
+        InventoryStockRecalculator.RecalcAsync(_db, product, cancellationToken);
 
     private async Task<Product> LoadOwnedProductAsync(
         Guid shopId,
@@ -459,6 +506,8 @@ public sealed class SellerInventoryRepository : ISellerInventoryRepository
             .Select(l => new SellerInventoryLotDto
             {
                 LotId = l.LotId,
+                VariantId = l.VariantId,
+                VariantName = l.Variant != null ? l.Variant.VariantName : null,
                 LotCode = l.LotCode,
                 QuantityReceived = l.QuantityReceived,
                 QuantityRemaining = l.QuantityRemaining,
@@ -494,6 +543,46 @@ public sealed class SellerInventoryRepository : ISellerInventoryRepository
             })
             .ToListAsync(cancellationToken);
 
+        var variantRows = await _db.ProductVariants.AsNoTracking()
+            .Where(v => v.ProductId == product.ProductId)
+            .OrderBy(v => v.SortOrder)
+            .ThenBy(v => v.VariantName)
+            .Select(v => new
+            {
+                v.VariantId,
+                v.VariantName,
+                v.Sku,
+                v.StockQuantity,
+                v.ReservedQuantity,
+                v.Price,
+                v.SalePrice,
+                v.AvgCostPrice,
+                v.IsActive
+            })
+            .ToListAsync(cancellationToken);
+
+        // Each variant is priced on its own, so its margin is against its own selling price
+        // rather than the product's. Done in memory to reuse the same two helpers as above.
+        var variants = variantRows.Select(v =>
+        {
+            var variantPrice = EffectiveSellingPrice(v.Price, v.SalePrice);
+            return new SellerInventoryVariantDto
+            {
+                VariantId = v.VariantId,
+                VariantName = v.VariantName,
+                Sku = v.Sku,
+                StockQuantity = v.StockQuantity,
+                ReservedQuantity = v.ReservedQuantity,
+                AvailableQuantity = Math.Max(0, v.StockQuantity - v.ReservedQuantity),
+                Price = v.Price,
+                SalePrice = v.SalePrice,
+                EffectivePrice = variantPrice,
+                AvgCostPrice = v.AvgCostPrice,
+                EstimatedMarginPerUnit = EstimatedMargin(variantPrice, v.AvgCostPrice),
+                IsActive = v.IsActive
+            };
+        }).ToList();
+
         var available = Math.Max(0, product.StockQuantity - product.ReservedQuantity);
         return new SellerInventoryDetailDto
         {
@@ -512,6 +601,7 @@ public sealed class SellerInventoryRepository : ISellerInventoryRepository
             SalePrice = product.SalePrice,
             EffectivePrice = effectivePrice,
             Currency = product.Currency,
+            Variants = variants,
             Lots = lots,
             RecentTransactions = transactions
         };

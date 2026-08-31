@@ -107,6 +107,8 @@ public sealed class AdminOrderRepository : IAdminOrderRepository
                 {
                     OrderItemId = i.OrderItemId,
                     ProductId = i.ProductId,
+                    VariantId = i.VariantId,
+                    VariantName = i.VariantNameSnapshot,
                     ProductName = i.ProductNameSnapshot,
                     Sku = i.SkuSnapshot,
                     Quantity = i.Quantity,

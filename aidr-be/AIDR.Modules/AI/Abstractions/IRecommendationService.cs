@@ -30,6 +30,13 @@ public sealed record RecommendationProductRecord
     public string Strategy { get; init; } = null!;
 }
 
+/// <summary>
+/// The price span of one product's active variants. Recommendation cards are built from
+/// their own queries, which know nothing about variants, so the span is looked up for the
+/// final set of product ids rather than joined into six different projections.
+/// </summary>
+public sealed record ProductVariantPriceRange(decimal Min, decimal Max, int VariantCount);
+
 public sealed class SimilarSourceProduct
 {
     public Guid ProductId { get; init; }
@@ -43,6 +50,14 @@ public sealed class SimilarSourceProduct
 public interface IRecommendationRepository
 {
     Task<bool> ProductExistsApprovedAsync(Guid productId, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Active-variant price spans for the given products. Products with no variants are
+    /// absent from the result — the caller falls back to the product's own price.
+    /// </summary>
+    Task<IReadOnlyDictionary<Guid, ProductVariantPriceRange>> GetVariantPriceRangesAsync(
+        IReadOnlyCollection<Guid> productIds,
+        CancellationToken cancellationToken = default);
 
     Task<SimilarSourceProduct?> GetApprovedProductSourceAsync(
         Guid productId,

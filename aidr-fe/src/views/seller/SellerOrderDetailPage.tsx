@@ -236,7 +236,12 @@ export function SellerOrderDetailPage() {
                               />
                             )}
                           </div>
-                          <span className="text-dark fw-medium fs-15">{item.productName}</span>
+                          <span className="d-flex flex-column">
+                            <span className="text-dark fw-medium fs-15">{item.productName}</span>
+                            {item.variantName && (
+                              <span className="text-muted fs-13">{item.variantName}</span>
+                            )}
+                          </span>
                         </div>
                       </td>
                       <td>

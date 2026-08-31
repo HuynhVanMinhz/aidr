@@ -12,7 +12,7 @@ export function AuthLayout({ children }: AuthLayoutProps) {
     <div className="auth-shell">
       <header className="auth-shell__header">
         <Link to="/" className="auth-shell__brand">
-          <img src="/theme/images/logo.svg" alt="AIDR" height={36} />
+          <img src="/theme/images/aidr-logo-header.png" alt="AIDR" height={60} />
         </Link>
         <div className="auth-shell__header-actions">
           <ThemeToggle />

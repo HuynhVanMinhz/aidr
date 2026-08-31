@@ -5,7 +5,7 @@ import { AdminStatCard } from '../../components/admin/AdminStatCard';
 import { FormField } from '../../components/admin/FormField';
 import { useSellerInventory } from '../../hooks/useSellerInventory';
 import { useToast } from '../../hooks/useToast';
-import type { SellerInventoryLot } from '../../types/sellerInventory';
+import type { SellerInventoryLot, SellerInventoryVariant } from '../../types/sellerInventory';
 import { visibleFieldErrors } from '../../utils/formValidation';
 import {
   buildAdjustPayload,
@@ -157,6 +157,7 @@ export function SellerInventoryDetailPage() {
           <div className="col-xl-6">
             <ImportLotCard
               productId={detail.productId}
+              variants={detail.variants}
               mutating={mutating}
               onError={(message) => {
                 setActionError(message);
@@ -170,6 +171,7 @@ export function SellerInventoryDetailPage() {
             />
             <AdjustStockCard
               lots={detail.lots}
+              variants={detail.variants}
               mutating={mutating}
               onError={(message) => {
                 setActionError(message);
@@ -188,6 +190,7 @@ export function SellerInventoryDetailPage() {
               basePrice={detail.basePrice}
               salePrice={detail.salePrice}
               lastCostPrice={detail.lastCostPrice}
+              hasVariants={detail.variants.length > 0}
               mutating={mutating}
               onError={(message) => {
                 setActionError(message);
@@ -217,6 +220,7 @@ export function SellerInventoryDetailPage() {
         </div>
       )}
 
+      <VariantStockTable variants={detail.variants} />
       <LotsTable lots={detail.lots} />
       <TransactionsTable transactions={detail.recentTransactions} />
     </>
@@ -225,12 +229,14 @@ export function SellerInventoryDetailPage() {
 
 function ImportLotCard({
   productId,
+  variants,
   mutating,
   onError,
   onSuccess,
   submit,
 }: {
   productId: string;
+  variants: SellerInventoryVariant[];
   mutating: boolean;
   onError: (message: string | null) => void;
   onSuccess: () => Promise<void>;
@@ -240,7 +246,10 @@ function ImportLotCard({
   const [touched, setTouched] = useState<Partial<Record<keyof ImportLotFormValues, boolean>>>({});
   const [submitted, setSubmitted] = useState(false);
 
-  const errors = validateImportLotForm(form);
+  // Stock belongs to a configuration once the product has any, so the API refuses a lot
+  // that does not name one.
+  const requireVariant = variants.length > 0;
+  const errors = validateImportLotForm(form, requireVariant);
   const visible = visibleFieldErrors(errors, touched, submitted);
   const canSubmit = canSubmitImportLotForm(form, errors);
 
@@ -251,7 +260,7 @@ function ImportLotCard({
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     setSubmitted(true);
-    if (!canSubmitImportLotForm(form, validateImportLotForm(form))) return;
+    if (!canSubmitImportLotForm(form, validateImportLotForm(form, requireVariant))) return;
     onError(null);
     try {
       await submit(productId, buildImportLotPayload(form));
@@ -276,6 +285,24 @@ function ImportLotCard({
         </p>
         <form onSubmit={(e) => void handleSubmit(e)}>
           <div className="row">
+            {requireVariant && (
+              <div className="col-12">
+                <FormField label="Variant" htmlFor="lot-variant" error={visible.variantId}>
+                  <AdminSelect
+                    id="lot-variant"
+                    value={form.variantId}
+                    options={[
+                      { value: '', label: 'Select variant' },
+                      ...variants.map((v) => ({
+                        value: v.variantId,
+                        label: `${v.variantName} · ${v.stockQuantity} in stock`,
+                      })),
+                    ]}
+                    onChange={(value) => setField('variantId', value)}
+                  />
+                </FormField>
+              </div>
+            )}
             <div className="col-md-6">
               <FormField label="Quantity" htmlFor="lot-qty" error={visible.quantity}>
                 <input
@@ -379,12 +406,14 @@ function ImportLotCard({
 
 function AdjustStockCard({
   lots,
+  variants,
   mutating,
   onError,
   onSuccess,
   submit,
 }: {
   lots: SellerInventoryLot[];
+  variants: SellerInventoryVariant[];
   mutating: boolean;
   onError: (message: string | null) => void;
   onSuccess: () => Promise<void>;
@@ -393,6 +422,7 @@ function AdjustStockCard({
   const [form, setForm] = useState<AdjustInventoryFormValues>(emptyAdjustForm);
   const [touched, setTouched] = useState<Partial<Record<keyof AdjustInventoryFormValues, boolean>>>({});
   const [submitted, setSubmitted] = useState(false);
+  const requireVariant = variants.length > 0;
 
   const lotOptions = useMemo(() => {
     const usable =
@@ -408,15 +438,15 @@ function AdjustStockCard({
     ];
   }, [form.mode, lots]);
 
-  const errors = validateAdjustForm(form);
+  const errors = validateAdjustForm(form, requireVariant);
   const visible = visibleFieldErrors(errors, touched, submitted);
-  const canSubmit = canSubmitAdjustForm(form, errors);
+  const canSubmit = canSubmitAdjustForm(form, errors, requireVariant);
   const showLot = form.mode === 'increase' || form.mode === 'decrease-lot';
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     setSubmitted(true);
-    if (!canSubmitAdjustForm(form, validateAdjustForm(form))) return;
+    if (!canSubmitAdjustForm(form, validateAdjustForm(form, requireVariant), requireVariant)) return;
     onError(null);
     try {
       await submit(buildAdjustPayload(form));
@@ -462,6 +492,22 @@ function AdjustStockCard({
               onBlur={() => setTouched((t) => ({ ...t, quantity: true }))}
             />
           </FormField>
+          {requireVariant && !showLot && (
+            <FormField label="Variant" htmlFor="adj-variant" error={visible.variantId}>
+              <AdminSelect
+                id="adj-variant"
+                value={form.variantId}
+                options={[
+                  { value: '', label: 'Select variant' },
+                  ...variants.map((v) => ({
+                    value: v.variantId,
+                    label: `${v.variantName} · ${v.availableQuantity} available`,
+                  })),
+                ]}
+                onChange={(value) => setForm((prev) => ({ ...prev, variantId: value }))}
+              />
+            </FormField>
+          )}
           {showLot ? (
             <FormField label="Lot" htmlFor="adj-lot" error={visible.lotId}>
               <AdminSelect
@@ -496,6 +542,7 @@ function SellingPriceCard({
   basePrice,
   salePrice,
   lastCostPrice,
+  hasVariants,
   mutating,
   onError,
   onSuccess,
@@ -505,6 +552,7 @@ function SellingPriceCard({
   basePrice: number;
   salePrice?: number | null;
   lastCostPrice?: number | null;
+  hasVariants: boolean;
   mutating: boolean;
   onError: (message: string | null) => void;
   onSuccess: () => Promise<void>;
@@ -546,6 +594,27 @@ function SellingPriceCard({
       const message = err instanceof Error ? err.message : 'Unable to update selling price.';
       onError(message);
     }
+  }
+
+  // With variants the product price is a rollup of the cheapest one, recomputed whenever
+  // the variants are saved. The API rejects an edit here, so the form is not offered.
+  if (hasVariants) {
+    return (
+      <div className="card">
+        <div className="card-header">
+          <h4 className="card-title mb-0">Selling price</h4>
+        </div>
+        <div className="card-body">
+          <p className="text-muted fs-13 mb-2">
+            Each variant carries its own price. The catalogue shows the cheapest one as
+            &ldquo;from {formatVnd(salePrice ?? basePrice)}&rdquo;.
+          </p>
+          <Link to={`/seller/products/${productId}/edit`} className="btn btn-outline-primary btn-sm">
+            Edit variant prices
+          </Link>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -670,6 +739,68 @@ function LowStockCard({
   );
 }
 
+/**
+ * Which configuration is running out. The product total hides this entirely: 60 units in
+ * stock reads as healthy while the colour everyone wants sits at zero.
+ */
+function VariantStockTable({ variants }: { variants: SellerInventoryVariant[] }) {
+  if (variants.length === 0) return null;
+
+  return (
+    <div className="card">
+      <div className="card-header">
+        <h4 className="card-title mb-0">Stock by variant</h4>
+      </div>
+      <div className="table-responsive">
+        <table className="table table-hover mb-0">
+          <thead className="bg-light-subtle">
+            <tr>
+              <th>Variant</th>
+              <th>SKU</th>
+              <th>In stock</th>
+              <th>Reserved</th>
+              <th>Available</th>
+              <th>Price</th>
+              <th>Avg cost</th>
+              <th>Margin / unit</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {variants.map((variant) => (
+              <tr key={variant.variantId}>
+                <td className="fw-medium">{variant.variantName}</td>
+                <td className={!variant.sku ? 'text-muted' : undefined}>
+                  {variant.sku?.trim() || 'No SKU'}
+                </td>
+                <td>{variant.stockQuantity}</td>
+                <td>{variant.reservedQuantity}</td>
+                <td className={variant.availableQuantity === 0 ? 'text-danger fw-medium' : undefined}>
+                  {variant.availableQuantity}
+                </td>
+                <td>{formatVnd(variant.effectivePrice)}</td>
+                <td className={variant.avgCostPrice == null ? 'text-muted' : undefined}>
+                  {variant.avgCostPrice == null ? 'Unknown' : formatVnd(variant.avgCostPrice)}
+                </td>
+                <td className={variant.estimatedMarginPerUnit == null ? 'text-muted' : undefined}>
+                  {variant.estimatedMarginPerUnit == null
+                    ? '—'
+                    : formatVnd(variant.estimatedMarginPerUnit)}
+                </td>
+                <td>
+                  <span className={variant.isActive ? 'text-success' : 'text-muted'}>
+                    {variant.isActive ? 'On sale' : 'Hidden'}
+                  </span>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
 function LotsTable({ lots }: { lots: SellerInventoryLot[] }) {
   return (
     <div className="card">
@@ -702,6 +833,10 @@ function LotsTable({ lots }: { lots: SellerInventoryLot[] }) {
                 <tr key={lot.lotId}>
                   <td>
                     <div className="fw-medium">{lot.lotCode}</div>
+                    {/* Which configuration this lot stocks — FIFO draws only from its own. */}
+                    {lot.variantName ? (
+                      <small className="d-block text-body">{lot.variantName}</small>
+                    ) : null}
                     {lot.invoiceNumber ? (
                       <small className="text-muted">{lot.invoiceNumber}</small>
                     ) : null}

@@ -220,6 +220,8 @@ export function toProductListItem(product: RecommendedProduct | SimilarProduct):
     basePrice: product.basePrice,
     salePrice: product.salePrice,
     effectivePrice: product.effectivePrice,
+    maxEffectivePrice: product.maxEffectivePrice,
+    variantCount: product.variantCount,
     currency: product.currency,
     stockQuantity: product.stockQuantity,
     availableQuantity: product.availableQuantity,

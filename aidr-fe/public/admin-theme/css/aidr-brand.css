@@ -15,6 +15,9 @@
   --bs-link-color: #16181d;
   --bs-link-hover-color: #2a2e36;
   --bs-main-nav-item-hover-color: #16181d;
+  /* AIDR emblem is nearly square; Larkon defaults (24/26px) were for a wide wordmark. */
+  --bs-logo-lg-height: 60px;
+  --bs-logo-sm-height: 60px;
 }
 
 html[data-menu-color='light'] {
@@ -86,4 +89,10 @@ html[data-bs-theme='dark'],
   --bs-btn-hover-border-color: #16181d;
   --bs-btn-active-bg: #16181d;
   --bs-btn-active-border-color: #16181d;
+}
+
+.logo-box img {
+  width: auto;
+  object-fit: contain;
+  background: transparent;
 }

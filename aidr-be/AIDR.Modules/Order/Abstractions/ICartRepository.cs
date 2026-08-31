@@ -2,6 +2,21 @@ using AIDR.Shared.Dtos.Order;
 
 namespace AIDR.Modules.Order.Abstractions;
 
+/// <summary>One purchasable configuration, carrying the price and stock the cart must use.</summary>
+public sealed class CartVariantSnapshot
+{
+    public Guid VariantId { get; init; }
+    public string VariantName { get; init; } = null!;
+    public decimal Price { get; init; }
+    public decimal? SalePrice { get; init; }
+    public int StockQuantity { get; init; }
+    public int ReservedQuantity { get; init; }
+    public bool IsActive { get; init; }
+
+    public decimal EffectivePrice => SalePrice ?? Price;
+    public int AvailableQuantity => Math.Max(0, StockQuantity - ReservedQuantity);
+}
+
 public sealed class CartProductSnapshot
 {
     public Guid ProductId { get; init; }
@@ -19,7 +34,13 @@ public sealed class CartProductSnapshot
     public string ShopSlug { get; init; } = null!;
     public string ShopStatus { get; init; } = null!;
     public string? PrimaryImageUrl { get; init; }
+    /// <summary>Empty when the product is sold as a single configuration.</summary>
+    public IReadOnlyList<CartVariantSnapshot> Variants { get; init; } = Array.Empty<CartVariantSnapshot>();
 
+    public bool HasVariants => Variants.Count > 0;
+
+    // With variants these two describe the cheapest one, which is right for a listing but
+    // never for a cart line — that always goes through the resolved CartVariantSnapshot.
     public decimal EffectivePrice => SalePrice ?? BasePrice;
     public int AvailableQuantity => Math.Max(0, StockQuantity - ReservedQuantity);
 }
@@ -35,6 +56,7 @@ public interface ICartRepository
     Task<CartResponse> AddOrMergeItemAsync(
         Guid userId,
         Guid productId,
+        Guid? variantId,
         int quantityToAdd,
         decimal unitPriceSnapshot,
         int availableQuantity,

@@ -433,6 +433,30 @@ public sealed class RecommendationRepository : IRecommendationRepository
             .ToList();
     }
 
+    public async Task<IReadOnlyDictionary<Guid, ProductVariantPriceRange>> GetVariantPriceRangesAsync(
+        IReadOnlyCollection<Guid> productIds,
+        CancellationToken cancellationToken = default)
+    {
+        if (productIds.Count == 0)
+            return new Dictionary<Guid, ProductVariantPriceRange>();
+
+        var rows = await _db.ProductVariants.AsNoTracking()
+            .Where(v => productIds.Contains(v.ProductId) && v.IsActive)
+            .GroupBy(v => v.ProductId)
+            .Select(g => new
+            {
+                ProductId = g.Key,
+                Min = g.Min(v => v.SalePrice ?? v.Price),
+                Max = g.Max(v => v.SalePrice ?? v.Price),
+                Count = g.Count()
+            })
+            .ToListAsync(cancellationToken);
+
+        return rows.ToDictionary(
+            r => r.ProductId,
+            r => new ProductVariantPriceRange(r.Min, r.Max, r.Count));
+    }
+
     private IQueryable<Persistence.Entities.Product> BuildApprovedQuery()
         => _db.Products.AsNoTracking()
             .Where(p => p.Status == RecommendationConstants.ApprovedStatus

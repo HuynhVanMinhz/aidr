@@ -3,6 +3,9 @@ import type { ApiResult } from './auth';
 export type CartItem = {
   cartItemId: string;
   productId: string;
+  variantId?: string | null;
+  /** "Orange / 128GB", so the row reads as the thing that was actually chosen. */
+  variantName?: string | null;
   productName: string;
   productSlug: string;
   primaryImageUrl?: string | null;
@@ -31,6 +34,8 @@ export type Cart = {
 
 export type AddCartItemRequest = {
   productId: string;
+  /** Required when the product has variants. */
+  variantId?: string | null;
   quantity: number;
 };
 

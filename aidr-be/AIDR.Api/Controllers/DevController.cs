@@ -518,6 +518,32 @@ public class DevController : ControllerBase
         });
     }
 
+    /// <summary>
+    /// Turn demo products into variant products — applies the variant schema, builds the
+    /// option matrix, and gives each configuration its own price and inventory lot (dev only).
+    /// </summary>
+    [HttpPost("seed-product-variants")]
+    public async Task<IActionResult> SeedProductVariants(
+        [FromServices] AidrDbContext db,
+        [FromServices] IWebHostEnvironment env,
+        CancellationToken ct)
+    {
+        if (!env.IsDevelopment())
+            return NotFound();
+
+        var log = await ProductVariantsDemoSeeder.SeedAsync(db, env.ContentRootPath, ct);
+        var report = await DataIntegritySeeder.ValidateAsync(db, env.ContentRootPath, ct);
+
+        return Ok(new
+        {
+            message = "Product variants seed completed.",
+            products = log,
+            variantCount = await db.ProductVariants.CountAsync(ct),
+            isHealthy = report.IsHealthy,
+            issueCount = report.IssueCount
+        });
+    }
+
     /// <summary>Re-sync denormalized counters and fix common seed drift (dev only).</summary>
     [HttpPost("seed-reconcile-data")]
     public async Task<IActionResult> SeedReconcileData(

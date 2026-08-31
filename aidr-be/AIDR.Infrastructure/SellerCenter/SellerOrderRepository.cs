@@ -307,6 +307,8 @@ public sealed class SellerOrderRepository : ISellerOrderRepository
             {
                 OrderItemId = i.OrderItemId,
                 ProductId = i.ProductId,
+                VariantId = i.VariantId,
+                VariantName = i.VariantNameSnapshot,
                 ProductName = i.ProductNameSnapshot,
                 Sku = i.SkuSnapshot,
                 ImageUrl = i.Product.Images
