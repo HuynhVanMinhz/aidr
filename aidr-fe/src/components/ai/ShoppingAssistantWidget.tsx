@@ -21,6 +21,7 @@ import {
 } from '../../utils/aiChatUi';
 import { formatChatTime, formatMessageTime } from '../../utils/chatUi';
 import { formatMoney } from '../../utils/formatCatalog';
+import { ASSISTANT_OPEN_EVENT } from '../../utils/openShoppingAssistant';
 import '../../styles/chat.css';
 
 const PLACEHOLDER = '/theme/images/product-image-1.png';
@@ -267,6 +268,12 @@ export function ShoppingAssistantWidget() {
       // ignore
     }
   }
+
+  useEffect(() => {
+    const handleOpenRequest = () => persistOpen(true);
+    window.addEventListener(ASSISTANT_OPEN_EVENT, handleOpenRequest);
+    return () => window.removeEventListener(ASSISTANT_OPEN_EVENT, handleOpenRequest);
+  }, []);
 
   useEffect(() => {
     if (!open || !isAuthenticated || loadedOnce) return;

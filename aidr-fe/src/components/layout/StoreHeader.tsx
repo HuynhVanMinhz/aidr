@@ -243,6 +243,11 @@ export function StoreHeader() {
                         Categories
                       </Link>
                     </li>
+                    <li className="nav-item">
+                      <Link className="nav-link" to="/about">
+                        About Us
+                      </Link>
+                    </li>
                     {isAuthenticated ? (
                       <li className="nav-item">
                         <Link className="nav-link" to="/account/orders">
