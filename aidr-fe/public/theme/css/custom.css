@@ -684,7 +684,9 @@ header.main-header .container{
 }
 
 .navbar-brand img{
-	max-width: 176px;
+	height: 60px;
+	width: 60px;
+	object-fit: cover;
 }
 
 .header-search-form-box{
@@ -8086,7 +8088,9 @@ ul.view-order-product-info-list li span{
 	}
 
 	.navbar-brand img{
-		max-width: 135px;
+		height: 60px;
+		width: 60px;
+		object-fit: cover;
 	}
 
 	.header-category-list{

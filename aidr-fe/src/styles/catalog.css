@@ -1864,7 +1864,8 @@ html[data-theme='dark'] header.main-header .header-sticky {
 }
 
 html[data-theme='dark'] .navbar-brand img {
-  filter: brightness(0) invert(1);
+  /* Color emblem is already visible on charcoal; invert turned the PNG into a white box. */
+  filter: none;
 }
 
 html[data-theme='dark'] .header-action-details ul li a {
