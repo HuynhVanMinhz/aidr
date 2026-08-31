@@ -180,12 +180,12 @@ export function AdminShell({ variant = 'admin', children }: AdminShellProps) {
       <div className="main-nav">
         <div className="logo-box">
           <Link to={homePath} className="logo-dark">
-            <img src="/admin-theme/images/logo-sm.png" className="logo-sm" alt="logo sm" />
-            <img src="/admin-theme/images/logo-dark.png" className="logo-lg" alt="logo dark" />
+            <img src="/admin-theme/images/logo-sm.png" className="logo-sm" alt="AIDR" />
+            <img src="/admin-theme/images/logo-dark.png" className="logo-lg" alt="AIDR" />
           </Link>
           <Link to={homePath} className="logo-light">
-            <img src="/admin-theme/images/logo-sm.png" className="logo-sm" alt="logo sm" />
-            <img src="/admin-theme/images/logo-light.png" className="logo-lg" alt="logo light" />
+            <img src="/admin-theme/images/logo-sm.png" className="logo-sm" alt="AIDR" />
+            <img src="/admin-theme/images/logo-light.png" className="logo-lg" alt="AIDR" />
           </Link>
         </div>
 

@@ -655,7 +655,7 @@ export function ShoppingAssistantWidget() {
         aria-expanded={open}
         aria-label={open ? 'Close shopping assistant' : 'Ask AI — shopping assistant'}
       >
-        {open ? '×' : quietFab ? '✨' : '✨ Ask AI'}
+        {open ? '×' : quietFab ? '✨' : '✨'}
       </button>
     </div>
   );
