@@ -13,6 +13,7 @@ import './styles/account.css';
 import './styles/catalog.css';
 import './styles/cart.css';
 import './styles/checkout.css';
+import './styles/support.css';
 
 attachStore(store);
 applyThemeToDocument(getInitialTheme());

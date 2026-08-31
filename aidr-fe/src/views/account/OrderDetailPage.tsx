@@ -288,6 +288,7 @@ export function OrderDetailPage() {
                       {item.productName}
                     </Link>
                     <p className="order-line__meta">
+                      {item.variantName ? <span>{item.variantName}</span> : null}
                       {item.sku ? <span>{item.sku}</span> : null}
                       <span>Qty {item.quantity}</span>
                       <span>{formatMoney(item.unitPrice, detail.currency)} each</span>

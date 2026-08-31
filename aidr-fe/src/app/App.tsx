@@ -8,6 +8,7 @@ import { HomePage } from '../views/HomePage';
 import { HealthPage } from '../views/HealthPage';
 import { HelpPage } from '../views/HelpPage';
 import { FaqPage } from '../views/FaqPage';
+import { AboutPage } from '../views/AboutPage';
 import { TermsPage } from '../views/TermsPage';
 import { NotFoundPage } from '../views/NotFoundPage';
 import { ForbiddenPage } from '../views/ForbiddenPage';
@@ -158,6 +159,7 @@ export function App() {
           <Route path="categories" element={<CategoriesPage />} />
           <Route path="help" element={<HelpPage />} />
           <Route path="faq" element={<FaqPage />} />
+          <Route path="about" element={<AboutPage />} />
           <Route path="terms" element={<TermsPage />} />
           <Route path="health" element={<HealthPage />} />
 

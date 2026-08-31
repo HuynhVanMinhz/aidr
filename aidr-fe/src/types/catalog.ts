@@ -37,7 +37,11 @@ export type ProductListItem = {
   brand?: string | null;
   basePrice: number;
   salePrice?: number | null;
+  /** Cheapest way to buy it — with variants, the cheapest variant. */
   effectivePrice: number;
+  /** Dearest active variant; equals effectivePrice when the product has none. */
+  maxEffectivePrice: number;
+  variantCount: number;
   currency: string;
   stockQuantity: number;
   availableQuantity: number;
@@ -51,6 +55,30 @@ export type ProductListItem = {
   shopId: string;
   shopName: string;
   publishedAt?: string | null;
+};
+
+/** One axis of the variant picker, e.g. Color -> [Orange, White]. */
+export type ProductVariantOption = {
+  name: string;
+  values: string[];
+};
+
+/**
+ * One buyable configuration. The picker matches the shopper's selection against
+ * `attributes` to find the variant, then prices and stocks the page from it.
+ */
+export type ProductVariant = {
+  variantId: string;
+  variantName: string;
+  sku?: string | null;
+  attributes: Record<string, string>;
+  price: number;
+  salePrice?: number | null;
+  effectivePrice: number;
+  stockQuantity: number;
+  availableQuantity: number;
+  imageUrl?: string | null;
+  sortOrder: number;
 };
 
 export type ProductImage = {
@@ -114,6 +142,11 @@ export type ProductDetail = {
   shop: ProductShopSummary;
   images: ProductImage[];
   recentReviews: ProductReviewSummary[];
+  /** Empty when the product is sold as a single configuration. */
+  variantOptions: ProductVariantOption[];
+  /** Active variants only. */
+  variants: ProductVariant[];
+  maxEffectivePrice: number;
 };
 
 export type CategoryTreeNode = {

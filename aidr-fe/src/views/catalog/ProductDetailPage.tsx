@@ -1,7 +1,8 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { CatalogBreadcrumb } from '../../components/catalog/CatalogBreadcrumb';
 import { ProductAdditionalInfo } from '../../components/catalog/ProductAdditionalInfo';
+import { ProductVariantPicker } from '../../components/catalog/ProductVariantPicker';
 import { SimilarProductsSection } from '../../components/catalog/SimilarProductsSection';
 import { ProductReviewsPanel } from '../../components/reviews/ProductReviewsPanel';
 import { useAuth } from '../../hooks/useAuth';
@@ -18,6 +19,11 @@ import {
   parseTagsJson,
 } from '../../utils/formatCatalog';
 import { PRODUCT_IMAGE_PLACEHOLDER, resolveProductImageUrl } from '../../utils/catalogImage';
+import {
+  defaultSelection,
+  findSelectedVariant,
+  type VariantSelection,
+} from '../../utils/productVariants';
 
 const PLACEHOLDER = PRODUCT_IMAGE_PLACEHOLDER;
 const MAX_QTY = 99;
@@ -60,6 +66,7 @@ export function ProductDetailPage() {
   const [activeImage, setActiveImage] = useState(0);
   const [tab, setTab] = useState<'description' | 'specs' | 'reviews'>('description');
   const [qty, setQty] = useState(1);
+  const [selection, setSelection] = useState<VariantSelection>({});
   const [adding, setAdding] = useState(false);
   const [buying, setBuying] = useState(false);
   const [wishlistPending, setWishlistPending] = useState(false);
@@ -77,6 +84,22 @@ export function ProductDetailPage() {
 
   const specs = useMemo(() => parseSpecsJson(product?.specsJson), [product?.specsJson]);
   const tags = useMemo(() => parseTagsJson(product?.tagsJson), [product?.tagsJson]);
+
+  const variantOptions = product?.variantOptions ?? [];
+  const variants = product?.variants ?? [];
+  const hasVariants = variantOptions.length > 0 && variants.length > 0;
+
+  // Land the shopper on a real, in-stock configuration rather than an empty picker.
+  useEffect(() => {
+    if (!product) return;
+    setSelection(defaultSelection(product.variants ?? [], product.variantOptions ?? []));
+    setQty(1);
+  }, [product]);
+
+  const selectedVariant = useMemo(
+    () => findSelectedVariant(variants, variantOptions, selection),
+    [variants, variantOptions, selection],
+  );
 
   if (loading) {
     return (
@@ -107,13 +130,35 @@ export function ProductDetailPage() {
   }
 
   const detail = product;
-  const mainImage = images[Math.min(activeImage, images.length - 1)]?.imageUrl ?? PLACEHOLDER;
-  const off = discountPercent(detail.basePrice, detail.salePrice);
-  const maxQty = Math.min(MAX_QTY, Math.max(1, detail.availableQuantity));
+  // A variant's own image wins over the gallery, so picking "Orange" changes the photo.
+  const mainImage =
+    selectedVariant?.imageUrl ??
+    images[Math.min(activeImage, images.length - 1)]?.imageUrl ??
+    PLACEHOLDER;
+
+  // With variants the product's own price and stock only describe its cheapest one; every
+  // figure the buyer acts on has to come from the configuration actually selected.
+  const listPrice = selectedVariant ? selectedVariant.price : detail.basePrice;
+  const currentPrice = selectedVariant ? selectedVariant.effectivePrice : detail.effectivePrice;
+  const comparePrice = selectedVariant ? selectedVariant.salePrice : detail.salePrice;
+  const availableQuantity = selectedVariant
+    ? selectedVariant.availableQuantity
+    : detail.availableQuantity;
+  const stockQuantity = selectedVariant ? selectedVariant.stockQuantity : detail.stockQuantity;
+
+  const off = discountPercent(listPrice, comparePrice);
+  const maxQty = Math.min(MAX_QTY, Math.max(1, availableQuantity));
   const safeQty = Math.min(Math.max(1, qty), maxQty);
-  const outOfStock = detail.availableQuantity < 1;
+  // An incomplete selection is not buyable, and neither is a sold-out configuration.
+  const awaitingVariant = hasVariants && !selectedVariant;
+  const outOfStock = availableQuantity < 1;
+  const cannotBuy = awaitingVariant || outOfStock;
   const addBusy = adding || buying || mutating;
   const productId = detail.productId;
+  const priceRangeLabel =
+    hasVariants && detail.maxEffectivePrice > detail.effectivePrice
+      ? `${formatMoney(detail.effectivePrice, detail.currency)} – ${formatMoney(detail.maxEffectivePrice, detail.currency)}`
+      : null;
 
   async function handleAddToCart() {
     if (!isAuthenticated) {
@@ -121,14 +166,18 @@ export function ProductDetailPage() {
       navigate(`/login?returnUrl=${returnUrl}`);
       return;
     }
+    if (awaitingVariant) {
+      toast.error('Please choose a configuration first.');
+      return;
+    }
     if (outOfStock) {
-      toast.error('Product is out of stock.');
+      toast.error('This configuration is out of stock.');
       return;
     }
 
     setAdding(true);
     try {
-      await addItem(productId, safeQty);
+      await addItem(productId, safeQty, selectedVariant?.variantId);
       toast.success('Added to cart.');
     } catch (err) {
       toast.error(getErrorMessage(err, 'Unable to add item to cart.'));
@@ -143,14 +192,18 @@ export function ProductDetailPage() {
       navigate(`/login?returnUrl=${returnUrl}`);
       return;
     }
+    if (awaitingVariant) {
+      toast.error('Please choose a configuration first.');
+      return;
+    }
     if (outOfStock) {
-      toast.error('Product is out of stock.');
+      toast.error('This configuration is out of stock.');
       return;
     }
 
     setBuying(true);
     try {
-      await buyNow(productId, safeQty);
+      await buyNow(productId, safeQty, selectedVariant?.variantId);
       navigate('/checkout');
     } catch (err) {
       toast.error(getErrorMessage(err, 'Unable to start checkout.'));
@@ -267,12 +320,27 @@ export function ProductDetailPage() {
 
                   <div className="product-single-price">
                     <h2>
-                      {formatMoney(product.effectivePrice, product.currency)}{' '}
-                      {product.salePrice != null && product.salePrice < product.basePrice && (
-                        <span>{formatMoney(product.basePrice, product.currency)}</span>
+                      {formatMoney(currentPrice, product.currency)}{' '}
+                      {comparePrice != null && comparePrice < listPrice && (
+                        <span>{formatMoney(listPrice, product.currency)}</span>
                       )}
                     </h2>
+                    {priceRangeLabel && (
+                      <p className="product-single-price__range">
+                        All configurations: {priceRangeLabel}
+                      </p>
+                    )}
                   </div>
+
+                  {hasVariants && (
+                    <ProductVariantPicker
+                      options={variantOptions}
+                      variants={variants}
+                      selection={selection}
+                      onChange={setSelection}
+                      disabled={addBusy}
+                    />
+                  )}
 
                   <div className="product-single-content-body">
                     <div className="qty-box">
@@ -306,15 +374,21 @@ export function ProductDetailPage() {
                       <button
                         type="button"
                         className="btn-default btn-accent"
-                        disabled={outOfStock || addBusy}
+                        disabled={cannotBuy || addBusy}
                         onClick={() => void handleAddToCart()}
                       >
-                        {outOfStock ? 'Out of Stock' : adding ? 'Adding…' : 'Add To Cart'}
+                        {awaitingVariant
+                          ? 'Select a configuration'
+                          : outOfStock
+                            ? 'Out of Stock'
+                            : adding
+                              ? 'Adding…'
+                              : 'Add To Cart'}
                       </button>
                       <button
                         type="button"
                         className="product-single-buy-now"
-                        disabled={outOfStock || addBusy}
+                        disabled={cannotBuy || addBusy}
                         onClick={() => void handleBuyNow()}
                       >
                         {buying ? 'Starting…' : 'Buy Now'}
@@ -354,9 +428,15 @@ export function ProductDetailPage() {
                   <div className="product-single-content-footer">
                     <div className="product-single-details-list">
                       <ul>
-                        {product.modelNumber && (
+                        {selectedVariant && (
                           <li>
-                            <span>SKU / Model:</span> {product.modelNumber}
+                            <span>Configuration:</span> {selectedVariant.variantName}
+                          </li>
+                        )}
+                        {(selectedVariant?.sku ?? product.modelNumber) && (
+                          <li>
+                            <span>SKU / Model:</span>{' '}
+                            {selectedVariant?.sku ?? product.modelNumber}
                           </li>
                         )}
                         <li>
@@ -375,9 +455,11 @@ export function ProductDetailPage() {
                         </li>
                         <li>
                           <span>Stock:</span>{' '}
-                          {product.availableQuantity > 0
-                            ? `${product.availableQuantity} available (${product.stockQuantity} total)`
-                            : 'Out of stock'}
+                          {awaitingVariant
+                            ? 'Select a configuration to see availability'
+                            : availableQuantity > 0
+                              ? `${availableQuantity} available (${stockQuantity} total)`
+                              : 'Out of stock'}
                         </li>
                         {product.originCountry && (
                           <li>

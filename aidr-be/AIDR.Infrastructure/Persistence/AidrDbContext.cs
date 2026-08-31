@@ -23,6 +23,7 @@ public class AidrDbContext : DbContext
     public DbSet<PayoutBatch> PayoutBatches => Set<PayoutBatch>();
     public DbSet<Product> Products => Set<Product>();
     public DbSet<ProductImage> ProductImages => Set<ProductImage>();
+    public DbSet<ProductVariant> ProductVariants => Set<ProductVariant>();
     public DbSet<InventoryLot> InventoryLots => Set<InventoryLot>();
     public DbSet<ProductPriceHistory> ProductPriceHistories => Set<ProductPriceHistory>();
     public DbSet<InventoryTransaction> InventoryTransactions => Set<InventoryTransaction>();
@@ -333,6 +334,26 @@ public class AidrDbContext : DbContext
             e.HasIndex(x => x.ProductId);
         });
 
+        modelBuilder.Entity<ProductVariant>(e =>
+        {
+            e.ToTable("ProductVariants");
+            e.HasKey(x => x.VariantId);
+            // Client-generated Guid, matching the other write paths in this context.
+            e.Property(x => x.VariantId).ValueGeneratedNever();
+            e.Property(x => x.Sku).HasMaxLength(64);
+            e.Property(x => x.VariantName).HasMaxLength(150).IsRequired();
+            e.Property(x => x.ImageUrl).HasMaxLength(512);
+            e.Property(x => x.Price).HasPrecision(18, 2);
+            e.Property(x => x.SalePrice).HasPrecision(18, 2);
+            e.Property(x => x.LastCostPrice).HasPrecision(18, 2);
+            e.Property(x => x.AvgCostPrice).HasPrecision(18, 2);
+            e.HasOne(x => x.Product)
+                .WithMany(x => x.Variants)
+                .HasForeignKey(x => x.ProductId)
+                .OnDelete(DeleteBehavior.Cascade);
+            e.HasIndex(x => new { x.ProductId, x.SortOrder });
+        });
+
         modelBuilder.Entity<InventoryLot>(e =>
         {
             e.ToTable("InventoryLots");
@@ -345,8 +366,11 @@ public class AidrDbContext : DbContext
             e.Property(x => x.Status).HasMaxLength(20).IsRequired();
             e.Property(x => x.Note).HasMaxLength(500);
             e.HasOne(x => x.Product).WithMany().HasForeignKey(x => x.ProductId);
+            e.HasOne(x => x.Variant).WithMany().HasForeignKey(x => x.VariantId).OnDelete(DeleteBehavior.Restrict);
             e.HasIndex(x => new { x.ProductId, x.LotCode }).IsUnique();
             e.HasIndex(x => new { x.ProductId, x.Status, x.ReceivedAt });
+            // FIFO allocation narrows by variant before ordering on ReceivedAt.
+            e.HasIndex(x => new { x.ProductId, x.VariantId, x.Status, x.ReceivedAt });
         });
 
         modelBuilder.Entity<ProductPriceHistory>(e =>
@@ -373,6 +397,7 @@ public class AidrDbContext : DbContext
             e.Property(x => x.ReferenceType).HasMaxLength(40);
             e.Property(x => x.Note).HasMaxLength(300);
             e.HasOne(x => x.Product).WithMany().HasForeignKey(x => x.ProductId);
+            e.HasOne(x => x.Variant).WithMany().HasForeignKey(x => x.VariantId).OnDelete(DeleteBehavior.Restrict);
             e.HasOne(x => x.Lot).WithMany().HasForeignKey(x => x.LotId);
             e.HasIndex(x => x.ProductId);
         });
@@ -514,6 +539,10 @@ public class AidrDbContext : DbContext
                 .WithMany()
                 .HasForeignKey(x => x.ProductId)
                 .OnDelete(DeleteBehavior.Restrict);
+            e.HasOne(x => x.Variant)
+                .WithMany()
+                .HasForeignKey(x => x.VariantId)
+                .OnDelete(DeleteBehavior.Restrict);
             e.HasIndex(x => new { x.CartId, x.ProductId, x.VariantId }).IsUnique();
         });
 
@@ -634,6 +663,7 @@ public class AidrDbContext : DbContext
             e.ToTable("OrderItems");
             e.HasKey(x => x.OrderItemId);
             e.Property(x => x.ProductNameSnapshot).HasMaxLength(256).IsRequired();
+            e.Property(x => x.VariantNameSnapshot).HasMaxLength(150);
             e.Property(x => x.SkuSnapshot).HasMaxLength(64);
             e.Property(x => x.UnitPrice).HasPrecision(18, 2);
             e.Property(x => x.UnitCostAvg).HasPrecision(18, 2);
@@ -645,6 +675,10 @@ public class AidrDbContext : DbContext
             e.HasOne(x => x.Product)
                 .WithMany()
                 .HasForeignKey(x => x.ProductId)
+                .OnDelete(DeleteBehavior.Restrict);
+            e.HasOne(x => x.Variant)
+                .WithMany()
+                .HasForeignKey(x => x.VariantId)
                 .OnDelete(DeleteBehavior.Restrict);
         });
 

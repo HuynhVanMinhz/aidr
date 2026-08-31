@@ -12,6 +12,9 @@ export type CreateOrderRequest = {
 export type CreatedOrderItem = {
   orderItemId: string;
   productId: string;
+  variantId?: string | null;
+  /** The configuration as it read at checkout; null for a single-configuration product. */
+  variantName?: string | null;
   productName: string;
   sku?: string | null;
   imageUrl?: string | null;
@@ -126,6 +129,9 @@ export type BuyerOrderShipping = {
 export type BuyerOrderItem = {
   orderItemId: string;
   productId: string;
+  variantId?: string | null;
+  /** The configuration as it read at checkout; null for a single-configuration product. */
+  variantName?: string | null;
   productName: string;
   sku?: string | null;
   imageUrl?: string | null;

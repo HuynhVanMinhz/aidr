@@ -43,7 +43,11 @@ public sealed class ProductListItemDto
     public string? Brand { get; init; }
     public decimal BasePrice { get; init; }
     public decimal? SalePrice { get; init; }
+    /// <summary>The cheapest way to buy this product — with variants, the cheapest variant.</summary>
     public decimal EffectivePrice { get; init; }
+    /// <summary>The dearest variant; equal to <see cref="EffectivePrice"/> when there are none.</summary>
+    public decimal MaxEffectivePrice { get; init; }
+    public int VariantCount { get; init; }
     public string Currency { get; init; } = "VND";
     public int StockQuantity { get; init; }
     public int AvailableQuantity { get; init; }
@@ -95,6 +99,33 @@ public sealed class ProductReviewSummaryDto
     public DateTime CreatedAt { get; init; }
 }
 
+/// <summary>An axis of the variant picker, e.g. <c>Color -> [Orange, White]</c>.</summary>
+public sealed class ProductVariantOptionDto
+{
+    public string Name { get; init; } = null!;
+    public IReadOnlyList<string> Values { get; init; } = Array.Empty<string>();
+}
+
+/// <summary>
+/// One buyable configuration. The storefront matches the shopper's selection against
+/// <see cref="Attributes"/> to find the variant, and takes the price and stock from it.
+/// </summary>
+public sealed class ProductVariantDto
+{
+    public Guid VariantId { get; init; }
+    public string VariantName { get; init; } = null!;
+    public string? Sku { get; init; }
+    public IReadOnlyDictionary<string, string> Attributes { get; init; } =
+        new Dictionary<string, string>();
+    public decimal Price { get; init; }
+    public decimal? SalePrice { get; init; }
+    public decimal EffectivePrice { get; init; }
+    public int StockQuantity { get; init; }
+    public int AvailableQuantity { get; init; }
+    public string? ImageUrl { get; init; }
+    public int SortOrder { get; init; }
+}
+
 public sealed class ProductDetailDto
 {
     public Guid ProductId { get; init; }
@@ -125,6 +156,15 @@ public sealed class ProductDetailDto
     public ProductShopSummaryDto Shop { get; init; } = null!;
     public IReadOnlyList<ProductImageDto> Images { get; init; } = Array.Empty<ProductImageDto>();
     public IReadOnlyList<ProductReviewSummaryDto> RecentReviews { get; init; } = Array.Empty<ProductReviewSummaryDto>();
+    /// <summary>Empty when the product is sold as a single configuration.</summary>
+    public IReadOnlyList<ProductVariantOptionDto> VariantOptions { get; init; } =
+        Array.Empty<ProductVariantOptionDto>();
+    /// <summary>
+    /// Only the active variants — a deactivated one must not be selectable. BasePrice and
+    /// EffectivePrice above describe the cheapest of these, for the "from X" label.
+    /// </summary>
+    public IReadOnlyList<ProductVariantDto> Variants { get; init; } = Array.Empty<ProductVariantDto>();
+    public decimal MaxEffectivePrice { get; init; }
 }
 
 public sealed class CategoryTreeNodeDto

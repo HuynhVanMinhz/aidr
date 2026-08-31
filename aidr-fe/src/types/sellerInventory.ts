@@ -1,5 +1,22 @@
+export type SellerInventoryVariant = {
+  variantId: string;
+  variantName: string;
+  sku?: string | null;
+  stockQuantity: number;
+  reservedQuantity: number;
+  availableQuantity: number;
+  price: number;
+  salePrice?: number | null;
+  effectivePrice: number;
+  avgCostPrice?: number | null;
+  estimatedMarginPerUnit?: number | null;
+  isActive: boolean;
+};
+
 export type SellerInventoryLot = {
   lotId: string;
+  variantId?: string | null;
+  variantName?: string | null;
   lotCode: string;
   quantityReceived: number;
   quantityRemaining: number;
@@ -81,6 +98,8 @@ export type SellerInventoryDetail = {
   salePrice?: number | null;
   effectivePrice: number;
   currency: string;
+  /** Empty when the product is sold as a single configuration. */
+  variants: SellerInventoryVariant[];
   lots: SellerInventoryLot[];
   recentTransactions: SellerInventoryTransaction[];
 };
@@ -107,12 +126,16 @@ export type UpdateSellerInventoryPayload = {
 };
 
 export type AdjustSellerInventoryPayload = {
+  /** Required when the product has variants and no lot is named. */
+  variantId?: string | null;
   changeQty: number;
   lotId?: string | null;
   note?: string | null;
 };
 
 export type ImportStockLotPayload = {
+  /** Required when the product has variants: stock belongs to a configuration. */
+  variantId?: string | null;
   lotCode?: string | null;
   quantity: number;
   unitCost: number;

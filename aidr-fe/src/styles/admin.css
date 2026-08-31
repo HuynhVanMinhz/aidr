@@ -342,7 +342,13 @@ html[data-aidr-shell='admin'] .wrapper .page-content > .container-xxl {
 
 /* Chips sit inside a real .form-control so focus and invalid states match
    every other field on the page. */
-.tag-field {
+/*
+  Qualified with .form-control on purpose. The element carries both classes, and Bootstrap's
+  .form-control{display:block} is loaded after this file — at equal specificity source order
+  would win and the chips would lay out inline, collapsing the gap below to nothing. Two
+  classes beat one regardless of order.
+*/
+.tag-field.form-control {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -569,4 +575,41 @@ html[data-aidr-shell='admin'] .wrapper .page-content > .container-xxl {
 .aidr-admin-select__trail {
   color: var(--bs-secondary-color, #6c757d);
   font-weight: 400;
+}
+
+/* ---------------------------------------------------------------------------
+   Seller variant editor
+
+   Layout and buttons come from Bootstrap utilities, the same as KeyValueField and the
+   inventory tables. Only sizing that utilities cannot express lives here.
+--------------------------------------------------------------------------- */
+
+/* Square, and the same height as the input it sits beside — matching .kv-field__remove. */
+.variant-option__remove {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+}
+
+.variant-bulk-price {
+  max-width: 16rem;
+}
+
+/*
+  The grid gains a row per combination and its inputs need room to stay usable, so the
+  table scrolls inside .table-responsive instead of squeezing every column. Cells opt out
+  of wrapping for that to take effect; the one column that carries a long error message
+  opts back in via .text-wrap.
+*/
+.variant-table th,
+.variant-table td {
+  white-space: nowrap;
+  vertical-align: top;
+}
+
+.variant-table td .form-control {
+  min-width: 8.5rem;
 }

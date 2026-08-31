@@ -121,7 +121,7 @@ export function StoreHeader() {
           <nav className="navbar navbar-expand-lg">
             <div className="header-action-box">
               <Link className="navbar-brand" to="/">
-                <img src="/theme/images/logo.svg" alt="AIDR" />
+                <img src="/theme/images/aidr-logo-header.png" alt="AIDR" />
               </Link>
 
               <div className="header-search-form-box">
@@ -241,6 +241,11 @@ export function StoreHeader() {
                     <li className="nav-item">
                       <Link className="nav-link" to="/categories">
                         Categories
+                      </Link>
+                    </li>
+                    <li className="nav-item">
+                      <Link className="nav-link" to="/about">
+                        About Us
                       </Link>
                     </li>
                     {isAuthenticated ? (

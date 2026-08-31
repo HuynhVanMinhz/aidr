@@ -31,8 +31,8 @@ export function useCart(options?: { autoLoad?: boolean }) {
   const refresh = useCallback(() => dispatch(fetchCart()).unwrap(), [dispatch]);
 
   const addItem = useCallback(
-    async (productId: string, quantity: number) => {
-      const result = await dispatch(addCartItem({ productId, quantity }));
+    async (productId: string, quantity: number, variantId?: string | null) => {
+      const result = await dispatch(addCartItem({ productId, variantId, quantity }));
       if (addCartItem.rejected.match(result)) {
         throw new Error(result.payload || 'Unable to add item to cart.');
       }
@@ -46,9 +46,13 @@ export function useCart(options?: { autoLoad?: boolean }) {
    * "Buy now" goes straight to payment without dragging the rest of the cart in.
    */
   const buyNow = useCallback(
-    async (productId: string, quantity: number) => {
-      const updated = await addItem(productId, quantity);
-      const line = updated.items.find((i) => i.productId === productId);
+    async (productId: string, quantity: number, variantId?: string | null) => {
+      const updated = await addItem(productId, quantity, variantId);
+      // Two configurations of one product are two lines, so the product id alone no
+      // longer identifies the line that was just added.
+      const line = updated.items.find(
+        (i) => i.productId === productId && (i.variantId ?? null) === (variantId ?? null),
+      );
       if (!line) {
         throw new Error('Unable to start checkout for this product.');
       }

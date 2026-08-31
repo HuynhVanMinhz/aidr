@@ -8,6 +8,8 @@ using AIDR.Shared.Dtos.Discovery;
 using AIDR.Shared.Exceptions;
 using Microsoft.Extensions.Logging;
 
+using AIDR.Shared.Serialization;
+
 namespace AIDR.Modules.Discovery.Services;
 
 public sealed class DiscoveryService : IDiscoveryService
@@ -638,6 +640,9 @@ public sealed class DiscoveryService : IDiscoveryService
             BasePrice = r.BasePrice,
             SalePrice = r.SalePrice,
             EffectivePrice = effective,
+            // BasePrice already tracks the cheapest variant, so the range only needs its top.
+            MaxEffectivePrice = r.MaxVariantEffectivePrice ?? effective,
+            VariantCount = r.VariantCount,
             Currency = r.Currency,
             StockQuantity = r.StockQuantity,
             AvailableQuantity = Math.Max(0, r.StockQuantity - r.ReservedQuantity),
@@ -711,7 +716,27 @@ public sealed class DiscoveryService : IDiscoveryService
             Content = rv.Content,
             BuyerName = rv.BuyerName,
             CreatedAt = rv.CreatedAt
-        }).ToList()
+        }).ToList(),
+        VariantOptions = ProductVariantJson.ParseOptions(r.VariantOptionsJson)
+            .Select(o => new ProductVariantOptionDto { Name = o.Name, Values = o.Values })
+            .ToList(),
+        Variants = r.Variants.Select(v => new ProductVariantDto
+        {
+            VariantId = v.VariantId,
+            VariantName = v.VariantName,
+            Sku = v.Sku,
+            Attributes = ProductVariantJson.ParseAttributes(v.AttributesJson),
+            Price = v.Price,
+            SalePrice = v.SalePrice,
+            EffectivePrice = v.SalePrice ?? v.Price,
+            StockQuantity = v.StockQuantity,
+            AvailableQuantity = Math.Max(0, v.StockQuantity - v.ReservedQuantity),
+            ImageUrl = v.ImageUrl,
+            SortOrder = v.SortOrder
+        }).ToList(),
+        MaxEffectivePrice = r.Variants.Count == 0
+            ? r.SalePrice ?? r.BasePrice
+            : r.Variants.Max(v => v.SalePrice ?? v.Price)
     };
 
     private static ShopPublicDetailDto MapShopDetail(ShopPublicRecord shop, PagedResult<ProductListItemDto> products)
