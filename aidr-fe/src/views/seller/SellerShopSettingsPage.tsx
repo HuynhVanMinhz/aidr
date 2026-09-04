@@ -3,12 +3,14 @@ import { Link } from 'react-router-dom';
 import { AddressMapPicker } from '../../components/address/AddressMapPicker';
 import { FormField } from '../../components/admin/FormField';
 import { OpeningHoursField } from '../../components/admin/OpeningHoursField';
+import { useShippingLocations } from '../../hooks/useShippingLocations';
 import { useToast } from '../../hooks/useToast';
 import { getMyShop, requireSellerShop, updateMyShop } from '../../services/sellerApi';
 import type { SellerShop } from '../../types/sellerShop';
 import type { LatLng } from '../../types/shippingLocation';
 import { getApiErrorMessage } from '../../utils/apiError';
 import { visibleFieldErrors } from '../../utils/formValidation';
+import { reverseGeocode } from '../../utils/geocoding';
 import {
   canSubmitSellerShopForm,
   emptySellerShopForm,
@@ -56,6 +58,27 @@ export function SellerShopSettingsPage() {
   // Kept beside the form rather than in it: the form values are all strings, and
   // a coordinate that round-trips through a string loses precision for no gain.
   const [pickupPoint, setPickupPoint] = useState<LatLng | null>(null);
+  const [initialPickupPoint, setInitialPickupPoint] = useState<LatLng | null>(null);
+  const [pickupCaption, setPickupCaption] = useState<string | null>(null);
+  const [pickupBusy, setPickupBusy] = useState(false);
+
+  // Same carrier-backed lists the buyer picks a delivery address from, so a shop
+  // address is spelled the way the carrier will accept when a booking is made.
+  const locations = useShippingLocations();
+  // Until a dropdown is touched, a saved shop keeps the names it was stored with:
+  // the carrier lists may not resolve them, and blanking the field silently would
+  // be worse than showing an empty select beside the value.
+  const [locationsTouched, setLocationsTouched] = useState(false);
+
+  const {
+    provinceId,
+    districtId,
+    wardId,
+    provinceName,
+    districtName,
+    wardName,
+    seed,
+  } = locations;
 
   useEffect(() => {
     let cancelled = false;
@@ -69,11 +92,14 @@ export function SellerShopSettingsPage() {
         const values = shopToForm(data);
         setForm(values);
         setInitial(values);
-        setPickupPoint(
+        setLocationsTouched(false);
+        seed({ province: values.province, district: values.district, ward: values.ward });
+        const loadedPoint =
           data.latitude != null && data.longitude != null
             ? { lat: data.latitude, lng: data.longitude }
-            : null,
-        );
+            : null;
+        setPickupPoint(loadedPoint);
+        setInitialPickupPoint(loadedPoint);
       })
       .catch((err) => {
         if (!cancelled) setLoadError(getApiErrorMessage(err));
@@ -84,15 +110,64 @@ export function SellerShopSettingsPage() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [seed]);
+
+  // Carrier spelling wins once a unit resolves. This mirrors names into the form
+  // without touching `dirty` — resolving what was already saved is not an edit.
+  useEffect(() => {
+    setForm((prev) => ({
+      ...prev,
+      province: provinceId ? provinceName : locationsTouched ? '' : prev.province,
+      district: districtId ? districtName : locationsTouched ? '' : prev.district,
+      ward: wardId ? wardName : locationsTouched ? '' : prev.ward,
+    }));
+  }, [provinceId, districtId, wardId, provinceName, districtName, wardName, locationsTouched]);
 
   const fieldErrors = useMemo(() => validateSellerShopForm(form), [form]);
   const visibleErrors = visibleFieldErrors(fieldErrors, touched, submitted);
   const canSubmit = canSubmitSellerShopForm(dirty, fieldErrors, form.shopName);
 
+  // Save is disabled while anything is invalid, and an untouched field's error
+  // is otherwise invisible — a shop seeded with an odd URL looked simply broken.
+  const blockingErrors = useMemo(() => Object.values(fieldErrors), [fieldErrors]);
+
   function updateField<K extends SellerShopFormField>(key: K, value: string) {
     setDirty(true);
     setForm((prev) => ({ ...prev, [key]: value }));
+  }
+
+  /**
+   * The pin is where the carrier actually collects, so the written address
+   * follows it rather than the other way round; a pin and an address that
+   * disagree send the driver to the wrong street.
+   */
+  function handlePickPickup(next: LatLng) {
+    setDirty(true);
+    setPickupPoint(next);
+    setPickupBusy(true);
+
+    void reverseGeocode(next)
+      .then((result) => {
+        if (!result) return;
+        setPickupCaption(result.displayName || null);
+        setForm((prev) => ({
+          ...prev,
+          streetAddress: result.street ?? prev.streetAddress,
+          ward: result.ward ?? prev.ward,
+          district: result.district ?? prev.district,
+          province: result.province ?? prev.province,
+        }));
+        // OSM's spelling only stands in until the carrier lists resolve the same
+        // names into selections; what they cannot match keeps the name above.
+        setLocationsTouched(false);
+        seed({
+          province: result.province ?? undefined,
+          district: result.district ?? undefined,
+          ward: result.ward ?? undefined,
+        });
+      })
+      .catch(() => undefined)
+      .finally(() => setPickupBusy(false));
   }
 
   function markTouched(key: SellerShopFormField) {
@@ -119,6 +194,9 @@ export function SellerShopSettingsPage() {
       const values = shopToForm(data);
       setForm(values);
       setInitial(values);
+      setLocationsTouched(false);
+      seed({ province: values.province, district: values.district, ward: values.ward });
+      setInitialPickupPoint(pickupPoint);
       setDirty(false);
       setSubmitted(false);
       toast.success('Shop settings saved.');
@@ -280,40 +358,100 @@ export function SellerShopSettingsPage() {
                   </FormField>
                 </div>
                 <div className="col-lg-6">
-                  <FormField label="Province" htmlFor="shop-province" error={visibleErrors.province}>
-                    <input
+                  <FormField label="Province / City" htmlFor="shop-province" error={visibleErrors.province}>
+                    <select
                       id="shop-province"
-                      type="text"
-                      className="form-control"
-                      value={form.province}
-                      onChange={(e) => updateField('province', e.target.value)}
-                      onBlur={() => markTouched('province')}
-                    />
+                      className="form-select"
+                      value={provinceId}
+                      disabled={locations.loadingProvinces}
+                      onChange={(e) => {
+                        setDirty(true);
+                        setLocationsTouched(true);
+                        markTouched('province');
+                        locations.selectProvince(e.target.value);
+                      }}
+                    >
+                      <option value="">
+                        {locations.loadingProvinces ? 'Loading…' : 'Select province / city'}
+                      </option>
+                      {locations.provinces.map((p) => (
+                        <option key={p.id} value={p.id}>
+                          {p.name}
+                        </option>
+                      ))}
+                    </select>
                   </FormField>
+                  {!provinceId && form.province ? (
+                    <p className="text-muted fs-13 mt-n2 mb-3">Saved as “{form.province}”</p>
+                  ) : null}
                 </div>
                 <div className="col-lg-6">
                   <FormField label="District" htmlFor="shop-district" error={visibleErrors.district}>
-                    <input
+                    <select
                       id="shop-district"
-                      type="text"
-                      className="form-control"
-                      value={form.district}
-                      onChange={(e) => updateField('district', e.target.value)}
-                      onBlur={() => markTouched('district')}
-                    />
+                      className="form-select"
+                      value={districtId}
+                      disabled={!provinceId || locations.loadingDistricts}
+                      onChange={(e) => {
+                        setDirty(true);
+                        setLocationsTouched(true);
+                        markTouched('district');
+                        locations.selectDistrict(e.target.value);
+                      }}
+                    >
+                      <option value="">
+                        {!provinceId
+                          ? 'Pick a province first'
+                          : locations.loadingDistricts
+                            ? 'Loading…'
+                            : locations.districts.length === 0
+                              ? 'No districts listed'
+                              : 'Select district'}
+                      </option>
+                      {locations.districts.map((d) => (
+                        <option key={d.id} value={d.id}>
+                          {d.name}
+                        </option>
+                      ))}
+                    </select>
                   </FormField>
+                  {!districtId && form.district ? (
+                    <p className="text-muted fs-13 mt-n2 mb-3">Saved as “{form.district}”</p>
+                  ) : null}
                 </div>
                 <div className="col-lg-6">
                   <FormField label="Ward" htmlFor="shop-ward" error={visibleErrors.ward}>
-                    <input
+                    <select
                       id="shop-ward"
-                      type="text"
-                      className="form-control"
-                      value={form.ward}
-                      onChange={(e) => updateField('ward', e.target.value)}
-                      onBlur={() => markTouched('ward')}
-                    />
+                      className="form-select"
+                      value={wardId}
+                      disabled={!districtId || locations.loadingWards}
+                      onChange={(e) => {
+                        setDirty(true);
+                        setLocationsTouched(true);
+                        markTouched('ward');
+                        locations.selectWard(e.target.value);
+                      }}
+                    >
+                      <option value="">
+                        {!districtId
+                          ? 'Pick a district first'
+                          : locations.loadingWards
+                            ? 'Loading…'
+                            : locations.wards.length === 0
+                              ? 'No wards listed'
+                              : 'Select ward'}
+                      </option>
+                      {locations.wards.map((w) => (
+                        <option key={w.id} value={w.id}>
+                          {w.name}
+                        </option>
+                      ))}
+                    </select>
                   </FormField>
+                  {!wardId && form.ward ? (
+                    <p className="text-muted fs-13 mt-n2 mb-3">Saved as “{form.ward}”</p>
+                  ) : null}
                 </div>
                 <div className="col-lg-6">
                   <FormField
@@ -334,13 +472,14 @@ export function SellerShopSettingsPage() {
                 <div className="col-12">
                   <AddressMapPicker
                     point={pickupPoint}
-                    onPick={(next) => {
-                      setDirty(true);
-                      setPickupPoint(next);
-                    }}
+                    onPick={handlePickPickup}
+                    busy={pickupBusy}
+                    title="Pin the pickup point"
+                    hint="Click the map or drag the pin. The carrier collects from here, and the address fields above follow it."
                     caption={
                       pickupPoint
-                        ? 'This is where the carrier collects parcels, and where the buyer’s tracking map starts.'
+                        ? pickupCaption ||
+                          'This is where the carrier collects parcels, and where the buyer’s tracking map starts.'
                         : 'No pickup pin yet — without one the order tracking map has nowhere to start.'
                     }
                   />
@@ -414,13 +553,26 @@ export function SellerShopSettingsPage() {
                 </div>
               </div>
             </div>
-            <div className="card-footer d-flex justify-content-end gap-2">
+            <div className="card-footer d-flex flex-wrap justify-content-end align-items-center gap-2">
+              {dirty && blockingErrors.length > 0 ? (
+                <p className="text-danger mb-0 me-auto fs-14">
+                  Cannot save yet: {blockingErrors.join(' ')}
+                </p>
+              ) : null}
               <button
                 type="button"
                 className="btn btn-outline-light"
                 disabled={!dirty || submitting}
                 onClick={() => {
                   setForm(initial);
+                  setLocationsTouched(false);
+                  seed({
+                    province: initial.province,
+                    district: initial.district,
+                    ward: initial.ward,
+                  });
+                  setPickupPoint(initialPickupPoint);
+                  setPickupCaption(null);
                   setDirty(false);
                   setSubmitted(false);
                   setTouched({});

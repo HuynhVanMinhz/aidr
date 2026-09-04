@@ -40,8 +40,8 @@ public sealed class SellerShopService : ISellerShopService
             OptionalText(request.Tagline, "Tagline", AdminConstants.MaxShopTaglineLength),
             OptionalText(request.ShortDescription, "Short description", AdminConstants.MaxShopShortDescriptionLength),
             OptionalText(request.Description, "Description", int.MaxValue),
-            OptionalUrl(request.LogoUrl, "Logo URL"),
-            OptionalUrl(request.BannerUrl, "Banner URL"),
+            OptionalAssetUrl(request.LogoUrl, "Logo URL"),
+            OptionalAssetUrl(request.BannerUrl, "Banner URL"),
             OptionalText(request.Email, "Email", AdminConstants.MaxShopEmailLength),
             OptionalText(request.Phone, "Phone", AdminConstants.MaxShopPhoneLength),
             OptionalText(request.Hotline, "Hotline", AdminConstants.MaxShopPhoneLength),
@@ -124,6 +124,23 @@ public sealed class SellerShopService : ISellerShopService
         if (trimmed.Length > maxLength)
             throw new AppException($"{fieldName} must not exceed {maxLength} characters.");
         return trimmed;
+    }
+
+    /// <summary>
+    /// Logos and banners are as often a path into the app's own asset tree as a
+    /// link out to a CDN; the uploader and the seeded theme images both write
+    /// the relative form, and rejecting it left those shops unable to save at all.
+    /// </summary>
+    private static string? OptionalAssetUrl(string? value, string fieldName)
+    {
+        var trimmed = OptionalText(value, fieldName, AdminConstants.MaxShopUrlLength);
+        if (trimmed is null)
+            return null;
+
+        if (trimmed.StartsWith('/'))
+            return trimmed;
+
+        return OptionalUrl(trimmed, fieldName);
     }
 
     private static string? OptionalUrl(string? value, string fieldName)

@@ -288,6 +288,11 @@ public sealed class OrderRepository : IOrderRepository
             .FirstOrDefaultAsync(cancellationToken);
 
         var destination = ParseShippingSnapshot(order.ShippingSnapshotJson, order.ShippingAddressId);
+        var (destinationLatitude, destinationLongitude) = await ResolveDestinationPointAsync(
+            destination.AddressId,
+            destination.Latitude,
+            destination.Longitude,
+            cancellationToken);
 
         return new BuyerOrderTrackingDto
         {
@@ -300,8 +305,8 @@ public sealed class OrderRepository : IOrderRepository
                 shop?.Latitude,
                 shop?.Longitude,
                 JoinAddress(shop?.ShopName, shop?.StreetAddress, shop?.Ward, shop?.District, shop?.Province),
-                destination.Latitude,
-                destination.Longitude,
+                destinationLatitude,
+                destinationLongitude,
                 JoinAddress(
                     destination.ReceiverName,
                     destination.StreetAddress,
@@ -315,6 +320,33 @@ public sealed class OrderRepository : IOrderRepository
     /// <summary>One readable line for a map marker; blank parts simply drop out.</summary>
     private static string JoinAddress(params string?[] parts) =>
         string.Join(", ", parts.Where(p => !string.IsNullOrWhiteSpace(p)).Select(p => p!.Trim()));
+
+    /// <summary>
+    /// Where to draw the delivery pin. The snapshot wins whenever it has one —
+    /// a past order must not move because the buyer edited their address book.
+    /// Orders snapshotted before the buyer pinned that address carry no point at
+    /// all, though, so fall back to the address book rather than draw no route;
+    /// the written address on the marker stays the snapshot's either way.
+    /// </summary>
+    private async Task<(double? Latitude, double? Longitude)> ResolveDestinationPointAsync(
+        Guid? addressId,
+        double? snapshotLatitude,
+        double? snapshotLongitude,
+        CancellationToken cancellationToken)
+    {
+        if (snapshotLatitude is not null && snapshotLongitude is not null)
+            return (snapshotLatitude, snapshotLongitude);
+
+        if (addressId is not { } id)
+            return (snapshotLatitude, snapshotLongitude);
+
+        var pinned = await _db.Addresses.AsNoTracking()
+            .Where(a => a.AddressId == id)
+            .Select(a => new { a.Latitude, a.Longitude })
+            .FirstOrDefaultAsync(cancellationToken);
+
+        return (pinned?.Latitude, pinned?.Longitude);
+    }
 
     public async Task<BuyerOrderDetailDto> CancelBuyerOrderAsync(
         Guid buyerUserId,
