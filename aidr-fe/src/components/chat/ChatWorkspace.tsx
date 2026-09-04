@@ -246,12 +246,12 @@ export function ChatWorkspace({ variant = 'admin' }: ChatWorkspaceProps) {
           </button>
         </header>
 
-        <div className="chat-search">
-          <SearchIcon className="chat-search__icon" />
+        <div className="chat-finder">
+          <SearchIcon className="chat-finder__icon" />
           <input
             ref={searchRef}
             type="text"
-            className="chat-search__input"
+            className="chat-finder__input"
             placeholder="Search conversations"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -261,7 +261,7 @@ export function ChatWorkspace({ variant = 'admin' }: ChatWorkspaceProps) {
           {search ? (
             <button
               type="button"
-              className="chat-search__clear"
+              className="chat-finder__clear"
               onClick={() => {
                 setSearch('');
                 searchRef.current?.focus();

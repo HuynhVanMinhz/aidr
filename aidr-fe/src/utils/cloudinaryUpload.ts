@@ -5,6 +5,7 @@ export const CloudinaryFolders = {
   profile: 'profile',
   product: 'product',
   category: 'category',
+  shop: 'shop',
   chat: 'chat',
   kyc: 'kyc',
 } as const;
@@ -109,6 +110,24 @@ export function validateChatImageFile(file: File): void {
 export async function uploadChatImageToCloudinary(file: File): Promise<CloudinaryUploadResult> {
   validateChatImageFile(file);
   return uploadImageToCloudinary(file, CloudinaryFolders.chat);
+}
+
+const MAX_SHOP_IMAGE_BYTES = 4 * 1024 * 1024;
+
+/** A shop banner is displayed wide, so it gets more headroom than an avatar. */
+export function validateShopImageFile(file: File): void {
+  if (!file.type.startsWith('image/')) {
+    throw new Error('Please choose a valid image file.');
+  }
+  if (file.size > MAX_SHOP_IMAGE_BYTES) {
+    throw new Error('Shop image must be 4MB or smaller.');
+  }
+}
+
+/** Upload a shop logo or banner to folder `shop`. */
+export async function uploadShopImageToCloudinary(file: File): Promise<CloudinaryUploadResult> {
+  validateShopImageFile(file);
+  return uploadImageToCloudinary(file, CloudinaryFolders.shop);
 }
 
 /** Upload category image to folder `category`. */

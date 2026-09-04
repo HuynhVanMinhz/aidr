@@ -66,12 +66,12 @@ export function ChatProductPicker({
         </button>
       </header>
 
-      <div className="chat-search chat-search--picker">
-        <SearchIcon className="chat-search__icon" />
+      <div className="chat-finder chat-finder--picker">
+        <SearchIcon className="chat-finder__icon" />
         <input
           ref={inputRef}
           type="text"
-          className="chat-search__input"
+          className="chat-finder__input"
           placeholder={`Search in ${shopName}`}
           value={query}
           onChange={(e) => setQuery(e.target.value)}
