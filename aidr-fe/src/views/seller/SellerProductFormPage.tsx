@@ -14,8 +14,17 @@ import {
   type SellerProductFormValues,
   type SellerProductStagedImage,
 } from '../../components/seller/sellerProductFormConstants';
+import {
+  emptyStockDelivery,
+  filledStockRows,
+  ProductStockSection,
+  SINGLE_STOCK_KEY,
+  validateStockDelivery,
+  type StockDelivery,
+} from '../../components/seller/ProductStockSection';
 import { SellerProductVariantsEditor } from '../../components/seller/SellerProductVariantsEditor';
 import { useCategories } from '../../hooks/useCatalog';
+import { importSellerStockLot } from '../../services/sellerInventoryApi';
 import { useSellerProducts } from '../../hooks/useSellerProducts';
 import { useToast } from '../../hooks/useToast';
 import type { CategoryTreeNode } from '../../types/catalog';
@@ -126,6 +135,13 @@ export function SellerProductFormPage() {
   // Kept so an edit that never touches the variant editor can omit them from the payload,
   // which the API reads as "leave the stored variants alone".
   const [variantsTouched, setVariantsTouched] = useState(false);
+  // Stock rides alongside the product form but is written through the inventory
+  // service afterwards: a lot can only be received once the product has an id.
+  const [stock, setStock] = useState<StockDelivery>(emptyStockDelivery());
+  // Derived, so a corrected quantity clears its own message instead of waiting
+  // for the next submit.
+  const [stockSubmitted, setStockSubmitted] = useState(false);
+  const [currentStock, setCurrentStock] = useState<number | undefined>(undefined);
   const [slugTouched, setSlugTouched] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -155,6 +171,10 @@ export function SellerProductFormPage() {
         setVariantOptions(drafts.options);
         setVariantRows(drafts.rows);
         setVariantsTouched(false);
+        setCurrentStock(item.stockQuantity);
+        // A delivery is per-save; reopening the product must not re-receive one.
+        setStock(emptyStockDelivery());
+        setStockSubmitted(false);
         setSlugTouched(true);
       })
       .catch((err) => {
@@ -187,12 +207,26 @@ export function SellerProductFormPage() {
     () => validateVariantDrafts(variantOptions, variantRows),
     [variantOptions, variantRows],
   );
+  const stockErrors = useMemo(
+    () => (stockSubmitted ? validateStockDelivery(stock) : {}),
+    [stock, stockSubmitted],
+  );
+  const hasPendingStock = useMemo(() => filledStockRows(stock).length > 0, [stock]);
+
   const variantsValid =
     variantValidation.formError === null &&
     Object.keys(variantValidation.rowErrors).length === 0;
 
   const canSubmit =
-    canSubmitSellerProductForm(form, initial, images, initialImages, mode, errors) && variantsValid;
+    canSubmitSellerProductForm(
+      form,
+      initial,
+      images,
+      initialImages,
+      mode,
+      errors,
+      hasPendingStock,
+    ) && variantsValid;
 
   const previewImage = images.find((i) => i.isPrimary)?.imageUrl ?? images[0]?.imageUrl ?? null;
   const previewBasePrice = Number(form.basePrice);
@@ -293,15 +327,94 @@ export function SellerProductFormPage() {
     markTouched('images');
   }
 
+  /**
+   * Receives the typed delivery against the saved product.
+   *
+   * Runs after the product is written, because a lot needs a product id — and a
+   * variant row needs the id the server assigned it, which is why each draft is
+   * matched back to the saved variant by id, then SKU, then its attributes.
+   */
+  async function receiveStock(saved: SellerProductDetail): Promise<string[]> {
+    const rows = filledStockRows(stock);
+    if (rows.length === 0) return [];
+
+    const failures: string[] = [];
+
+    for (const row of rows) {
+      let variantId: string | null = null;
+
+      if (row.key !== SINGLE_STOCK_KEY) {
+        const draft = variantRows.find((v) => v.key === row.key);
+        if (!draft) continue;
+
+        const match =
+          (draft.variantId
+            ? saved.variants.find((v) => v.variantId === draft.variantId)
+            : undefined) ??
+          (draft.sku.trim()
+            ? saved.variants.find(
+                (v) => (v.sku ?? '').trim().toLowerCase() === draft.sku.trim().toLowerCase(),
+              )
+            : undefined) ??
+          saved.variants.find((v) =>
+            Object.entries(draft.attributes).every(([name, value]) => v.attributes[name] === value),
+          );
+
+        if (!match) {
+          failures.push(`no saved variant matched "${row.key}".`);
+          continue;
+        }
+        variantId = match.variantId;
+      }
+
+      try {
+        await importSellerStockLot(saved.productId, {
+          variantId,
+          lotCode: stock.lotCode.trim() || null,
+          quantity: Number(row.quantity),
+          unitCost: Number(row.unitCost),
+          supplierName: stock.supplierName.trim() || null,
+          invoiceNumber: stock.invoiceNumber.trim() || null,
+          note: stock.note.trim() || null,
+        });
+      } catch (err) {
+        failures.push(err instanceof Error ? err.message : 'the lot was refused.');
+      }
+    }
+
+    return failures;
+  }
+
+  /** The product is already saved, so a refused lot is reported, not thrown. */
+  function reportSave(message: string, stockFailures: string[]) {
+    toast.success(message);
+    if (stockFailures.length > 0) {
+      toast.error(`Stock was not received: ${stockFailures.join(' ')}`);
+    }
+  }
+
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     setSubmitted(true);
     const nextErrors = validateSellerProductFormFields(form, images, {
       requireImages: mode === 'create',
     });
+
+    setStockSubmitted(true);
+    const nextStockErrors = validateStockDelivery(stock);
+
     if (
       Object.keys(nextErrors).length > 0 ||
-      !canSubmitSellerProductForm(form, initial, images, initialImages, mode, nextErrors) ||
+      Object.keys(nextStockErrors).length > 0 ||
+      !canSubmitSellerProductForm(
+        form,
+        initial,
+        images,
+        initialImages,
+        mode,
+        nextErrors,
+        hasPendingStock,
+      ) ||
       !variantsValid
     ) {
       return;
@@ -327,17 +440,17 @@ export function SellerProductFormPage() {
 
       if (mode === 'create') {
         const created = await create({ ...payload, ...variantPayload, images: imagePayload });
-        toast.success('Product created and submitted for review.');
+        reportSave('Product created and submitted for review.', await receiveStock(created));
         navigate(`/seller/products/${created.productId}`);
         return;
       }
 
       if (!id) return;
-      await update(id, { ...payload, ...variantPayload });
+      const updated = await update(id, { ...payload, ...variantPayload });
       if (!imagesEqual(images, initialImages)) {
         await uploadImages(id, { images: imagePayload, replaceExisting: true });
       }
-      toast.success('Product updated. Status reset to Pending for review.');
+      reportSave('Product updated. Status reset to Pending for review.', await receiveStock(updated));
       navigate(`/seller/products/${id}`);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Unable to save product.';
@@ -806,6 +919,16 @@ export function SellerProductFormPage() {
               />
             </div>
           </div>
+
+          <ProductStockSection
+            mode={mode}
+            variantRows={variantRows}
+            currentStock={currentStock}
+            delivery={stock}
+            onChange={setStock}
+            errors={stockErrors}
+            disabled={mutating || uploadingImage}
+          />
 
           <div className="p-3 bg-light mb-3 rounded">
             <div className="d-flex flex-nowrap justify-content-end align-items-center gap-2">

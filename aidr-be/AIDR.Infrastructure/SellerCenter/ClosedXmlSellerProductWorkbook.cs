@@ -15,6 +15,7 @@ public sealed class ClosedXmlSellerProductWorkbook : ISellerProductWorkbook
 {
     private const string ProductsSheet = "Products";
     private const string CategoriesSheet = "Categories";
+    private const string InventorySheet = "Inventory";
     private const string GuideSheet = "How to fill this in";
 
     /// <summary>Excel refuses more than this in one cell, long before our own limits bite.</summary>
@@ -47,6 +48,37 @@ public sealed class ClosedXmlSellerProductWorkbook : ISellerProductWorkbook
         "ImageUrls",
     ];
 
+    /// <summary>
+    /// The Inventory sheet. Slug / Product / OnHand are written by the export for
+    /// orientation; Quantity and UnitCost are the two cells that actually do
+    /// something, and the export deliberately leaves them blank.
+    /// </summary>
+    private static readonly string[] InventoryHeaders =
+    [
+        "Slug",
+        "Product",
+        "VariantSku",
+        "OnHand",
+        "Quantity",
+        "UnitCost",
+        "LotCode",
+        "Supplier",
+        "InvoiceNumber",
+        "ReceivedAt",
+        "Note",
+    ];
+
+    private static readonly (string Column, string Rule)[] InventoryGuide =
+    [
+        ("Slug", "Required. The product to receive stock for — the same slug as on the Products sheet, including a product this file is creating."),
+        ("Product / OnHand", "Written by the export so you can see what you have. The import ignores them."),
+        ("VariantSku", "Required only when the product is sold in variants; it says which configuration the stock is for. Leave blank for a single-configuration product."),
+        ("Quantity", "How many units to receive as a NEW lot. Blank means this row does nothing — that is why an untouched export cannot double your stock."),
+        ("UnitCost", "Required with Quantity: what you paid per unit for this lot. Digits only. Existing lots are never changed."),
+        ("LotCode", "Optional. Letters, numbers, hyphen and underscore only."),
+        ("ReceivedAt", "Optional date, e.g. 2026-09-04. Blank means today."),
+    ];
+
     private static readonly (string Column, string Rule)[] Guide =
     [
         ("ProductId / Status / Stock", "Written by the export. Leave them alone — the import ignores them."),
@@ -63,14 +95,36 @@ public sealed class ClosedXmlSellerProductWorkbook : ISellerProductWorkbook
         ("ImageUrls", "Comma separated http(s) links. The first one becomes the primary image. On a row that updates an existing product, leaving this blank keeps the photos it already has."),
     ];
 
-    public IReadOnlyList<SellerProductSheetRow> Read(Stream stream)
+    public SellerImportSheets Read(Stream stream)
     {
         using var workbook = OpenWorkbook(stream);
 
+        return new SellerImportSheets
+        {
+            Products = ReadProducts(workbook),
+            Inventory = ReadInventory(workbook),
+        };
+    }
+
+    private static IReadOnlyList<SellerProductSheetRow> ReadProducts(XLWorkbook workbook)
+    {
         var sheet = workbook.Worksheets.FirstOrDefault(w =>
-                string.Equals(w.Name, ProductsSheet, StringComparison.OrdinalIgnoreCase))
-            ?? workbook.Worksheets.FirstOrDefault()
-            ?? throw new AppException("The workbook has no sheets.");
+            string.Equals(w.Name, ProductsSheet, StringComparison.OrdinalIgnoreCase));
+
+        if (sheet is null)
+        {
+            // A file whose only sheet is Inventory is a stock delivery, not a broken
+            // catalogue upload; reading the first sheet as products would reject it
+            // for having no Name column.
+            if (workbook.Worksheets.Any(w =>
+                    string.Equals(w.Name, InventorySheet, StringComparison.OrdinalIgnoreCase)))
+            {
+                return [];
+            }
+
+            sheet = workbook.Worksheets.FirstOrDefault()
+                ?? throw new AppException("The workbook has no sheets.");
+        }
 
         var used = sheet.RangeUsed();
         if (used is null)
@@ -119,8 +173,51 @@ public sealed class ClosedXmlSellerProductWorkbook : ISellerProductWorkbook
         return rows;
     }
 
+    /// <summary>
+    /// The Inventory sheet is optional: a file saved from an older export, or one
+    /// the seller built by hand, simply has no stock to receive.
+    /// </summary>
+    private static IReadOnlyList<SellerInventorySheetRow> ReadInventory(XLWorkbook workbook)
+    {
+        var sheet = workbook.Worksheets.FirstOrDefault(w =>
+            string.Equals(w.Name, InventorySheet, StringComparison.OrdinalIgnoreCase));
+
+        var used = sheet?.RangeUsed();
+        if (used is null) return [];
+
+        var columns = MapHeaderColumns(used.FirstRow());
+        if (!columns.ContainsKey("slug")) return [];
+
+        var rows = new List<SellerInventorySheetRow>();
+
+        foreach (var row in used.RowsUsed().Skip(1))
+        {
+            var parsed = new SellerInventorySheetRow
+            {
+                RowNumber = row.RowNumber(),
+                Slug = Read(row, columns, "slug"),
+                VariantSku = Read(row, columns, "variantsku"),
+                Quantity = Read(row, columns, "quantity"),
+                UnitCost = Read(row, columns, "unitcost"),
+                LotCode = Read(row, columns, "lotcode"),
+                SupplierName = Read(row, columns, "supplier"),
+                InvoiceNumber = Read(row, columns, "invoicenumber"),
+                ReceivedAt = Read(row, columns, "receivedat"),
+                Note = Read(row, columns, "note"),
+            };
+
+            // An export row nobody edited carries only the read-only cells.
+            if (parsed.IsEmpty) continue;
+
+            rows.Add(parsed);
+        }
+
+        return rows;
+    }
+
     public byte[] WriteProducts(
         IReadOnlyList<SellerProductSheetExport> products,
+        IReadOnlyList<SellerInventorySheetExport> inventory,
         IReadOnlyList<SellerCategoryChoice> categories)
     {
         using var workbook = new XLWorkbook();
@@ -158,6 +255,7 @@ public sealed class ClosedXmlSellerProductWorkbook : ISellerProductWorkbook
         sheet.Columns(11, 12).Style.NumberFormat.Format = "0";
         FinishProductsSheet(sheet, rowIndex - 1);
 
+        AddInventorySheet(workbook, inventory);
         AddCategoriesSheet(workbook, categories);
         AddGuideSheet(workbook);
 
@@ -195,10 +293,76 @@ public sealed class ClosedXmlSellerProductWorkbook : ISellerProductWorkbook
         sheet.Cell(3, 1).Style.Font.FontColor = XLColor.Gray;
 
         FinishProductsSheet(sheet, 2);
+
+        // The template's inventory example receives stock for the product above it,
+        // which is the whole point: one file can create a product and stock it.
+        AddInventorySheet(workbook, [], example: new SellerInventorySheetExport
+        {
+            Slug = "galaxy-s24-ultra-256gb",
+            ProductName = "Galaxy S24 Ultra 256GB",
+            VariantSku = string.Empty,
+        });
+
         AddCategoriesSheet(workbook, categories);
         AddGuideSheet(workbook);
 
         return Save(workbook);
+    }
+
+    private static void AddInventorySheet(
+        XLWorkbook workbook,
+        IReadOnlyList<SellerInventorySheetExport> inventory,
+        SellerInventorySheetExport? example = null)
+    {
+        var sheet = workbook.AddWorksheet(InventorySheet);
+
+        for (var i = 0; i < InventoryHeaders.Length; i++)
+            sheet.Cell(1, i + 1).SetValue(InventoryHeaders[i]);
+
+        var header = sheet.Range(1, 1, 1, InventoryHeaders.Length);
+        header.Style.Font.Bold = true;
+        header.Style.Fill.BackgroundColor = XLColor.FromHtml("#F1F3F5");
+        // Product and OnHand are ours; the seller edits from Quantity rightwards.
+        sheet.Range(1, 2, 1, 2).Style.Font.FontColor = XLColor.Gray;
+        sheet.Range(1, 4, 1, 4).Style.Font.FontColor = XLColor.Gray;
+
+        var rowIndex = 2;
+        foreach (var line in inventory)
+        {
+            var row = sheet.Row(rowIndex);
+            row.Cell(1).SetValue(Clamp(line.Slug));
+            row.Cell(2).SetValue(Clamp(line.VariantName is null
+                ? line.ProductName
+                : $"{line.ProductName} — {line.VariantName}"));
+            row.Cell(3).SetValue(Clamp(line.VariantSku));
+            row.Cell(4).SetValue(line.OnHand);
+            // Quantity and UnitCost stay empty on purpose: importing an untouched
+            // export must be a no-op, not a second delivery of everything.
+            rowIndex++;
+        }
+
+        if (example is not null)
+        {
+            var row = sheet.Row(rowIndex);
+            row.Cell(1).SetValue(example.Slug);
+            row.Cell(2).SetValue(example.ProductName);
+            row.Cell(5).SetValue(10);
+            row.Cell(6).SetValue(24500000);
+            row.Cell(7).SetValue("LOT-2026-09");
+            row.Cell(8).SetValue("Samsung Vietnam");
+            row.Style.Font.FontColor = XLColor.Gray;
+            row.Style.Font.Italic = true;
+            rowIndex++;
+
+            sheet.Cell(rowIndex, 1).SetValue("The row above is an example. Delete it before importing.");
+            sheet.Cell(rowIndex, 1).Style.Font.FontColor = XLColor.Gray;
+            rowIndex++;
+        }
+
+        sheet.Columns(6, 6).Style.NumberFormat.Format = "0";
+        sheet.SheetView.FreezeRows(1);
+        sheet.Columns(1, InventoryHeaders.Length)
+            .AdjustToContents(1, Math.Max(rowIndex - 1, 1), 10d, 40d);
     }
 
     private static void WriteHeaderRow(IXLWorksheet sheet)
@@ -249,6 +413,18 @@ public sealed class ClosedXmlSellerProductWorkbook : ISellerProductWorkbook
 
         var rowIndex = 2;
         foreach (var (column, rule) in Guide)
+        {
+            sheet.Cell(rowIndex, 1).SetValue(column);
+            sheet.Cell(rowIndex, 2).SetValue(rule);
+            rowIndex++;
+        }
+
+        rowIndex++;
+        sheet.Cell(rowIndex, 1).SetValue("Inventory sheet");
+        sheet.Cell(rowIndex, 1).Style.Font.Bold = true;
+        rowIndex++;
+
+        foreach (var (column, rule) in InventoryGuide)
         {
             sheet.Cell(rowIndex, 1).SetValue(column);
             sheet.Cell(rowIndex, 2).SetValue(rule);

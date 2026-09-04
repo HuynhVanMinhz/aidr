@@ -28,6 +28,7 @@ public sealed class SellerProductExcelService : ISellerProductExcelService
     private const string ActionCreate = "Create";
     private const string ActionUpdate = "Update";
     private const string ActionError = "Error";
+    private const string ActionReceive = "Receive";
 
     private static readonly Regex SlugRegex = new(
         @"^[a-z0-9]+(?:-[a-z0-9]+)*$",
@@ -42,15 +43,20 @@ public sealed class SellerProductExcelService : ISellerProductExcelService
 
     private readonly ISellerProductRepository _repository;
     private readonly ISellerProductService _products;
+    private readonly ISellerInventoryService _inventory;
     private readonly ISellerProductWorkbook _workbook;
 
     public SellerProductExcelService(
         ISellerProductRepository repository,
         ISellerProductService products,
+        ISellerInventoryService inventory,
         ISellerProductWorkbook workbook)
     {
         _repository = repository;
         _products = products;
+        // Stock goes in through the same service the Inventory screen uses, so a
+        // spreadsheet can never receive a lot the form would have refused.
+        _inventory = inventory;
         _workbook = workbook;
     }
 
@@ -113,7 +119,26 @@ public sealed class SellerProductExcelService : ISellerProductExcelService
             ImageUrls = string.Join(", ", imagesByProduct.GetValueOrDefault(item.ProductId) ?? []),
         }).ToList();
 
-        return _workbook.WriteProducts(exports, categories.Choices);
+        // One line per sellable configuration: that is the grain stock is held at,
+        // and the grain the seller has to type a quantity against.
+        var stock = records.SelectMany(item => item.Variants.Count == 0
+            ? [new SellerInventorySheetExport
+                {
+                    Slug = item.Slug,
+                    ProductName = item.Name,
+                    OnHand = item.StockQuantity,
+                }]
+            : item.Variants.Select(v => new SellerInventorySheetExport
+                {
+                    Slug = item.Slug,
+                    ProductName = item.Name,
+                    VariantSku = v.Sku,
+                    VariantName = v.VariantName,
+                    OnHand = v.StockQuantity,
+                }))
+            .ToList();
+
+        return _workbook.WriteProducts(exports, stock, categories.Choices);
     }
 
     public async Task<byte[]> BuildTemplateAsync(Guid ownerUserId, CancellationToken cancellationToken = default)
@@ -130,14 +155,20 @@ public sealed class SellerProductExcelService : ISellerProductExcelService
     {
         var plan = await PlanAsync(ownerUserId, file, cancellationToken);
 
+        var receiving = plan.StockRows.Where(r => r.Action == ActionReceive).ToList();
+
         return new SellerProductImportPreviewDto
         {
             TotalRows = plan.Rows.Count,
             CreateCount = plan.Rows.Count(r => r.Action == ActionCreate),
             UpdateCount = plan.Rows.Count(r => r.Action == ActionUpdate),
             ErrorCount = plan.Rows.Count(r => r.Action == ActionError),
+            StockRowCount = receiving.Count,
+            StockErrorCount = plan.StockRows.Count(r => r.Action == ActionError),
+            StockUnitCount = receiving.Sum(r => r.Quantity ?? 0),
             Warnings = plan.Warnings,
             Rows = plan.Rows.Select(ToDto).ToList(),
+            StockRows = plan.StockRows.Select(ToDto).ToList(),
         };
     }
 
@@ -197,13 +228,85 @@ public sealed class SellerProductExcelService : ISellerProductExcelService
             }
         }
 
+        // Stock is applied last so a lot can reference a product this same file
+        // created a moment ago.
+        var (lots, units, stockFailed) = await ReceiveStockAsync(ownerUserId, plan, cancellationToken);
+
         return new SellerProductImportResultDto
         {
             Created = created,
             Updated = updated,
             Failed = failed.Count,
             FailedRows = failed,
+            StockLotsReceived = lots,
+            StockUnitsReceived = units,
+            StockFailed = stockFailed.Count,
+            FailedStockRows = stockFailed,
         };
+    }
+
+    /// <summary>
+    /// Receives every planned lot. A row that fails is reported and the rest still
+    /// run: a rejected lot is not a reason to leave the other deliveries unrecorded.
+    /// </summary>
+    private async Task<(int Lots, int Units, List<SellerInventoryImportRowDto> Failed)> ReceiveStockAsync(
+        Guid ownerUserId,
+        ImportPlan plan,
+        CancellationToken cancellationToken)
+    {
+        var lots = 0;
+        var units = 0;
+        var failed = new List<SellerInventoryImportRowDto>();
+
+        foreach (var row in plan.StockRows)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            if (row.Action == ActionError)
+            {
+                failed.Add(ToDto(row));
+                continue;
+            }
+
+            // Products created by this run had no id at planning time.
+            var productId = row.ProductId ?? plan.CreatedIdFor(row.Slug!);
+            if (productId is null)
+            {
+                failed.Add(ToDto(row) with
+                {
+                    Errors = [$"No product with slug \"{row.Slug}\" — the row that would have created it did not run."],
+                });
+                continue;
+            }
+
+            try
+            {
+                await _inventory.ImportLotAsync(
+                    ownerUserId,
+                    productId.Value,
+                    new ImportStockLotRequest
+                    {
+                        VariantId = row.VariantId,
+                        LotCode = row.LotCode,
+                        Quantity = row.Quantity!.Value,
+                        UnitCost = row.UnitCost!.Value,
+                        SupplierName = row.SupplierName,
+                        InvoiceNumber = row.InvoiceNumber,
+                        ReceivedAt = row.ReceivedAt,
+                        Note = row.Note,
+                    },
+                    cancellationToken);
+
+                lots++;
+                units += row.Quantity!.Value;
+            }
+            catch (AppException ex)
+            {
+                failed.Add(ToDto(row) with { Errors = [ex.Message] });
+            }
+        }
+
+        return (lots, units, failed);
     }
 
     /* ------------------------------------------------------------ planning */
@@ -219,9 +322,10 @@ public sealed class SellerProductExcelService : ISellerProductExcelService
         CancellationToken cancellationToken)
     {
         var shop = await RequireShopAsync(ownerUserId, cancellationToken);
-        var sheetRows = _workbook.Read(file);
+        var sheets = _workbook.Read(file);
+        var sheetRows = sheets.Products;
 
-        if (sheetRows.Count == 0)
+        if (sheetRows.Count == 0 && sheets.Inventory.Count == 0)
             throw new AppException("The sheet has no product rows.");
 
         if (sheetRows.Count > MaxRows)
@@ -261,7 +365,209 @@ public sealed class SellerProductExcelService : ISellerProductExcelService
 
         await ValidateImagesAsync(planned, cancellationToken);
 
-        return new ImportPlan(planned, warnings);
+        var stock = await PlanStockAsync(shop.ShopId, sheets.Inventory, planned, cancellationToken);
+        WarnOnRepeatedStockRows(stock, warnings);
+
+        return new ImportPlan(planned, warnings, stock);
+    }
+
+    /// <summary>
+    /// Two rows for the same configuration are legal — a shop really can take two
+    /// deliveries — but they are also what a duplicated paste looks like, and the
+    /// difference is only visible to the seller. So it is said out loud.
+    /// </summary>
+    private static void WarnOnRepeatedStockRows(List<PlannedStockRow> stock, List<string> warnings)
+    {
+        var groups = stock
+            .Where(r => r.Action == ActionReceive && r.Slug is not null)
+            .GroupBy(r => $"{r.Slug}|{r.VariantSku?.ToLowerInvariant() ?? string.Empty}")
+            .Where(g => g.Count() > 1);
+
+        foreach (var group in groups)
+        {
+            var first = group.First();
+            var where = first.VariantSku is null
+                ? Quoted(first.Slug!)
+                : $"{Quoted(first.Slug!)} / {Quoted(first.VariantSku)}";
+
+            warnings.Add(
+                $"Rows {string.Join(", ", group.Select(r => r.RowNumber))} all receive stock for " +
+                $"{where}; that is {group.Sum(r => r.Quantity ?? 0)} units in " +
+                $"{group.Count()} separate lots.");
+        }
+    }
+
+    /// <summary>
+    /// Works out what each Inventory row would receive, and against which product
+    /// and configuration. A slug the file itself is creating is accepted here and
+    /// resolved to its new id once the products have been written.
+    /// </summary>
+    private async Task<List<PlannedStockRow>> PlanStockAsync(
+        Guid shopId,
+        IReadOnlyList<SellerInventorySheetRow> sheetRows,
+        List<PlannedRow> productRows,
+        CancellationToken cancellationToken)
+    {
+        var planned = new List<PlannedStockRow>(sheetRows.Count);
+        if (sheetRows.Count == 0) return planned;
+
+        if (sheetRows.Count > MaxRows)
+            throw new AppException($"The Inventory sheet has {sheetRows.Count} rows; the limit is {MaxRows} per import.");
+
+        // One lookup per distinct slug, however many lots that slug receives.
+        var resolved = new Dictionary<string, SellerProductRecord?>(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var sheetRow in sheetRows)
+        {
+            var row = new PlannedStockRow { RowNumber = sheetRow.RowNumber, Action = ActionError };
+            var errors = row.Errors;
+
+            row.Slug = sheetRow.Slug?.Trim().ToLowerInvariant();
+            row.VariantSku = Trimmed(sheetRow.VariantSku);
+
+            if (string.IsNullOrWhiteSpace(row.Slug))
+                errors.Add("Slug is required - it says which product this stock is for.");
+
+            /* quantity and cost: the two cells that make a row do anything */
+            if (string.IsNullOrWhiteSpace(sheetRow.Quantity))
+            {
+                errors.Add("Quantity is required to receive stock.");
+            }
+            else if (!int.TryParse(
+                         sheetRow.Quantity.Trim(),
+                         NumberStyles.Integer,
+                         CultureInfo.InvariantCulture,
+                         out var qty))
+            {
+                errors.Add($"Quantity {Quoted(sheetRow.Quantity)} is not a whole number.");
+            }
+            else if (qty <= 0 || qty > SellerInventoryConstants.MaxQuantity)
+            {
+                errors.Add($"Quantity must be between 1 and {SellerInventoryConstants.MaxQuantity}.");
+            }
+            else
+            {
+                row.Quantity = qty;
+            }
+
+            if (string.IsNullOrWhiteSpace(sheetRow.UnitCost))
+                errors.Add("UnitCost is required: a lot with no cost would make every margin figure wrong.");
+            else if (!TryParseMoney(sheetRow.UnitCost, out var cost))
+                errors.Add($"UnitCost {Quoted(sheetRow.UnitCost)} is not a number.");
+            else if (cost < 0)
+                errors.Add("UnitCost must be 0 or more.");
+            else
+                row.UnitCost = cost;
+
+            if (!string.IsNullOrWhiteSpace(sheetRow.ReceivedAt))
+            {
+                if (DateTime.TryParse(
+                        sheetRow.ReceivedAt.Trim(),
+                        CultureInfo.InvariantCulture,
+                        DateTimeStyles.AdjustToUniversal | DateTimeStyles.AssumeUniversal,
+                        out var receivedAt))
+                {
+                    row.ReceivedAt = receivedAt;
+                }
+                else
+                {
+                    errors.Add($"ReceivedAt {Quoted(sheetRow.ReceivedAt)} is not a date; use 2026-09-04.");
+                }
+            }
+
+            row.LotCode = Trimmed(sheetRow.LotCode);
+            row.SupplierName = Trimmed(sheetRow.SupplierName);
+            row.InvoiceNumber = Trimmed(sheetRow.InvoiceNumber);
+            row.Note = Trimmed(sheetRow.Note);
+
+            /* which product, and which configuration of it */
+            if (row.Slug is { } slug)
+            {
+                if (!resolved.TryGetValue(slug, out var record))
+                {
+                    var productId = await _repository.FindIdBySlugAsync(shopId, slug, cancellationToken);
+                    record = productId is null
+                        ? null
+                        : await _repository.GetByIdForShopAsync(shopId, productId.Value, cancellationToken);
+                    resolved[slug] = record;
+                }
+
+                if (record is not null)
+                {
+                    row.ProductId = record.ProductId;
+                    row.ProductName = record.Name;
+                    ResolveVariant(record, row);
+                }
+                else
+                {
+                    var creating = productRows.FirstOrDefault(r =>
+                        r.Action == ActionCreate &&
+                        string.Equals(r.Slug, slug, StringComparison.OrdinalIgnoreCase));
+
+                    if (creating is null)
+                    {
+                        errors.Add($"No product with slug {Quoted(slug)} in your shop, and this file does not create one.");
+                    }
+                    else
+                    {
+                        // It cannot have variants yet: the Products sheet has no way
+                        // to describe them, so a new product is single-configuration.
+                        row.ProductName = creating.Name;
+
+                        if (row.VariantSku is not null)
+                            errors.Add("VariantSku cannot be used for a product this file is creating; import it first, then add its stock.");
+                    }
+                }
+            }
+
+            row.Action = errors.Count == 0 ? ActionReceive : ActionError;
+            planned.Add(row);
+        }
+
+        return planned;
+    }
+
+    /// <summary>
+    /// Stock belongs to a configuration, so a product sold in variants has to be
+    /// told which one; a single-configuration product has to be told nothing.
+    /// </summary>
+    private static void ResolveVariant(SellerProductRecord record, PlannedStockRow row)
+    {
+        if (record.Variants.Count == 0)
+        {
+            if (row.VariantSku is not null)
+                row.Errors.Add($"{Quoted(record.Name)} is sold as a single configuration; leave VariantSku blank.");
+            return;
+        }
+
+        if (row.VariantSku is null)
+        {
+            var known = record.Variants
+                .Where(v => !string.IsNullOrWhiteSpace(v.Sku))
+                .Select(v => v.Sku!)
+                .ToList();
+
+            row.Errors.Add(known.Count == 0
+                ? $"{Quoted(record.Name)} is sold in variants, but none of them has a SKU to address it by."
+                : $"{Quoted(record.Name)} is sold in variants; set VariantSku to one of: {string.Join(", ", known)}.");
+            return;
+        }
+
+        var match = record.Variants.FirstOrDefault(v =>
+            string.Equals(v.Sku, row.VariantSku, StringComparison.OrdinalIgnoreCase));
+
+        if (match is null)
+            row.Errors.Add($"{Quoted(record.Name)} has no variant with SKU {Quoted(row.VariantSku)}.");
+        else
+            row.VariantId = match.VariantId;
+    }
+
+    private static string Quoted(string value) => "\"" + value.Trim() + "\"";
+
+    private static string? Trimmed(string? value)
+    {
+        var trimmed = value?.Trim();
+        return string.IsNullOrEmpty(trimmed) ? null : trimmed;
     }
 
     private PlannedRow BuildPlannedRow(SellerProductSheetRow sheet, CategoryLookup categories)
@@ -516,6 +822,18 @@ public sealed class SellerProductExcelService : ISellerProductExcelService
         ProductId = row.ProductId,
         CategoryName = row.CategoryName,
         BasePrice = row.BasePrice,
+        Errors = row.Errors.ToList(),
+    };
+
+    private static SellerInventoryImportRowDto ToDto(PlannedStockRow row) => new()
+    {
+        RowNumber = row.RowNumber,
+        Slug = row.Slug,
+        ProductName = row.ProductName,
+        VariantSku = row.VariantSku,
+        Action = row.Action,
+        Quantity = row.Quantity,
+        UnitCost = row.UnitCost,
         Errors = row.Errors.ToList(),
     };
 
@@ -907,17 +1225,49 @@ public sealed class SellerProductExcelService : ISellerProductExcelService
         }
     }
 
+    /// <summary>One Inventory row, decided but not yet written.</summary>
+    private sealed class PlannedStockRow
+    {
+        public int RowNumber { get; init; }
+        public string Action { get; set; } = null!;
+        public string? Slug { get; set; }
+        public string? ProductName { get; set; }
+        public Guid? ProductId { get; set; }
+        public string? VariantSku { get; set; }
+        public Guid? VariantId { get; set; }
+        public int? Quantity { get; set; }
+        public decimal? UnitCost { get; set; }
+        public string? LotCode { get; set; }
+        public string? SupplierName { get; set; }
+        public string? InvoiceNumber { get; set; }
+        public DateTime? ReceivedAt { get; set; }
+        public string? Note { get; set; }
+        public List<string> Errors { get; } = [];
+    }
+
     private sealed class ImportPlan
     {
-        public ImportPlan(List<PlannedRow> rows, List<string> warnings)
+        public ImportPlan(List<PlannedRow> rows, List<string> warnings, List<PlannedStockRow> stockRows)
         {
             Rows = rows;
             Warnings = warnings;
+            StockRows = stockRows;
         }
 
         public List<PlannedRow> Rows { get; }
 
         public IReadOnlyList<string> Warnings { get; }
+
+        public List<PlannedStockRow> StockRows { get; }
+
+        /// <summary>
+        /// The id a slug ended up with, for stock rows planned before the product
+        /// existed. Null means the row that would have created it never succeeded.
+        /// </summary>
+        public Guid? CreatedIdFor(string slug) =>
+            Rows.FirstOrDefault(r =>
+                r.ProductId is not null &&
+                string.Equals(r.Slug, slug, StringComparison.OrdinalIgnoreCase))?.ProductId;
 
         /// <summary>
         /// Once a row has created a product, later rows with the same slug must

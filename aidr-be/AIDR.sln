@@ -11,6 +11,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AIDR.Infrastructure", "AIDR
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AIDR.Modules", "AIDR.Modules\AIDR.Modules.csproj", "{62FF9681-896D-4719-A07C-8C031BCF94D5}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AIDR.Tests", "AIDR.Tests\AIDR.Tests.csproj", "{69E88F2B-20A5-45DC-8149-C1F8350DB39A}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -69,6 +71,18 @@ Global
 		{62FF9681-896D-4719-A07C-8C031BCF94D5}.Release|x64.Build.0 = Release|Any CPU
 		{62FF9681-896D-4719-A07C-8C031BCF94D5}.Release|x86.ActiveCfg = Release|Any CPU
 		{62FF9681-896D-4719-A07C-8C031BCF94D5}.Release|x86.Build.0 = Release|Any CPU
+		{69E88F2B-20A5-45DC-8149-C1F8350DB39A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{69E88F2B-20A5-45DC-8149-C1F8350DB39A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{69E88F2B-20A5-45DC-8149-C1F8350DB39A}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{69E88F2B-20A5-45DC-8149-C1F8350DB39A}.Debug|x64.Build.0 = Debug|Any CPU
+		{69E88F2B-20A5-45DC-8149-C1F8350DB39A}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{69E88F2B-20A5-45DC-8149-C1F8350DB39A}.Debug|x86.Build.0 = Debug|Any CPU
+		{69E88F2B-20A5-45DC-8149-C1F8350DB39A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{69E88F2B-20A5-45DC-8149-C1F8350DB39A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{69E88F2B-20A5-45DC-8149-C1F8350DB39A}.Release|x64.ActiveCfg = Release|Any CPU
+		{69E88F2B-20A5-45DC-8149-C1F8350DB39A}.Release|x64.Build.0 = Release|Any CPU
+		{69E88F2B-20A5-45DC-8149-C1F8350DB39A}.Release|x86.ActiveCfg = Release|Any CPU
+		{69E88F2B-20A5-45DC-8149-C1F8350DB39A}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
