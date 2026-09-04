@@ -14,7 +14,7 @@ html[data-aidr-shell='admin'] .dropdown-menu.show {
   display: block;
 }
 
-/* Flatpickr — align with AIDR admin primary (#16181D) */
+/* Flatpickr — follows the admin brand tokens, so it inverts in dark mode too. */
 html[data-aidr-shell='admin'] .flatpickr-calendar {
   box-shadow: 0 0.5rem 1.5rem rgba(22, 24, 29, 0.12);
   border: 1px solid rgba(22, 24, 29, 0.08);
@@ -26,18 +26,19 @@ html[data-aidr-shell='admin'] .flatpickr-day.endRange,
 html[data-aidr-shell='admin'] .flatpickr-day.selected:hover,
 html[data-aidr-shell='admin'] .flatpickr-day.startRange:hover,
 html[data-aidr-shell='admin'] .flatpickr-day.endRange:hover {
-  background: #16181d;
-  border-color: #16181d;
+  background: var(--aidr-brand, #16181d);
+  border-color: var(--aidr-brand, #16181d);
+  color: var(--aidr-brand-on, #ffffff);
 }
 
 html[data-aidr-shell='admin'] .flatpickr-day.today:not(.selected) {
-  border-color: #16181d;
+  border-color: var(--aidr-brand, #16181d);
 }
 
 html[data-aidr-shell='admin'] .flatpickr-months .flatpickr-month,
 html[data-aidr-shell='admin'] .flatpickr-current-month .flatpickr-monthDropdown-months,
 html[data-aidr-shell='admin'] span.flatpickr-weekday {
-  color: #16181d;
+  color: var(--aidr-brand, #16181d);
 }
 
 html[data-aidr-shell='admin'] .flatpickr-input[readonly],

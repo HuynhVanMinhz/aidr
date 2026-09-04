@@ -1,94 +1,190 @@
 /**
- * AIDR brand override for Larkon admin theme.
- * Aligns primary/accent with storefront theme-for-aidr-fe (#16181D).
+ * AIDR brand override for the Larkon admin theme.
+ *
+ * Larkon ships a purple-grey accent (#8486a7) across links, muted text and the
+ * side nav. AIDR's mark is the near-black #16181D of the storefront, so every
+ * one of those roles is remapped here — this file loads after app.min.css, so
+ * it is the last word without forking the vendor stylesheet.
+ *
+ * #16181D can only be the accent in light mode: on a dark ground a near-black
+ * accent is invisible. Dark mode therefore inverts the pair — a light neutral
+ * carries the accent and the brand becomes the colour written on top of it —
+ * which keeps the two themes the same design rather than two different ones.
+ * Everything below is expressed through the tokens in this first block, so the
+ * inversion is a handful of values rather than a second copy of the rules.
  */
 :root,
 [data-bs-theme='light'] {
-  --bs-primary: #16181d;
+  --aidr-brand: #16181d;
+  --aidr-brand-rgb: 22, 24, 29;
+  --aidr-brand-hover: #2a2e36;
+  --aidr-brand-active: #0c0d10;
+  /* Text and icons drawn on top of a brand-filled surface. */
+  --aidr-brand-on: #ffffff;
+  /* Secondary text: the role Larkon spent #8486a7 on, in a neutral grey. */
+  --aidr-brand-muted: #5f636d;
+  /* Third-rank text — disabled options, dropdown headers. */
+  --aidr-brand-faint: #8a8f99;
+  --aidr-brand-border: rgba(22, 24, 29, 0.14);
+  --aidr-brand-subtle-bg: rgba(22, 24, 29, 0.08);
+  /*
+   * The admin shell pins its topbar light and its side nav dark whichever theme
+   * is on, so those two surfaces need muted text that does NOT follow the theme.
+   * These are deliberately absent from the dark block below.
+   */
+  --aidr-on-light-muted: #5f636d;
+  --aidr-on-dark-muted: #9ca3af;
+
+  --bs-primary: var(--aidr-brand);
   --bs-primary-rgb: 22, 24, 29;
-  --bs-orange: #16181d;
+  --bs-orange: var(--aidr-brand);
   --bs-orange-rgb: 22, 24, 29;
-  --bs-primary-text-emphasis: #0c0d10;
-  --bs-primary-bg-subtle: rgba(22, 24, 29, 0.08);
-  --bs-primary-border-subtle: rgba(22, 24, 29, 0.2);
-  --bs-headings-color: #16181d;
-  --bs-link-color: #16181d;
-  --bs-link-hover-color: #2a2e36;
-  --bs-main-nav-item-hover-color: #16181d;
+  --bs-primary-text-emphasis: var(--aidr-brand-active);
+  --bs-primary-bg-subtle: var(--aidr-brand-subtle-bg);
+  --bs-primary-border-subtle: var(--aidr-brand-border);
+  --bs-headings-color: var(--aidr-brand);
+  --bs-heading-color: var(--aidr-brand);
+  --bs-link-color: var(--aidr-brand);
+  --bs-link-color-rgb: 22, 24, 29;
+  --bs-link-hover-color: var(--aidr-brand-hover);
+  --bs-link-hover-color-rgb: 42, 46, 54;
+
+  /* Larkon's grey ramp leans purple; these three are the ones that show. */
+  --bs-gray-500: var(--aidr-brand-faint);
+  --bs-dark-border-subtle: var(--aidr-brand-border);
+  --bs-dropdown-link-disabled-color: var(--aidr-brand-faint);
+  --bs-dropdown-header-color: var(--aidr-brand-muted);
+
+  /*
+   * --bs-main-nav-item-hover-color is deliberately NOT set here: the side nav's
+   * colours belong to whichever data-menu-color block is active below, and a
+   * theme-following value at :root would fight them.
+   */
   /* AIDR emblem is nearly square; Larkon defaults (24/26px) were for a wide wordmark. */
   --bs-logo-lg-height: 60px;
   --bs-logo-sm-height: 60px;
 }
 
+html[data-bs-theme='dark'],
+[data-bs-theme='dark'] {
+  /* The accent and the colour written on it swap places. */
+  --aidr-brand: #e9ebef;
+  --aidr-brand-rgb: 233, 235, 239;
+  --aidr-brand-hover: #ffffff;
+  --aidr-brand-active: #cbd0d8;
+  --aidr-brand-on: #16181d;
+  --aidr-brand-muted: #9ca3af;
+  --aidr-brand-faint: #6b7280;
+  --aidr-brand-border: rgba(233, 235, 239, 0.18);
+  --aidr-brand-subtle-bg: rgba(233, 235, 239, 0.12);
+
+  --bs-primary-rgb: 233, 235, 239;
+  --bs-primary-text-emphasis: var(--aidr-brand-hover);
+  --bs-link-color-rgb: 233, 235, 239;
+  --bs-link-hover-color-rgb: 255, 255, 255;
+}
+
+/* ---------------------------------- nav ---------------------------------- */
+
 html[data-menu-color='light'] {
   --bs-main-nav-bg: #ffffff;
-  --bs-main-nav-item-color: #707070;
-  --bs-main-nav-item-hover-color: #16181d;
-  --bs-main-nav-border-color: rgba(22, 24, 29, 0.1);
+  --bs-main-nav-item-color: var(--aidr-on-light-muted);
+  --bs-main-nav-item-hover-color: var(--aidr-brand);
+  --bs-main-nav-border-color: var(--aidr-brand-border);
+}
+
+html[data-menu-color='dark'] {
+  --bs-main-nav-item-color: var(--aidr-on-dark-muted);
+  --bs-main-nav-item-hover-color: #ffffff;
 }
 
 html[data-topbar-color='light'] {
   --bs-topbar-bg: #ffffff;
-  --bs-topbar-item-color: #707070;
+  --bs-topbar-item-color: var(--aidr-on-light-muted);
   --bs-topbar-search-bg: #f3f3f3;
 }
 
-html[data-bs-theme='dark'],
-[data-bs-theme='dark'] {
-  --bs-primary: #2dd4bf;
-  --bs-primary-rgb: 45, 212, 191;
-  --bs-primary-text-emphasis: #5eead4;
-  --bs-primary-bg-subtle: rgba(45, 212, 191, 0.15);
-  --bs-primary-border-subtle: rgba(45, 212, 191, 0.35);
-  --bs-main-nav-item-hover-color: #2dd4bf;
+/*
+ * Larkon paints this icon #8486a7 outright. Follow the topbar's own item colour
+ * rather than a fixed value: the vendor re-darkens the topbar in dark mode, and
+ * a pinned light-surface grey would land on a dark bar.
+ */
+.topbar .app-search .search-widget-icon {
+  color: var(--bs-topbar-item-color);
 }
+
+/* -------------------------------- surfaces -------------------------------- */
 
 .btn-primary,
 .bg-primary,
 .badge.bg-primary,
 .page-item.active .page-link,
 .nav-pills .nav-link.active {
-  --bs-btn-bg: #16181d;
-  --bs-btn-border-color: #16181d;
-  --bs-btn-hover-bg: #2a2e36;
-  --bs-btn-hover-border-color: #2a2e36;
-  --bs-btn-active-bg: #0c0d10;
-  --bs-btn-active-border-color: #0c0d10;
-  --bs-btn-disabled-bg: #16181d;
-  --bs-btn-disabled-border-color: #16181d;
+  --bs-btn-color: var(--aidr-brand-on);
+  --bs-btn-bg: var(--aidr-brand);
+  --bs-btn-border-color: var(--aidr-brand);
+  --bs-btn-hover-color: var(--aidr-brand-on);
+  --bs-btn-hover-bg: var(--aidr-brand-hover);
+  --bs-btn-hover-border-color: var(--aidr-brand-hover);
+  --bs-btn-active-color: var(--aidr-brand-on);
+  --bs-btn-active-bg: var(--aidr-brand-active);
+  --bs-btn-active-border-color: var(--aidr-brand-active);
+  --bs-btn-disabled-color: var(--aidr-brand-on);
+  --bs-btn-disabled-bg: var(--aidr-brand);
+  --bs-btn-disabled-border-color: var(--aidr-brand);
+}
+
+.bg-primary,
+.badge.bg-primary,
+.page-item.active .page-link,
+.nav-pills .nav-link.active {
+  color: var(--aidr-brand-on) !important;
+  background-color: var(--aidr-brand) !important;
+  border-color: var(--aidr-brand);
 }
 
 .text-primary {
-  color: #16181d !important;
-}
-
-.bg-primary {
-  background-color: #16181d !important;
+  color: var(--aidr-brand) !important;
 }
 
 .bg-primary-subtle {
-  background-color: rgba(22, 24, 29, 0.08) !important;
+  background-color: var(--aidr-brand-subtle-bg) !important;
 }
 
 .btn-soft-primary {
-  color: #16181d;
-  background-color: rgba(22, 24, 29, 0.08);
+  color: var(--aidr-brand);
+  background-color: var(--aidr-brand-subtle-bg);
   border-color: transparent;
 }
 
 .btn-soft-primary:hover,
 .btn-soft-primary:focus {
-  color: #ffffff;
-  background-color: #16181d;
+  color: var(--aidr-brand-on);
+  background-color: var(--aidr-brand);
 }
 
 .btn-outline-primary {
-  --bs-btn-color: #16181d;
-  --bs-btn-border-color: #16181d;
-  --bs-btn-hover-bg: #16181d;
-  --bs-btn-hover-border-color: #16181d;
-  --bs-btn-active-bg: #16181d;
-  --bs-btn-active-border-color: #16181d;
+  --bs-btn-color: var(--aidr-brand);
+  --bs-btn-border-color: var(--aidr-brand);
+  --bs-btn-hover-color: var(--aidr-brand-on);
+  --bs-btn-hover-bg: var(--aidr-brand);
+  --bs-btn-hover-border-color: var(--aidr-brand);
+  --bs-btn-active-color: var(--aidr-brand-on);
+  --bs-btn-active-bg: var(--aidr-brand);
+  --bs-btn-active-border-color: var(--aidr-brand);
+}
+
+/* ---------------------------------- links --------------------------------- */
+
+.btn-link,
+.message-list li a {
+  color: var(--aidr-brand);
+}
+
+.btn-link:hover,
+.btn-link:focus,
+.message-list li a:hover {
+  color: var(--aidr-brand-hover);
 }
 
 .logo-box img {
