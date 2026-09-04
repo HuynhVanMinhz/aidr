@@ -386,7 +386,7 @@
 }
 
 .checkout-totals__row--discount span:last-child {
-  color: #1a7f37;
+  color: var(--positive-text, #1a7f37);
 }
 
 .checkout-totals__row--grand {
@@ -758,7 +758,7 @@
 }
 
 .receipt-totals__row--discount span:last-child {
-  color: #1a7f37;
+  color: var(--positive-text, #1a7f37);
 }
 
 .receipt-totals__grand {
@@ -851,7 +851,7 @@
 }
 
 .receipt-payment__hint--ok {
-  color: #1a7f37;
+  color: var(--positive-text, #1a7f37);
 }
 
 /* Shipping address */

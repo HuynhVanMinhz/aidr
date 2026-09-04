@@ -14,7 +14,7 @@ html[data-theme='light'] {
   --aidr-surface: #ffffff;
   --aidr-navbar: #ffffff;
   --aidr-text: #16181d;
-  --aidr-text-muted: #707070;
+  --aidr-text-muted: #6b6b6b;
   --aidr-border: rgba(22, 24, 29, 0.1);
   --aidr-accent: #16181d;
   --aidr-accent-hover: #2a2e36;
@@ -33,12 +33,12 @@ html[data-theme='light'] {
   --primary-color: #16181d;
   --secondary-color: #f3f3f3;
   --bg-color: #ffffff;
-  --text-color: #707070;
+  --text-color: #6b6b6b;
   --accent-color: #16181d;
   --white-color: #ffffff;
   --divider-color: #16181d1a;
   --dark-divider-color: #ffffff1a;
-  --error-color: rgb(230, 87, 87);
+  --error-color: #d92d20;
 
   /* Auth alerts */
   --alert-error-bg: #fef3f2;
@@ -57,6 +57,31 @@ html[data-theme='light'] {
   --btn-secondary-bg: transparent;
   --btn-secondary-border: rgba(22, 24, 29, 0.2);
   --btn-secondary-text: #16181d;
+
+  /*
+   * Text drawn ON a themed fill — the accent, and the error fill behind a
+   * discount badge, which the dark theme lightens for the same reason.
+   *
+   * It is a separate token because it must move OPPOSITE to the accent, not with
+   * it: light mode fills buttons with near-black and writes white on them, dark
+   * mode fills them with teal and must write near-black. --white-color cannot do
+   * this job, because it also means "text on the dark navbar", which stays light.
+   */
+  --on-accent: #ffffff;
+
+  /*
+   * "This is good news" written as plain text — a discount line, an in-stock
+   * label — rather than inside an alert box. It sits straight on the surface,
+   * so it has to move with the surface: a dark green is invisible on charcoal.
+   */
+  --positive-text: #1a7f37;
+
+  /*
+   * Text on a fill that stays pale in BOTH themes — the inverted button sitting
+   * on a dark hero. --primary-color cannot do it: that one flips to pale in dark
+   * and would put pale text on a pale button.
+   */
+  --on-light: #16181d;
 
   --logo-filter: none;
   --shadow-sm: 0 1px 2px rgba(22, 24, 29, 0.06);
@@ -111,6 +136,10 @@ html[data-theme='dark'] {
   --btn-secondary-bg: transparent;
   --btn-secondary-border: rgba(232, 234, 237, 0.2);
   --btn-secondary-text: #e8eaed;
+
+  --on-accent: #0c0e14;
+  --positive-text: #4ade80;
+  --on-light: #0c0e14;
 
   --logo-filter: none;
   --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.35);

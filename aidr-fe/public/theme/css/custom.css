@@ -103,7 +103,7 @@ body{
 }
 
 ::selection{
-	color: var(--white-color);
+	color: var(--on-accent);
 	background-color: var(--accent-color);
 	filter: invert(1);
 }
@@ -227,7 +227,7 @@ a:focus{
 	font-weight: 600;
 	line-height: 1em;
 	text-transform: capitalize;
-	color: var(--white-color);
+	color: var(--on-accent);
 	background: var(--accent-color);
 	border: 1px solid var(--accent-color);
 	border-radius: 5px;
@@ -282,13 +282,14 @@ a:focus{
 }
 
 .btn-default.btn-highlighted{
-	color: var(--primary-color);
+	color: var(--on-light);
 	background: var(--white-color);
 	border-color: var(--white-color);
 }
 
+/* On hover the ::after fills the button with --primary-color instead. */
 .btn-default.btn-highlighted:hover{
-	color: var(--white-color);
+	color: var(--on-accent);
 }
 
 .btn-default.btn-highlighted::before{
@@ -833,7 +834,7 @@ header.main-header .container{
 .popular-categories-list li:hover a{
 	padding-left: 23px;
 	background: var(--primary-color);
-	color: var(--white-color);
+	color: var(--on-accent);
 }
 
 .main-menu .nav-menu-wrapper{
@@ -941,7 +942,7 @@ header.main-header .container{
 
 .main-menu ul ul .nav-item .nav-link:hover,
 .main-menu ul ul .nav-item .nav-link:focus{
-	color: var(--white-color);
+	color: var(--on-accent);
 	background-color: var(--primary-color);
 	padding: 10px 20px 10px 23px !important;
 }
@@ -1570,7 +1571,7 @@ header.main-header .container{
 	display: inline-block;
 	font-weight: 500;
 	line-height: normal;
-	color: var(--white-color);
+	color: var(--on-accent);
 	background: var(--error-color);
 	border-radius: 5px;
 	padding: 7px 14px;
@@ -2153,7 +2154,7 @@ header.main-header .container{
 	font-size: 12px;
 	font-weight: 700;
 	line-height: 1em;
-	color: var(--white-color);
+	color: var(--on-accent);
 	background: var(--accent-color);
 	border-radius: 100px;
 	padding: 5px 10px;
@@ -2934,7 +2935,7 @@ header.main-header .container{
 
 .footer-newsletter-form .newsletter-btn:hover{
 	background-color: var(--accent-color);
-	color: var(--white-color);
+	color: var(--on-accent);
 }
 
 .footer-newsletter-form .newsletter-btn i{
@@ -3414,7 +3415,7 @@ header.main-header .container{
 .page-pagination ul li.active a, 
 .page-pagination ul li a:hover{
     background: var(--accent-color);
-	color: var(--white-color);
+	color: var(--on-accent);
 }
 
 /************************************/
@@ -3619,7 +3620,7 @@ header.main-header .container{
 
 .post-tags .tag-links a:hover{
 	background: var(--accent-color);
-	color: var(--white-color);
+	color: var(--on-accent);
 }
 
 .post-social-sharing{
@@ -3656,7 +3657,7 @@ header.main-header .container{
 
 .post-social-sharing ul li:hover a{
 	background: var(--primary-color);
-	color: var(--white-color);
+	color: var(--on-accent);
 }
 
 .post-social-sharing ul li a i{
@@ -4118,7 +4119,7 @@ header.main-header .container{
 
 .product-single-item-size ul li input[type="radio"]:checked + label{
 	background: var(--primary-color);
-	color: var(--white-color);
+	color: var(--on-accent);
 }
 
 .product-single-content-body{
