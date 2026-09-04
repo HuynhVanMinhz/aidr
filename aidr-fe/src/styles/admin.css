@@ -119,6 +119,16 @@ html[data-aidr-shell='admin'] .wrapper .page-content > .container-xxl {
   padding-bottom: 1.5rem;
 }
 
+/*
+ * Larkon caps .container-xxl at 95%, which suits pages made of narrow cards but
+ * strands a column of empty page beside the chat. The chat workspace is a
+ * two-pane app view, not a document, so it takes the full content width — and
+ * the extra room goes to the message pane, since the thread list is fixed.
+ */
+html[data-aidr-shell='admin'] .wrapper .page-content > .container-xxl:has(.chat-workspace--admin) {
+  max-width: 100%;
+}
+
 /* Category form — preview card */
 .aidr-category-preview {
   position: relative;
@@ -240,6 +250,30 @@ html[data-aidr-shell='admin'] .wrapper .page-content > .container-xxl {
 .aidr-dropzone:hover .aidr-dropzone__overlay,
 .aidr-dropzone:focus-visible .aidr-dropzone__overlay {
   opacity: 1;
+}
+
+/*
+ * The dropzone was written for the light shell and paints its own paper-white
+ * ground; on the dark theme that is a slab of white in the middle of the form.
+ * Only the surfaces move — the accent still comes from --aidr-brand.
+ */
+[data-bs-theme='dark'] .aidr-dropzone {
+  border-color: rgba(233, 235, 239, 0.22);
+  background: linear-gradient(180deg, #232830 0%, #1c2027 100%);
+}
+
+[data-bs-theme='dark'] .aidr-dropzone:hover,
+[data-bs-theme='dark'] .aidr-dropzone.is-dragging {
+  background: #232830;
+  box-shadow: 0 0 0 4px rgba(233, 235, 239, 0.08);
+}
+
+[data-bs-theme='dark'] .aidr-dropzone__badge {
+  background: rgba(233, 235, 239, 0.1);
+}
+
+[data-bs-theme='dark'] .aidr-dropzone__preview img {
+  background: #232830;
 }
 
 /* Theme select — Larkon btn-outline-light dropdown */

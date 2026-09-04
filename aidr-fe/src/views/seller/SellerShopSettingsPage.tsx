@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { Link } from 'react-router-dom';
 import { AddressMapPicker } from '../../components/address/AddressMapPicker';
 import { FormField } from '../../components/admin/FormField';
+import { ImageDropzone } from '../../components/admin/ImageDropzone';
 import { OpeningHoursField } from '../../components/admin/OpeningHoursField';
 import { useShippingLocations } from '../../hooks/useShippingLocations';
 import { useToast } from '../../hooks/useToast';
@@ -9,6 +10,11 @@ import { getMyShop, requireSellerShop, updateMyShop } from '../../services/selle
 import type { SellerShop } from '../../types/sellerShop';
 import type { LatLng } from '../../types/shippingLocation';
 import { getApiErrorMessage } from '../../utils/apiError';
+import {
+  isCloudinaryConfigured,
+  uploadShopImageToCloudinary,
+  validateShopImageFile,
+} from '../../utils/cloudinaryUpload';
 import { visibleFieldErrors } from '../../utils/formValidation';
 import { reverseGeocode } from '../../utils/geocoding';
 import {
@@ -60,6 +66,9 @@ export function SellerShopSettingsPage() {
   const [pickupPoint, setPickupPoint] = useState<LatLng | null>(null);
   const [initialPickupPoint, setInitialPickupPoint] = useState<LatLng | null>(null);
   const [pickupCaption, setPickupCaption] = useState<string | null>(null);
+  const [imageError, setImageError] = useState<Partial<Record<'logoUrl' | 'bannerUrl', string>>>({});
+  // Without Cloudinary keys there is nowhere to upload to; the URL field still works.
+  const uploadsEnabled = isCloudinaryConfigured();
   const [pickupBusy, setPickupBusy] = useState(false);
 
   // Same carrier-backed lists the buyer picks a delivery address from, so a shop
@@ -168,6 +177,14 @@ export function SellerShopSettingsPage() {
       })
       .catch(() => undefined)
       .finally(() => setPickupBusy(false));
+  }
+
+  /** A finished upload is an edit like any other, and clears the last failure. */
+  function pickShopImage(key: 'logoUrl' | 'bannerUrl', url: string) {
+    setImageError((prev) => ({ ...prev, [key]: undefined }));
+    updateField(key, url);
+    markTouched(key);
+    toast.success(key === 'logoUrl' ? 'Logo uploaded.' : 'Banner uploaded.');
   }
 
   function markTouched(key: SellerShopFormField) {
@@ -334,28 +351,72 @@ export function SellerShopSettingsPage() {
                   </FormField>
                 </div>
                 <div className="col-lg-6">
-                  <FormField label="Logo URL" htmlFor="shop-logo" error={visibleErrors.logoUrl}>
-                    <input
-                      id="shop-logo"
-                      type="url"
-                      className="form-control"
+                  <FormField
+                    label="Logo"
+                    htmlFor="shop-logo-file"
+                    error={imageError.logoUrl ?? visibleErrors.logoUrl}
+                  >
+                    <ImageDropzone
+                      id="shop-logo-file"
                       value={form.logoUrl}
-                      onChange={(e) => updateField('logoUrl', e.target.value)}
-                      onBlur={() => markTouched('logoUrl')}
+                      onChange={(url) => pickShopImage('logoUrl', url)}
+                      upload={uploadShopImageToCloudinary}
+                      validate={validateShopImageFile}
+                      disabled={submitting || !uploadsEnabled}
+                      emptyLabel={uploadsEnabled ? 'Drop your logo here' : 'Uploads unavailable'}
+                      hint={
+                        uploadsEnabled
+                          ? 'Square works best · PNG or JPG · up to 4MB'
+                          : 'Image hosting is not configured — paste a URL below instead.'
+                      }
+                      previewAlt="Shop logo preview"
+                      onError={(message) => setImageError((e) => ({ ...e, logoUrl: message }))}
                     />
                   </FormField>
+                  <input
+                    id="shop-logo"
+                    type="text"
+                    className="form-control form-control-sm mt-n2 mb-3"
+                    value={form.logoUrl}
+                    placeholder="…or paste an image URL"
+                    aria-label="Logo URL"
+                    onChange={(e) => updateField('logoUrl', e.target.value)}
+                    onBlur={() => markTouched('logoUrl')}
+                  />
                 </div>
                 <div className="col-lg-6">
-                  <FormField label="Banner URL" htmlFor="shop-banner" error={visibleErrors.bannerUrl}>
-                    <input
-                      id="shop-banner"
-                      type="url"
-                      className="form-control"
+                  <FormField
+                    label="Banner"
+                    htmlFor="shop-banner-file"
+                    error={imageError.bannerUrl ?? visibleErrors.bannerUrl}
+                  >
+                    <ImageDropzone
+                      id="shop-banner-file"
                       value={form.bannerUrl}
-                      onChange={(e) => updateField('bannerUrl', e.target.value)}
-                      onBlur={() => markTouched('bannerUrl')}
+                      onChange={(url) => pickShopImage('bannerUrl', url)}
+                      upload={uploadShopImageToCloudinary}
+                      validate={validateShopImageFile}
+                      disabled={submitting || !uploadsEnabled}
+                      emptyLabel={uploadsEnabled ? 'Drop your banner here' : 'Uploads unavailable'}
+                      hint={
+                        uploadsEnabled
+                          ? 'Wide crop, around 3:1 · PNG or JPG · up to 4MB'
+                          : 'Image hosting is not configured — paste a URL below instead.'
+                      }
+                      previewAlt="Shop banner preview"
+                      onError={(message) => setImageError((e) => ({ ...e, bannerUrl: message }))}
                     />
                   </FormField>
+                  <input
+                    id="shop-banner"
+                    type="text"
+                    className="form-control form-control-sm mt-n2 mb-3"
+                    value={form.bannerUrl}
+                    placeholder="…or paste an image URL"
+                    aria-label="Banner URL"
+                    onChange={(e) => updateField('bannerUrl', e.target.value)}
+                    onBlur={() => markTouched('bannerUrl')}
+                  />
                 </div>
                 <div className="col-lg-6">
                   <FormField label="Province / City" htmlFor="shop-province" error={visibleErrors.province}>

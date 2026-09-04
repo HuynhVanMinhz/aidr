@@ -2,6 +2,11 @@
    Chat workspace — shared by the storefront (/chat) and the seller console.
    Self-contained: the two shells load different icon fonts and CSS resets, so
    nothing here relies on Bootstrap or Larkon component classes.
+
+   Class names must also stay clear of theirs. The admin shell appends the
+   Larkon stylesheets at runtime, so they land after this bundle and win every
+   specificity tie: its own `.chat-search` (display:table) was reshaping this
+   search box, which is why the box below is `chat-finder`.
    ========================================================================== */
 
 .chat-workspace {
@@ -122,7 +127,7 @@ html[data-theme='dark'] .chat-workspace {
 .chat-list__item:focus-visible,
 .chat-ghost-btn:focus-visible,
 .chat-send-btn:focus-visible,
-.chat-search__input:focus-visible,
+.chat-finder__input:focus-visible,
 .chat-composer__input:focus-visible,
 .chat-input:focus-visible {
   outline: 2px solid var(--chat-accent);
@@ -267,21 +272,28 @@ html[data-theme='dark'] .chat-avatar {
   font-weight: 700;
 }
 
-.chat-search {
+.chat-finder {
   position: relative;
   display: flex;
   align-items: center;
   margin: 0.75rem 0.75rem 0.5rem;
 }
 
-.chat-search__icon {
+/*
+ * Centred explicitly rather than by the parent's `align-items`: engines disagree
+ * on whether alignment moves the static position of an absolutely positioned
+ * flex child, and relying on it put the icon at the top of a pill-shaped input.
+ */
+.chat-finder__icon {
   position: absolute;
   left: 0.7rem;
+  top: 50%;
+  transform: translateY(-50%);
   color: var(--chat-muted);
   pointer-events: none;
 }
 
-.chat-search__input {
+.chat-finder__input {
   width: 100%;
   border: 1px solid var(--chat-border);
   border-radius: 999px;
@@ -292,13 +304,15 @@ html[data-theme='dark'] .chat-avatar {
   padding: 0.5rem 2.25rem 0.5rem 2.35rem;
 }
 
-.chat-search__input::placeholder {
+.chat-finder__input::placeholder {
   color: var(--chat-muted);
 }
 
-.chat-search__clear {
+.chat-finder__clear {
   position: absolute;
   right: 0.35rem;
+  top: 50%;
+  transform: translateY(-50%);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -311,7 +325,7 @@ html[data-theme='dark'] .chat-avatar {
   cursor: pointer;
 }
 
-.chat-search__clear:hover {
+.chat-finder__clear:hover {
   background: var(--chat-hover);
   color: var(--chat-text);
 }
@@ -1040,7 +1054,7 @@ html[data-theme='dark'] .chat-avatar {
   font-size: 0.8125rem;
 }
 
-.chat-search--picker {
+.chat-finder--picker {
   margin: 0.6rem 0.6rem 0.35rem;
 }
 
