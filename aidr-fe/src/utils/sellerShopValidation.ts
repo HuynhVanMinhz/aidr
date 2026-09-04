@@ -62,6 +62,19 @@ export function emptySellerShopForm(overrides?: Partial<SellerShopFormValues>): 
   };
 }
 
+/**
+ * Logos and banners are as often a path into this app's own asset tree — the
+ * uploader and the seeded theme images both write one — as they are a link out
+ * to a CDN. Rejecting the relative form left every seeded shop unable to save.
+ */
+function optionalAssetUrl(value: string, label: string): string | undefined {
+  const trimmed = value.trim();
+  if (!trimmed) return undefined;
+  if (!trimmed.startsWith('/')) return optionalUrl(trimmed, label);
+  validateMaxLength(trimmed, SELLER_SHOP_MAX_URL, label);
+  return trimmed;
+}
+
 function optionalUrl(value: string, label: string): string | undefined {
   const trimmed = value.trim();
   if (!trimmed) return undefined;
@@ -132,15 +145,15 @@ export function validateSellerShopForm(values: SellerShopFormValues) {
     errors.email = 'Email address is invalid.';
   }
 
-  for (const [field, label] of [
-    ['logoUrl', 'Logo URL'],
-    ['bannerUrl', 'Banner URL'],
-    ['websiteUrl', 'Website URL'],
-    ['facebookUrl', 'Facebook URL'],
+  for (const [field, label, check] of [
+    ['logoUrl', 'Logo URL', optionalAssetUrl],
+    ['bannerUrl', 'Banner URL', optionalAssetUrl],
+    ['websiteUrl', 'Website URL', optionalUrl],
+    ['facebookUrl', 'Facebook URL', optionalUrl],
   ] as const) {
     if (!values[field].trim()) continue;
     try {
-      optionalUrl(values[field], label);
+      check(values[field], label);
     } catch (error) {
       errors[field] = error instanceof Error ? error.message : `${label} is invalid.`;
     }

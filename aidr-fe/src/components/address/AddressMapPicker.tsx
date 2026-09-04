@@ -12,6 +12,10 @@ type AddressMapPickerProps = {
   onPick: (point: LatLng) => void;
   /** One line describing what the pin currently sits on. */
   caption?: string | null;
+  /** Heading over the map; defaults to the buyer's delivery wording. */
+  title?: string;
+  /** One line under the heading saying what dropping a pin does here. */
+  hint?: string;
   busy?: boolean;
 };
 
@@ -29,7 +33,14 @@ const pinIcon = L.divIcon({
   iconAnchor: [11, 11],
 });
 
-export function AddressMapPicker({ point, onPick, caption, busy }: AddressMapPickerProps) {
+export function AddressMapPicker({
+  point,
+  onPick,
+  caption,
+  title = 'Pin the delivery point',
+  hint = 'Click the map or drag the pin. The address fields fill themselves in from wherever it lands.',
+  busy,
+}: AddressMapPickerProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<L.Map | null>(null);
   const markerRef = useRef<L.Marker | null>(null);
@@ -123,11 +134,8 @@ export function AddressMapPicker({ point, onPick, caption, busy }: AddressMapPic
     <div className="address-map">
       <div className="address-map__head">
         <div>
-          <p className="address-map__title">Pin the delivery point</p>
-          <p className="address-map__hint">
-            Click the map or drag the pin. The courier uses the written address — the
-            pin just confirms you both mean the same place.
-          </p>
+          <p className="address-map__title">{title}</p>
+          <p className="address-map__hint">{hint}</p>
         </div>
         <button
           type="button"

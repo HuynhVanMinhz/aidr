@@ -151,10 +151,25 @@ export function AddressesPage() {
       .then((result) => {
         if (!result) return;
         setMapCaption(result.displayName || null);
-        // Only offer to fill a street the buyer has not written yet.
-        setForm((f) =>
-          f.streetAddress.trim() || !result.street ? f : { ...f, streetAddress: result.street },
-        );
+        // The pin is the buyer's own answer to "where", so the written address
+        // follows it rather than the other way round — a pin and a street that
+        // disagree is how a parcel ends up on the wrong doorstep.
+        setForm((f) => ({
+          ...f,
+          streetAddress: result.street ?? f.streetAddress,
+          province: result.province ?? f.province,
+          district: result.district ?? f.district,
+          ward: result.ward ?? f.ward,
+        }));
+        // OSM's spelling only stands in until the carrier lists resolve the same
+        // names back into selections; whatever they cannot match keeps the name
+        // above rather than blanking the field.
+        setLocationsTouched(false);
+        seed({
+          province: result.province ?? undefined,
+          district: result.district ?? undefined,
+          ward: result.ward ?? undefined,
+        });
       })
       .catch(() => undefined)
       .finally(() => setMapBusy(false));
