@@ -7,6 +7,7 @@ import {
   previewSellerProductImport,
 } from '../../services/sellerProductExcelApi';
 import type {
+  SellerInventoryImportRow,
   SellerProductImportPreview,
   SellerProductImportResult,
   SellerProductImportRow,
@@ -117,7 +118,9 @@ export function ProductImportModal({ open, onClose, onImported }: ProductImportM
 
   if (!open) return null;
 
-  const importable = preview ? preview.createCount + preview.updateCount : 0;
+  const importable = preview
+    ? preview.createCount + preview.updateCount + preview.stockRowCount
+    : 0;
 
   return createPortal(
     <>
@@ -267,6 +270,20 @@ function PreviewStage({ file, preview }: { file: File | null; preview: SellerPro
           count={preview.errorCount}
           className="bg-danger-subtle text-danger"
         />
+        {preview.stockRowCount > 0 ? (
+          <Tally
+            label="Stock lots"
+            count={preview.stockRowCount}
+            className="bg-primary-subtle text-primary"
+          />
+        ) : null}
+        {preview.stockErrorCount > 0 ? (
+          <Tally
+            label="Stock skipped"
+            count={preview.stockErrorCount}
+            className="bg-danger-subtle text-danger"
+          />
+        ) : null}
       </div>
 
       {preview.updateCount > 0 ? (
@@ -274,6 +291,16 @@ function PreviewStage({ file, preview }: { file: File | null; preview: SellerPro
           {preview.updateCount} row{preview.updateCount === 1 ? '' : 's'} match a product you
           already sell and will overwrite it. Every product touched goes back to Pending for
           admin review.
+        </div>
+      ) : null}
+
+      {preview.stockRowCount > 0 ? (
+        <div className="alert alert-info py-2 px-3 fs-13">
+          {preview.stockUnitCount.toLocaleString('vi-VN')} unit
+          {preview.stockUnitCount === 1 ? '' : 's'} will be received as{' '}
+          {preview.stockRowCount} new stock lot{preview.stockRowCount === 1 ? '' : 's'}. This adds
+          to what you already hold — it does not replace it, so importing the same file twice
+          receives the stock twice.
         </div>
       ) : null}
 
@@ -302,7 +329,61 @@ function PreviewStage({ file, preview }: { file: File | null; preview: SellerPro
           </tbody>
         </table>
       </div>
+
+      {preview.stockRows.length > 0 ? (
+        <>
+          <p className="fw-medium mb-2 mt-3">Inventory sheet</p>
+          <div className="table-responsive" style={{ maxHeight: 300 }}>
+            <table className="table table-sm align-middle mb-0">
+              <thead className="bg-light-subtle position-sticky top-0">
+                <tr>
+                  <th style={{ width: 60 }}>Row</th>
+                  <th style={{ width: 90 }}>Action</th>
+                  <th>Product</th>
+                  <th>Variant</th>
+                  <th className="text-end">Qty</th>
+                  <th className="text-end">Unit cost</th>
+                  <th>Problems</th>
+                </tr>
+              </thead>
+              <tbody>
+                {preview.stockRows.map((row) => (
+                  <StockRow key={row.rowNumber} row={row} />
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
+      ) : null}
     </>
+  );
+}
+
+function StockRow({ row }: { row: SellerInventoryImportRow }) {
+  const dash = <span className="text-muted">—</span>;
+
+  return (
+    <tr className={row.action === 'Error' ? 'table-danger' : undefined}>
+      <td>{row.rowNumber}</td>
+      <td>
+        <span
+          className={
+            row.action === 'Receive'
+              ? 'badge bg-primary-subtle text-primary'
+              : 'badge bg-danger-subtle text-danger'
+          }
+        >
+          {row.action}
+        </span>
+      </td>
+      <td>{row.productName || row.slug || dash}</td>
+      <td>{row.variantSku || dash}</td>
+      <td className="text-end">{row.quantity?.toLocaleString('vi-VN') ?? dash}</td>
+      <td className="text-end">{row.unitCost?.toLocaleString('vi-VN') ?? dash}</td>
+      <td>
+        <ProblemList errors={row.errors} />
+      </td>
+    </tr>
   );
 }
 
@@ -313,7 +394,29 @@ function DoneStage({ result }: { result: SellerProductImportResult }) {
         <Tally label="Created" count={result.created} className="bg-success-subtle text-success" />
         <Tally label="Updated" count={result.updated} className="bg-info-subtle text-info" />
         <Tally label="Skipped" count={result.failed} className="bg-danger-subtle text-danger" />
+        {result.stockLotsReceived > 0 ? (
+          <Tally
+            label="Stock lots"
+            count={result.stockLotsReceived}
+            className="bg-primary-subtle text-primary"
+          />
+        ) : null}
+        {result.stockFailed > 0 ? (
+          <Tally
+            label="Stock skipped"
+            count={result.stockFailed}
+            className="bg-danger-subtle text-danger"
+          />
+        ) : null}
       </div>
+
+      {result.stockLotsReceived > 0 ? (
+        <p className="text-muted fs-13">
+          {result.stockUnitsReceived.toLocaleString('vi-VN')} unit
+          {result.stockUnitsReceived === 1 ? '' : 's'} received across{' '}
+          {result.stockLotsReceived} lot{result.stockLotsReceived === 1 ? '' : 's'}.
+        </p>
+      ) : null}
 
       {result.created + result.updated > 0 ? (
         <p className="text-muted fs-13">
@@ -339,6 +442,38 @@ function DoneStage({ result }: { result: SellerProductImportResult }) {
                   <tr key={row.rowNumber}>
                     <td>{row.rowNumber}</td>
                     <td>{row.name || <span className="text-muted">—</span>}</td>
+                    <td>
+                      <ProblemList errors={row.errors} />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
+      ) : null}
+
+      {result.failedStockRows.length > 0 ? (
+        <>
+          <p className="fw-medium mb-2 mt-3">These stock lots were not received:</p>
+          <div className="table-responsive" style={{ maxHeight: 240 }}>
+            <table className="table table-sm align-middle mb-0">
+              <thead className="bg-light-subtle position-sticky top-0">
+                <tr>
+                  <th style={{ width: 60 }}>Row</th>
+                  <th>Product</th>
+                  <th className="text-end">Qty</th>
+                  <th>Problems</th>
+                </tr>
+              </thead>
+              <tbody>
+                {result.failedStockRows.map((row) => (
+                  <tr key={row.rowNumber}>
+                    <td>{row.rowNumber}</td>
+                    <td>{row.productName || row.slug || <span className="text-muted">—</span>}</td>
+                    <td className="text-end">
+                      {row.quantity?.toLocaleString('vi-VN') ?? <span className="text-muted">—</span>}
+                    </td>
                     <td>
                       <ProblemList errors={row.errors} />
                     </td>

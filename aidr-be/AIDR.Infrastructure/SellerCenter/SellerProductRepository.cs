@@ -1,4 +1,4 @@
-using AIDR.Infrastructure.Persistence;
+﻿using AIDR.Infrastructure.Persistence;
 using AIDR.Infrastructure.Persistence.Entities;
 using AIDR.Modules.SellerCenter.Abstractions;
 using AIDR.Shared.Constants;
@@ -133,6 +133,7 @@ public sealed class SellerProductRepository : ISellerProductRepository
                     .Select(v => new SellerProductVariantRecord
                     {
                         VariantId = v.VariantId,
+                        Sku = v.Sku,
                         VariantName = v.VariantName,
                         Price = v.Price,
                         SalePrice = v.SalePrice,

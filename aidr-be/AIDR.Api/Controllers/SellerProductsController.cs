@@ -1,4 +1,4 @@
-using AIDR.Api.Extensions;
+﻿using AIDR.Api.Extensions;
 using AIDR.Modules.SellerCenter.Abstractions;
 using AIDR.Shared.Dtos.Discovery;
 using AIDR.Shared.Dtos.Seller;
@@ -97,9 +97,15 @@ public sealed class SellerProductsController : ControllerBase
         await using var stream = await ReadUploadAsync(file, cancellationToken);
         var result = await _excel.ImportAsync(User.GetUserId(), stream, cancellationToken);
 
-        return Ok(ApiResult<SellerProductImportResultDto>.Ok(
-            result,
-            $"{result.Created} created, {result.Updated} updated, {result.Failed} skipped."));
+        var summary = $"{result.Created} created, {result.Updated} updated, {result.Failed} skipped.";
+        if (result.StockLotsReceived > 0 || result.StockFailed > 0)
+        {
+            summary +=
+                $" {result.StockUnitsReceived} units received in {result.StockLotsReceived} lot(s)" +
+                $", {result.StockFailed} lot(s) skipped.";
+        }
+
+        return Ok(ApiResult<SellerProductImportResultDto>.Ok(result, summary));
     }
 
     /// <summary>

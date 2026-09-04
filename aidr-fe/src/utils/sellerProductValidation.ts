@@ -198,9 +198,20 @@ export function canSubmitSellerProductForm(
   initialImages: SellerProductStagedImage[],
   mode: 'create' | 'edit',
   errors: FieldErrors<SellerProductFormField>,
+  /**
+   * Stock waiting to be received counts as an unsaved change. Without this, an
+   * edit that only receives a delivery leaves Save disabled, because none of the
+   * product's own fields moved.
+   */
+  hasPendingStock = false,
 ): boolean {
   if (Object.keys(errors).length > 0) return false;
-  if (!isSellerProductFormDirty(form, initial, images, initialImages, mode)) return false;
+  if (
+    !isSellerProductFormDirty(form, initial, images, initialImages, mode) &&
+    !hasPendingStock
+  ) {
+    return false;
+  }
   if (mode === 'create') {
     return Boolean(
       form.name.trim() &&
