@@ -58,6 +58,21 @@ public sealed class AdminProductsController : ControllerBase
         return Ok(ApiResult<AdminProductDetailDto>.Ok(result, "Product approved."));
     }
 
+    /// <summary>Approve multiple pending products in one request.</summary>
+    [HttpPost("approve-bulk")]
+    public async Task<ActionResult<ApiResult<BulkApproveProductsResultDto>>> ApproveBulk(
+        [FromBody] BulkApproveProductsRequest request,
+        CancellationToken cancellationToken)
+    {
+        var adminUserId = User.GetUserId();
+        var result = await _products.ApproveBulkAsync(request, adminUserId, cancellationToken);
+        return Ok(ApiResult<BulkApproveProductsResultDto>.Ok(
+            result,
+            result.ApprovedCount == 0
+                ? "No pending products were approved."
+                : $"{result.ApprovedCount} product(s) approved."));
+    }
+
     /// <summary>Reject a pending product with a reason and record moderation history.</summary>
     [HttpPost("{id:guid}/reject")]
     public async Task<ActionResult<ApiResult<AdminProductDetailDto>>> Reject(

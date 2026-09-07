@@ -137,6 +137,73 @@ public sealed class NotificationService : INotificationService
         return created;
     }
 
+    public async Task<NotificationDto> CreateOrUpdateUnreadAsync(
+        CreateNotificationRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        if (request is null)
+            throw new AppException("Notification body is required.");
+
+        EnsureUserId(request.UserId);
+
+        var title = RequireText(request.Title, "Title", NotificationConstants.MaxTitleLength);
+        var body = RequireText(request.Body, "Body", NotificationConstants.MaxBodyLength);
+        var type = RequireType(request.Type);
+
+        string? referenceType = null;
+        if (!string.IsNullOrWhiteSpace(request.ReferenceType))
+        {
+            referenceType = request.ReferenceType.Trim();
+            if (referenceType.Length > NotificationConstants.MaxReferenceTypeLength)
+            {
+                throw new AppException(
+                    $"Reference type must not exceed {NotificationConstants.MaxReferenceTypeLength} characters.");
+            }
+        }
+
+        if (request.ReferenceId is not { } referenceId || referenceId == Guid.Empty)
+            throw new AppException("Reference id is required.");
+
+        var updated = await _notifications.TryUpdateUnreadAsync(
+            request.UserId,
+            type,
+            referenceType ?? string.Empty,
+            referenceId,
+            title,
+            body,
+            cancellationToken);
+
+        if (updated is not null)
+        {
+            try
+            {
+                await _realtime.PublishCreatedAsync(request.UserId, updated, cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(
+                    ex,
+                    "Failed to push updated notification {NotificationId} to user {UserId} over SignalR",
+                    updated.NotificationId,
+                    request.UserId);
+            }
+
+            return updated;
+        }
+
+        return await CreateAsync(
+            new CreateNotificationRequest
+            {
+                UserId = request.UserId,
+                Title = title,
+                Body = body,
+                Type = type,
+                ReferenceType = referenceType,
+                ReferenceId = referenceId
+            },
+            cancellationToken);
+    }
+
     private static void EnsureUserId(Guid userId)
     {
         if (userId == Guid.Empty)

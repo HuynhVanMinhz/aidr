@@ -37,6 +37,7 @@ public static class ModulesServiceCollectionExtensions
         services.AddScoped<IRecommendationService, RecommendationService>();
         services.AddScoped<IAiNlFilterService, AiNlFilterService>();
         services.AddScoped<IAiCompareService, AiCompareService>();
+        services.AddScoped<IAiAnalyticsService, AiAnalyticsService>();
         services.AddScoped<IAiShoppingAssistantService, AiShoppingAssistantService>();
         services.AddScoped<IAdminCategoryService, AdminCategoryService>();
         services.AddScoped<IAdminSellerRegistrationService, AdminSellerRegistrationService>();
@@ -58,6 +59,7 @@ public static class ModulesServiceCollectionExtensions
         services.AddScoped<IOrderService, OrderService>();
         services.AddScoped<IReturnService, ReturnService>();
         services.AddScoped<IVoucherService, VoucherService>();
+        services.AddScoped<OrderInvoiceMailer>();
         services.AddScoped<IPaymentService, PaymentService>();
         services.AddScoped<ISettlementService, SettlementService>();
         services.AddScoped<IShippingService, ShippingService>();

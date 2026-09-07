@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, Navigate, useSearchParams } from 'react-router-dom';
 import { CatalogBreadcrumb } from '../../components/catalog/CatalogBreadcrumb';
+import { OrderInvoice } from '../../components/checkout/OrderInvoice';
 import { useToast } from '../../hooks/useToast';
 import { useToastMessage } from '../../hooks/useToastMessage';
 import {
@@ -445,7 +446,7 @@ export function OrderReceivedPage() {
 
                   {allPaid && (
                     <p className="receipt-payment__hint receipt-payment__hint--ok">
-                      Payment received. We have notified the shop.
+                      Payment received. An invoice email has been sent to your account email.
                     </p>
                   )}
                 </section>
@@ -500,6 +501,35 @@ export function OrderReceivedPage() {
               </div>
             </div>
           </div>
+
+          {allPaid
+            ? orders.map((order) => (
+                <OrderInvoice
+                  key={`invoice-${order.orderId}`}
+                  printId={`order-invoice-${order.orderId}`}
+                  orderCode={order.orderCode}
+                  shopName={order.shopName}
+                  currency={order.currency}
+                  createdAt={order.createdAt}
+                  paidAt={order.createdAt}
+                  subtotalAmount={order.subtotalAmount}
+                  discountAmount={order.discountAmount}
+                  shippingFee={order.shippingFee}
+                  totalAmount={order.totalAmount}
+                  shipping={shipping}
+                  buyerNote={buyerNote}
+                  items={order.items.map((item) => ({
+                    key: item.orderItemId,
+                    productName: item.productName,
+                    variantName: item.variantName,
+                    sku: item.sku,
+                    quantity: item.quantity,
+                    unitPrice: item.unitPrice,
+                    lineTotal: item.lineTotal,
+                  }))}
+                />
+              ))
+            : null}
         </div>
       </div>
 

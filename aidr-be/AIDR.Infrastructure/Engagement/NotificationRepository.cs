@@ -119,6 +119,34 @@ public sealed class NotificationRepository : INotificationRepository
                  && n.CreatedAt >= createdAfterUtc,
             cancellationToken);
 
+    public async Task<NotificationDto?> TryUpdateUnreadAsync(
+        Guid userId,
+        string type,
+        string referenceType,
+        Guid referenceId,
+        string title,
+        string body,
+        CancellationToken cancellationToken = default)
+    {
+        var entity = await _db.Notifications
+            .Where(n => n.UserId == userId
+                        && !n.IsRead
+                        && n.Type == type
+                        && n.ReferenceType == referenceType
+                        && n.ReferenceId == referenceId)
+            .OrderByDescending(n => n.CreatedAt)
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (entity is null)
+            return null;
+
+        entity.Title = title;
+        entity.Body = body;
+        entity.CreatedAt = DateTime.UtcNow;
+        await _db.SaveChangesAsync(cancellationToken);
+        return Map(entity);
+    }
+
     public async Task<NotificationDto?> MarkReadAsync(
         Guid userId,
         Guid notificationId,

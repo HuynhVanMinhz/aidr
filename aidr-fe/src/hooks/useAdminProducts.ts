@@ -1,6 +1,7 @@
 import { useCallback, useEffect } from 'react';
 import {
   approveAdminProduct,
+  approveAdminProductsBulk,
   fetchAdminProduct,
   fetchAdminProducts,
   fetchProductModerationHistory,
@@ -101,6 +102,17 @@ export function useAdminProducts(
     [dispatch],
   );
 
+  const approveBulk = useCallback(
+    async (productIds: string[]) => {
+      const result = await dispatch(approveAdminProductsBulk({ productIds }));
+      if (approveAdminProductsBulk.rejected.match(result)) {
+        throw new Error((result.payload as string) || 'Unable to approve products.');
+      }
+      return result.payload;
+    },
+    [dispatch],
+  );
+
   const reject = useCallback(
     async (id: string, payload: RejectProductPayload) => {
       const result = await dispatch(rejectAdminProduct({ id, payload }));
@@ -127,6 +139,7 @@ export function useAdminProducts(
     loadOne,
     loadHistory,
     approve,
+    approveBulk,
     reject,
   };
 }

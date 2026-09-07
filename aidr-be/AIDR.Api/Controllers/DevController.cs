@@ -226,6 +226,36 @@ public class DevController : ControllerBase
         });
     }
 
+    /// <summary>
+    /// Seed paid orders and buyers for AI analytics briefs on admin/seller dashboards (dev only).
+    /// Prerequisites: demo accounts and catalog from seed-demo-accounts / seed-pending-products.
+    /// </summary>
+    [HttpPost("seed-ai-analytics")]
+    public async Task<IActionResult> SeedAiAnalytics(
+        [FromServices] AidrDbContext db,
+        [FromServices] IWebHostEnvironment env,
+        CancellationToken ct)
+    {
+        if (!env.IsDevelopment())
+            return NotFound();
+
+        await GovernanceInsightsDemoSeeder.SeedAsync(db, env.ContentRootPath, ct);
+
+        var insightBuyers = await db.Users.CountAsync(
+            u => u.Email.StartsWith("insight-buyer-"),
+            ct);
+        var insightOrders = await db.Orders.CountAsync(
+            o => o.OrderCode.StartsWith("INS"),
+            ct);
+
+        return Ok(new
+        {
+            message = "AI analytics demo seed completed. Try GET /api/admin/ai/analytics-brief or /api/seller/ai/analytics-brief.",
+            insightBuyerCount = insightBuyers,
+            insightOrderCount = insightOrders
+        });
+    }
+
     /// <summary>Seed Delivered orders + return requests for Return & Refund flows (dev only).</summary>
     [HttpPost("seed-returns")]
     public async Task<IActionResult> SeedReturns(

@@ -31,9 +31,9 @@
 | UC-14 | Update Product | **Actor:** Seller (owner). Sửa thông tin SP thuộc shop; **reset status → Pending** để Admin duyệt lại (BR-P03). **Business:** Giữ thông tin SP cập nhật; không lên kệ lại khi chưa duyệt. | Done | P0 |
 | UC-15 | Delete Product | **Actor:** Seller. Soft-delete / Inactive; không xóa cứng nếu đã có order. **Business:** Dọn catalog; bảo toàn lịch sử đơn. | Done | P1 |
 | UC-16 | View My Products | **Actor:** Seller. List SP của shop theo status (Draft/Pending/Approved…). **Business:** Quản lý danh mục bán. | Done | P0 |
-| UC-17 | Manage Product Inventory | **Actor:** Seller. Xem tồn, reserved, low-stock; **so sánh giá bán vs giá nhập (AvgCost / UnitCost lô)** → Est. margin/unit; điều chỉnh thủ công có ghi InventoryTransactions; khi vừa chuyển sang low-stock → System notification (SignalR). **Business:** Tránh oversell; biết lời lãi từng SP (BR-C06). | Done | P0 |
-| UC-18 | View Product List (Admin) | **Actor:** Admin. Queue toàn bộ SP (ưu tiên Pending). **Business:** Kiểm soát chất lượng catalog. | Done | P0 |
-| UC-19 | Approve Product | **Actor:** Admin. Pending → Approved; ghi moderation history. **Business:** SP đủ chuẩn mới hiện buyer. | Done | P0 |
+| UC-17 | Manage Product Inventory | **Actor:** Seller. Xem tồn, reserved, low-stock; **so sánh giá bán vs giá nhập (AvgCost / UnitCost lô)** → Est. margin/unit; điều chỉnh thủ công có ghi InventoryTransactions; **phiếu xuất/nhập kho in được** từ lot & movements; khi vừa chuyển sang low-stock → System notification (SignalR). **Business:** Tránh oversell; biết lời lãi từng SP (BR-C06). | Done | P0 |
+| UC-18 | View Product List (Admin) | **Actor:** Admin. Queue toàn bộ SP (ưu tiên Pending); hỗ trợ chọn nhiều + **Approve bulk**. **Business:** Kiểm soát chất lượng catalog. | Done | P0 |
+| UC-19 | Approve Product | **Actor:** Admin. Pending → Approved; ghi moderation history; có bulk approve. **Business:** SP đủ chuẩn mới hiện buyer. | Done | P0 |
 | UC-20 | Reject Product | **Actor:** Admin. Pending → Rejected + lý do; Seller xem reason → sửa (UC-14) hoặc bỏ SP. **Business:** Chặn SP sai/thiếu thông tin; vòng duyệt lại. | Done | P0 |
 | UC-21 | View Moderation History | **Actor:** Admin. Timeline Approve/Reject theo product. **Business:** Audit & tranh chấp. | Done | P1 |
 | UC-22 | Create Category | **Actor:** Admin. Tạo category (parent/child, slug unique). **Business:** Cấu trúc ngành hàng. | Done | P0 |
@@ -49,7 +49,7 @@
 | UC-32 | View Voucher | **Actor:** Buyer. List voucher System + Shop đang hiệu lực & đủ điều kiện. **Business:** Thúc đẩy conversion bằng KM. | Done | P1 |
 | UC-33 | Apply Voucher | **Actor:** Buyer. Preview/apply giảm giá theo min order, limit, scope. **Business:** Áp dụng đúng policy KM. | Done | P1 |
 | UC-34 | Create Order | **Actor:** Buyer. Split theo shop; snapshot địa chỉ & giá; reserve stock; tạo Payment pending. **Business:** Chốt đơn mua. | Done | P0 |
-| UC-35 | Make Payment | **Actor:** Buyer. Tạo link payOS; webhook cập nhật Paid. **Business:** Thu tiền online an toàn. | Done | P0 |
+| UC-35 | Make Payment | **Actor:** Buyer. Tạo link payOS; webhook cập nhật Paid; **UI hóa đơn + email receipt** khi thanh toán thành công. **Business:** Thu tiền online an toàn. | Done | P0 |
 | UC-36 | View Wishlist | **Actor:** Buyer. Danh sách SP yêu thích. **Business:** Lưu SP quan tâm để mua sau. | Done | P1 |
 | UC-37 | Add Product to Wishlist | **Actor:** Buyer. Thêm SP (unique user+product). **Business:** Retention & remarketing. | Done | P1 |
 | UC-38 | Delete Product from Wishlist | **Actor:** Buyer. Gỡ SP khỏi wishlist. **Business:** Quản lý danh sách quan tâm. | Done | P1 |
@@ -70,7 +70,7 @@
 | UC-54 | View Similar Products | **Actor:** Buyer. SP tương tự theo category/specs/content. **Business:** Cross-sell trên trang detail. | Done | P2 |
 | UC-56 | Use AI Shopping Assistant | **Actor:** Buyer. Chatbot Groq tư vấn SP / FAQ mua sắm (intent + slot memory + NL filter retrieve). **Business:** Hỗ trợ 24/7, giảm tải CSKH. | Done | P2 |
 | UC-57 | View Chat List | **Actor:** Buyer/Seller. Danh sách thread buyer↔shop. **Business:** Kênh thương lượng / hỗ trợ trước-sau bán. | Done | P1 |
-| UC-58 | Send Message | **Actor:** Buyer/Seller. Gửi tin nhắn realtime SignalR; optional attachment. **Business:** Tăng trust & chốt sale. | Done | P1 |
+| UC-58 | Send Message | **Actor:** Buyer/Seller. Gửi tin nhắn realtime SignalR; optional attachment; share SP dạng card/chip; **notification chat gộp theo thread** (không 1 noti/tin). **Business:** Tăng trust & chốt sale. | Done | P1 |
 | UC-59 | View Product Reviews | **Actor:** Guest/Buyer. List review + rating; có thể hiện sentiment AI. **Business:** Social proof. | Done | P1 |
 | UC-60 | Add Product Review | **Actor:** Buyer. Chỉ sau mua hoàn tất; 1–5 sao + nội dung. **Business:** Feedback chất lượng SP. | Done | P1 |
 | UC-61 | Update Product Review | **Actor:** Buyer (owner). Sửa review trong cửa sổ cho phép. **Business:** Cho phép chỉnh sau trải nghiệm. | Done | P2 |
@@ -99,7 +99,7 @@
 | UC-88 | Update Voucher for My Shop | **Actor:** Seller. Sửa voucher của mình. **Business:** Linh hoạt chiến dịch shop. | Done | P2 |
 | UC-89 | Delete Voucher for My Shop | **Actor:** Seller. Xóa voucher shop. **Business:** Kết thúc KM. | Done | P2 |
 | UC-90 | AI NL → Filter | **Actor:** Guest/Buyer. Câu tự nhiên → JSON filter hợp lệ → apply search. **Business:** Tìm SP dễ hơn với người không rành filter. | Done | P2 |
-| UC-91 | Import Stock Lot | **Actor:** Seller. Nhập lô: LotCode unique, qty > 0, UnitCost ≥ 0, supplier/invoice/date; tăng tồn; cập nhật Avg/LastCost; **không** sửa UnitCost lô cũ (BR-I01, BR-C02). **Business:** Theo dõi giá vốn & lãi gộp đúng khi giá nhập thay đổi. | Done | P0 |
+| UC-91 | Import Stock Lot | **Actor:** Seller. Nhập lô: LotCode unique, qty > 0, UnitCost ≥ 0, supplier/invoice/date; tăng tồn; cập nhật Avg/LastCost; **không** sửa UnitCost lô cũ (BR-I01, BR-C02); **phiếu nhập kho in được**. **Business:** Theo dõi giá vốn & lãi gộp đúng khi giá nhập thay đổi. | Done | P0 |
 | UC-92 | Update Selling Price | **Actor:** Seller. Đổi BasePrice/SalePrice; ghi ProductPriceHistories; độc lập giá vốn lô. **Business:** Phản ứng thị trường mà không phá lịch sử cost/đơn. | Done | P0 |
 
 ---

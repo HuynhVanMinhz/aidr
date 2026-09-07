@@ -58,6 +58,12 @@ html[data-theme='light'] {
   --btn-secondary-border: rgba(22, 24, 29, 0.2);
   --btn-secondary-text: #16181d;
 
+  /* Disabled buttons — muted fill + reduced opacity */
+  --btn-disabled-opacity: 0.52;
+  --btn-disabled-bg: #ececee;
+  --btn-disabled-text: #8a8f98;
+  --btn-disabled-border: rgba(22, 24, 29, 0.12);
+
   /*
    * Text drawn ON a themed fill — the accent, and the error fill behind a
    * discount badge, which the dark theme lightens for the same reason.
@@ -137,6 +143,11 @@ html[data-theme='dark'] {
   --btn-secondary-border: rgba(232, 234, 237, 0.2);
   --btn-secondary-text: #e8eaed;
 
+  --btn-disabled-opacity: 0.48;
+  --btn-disabled-bg: #1c2230;
+  --btn-disabled-text: #6b7380;
+  --btn-disabled-border: rgba(232, 234, 237, 0.1);
+
   --on-accent: #0c0e14;
   --positive-text: #4ade80;
   --on-light: #0c0e14;
@@ -201,9 +212,12 @@ html[data-theme='dark'] .btn-default.btn-accent {
   border-color: var(--btn-primary-bg);
 }
 
-html[data-theme='dark'] .btn-default.btn-accent::before,
+html[data-theme='dark'] .btn-default.btn-accent::before {
+  display: none;
+}
+
 html[data-theme='dark'] .btn-default.btn-accent::after {
-  background: var(--btn-primary-bg);
+  display: none;
 }
 
 html[data-theme='dark'] .btn-default.btn-border {

@@ -21,6 +21,147 @@ body {
   --bs-breadcrumb-divider: '/';
 }
 
+/* Theme default `.page-header { padding: 110px 0 }` is too tall for app pages. */
+.store-shell .page-header.light-section,
+.app-main .page-header.light-section {
+  padding: 28px 0 18px;
+}
+
+.store-shell .page-header-box h1,
+.store-shell .page-header-box h2,
+.app-main .page-header-box h1,
+.app-main .page-header-box h2 {
+  font-size: clamp(1.75rem, 3.5vw, 2.25rem);
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+  margin-bottom: 0.35rem;
+  cursor: auto;
+}
+
+.store-shell .page-header-box .breadcrumb,
+.app-main .page-header-box .breadcrumb {
+  margin-bottom: 0;
+  padding: 0;
+}
+
+.store-shell .page-header-box .breadcrumb-item,
+.app-main .page-header-box .breadcrumb-item {
+  font-size: 0.875rem;
+  line-height: 1.4;
+}
+
+.store-shell .page-header-box .breadcrumb-item a,
+.app-main .page-header-box .breadcrumb-item a {
+  color: var(--text-color, #707070);
+  text-decoration: none;
+}
+
+.store-shell .page-header-box .breadcrumb-item a:hover,
+.app-main .page-header-box .breadcrumb-item a:hover {
+  color: var(--primary-color, #16181d);
+  text-decoration: underline;
+}
+
+.store-shell .page-header-box .breadcrumb-item.active,
+.app-main .page-header-box .breadcrumb-item.active {
+  color: var(--text-color, #707070);
+}
+
+/* Theme page sections often use `padding: 100px 0` — tighten after compact header. */
+.store-shell .page-cart,
+.store-shell .page-checkout,
+.store-shell .page-order-receive,
+.store-shell .page-products,
+.store-shell .page-product-single,
+.store-shell .page-account-details,
+.store-shell .page-my-account,
+.store-shell .page-account-order,
+.store-shell .page-account-wishlist,
+.store-shell .page-account-addresses,
+.store-shell .page-contact-us,
+.store-shell .page-faqs,
+.store-shell .page-blog,
+.store-shell .page-single-post {
+  padding: 1.5rem 0 3rem;
+}
+
+@media (max-width: 767.98px) {
+  .store-shell .page-header.light-section,
+  .app-main .page-header.light-section {
+    padding: 20px 0 14px;
+  }
+
+  .store-shell .page-header-box h1,
+  .store-shell .page-header-box h2,
+  .app-main .page-header-box h1,
+  .app-main .page-header-box h2 {
+    font-size: 1.5rem;
+  }
+
+  .store-shell .page-cart,
+  .store-shell .page-checkout,
+  .store-shell .page-order-receive,
+  .store-shell .page-products,
+  .store-shell .page-product-single,
+  .store-shell .page-account-details,
+  .store-shell .page-my-account,
+  .store-shell .page-account-order,
+  .store-shell .page-account-wishlist,
+  .store-shell .page-account-addresses,
+  .store-shell .page-contact-us,
+  .store-shell .page-faqs,
+  .store-shell .page-blog,
+  .store-shell .page-single-post {
+    padding: 1.25rem 0 2.5rem;
+  }
+}
+
+/* ── Disabled buttons (admin Bootstrap + explicit disabled states) ── */
+.btn:disabled,
+.btn.disabled,
+.btn-default:disabled,
+.btn-primary:disabled,
+.btn-secondary:disabled,
+.btn-success:disabled,
+.btn-danger:disabled,
+.btn-warning:disabled,
+.btn-light:disabled,
+.btn-dark:disabled,
+.btn-outline-primary:disabled,
+.btn-outline-secondary:disabled,
+.btn-outline-light:disabled,
+.btn-outline-dark:disabled,
+[role='button'][aria-disabled='true'] {
+  opacity: var(--btn-disabled-opacity, 0.52);
+  cursor: not-allowed !important;
+  pointer-events: none;
+  box-shadow: none;
+  transform: none;
+}
+
+.btn-primary:disabled,
+.btn-success:disabled,
+.btn-danger:disabled,
+.btn-warning:disabled,
+.btn-dark:disabled,
+.btn-default.btn-accent:disabled,
+.btn-default.btn-accent.disabled {
+  background-color: var(--btn-disabled-bg) !important;
+  border-color: var(--btn-disabled-border) !important;
+  color: var(--btn-disabled-text) !important;
+}
+
+.btn-light:disabled,
+.btn-secondary:disabled,
+.btn-default.btn-border:disabled,
+.btn-outline-primary:disabled,
+.btn-outline-secondary:disabled,
+.btn-outline-light:disabled {
+  background-color: var(--btn-disabled-bg) !important;
+  border-color: var(--btn-disabled-border) !important;
+  color: var(--btn-disabled-text) !important;
+}
+
 a {
   color: var(--accent);
   text-decoration: none;

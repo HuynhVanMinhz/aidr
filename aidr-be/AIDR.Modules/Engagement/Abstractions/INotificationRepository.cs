@@ -36,6 +36,19 @@ public interface INotificationRepository
         DateTime createdAfterUtc,
         CancellationToken cancellationToken = default);
 
+    /// <summary>
+    /// Update title/body/CreatedAt on an existing unread notification for the same reference,
+    /// or return null when none exists (caller should create).
+    /// </summary>
+    Task<NotificationDto?> TryUpdateUnreadAsync(
+        Guid userId,
+        string type,
+        string referenceType,
+        Guid referenceId,
+        string title,
+        string body,
+        CancellationToken cancellationToken = default);
+
     Task<NotificationDto?> MarkReadAsync(
         Guid userId,
         Guid notificationId,

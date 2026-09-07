@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { Link, useParams } from 'react-router-dom';
+import { OrderInvoice } from '../../components/checkout/OrderInvoice';
 import { OrderReviewSection } from '../../components/reviews/OrderReviewSection';
 import { OrderTrackingMap } from '../../components/shipping/OrderTrackingMap';
 import { useBuyerOrderDetail } from '../../hooks/useBuyerOrders';
@@ -257,6 +258,31 @@ export function OrderDetailPage() {
           {formatOrderStatus(detail.status)}
         </span>
       </header>
+
+      {detail.paidAt || (!unpaid && detail.status !== 'Cancelled') ? (
+        <OrderInvoice
+          orderCode={detail.orderCode}
+          shopName={detail.shopName}
+          currency={detail.currency}
+          createdAt={detail.createdAt}
+          paidAt={detail.paidAt}
+          subtotalAmount={detail.subtotalAmount}
+          discountAmount={detail.discountAmount}
+          shippingFee={detail.shippingFee}
+          totalAmount={detail.totalAmount}
+          shipping={detail.shipping}
+          buyerNote={detail.buyerNote}
+          items={detail.items.map((item) => ({
+            key: item.orderItemId,
+            productName: item.productName,
+            variantName: item.variantName,
+            sku: item.sku,
+            quantity: item.quantity,
+            unitPrice: item.unitPrice,
+            lineTotal: item.lineTotal,
+          }))}
+        />
+      ) : null}
 
       <div className="order-detail__grid">
         <div className="order-detail__main">

@@ -10,6 +10,8 @@ import type {
   AdminSellerRegistration,
   AdminSellerRegistrationListResult,
   ApproveSellerRegistrationResult,
+  BulkApproveProductsPayload,
+  BulkApproveProductsResult,
   ProductModerationHistoryResult,
   RejectProductPayload,
   RejectSellerRegistrationPayload,
@@ -96,6 +98,14 @@ export async function getAdminProduct(id: string) {
 export async function approveAdminProduct(id: string) {
   const { data } = await apiClient.post<ApiResult<AdminProductDetail>>(
     `/admin/products/${id}/approve`,
+  );
+  return data;
+}
+
+export async function approveAdminProductsBulk(payload: BulkApproveProductsPayload) {
+  const { data } = await apiClient.post<ApiResult<BulkApproveProductsResult>>(
+    `/admin/products/approve-bulk`,
+    payload,
   );
   return data;
 }

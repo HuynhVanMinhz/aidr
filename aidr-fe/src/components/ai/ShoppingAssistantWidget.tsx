@@ -13,6 +13,7 @@ import type {
   AiSuggestedProduct,
 } from '../../types/ai';
 import { AI_SKIP_QUESTIONS_VALUE } from '../../types/ai';
+import { SendIcon } from '../chat/ChatIcons';
 import {
   catalogFiltersToSearchParams,
   formatSlotChips,
@@ -643,10 +644,15 @@ export function ShoppingAssistantWidget() {
                   </span>
                   <button
                     type="submit"
-                    className="btn btn-default btn-sm"
+                    className="aidr-assistant-widget__send-btn"
                     disabled={sending || !draft.trim()}
+                    aria-label={sending ? 'Sending message' : 'Send message'}
                   >
-                    {sending ? 'Sending…' : 'Send'}
+                    {sending ? (
+                      <span className="chat-spinner" aria-hidden="true" />
+                    ) : (
+                      <SendIcon />
+                    )}
                   </button>
                 </div>
               </form>

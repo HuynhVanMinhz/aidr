@@ -3,9 +3,19 @@ import { Link, useParams } from 'react-router-dom';
 import { AdminSelect } from '../../components/admin/AdminSelect';
 import { AdminStatCard } from '../../components/admin/AdminStatCard';
 import { FormField } from '../../components/admin/FormField';
+import {
+  moneyOrDash,
+  StockVoucherModal,
+  type StockVoucherKind,
+  type StockVoucherRow,
+} from '../../components/seller/StockVoucherModal';
 import { useSellerInventory } from '../../hooks/useSellerInventory';
 import { useToast } from '../../hooks/useToast';
-import type { SellerInventoryLot, SellerInventoryVariant } from '../../types/sellerInventory';
+import type {
+  SellerInventoryLot,
+  SellerInventoryTransaction,
+  SellerInventoryVariant,
+} from '../../types/sellerInventory';
 import { visibleFieldErrors } from '../../utils/formValidation';
 import {
   buildAdjustPayload,
@@ -221,8 +231,11 @@ export function SellerInventoryDetailPage() {
       )}
 
       <VariantStockTable variants={detail.variants} />
-      <LotsTable lots={detail.lots} />
-      <TransactionsTable transactions={detail.recentTransactions} />
+      <LotsTable lots={detail.lots} productName={detail.name} />
+      <TransactionsTable
+        transactions={detail.recentTransactions}
+        productName={detail.name}
+      />
     </>
   );
 }
@@ -801,7 +814,28 @@ function VariantStockTable({ variants }: { variants: SellerInventoryVariant[] })
   );
 }
 
-function LotsTable({ lots }: { lots: SellerInventoryLot[] }) {
+function LotsTable({ lots, productName }: { lots: SellerInventoryLot[]; productName: string }) {
+  const [voucherLot, setVoucherLot] = useState<SellerInventoryLot | null>(null);
+
+  const voucherRows: StockVoucherRow[] = voucherLot
+    ? [
+        { label: 'Lot code', value: voucherLot.lotCode },
+        { label: 'Variant', value: voucherLot.variantName?.trim() || 'Default' },
+        { label: 'Quantity received', value: String(voucherLot.quantityReceived) },
+        { label: 'Quantity remaining', value: String(voucherLot.quantityRemaining) },
+        { label: 'Unit cost', value: moneyOrDash(voucherLot.unitCost) },
+        {
+          label: 'Supplier',
+          value: voucherLot.supplierName?.trim() || 'No supplier listed',
+        },
+        {
+          label: 'Supplier invoice',
+          value: voucherLot.invoiceNumber?.trim() || '—',
+        },
+        { label: 'Status', value: voucherLot.status },
+      ]
+    : [];
+
   return (
     <div className="card">
       <div className="card-header">
@@ -819,12 +853,13 @@ function LotsTable({ lots }: { lots: SellerInventoryLot[] }) {
               <th>Supplier</th>
               <th>Received at</th>
               <th>Status</th>
+              <th>Voucher</th>
             </tr>
           </thead>
           <tbody>
             {lots.length === 0 ? (
               <tr>
-                <td colSpan={8} className="text-center py-4 text-muted">
+                <td colSpan={9} className="text-center py-4 text-muted">
                   No lots yet. Import a stock lot to add inventory.
                 </td>
               </tr>
@@ -833,7 +868,6 @@ function LotsTable({ lots }: { lots: SellerInventoryLot[] }) {
                 <tr key={lot.lotId}>
                   <td>
                     <div className="fw-medium">{lot.lotCode}</div>
-                    {/* Which configuration this lot stocks — FIFO draws only from its own. */}
                     {lot.variantName ? (
                       <small className="d-block text-body">{lot.variantName}</small>
                     ) : null}
@@ -868,21 +902,70 @@ function LotsTable({ lots }: { lots: SellerInventoryLot[] }) {
                   <td>
                     <span className={sellerLotStatusBadgeClass(lot.status)}>{lot.status}</span>
                   </td>
+                  <td>
+                    <button
+                      type="button"
+                      className="btn btn-light btn-sm"
+                      onClick={() => setVoucherLot(lot)}
+                    >
+                      View
+                    </button>
+                  </td>
                 </tr>
               ))
             )}
           </tbody>
         </table>
       </div>
+
+      <StockVoucherModal
+        open={Boolean(voucherLot)}
+        kind="in"
+        title="Stock-in voucher"
+        productName={productName}
+        voucherCode={voucherLot ? `IN-${voucherLot.lotCode}` : ''}
+        occurredAt={voucherLot?.receivedAt ?? ''}
+        rows={voucherRows}
+        note={voucherLot?.note}
+        onClose={() => setVoucherLot(null)}
+      />
     </div>
   );
 }
 
 function TransactionsTable({
   transactions,
+  productName,
 }: {
-  transactions: import('../../types/sellerInventory').SellerInventoryTransaction[];
+  transactions: SellerInventoryTransaction[];
+  productName: string;
 }) {
+  const [voucherTx, setVoucherTx] = useState<SellerInventoryTransaction | null>(null);
+  const voucherKind: StockVoucherKind =
+    voucherTx && voucherTx.changeQty < 0 ? 'out' : 'in';
+
+  const voucherRows: StockVoucherRow[] = voucherTx
+    ? [
+        { label: 'Transaction', value: `#${voucherTx.inventoryTxId}` },
+        { label: 'Reason', value: voucherTx.reason },
+        {
+          label: 'Quantity',
+          value:
+            voucherTx.changeQty > 0
+              ? `+${voucherTx.changeQty}`
+              : String(voucherTx.changeQty),
+        },
+        { label: 'Lot', value: voucherTx.lotCode?.trim() || '—' },
+        { label: 'Unit cost', value: moneyOrDash(voucherTx.unitCost) },
+        {
+          label: 'Reference',
+          value: voucherTx.referenceType
+            ? `${voucherTx.referenceType}${voucherTx.referenceId ? ` · ${voucherTx.referenceId}` : ''}`
+            : '—',
+        },
+      ]
+    : [];
+
   return (
     <div className="card">
       <div className="card-header">
@@ -898,12 +981,13 @@ function TransactionsTable({
               <th>Lot</th>
               <th>Unit cost</th>
               <th>Note</th>
+              <th>Voucher</th>
             </tr>
           </thead>
           <tbody>
             {transactions.length === 0 ? (
               <tr>
-                <td colSpan={6} className="text-center py-4 text-muted">
+                <td colSpan={7} className="text-center py-4 text-muted">
                   No inventory transactions yet.
                 </td>
               </tr>
@@ -930,12 +1014,37 @@ function TransactionsTable({
                       {tx.note?.trim() || 'No note'}
                     </span>
                   </td>
+                  <td>
+                    <button
+                      type="button"
+                      className="btn btn-light btn-sm"
+                      onClick={() => setVoucherTx(tx)}
+                    >
+                      View
+                    </button>
+                  </td>
                 </tr>
               ))
             )}
           </tbody>
         </table>
       </div>
+
+      <StockVoucherModal
+        open={Boolean(voucherTx)}
+        kind={voucherKind}
+        title={voucherKind === 'out' ? 'Stock-out voucher' : 'Stock movement voucher'}
+        productName={productName}
+        voucherCode={
+          voucherTx
+            ? `${voucherKind === 'out' ? 'OUT' : 'MOV'}-${voucherTx.inventoryTxId}`
+            : ''
+        }
+        occurredAt={voucherTx?.createdAt ?? ''}
+        rows={voucherRows}
+        note={voucherTx?.note}
+        onClose={() => setVoucherTx(null)}
+      />
     </div>
   );
 }

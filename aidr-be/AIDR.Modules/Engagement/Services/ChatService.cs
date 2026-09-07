@@ -257,7 +257,7 @@ public sealed class ChatService : IChatService
 
         try
         {
-            await _notifications.CreateAsync(
+            await _notifications.CreateOrUpdateUnreadAsync(
                 new CreateNotificationRequest
                 {
                     UserId = recipientUserId,
