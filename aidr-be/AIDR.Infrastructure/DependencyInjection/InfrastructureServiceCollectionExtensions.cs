@@ -71,11 +71,14 @@ public static class InfrastructureServiceCollectionExtensions
         services.Configure<PayOsOptions>(configuration.GetSection(PayOsOptions.SectionName));
         services.Configure<GroqOptions>(configuration.GetSection(GroqOptions.SectionName));
         services.Configure<SettlementOptions>(configuration.GetSection(SettlementOptions.SectionName));
+        services.Configure<EkycOptions>(configuration.GetSection(EkycOptions.SectionName));
         services.Configure<FptAiOptions>(configuration.GetSection(FptAiOptions.SectionName));
+        services.Configure<GeminiEkycOptions>(configuration.GetSection(GeminiEkycOptions.SectionName));
         services.Configure<ShippingOptions>(configuration.GetSection(ShippingOptions.SectionName));
 
-        // Typed client: it both downloads the uploaded images and calls FPT.AI.
-        services.AddHttpClient<IFptAiEkycClient, FptAiEkycClient>();
+        services.AddHttpClient<FptAiEkycClient>();
+        services.AddHttpClient<GeminiEkycClient>();
+        services.AddScoped<IEkycClient, EkycClientResolver>();
 
         services.AddScoped<IAuthUserRepository, AuthUserRepository>();
         services.AddScoped<IProfileRepository, ProfileRepository>();

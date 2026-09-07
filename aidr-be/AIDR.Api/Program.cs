@@ -66,10 +66,10 @@ if (!useInMemoryCache)
 // A mock identity check that looks real is worse than no check at all — refuse
 // to start with it enabled anywhere but Development.
 if (!builder.Environment.IsDevelopment()
-    && builder.Configuration.GetValue("FptAi:UseMock", false))
+    && builder.Configuration.GetValue("Ekyc:UseMock", false))
 {
     throw new InvalidOperationException(
-        "FptAi:UseMock must be false outside Development. Set a real FptAi:ApiKey.");
+        "Ekyc:UseMock must be false outside Development. Configure a real eKYC provider API key.");
 }
 
 var app = builder.Build();

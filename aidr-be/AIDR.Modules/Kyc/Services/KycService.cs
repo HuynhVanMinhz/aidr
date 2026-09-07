@@ -12,14 +12,14 @@ namespace AIDR.Modules.Kyc.Services;
 public sealed class KycService : IKycService
 {
     private readonly IKycRepository _repository;
-    private readonly IFptAiEkycClient _client;
-    private readonly FptAiOptions _options;
+    private readonly IEkycClient _client;
+    private readonly EkycOptions _options;
     private readonly ILogger<KycService> _logger;
 
     public KycService(
         IKycRepository repository,
-        IFptAiEkycClient client,
-        IOptions<FptAiOptions> options,
+        IEkycClient client,
+        IOptions<EkycOptions> options,
         ILogger<KycService> logger)
     {
         _repository = repository;
@@ -52,7 +52,6 @@ public sealed class KycService : IKycService
             ? null
             : RequireUrl(request.BackImageUrl, "ID card back photo");
 
-        // Each attempt costs a provider call — cap them per day.
         var since = DateTime.UtcNow.AddDays(-1);
         var attempts = await _repository.CountAttemptsSinceAsync(userId, since, ct);
         if (attempts >= _options.MaxAttemptsPerDay)
@@ -68,24 +67,24 @@ public sealed class KycService : IKycService
             throw new ConflictException("Your identity has already been verified.");
         }
 
-        // A mock run is recorded under a different provider so nothing downstream
-        // can mistake canned data for a real identity check.
-        var provider = _client.UseMock ? KycConstants.ProviderMock : KycConstants.ProviderFptAi;
+        var provider = _client.UseMock ? KycConstants.ProviderMock : _client.ProviderName;
 
-        IdCardOcrResult ocr;
+        EkycIdentityResult identity;
         try
         {
-            ocr = await _client.ReadIdCardAsync(frontUrl, backUrl, ct);
+            identity = await _client.VerifyIdentityAsync(frontUrl, backUrl, selfieUrl, ct);
         }
         catch (ProviderUnavailableException ex)
         {
             return await ManualReviewAsync(userId, frontUrl, backUrl, selfieUrl, ex, ct);
         }
 
+        var ocr = identity.Ocr;
         if (string.IsNullOrWhiteSpace(ocr.DocumentNumber))
         {
             return await FailAsync(
                 userId,
+                provider,
                 frontUrl,
                 backUrl,
                 selfieUrl,
@@ -102,6 +101,7 @@ public sealed class KycService : IKycService
         {
             return await FailAsync(
                 userId,
+                provider,
                 frontUrl,
                 backUrl,
                 selfieUrl,
@@ -111,15 +111,7 @@ public sealed class KycService : IKycService
                 ct);
         }
 
-        FaceMatchResult face;
-        try
-        {
-            face = await _client.MatchFaceAsync(frontUrl, selfieUrl, ct);
-        }
-        catch (ProviderUnavailableException ex)
-        {
-            return await ManualReviewAsync(userId, frontUrl, backUrl, selfieUrl, ex, ct);
-        }
+        var face = identity.Face;
 
         var status = face.Similarity >= _options.FaceMatchThreshold
             ? KycConstants.StatusPassed
@@ -137,8 +129,9 @@ public sealed class KycService : IKycService
         };
 
         _logger.LogInformation(
-            "KYC for user {UserId}: similarity {Similarity} -> {Status}",
+            "KYC for user {UserId} via {Provider}: similarity {Similarity} -> {Status}",
             userId,
+            provider,
             face.Similarity,
             status);
 
@@ -170,12 +163,6 @@ public sealed class KycService : IKycService
             ct);
     }
 
-    /// <summary>
-    /// The automated check could not run. Rather than block the seller or — far
-    /// worse — wave them through, park the application for a person to read the
-    /// documents. Nothing here is treated as verified: the identity fields stay
-    /// empty because no machine read them, and admin still has to approve.
-    /// </summary>
     private async Task<KycVerificationDto> ManualReviewAsync(
         Guid userId,
         string frontUrl,
@@ -207,10 +194,9 @@ public sealed class KycService : IKycService
             ct);
     }
 
-    /* ------------------------------------------------------------- helpers */
-
     private Task<KycVerificationDto> FailAsync(
         Guid userId,
+        string provider,
         string frontUrl,
         string? backUrl,
         string selfieUrl,
@@ -222,7 +208,7 @@ public sealed class KycService : IKycService
             new KycVerificationRecord
             {
                 UserId = userId,
-                Provider = KycConstants.ProviderFptAi,
+                Provider = provider,
                 FrontImageUrl = frontUrl,
                 BackImageUrl = backUrl,
                 SelfieImageUrl = selfieUrl,
@@ -248,7 +234,6 @@ public sealed class KycService : IKycService
         return url;
     }
 
-    /// <summary>Keep only the last four digits readable.</summary>
     private static string Mask(string documentNumber)
     {
         var digits = new string(documentNumber.Where(char.IsLetterOrDigit).ToArray());
