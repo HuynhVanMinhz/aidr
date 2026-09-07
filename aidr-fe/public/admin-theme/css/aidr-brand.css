@@ -60,9 +60,9 @@
    * colours belong to whichever data-menu-color block is active below, and a
    * theme-following value at :root would fight them.
    */
-  /* AIDR emblem is nearly square; Larkon defaults (24/26px) were for a wide wordmark. */
-  --bs-logo-lg-height: 60px;
-  --bs-logo-sm-height: 60px;
+  /* Horizontal AIDR wordmark */
+  --bs-logo-lg-height: 48px;
+  --bs-logo-sm-height: 40px;
 }
 
 html[data-bs-theme='dark'],
@@ -77,6 +77,8 @@ html[data-bs-theme='dark'],
   --aidr-brand-faint: #6b7280;
   --aidr-brand-border: rgba(233, 235, 239, 0.18);
   --aidr-brand-subtle-bg: rgba(233, 235, 239, 0.12);
+  --aidr-btn-disabled-bg: #2a3142;
+  --aidr-btn-disabled-text: #6b7280;
 
   --bs-primary-rgb: 233, 235, 239;
   --bs-primary-text-emphasis: var(--aidr-brand-hover);
@@ -129,9 +131,10 @@ html[data-topbar-color='light'] {
   --bs-btn-active-color: var(--aidr-brand-on);
   --bs-btn-active-bg: var(--aidr-brand-active);
   --bs-btn-active-border-color: var(--aidr-brand-active);
-  --bs-btn-disabled-color: var(--aidr-brand-on);
-  --bs-btn-disabled-bg: var(--aidr-brand);
-  --bs-btn-disabled-border-color: var(--aidr-brand);
+  --bs-btn-disabled-color: var(--aidr-brand-faint);
+  --bs-btn-disabled-bg: #ececee;
+  --bs-btn-disabled-border-color: rgba(22, 24, 29, 0.12);
+  --bs-btn-disabled-opacity: 0.55;
 }
 
 .bg-primary,
@@ -172,6 +175,28 @@ html[data-topbar-color='light'] {
   --bs-btn-active-color: var(--aidr-brand-on);
   --bs-btn-active-bg: var(--aidr-brand);
   --bs-btn-active-border-color: var(--aidr-brand);
+  --bs-btn-disabled-color: var(--aidr-brand-faint);
+  --bs-btn-disabled-bg: transparent;
+  --bs-btn-disabled-border-color: rgba(22, 24, 29, 0.12);
+  --bs-btn-disabled-opacity: 0.55;
+}
+
+html[data-bs-theme='dark'] .btn-primary,
+html[data-bs-theme='dark'] .btn-primary:disabled,
+html[data-bs-theme='dark'] .btn-primary.disabled {
+  --bs-btn-disabled-color: var(--aidr-btn-disabled-text, #6b7280);
+  --bs-btn-disabled-bg: var(--aidr-btn-disabled-bg, #2a3142);
+  --bs-btn-disabled-border-color: var(--aidr-brand-border);
+  --bs-btn-disabled-opacity: 0.5;
+}
+
+html[data-bs-theme='dark'] .btn-outline-primary,
+html[data-bs-theme='dark'] .btn-outline-primary:disabled,
+html[data-bs-theme='dark'] .btn-outline-primary.disabled {
+  --bs-btn-disabled-color: var(--aidr-btn-disabled-text, #6b7280);
+  --bs-btn-disabled-bg: transparent;
+  --bs-btn-disabled-border-color: var(--aidr-brand-border);
+  --bs-btn-disabled-opacity: 0.5;
 }
 
 /* ---------------------------------- links --------------------------------- */
@@ -189,6 +214,13 @@ html[data-topbar-color='light'] {
 
 .logo-box img {
   width: auto;
+  max-width: 180px;
   object-fit: contain;
   background: transparent;
+}
+
+html[data-menu-size='condensed'] .main-nav .logo-box .logo-sm,
+html[data-menu-size='sm-hover'] .main-nav:not(:hover) .logo-box .logo-sm {
+  max-width: 44px;
+  object-position: left center;
 }

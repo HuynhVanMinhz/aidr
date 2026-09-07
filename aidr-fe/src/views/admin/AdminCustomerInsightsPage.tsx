@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState, type CSSProperties, type FormEvent } from 'react';
 import type { ApexOptions } from 'apexcharts';
 import { AdminApexChart } from '../../components/admin/AdminApexChart';
+import { AiAnalyticsBriefCard } from '../../components/admin/AiAnalyticsBriefCard';
 import { AdminDatePicker } from '../../components/admin/AdminDatePicker';
 import { AdminPagination, AdminStatCard } from '../../components/admin/AdminStatCard';
 import { AdminSelect } from '../../components/admin/AdminSelect';
@@ -363,6 +364,12 @@ export function AdminCustomerInsightsPage() {
               {error}
             </p>
           ) : null}
+        </div>
+      </div>
+
+      <div className="row">
+        <div className="col-12">
+          <AiAnalyticsBriefCard audience="admin" from={applied.from} to={applied.to} />
         </div>
       </div>
 

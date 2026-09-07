@@ -44,4 +44,12 @@ public interface INotificationService
     Task<NotificationDto> CreateAsync(
         CreateNotificationRequest request,
         CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// For chat: update an existing unread notification for the same thread, or create one.
+    /// Avoids one inbox row per message while the peer has not opened the thread.
+    /// </summary>
+    Task<NotificationDto> CreateOrUpdateUnreadAsync(
+        CreateNotificationRequest request,
+        CancellationToken cancellationToken = default);
 }

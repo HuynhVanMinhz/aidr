@@ -38,6 +38,7 @@ public sealed class PaymentService : IPaymentService
     private readonly IPayOsClient _payOs;
     private readonly PayOsOptions _options;
     private readonly INotificationService _notifications;
+    private readonly OrderInvoiceMailer _invoiceMailer;
     private readonly ILogger<PaymentService> _logger;
 
     public PaymentService(
@@ -45,12 +46,14 @@ public sealed class PaymentService : IPaymentService
         IPayOsClient payOs,
         IOptions<PayOsOptions> options,
         INotificationService notifications,
+        OrderInvoiceMailer invoiceMailer,
         ILogger<PaymentService> logger)
     {
         _payments = payments;
         _payOs = payOs;
         _options = options.Value;
         _notifications = notifications;
+        _invoiceMailer = invoiceMailer;
         _logger = logger;
     }
 
@@ -235,7 +238,10 @@ public sealed class PaymentService : IPaymentService
         // Same notification the webhook path fires, and the same replay guard —
         // whichever of the two gets here first is the only one that notifies.
         if (result.Processed && !result.IdempotentReplay)
+        {
             await NotifySellerNewPaidOrderAsync(result, cancellationToken);
+            await _invoiceMailer.TrySendAfterPaidAsync(result, cancellationToken);
+        }
 
         _logger.LogInformation(
             "Reconciled order {OrderId} against payOS: payment {PaymentStatus}, order {OrderStatus}",
@@ -296,7 +302,10 @@ public sealed class PaymentService : IPaymentService
             cancellationToken);
 
         if (result.Processed && !result.IdempotentReplay)
+        {
             await NotifySellerNewPaidOrderAsync(result, cancellationToken);
+            await _invoiceMailer.TrySendAfterPaidAsync(result, cancellationToken);
+        }
 
         return result;
     }

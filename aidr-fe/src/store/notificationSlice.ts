@@ -155,6 +155,8 @@ export const notificationSlice = createSlice({
       const existingIndex = state.items.findIndex(
         (item) => item.notificationId === incoming.notificationId,
       );
+      const wasUnread =
+        existingIndex >= 0 ? Boolean(state.items[existingIndex]?.isRead) === false : false;
 
       if (existingIndex >= 0) {
         state.items[existingIndex] = incoming;
@@ -165,7 +167,10 @@ export const notificationSlice = createSlice({
 
       upsertPreview(state, incoming);
 
-      if (!incoming.isRead) {
+      // Only bump the badge for brand-new unread rows — coalesced chat updates reuse the same id.
+      if (!incoming.isRead && existingIndex < 0) {
+        state.unreadCount += 1;
+      } else if (!incoming.isRead && existingIndex >= 0 && !wasUnread) {
         state.unreadCount += 1;
       }
     },

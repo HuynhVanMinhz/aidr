@@ -158,11 +158,11 @@ export function attachmentFileName(url: string): string {
    ───────────────────────────────────────────────────────────────────────── */
 
 /**
- * `\s` inside a template literal degrades to a plain `s`, so the pattern is a literal regex:
- * optional origin, then /products/{guid} plus any query or hash the link carries.
+ * Match a product detail URL ending at the GUID. Trailing typed text must not
+ * become part of the link (composer chips + card render handle the product).
  */
 const PRODUCT_LINK =
-  /(?:https?:\/\/[^\s]*?)?\/products\/([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})[^\s]*/g;
+  /(?:https?:\/\/[^\s/]+)?\/products\/([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})(?![0-9a-fA-F-])/g;
 
 export function buildProductLink(productId: string): string {
   const origin = typeof window !== 'undefined' ? window.location.origin : '';

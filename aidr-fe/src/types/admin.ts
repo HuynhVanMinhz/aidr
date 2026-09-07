@@ -222,6 +222,16 @@ export type RejectProductPayload = {
   reason: string;
 };
 
+export type BulkApproveProductsPayload = {
+  productIds: string[];
+};
+
+export type BulkApproveProductsResult = {
+  approvedCount: number;
+  skippedCount: number;
+  approvedProductIds: string[];
+};
+
 export type ProductModerationHistoryItem = {
   moderationId: number;
   productId: string;

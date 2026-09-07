@@ -1,9 +1,11 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { AdminConfirmModal } from '../../components/admin/AdminConfirmModal';
 import { AdminPagination, AdminStatCard } from '../../components/admin/AdminStatCard';
 import { AdminSelect } from '../../components/admin/AdminSelect';
 import { IconifyIcon } from '../../components/admin/IconifyIcon';
 import { useAdminProducts } from '../../hooks/useAdminProducts';
+import { useToast } from '../../hooks/useToast';
 import type { AdminProductStatusFilter } from '../../types/admin';
 import { productModerationBadgeClass } from '../../utils/adminBadge';
 import { formatVnd } from '../../utils/sellerProductUi';
@@ -24,10 +26,14 @@ function formatDate(value: string) {
 }
 
 export function AdminProductListPage() {
+  const toast = useToast();
   const [status, setStatus] = useState<AdminProductStatusFilter>('Pending');
   const [q, setQ] = useState('');
   const [debouncedQ, setDebouncedQ] = useState('');
   const [page, setPage] = useState(1);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [bulkOpen, setBulkOpen] = useState(false);
+  const [confirmingBulk, setConfirmingBulk] = useState(false);
 
   useEffect(() => {
     const timer = window.setTimeout(() => setDebouncedQ(q.trim()), 300);
@@ -38,7 +44,21 @@ export function AdminProductListPage() {
     setPage(1);
   }, [debouncedQ, status]);
 
-  const { items, loading, error, summary, totalCount, page: serverPage } = useAdminProducts({
+  useEffect(() => {
+    setSelectedIds([]);
+  }, [debouncedQ, status, page]);
+
+  const {
+    items,
+    loading,
+    error,
+    summary,
+    totalCount,
+    page: serverPage,
+    mutating,
+    approveBulk,
+    reload,
+  } = useAdminProducts({
     status,
     q: debouncedQ,
     page,
@@ -49,6 +69,15 @@ export function AdminProductListPage() {
     if (serverPage !== page) setPage(serverPage);
   }, [serverPage, page]);
 
+  const pendingOnPage = useMemo(
+    () => items.filter((item) => item.status === 'Pending'),
+    [items],
+  );
+  const pendingIds = useMemo(() => pendingOnPage.map((item) => item.productId), [pendingOnPage]);
+  const canBulk = status === 'Pending' || status === 'all';
+  const allPendingSelected =
+    pendingIds.length > 0 && pendingIds.every((id) => selectedIds.includes(id));
+
   const viewTotal =
     status === 'Pending'
       ? summary.pendingCount
@@ -57,6 +86,36 @@ export function AdminProductListPage() {
         : status === 'Rejected'
           ? summary.rejectedCount
           : summary.pendingCount + summary.approvedCount + summary.rejectedCount;
+
+  function toggleOne(productId: string, checked: boolean) {
+    setSelectedIds((current) =>
+      checked ? [...new Set([...current, productId])] : current.filter((id) => id !== productId),
+    );
+  }
+
+  function toggleAllPending(checked: boolean) {
+    setSelectedIds(checked ? pendingIds : []);
+  }
+
+  async function confirmBulkApprove() {
+    if (selectedIds.length === 0) return;
+    setConfirmingBulk(true);
+    try {
+      const result = await approveBulk(selectedIds);
+      setBulkOpen(false);
+      setSelectedIds([]);
+      toast.success(
+        result.approvedCount === 0
+          ? 'No pending products were approved.'
+          : `${result.approvedCount} product(s) approved.`,
+      );
+      await reload();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Unable to approve products.');
+    } finally {
+      setConfirmingBulk(false);
+    }
+  }
 
   return (
     <>
@@ -105,6 +164,16 @@ export function AdminProductListPage() {
             <div className="card-header d-flex flex-wrap justify-content-between align-items-center gap-2">
               <h4 className="card-title mb-0">Product Moderation Queue</h4>
               <div className="d-flex flex-nowrap align-items-center gap-2">
+                {canBulk ? (
+                  <button
+                    type="button"
+                    className="btn btn-success btn-sm"
+                    disabled={selectedIds.length === 0 || mutating}
+                    onClick={() => setBulkOpen(true)}
+                  >
+                    Approve selected ({selectedIds.length})
+                  </button>
+                ) : null}
                 <AdminSelect
                   id="admin-product-status"
                   size="sm"
@@ -138,6 +207,18 @@ export function AdminProductListPage() {
               <table className="table align-middle mb-0 table-hover table-centered">
                 <thead className="bg-light-subtle">
                   <tr>
+                    {canBulk ? (
+                      <th style={{ width: 40 }}>
+                        <input
+                          type="checkbox"
+                          className="form-check-input"
+                          aria-label="Select all pending on this page"
+                          checked={allPendingSelected}
+                          disabled={pendingIds.length === 0}
+                          onChange={(e) => toggleAllPending(e.target.checked)}
+                        />
+                      </th>
+                    ) : null}
                     <th>Product</th>
                     <th>Shop</th>
                     <th>Price</th>
@@ -151,73 +232,90 @@ export function AdminProductListPage() {
                 <tbody>
                   {loading && items.length === 0 ? (
                     <tr>
-                      <td colSpan={8} className="text-center py-4 text-muted">
+                      <td colSpan={canBulk ? 9 : 8} className="text-center py-4 text-muted">
                         Loading...
                       </td>
                     </tr>
                   ) : null}
                   {!loading && items.length === 0 ? (
                     <tr>
-                      <td colSpan={8} className="text-center py-4 text-muted">
+                      <td colSpan={canBulk ? 9 : 8} className="text-center py-4 text-muted">
                         No products found.
                       </td>
                     </tr>
                   ) : null}
-                  {items.map((item) => (
-                    <tr key={item.productId}>
-                      <td>
-                        <div className="d-flex align-items-center gap-2">
-                          <div className="rounded bg-light avatar-md d-flex align-items-center justify-content-center overflow-hidden">
-                            {item.primaryImageUrl ? (
-                              <img
-                                src={item.primaryImageUrl}
-                                alt=""
-                                className="avatar-md"
-                                style={{ objectFit: 'cover' }}
-                              />
-                            ) : (
-                              <IconifyIcon
-                                icon="solar:gallery-bold-duotone"
-                                className="fs-24 text-muted"
-                              />
-                            )}
-                          </div>
-                          <div>
-                            <p className="text-dark fw-medium fs-15 mb-0">{item.name}</p>
-                            <p className="text-muted mb-0 fs-13">
-                              {item.brand?.trim() || item.conditionType}
-                            </p>
-                          </div>
-                        </div>
-                      </td>
-                      <td>
-                        <p className="mb-0 fw-medium">{item.shopName}</p>
-                      </td>
-                      <td>
-                        <div>{formatVnd(item.effectivePrice)}</div>
-                        {item.salePrice != null && item.salePrice < item.basePrice ? (
-                          <div className="text-muted text-decoration-line-through fs-13">
-                            {formatVnd(item.basePrice)}
-                          </div>
+                  {items.map((item) => {
+                    const isPending = item.status === 'Pending';
+                    return (
+                      <tr key={item.productId}>
+                        {canBulk ? (
+                          <td>
+                            <input
+                              type="checkbox"
+                              className="form-check-input"
+                              aria-label={`Select ${item.name}`}
+                              checked={selectedIds.includes(item.productId)}
+                              disabled={!isPending}
+                              onChange={(e) => toggleOne(item.productId, e.target.checked)}
+                            />
+                          </td>
                         ) : null}
-                      </td>
-                      <td>{item.stockQuantity}</td>
-                      <td>{item.categoryName}</td>
-                      <td>{formatDate(item.updatedAt)}</td>
-                      <td>
-                        <span className={productModerationBadgeClass(item.status)}>{item.status}</span>
-                      </td>
-                      <td>
-                        <Link
-                          to={`/admin/products/${item.productId}`}
-                          className="btn btn-light btn-sm"
-                          title="Review"
-                        >
-                          <IconifyIcon icon="solar:eye-broken" className="align-middle fs-18" />
-                        </Link>
-                      </td>
-                    </tr>
-                  ))}
+                        <td>
+                          <div className="d-flex align-items-center gap-2">
+                            <div className="rounded bg-light avatar-md d-flex align-items-center justify-content-center overflow-hidden">
+                              {item.primaryImageUrl ? (
+                                <img
+                                  src={item.primaryImageUrl}
+                                  alt=""
+                                  className="avatar-md"
+                                  style={{ objectFit: 'cover' }}
+                                />
+                              ) : (
+                                <IconifyIcon
+                                  icon="solar:gallery-bold-duotone"
+                                  className="fs-24 text-muted"
+                                />
+                              )}
+                            </div>
+                            <div>
+                              <p className="text-dark fw-medium fs-15 mb-0">{item.name}</p>
+                              <p className="text-muted mb-0 fs-13">
+                                {item.brand?.trim() || item.conditionType}
+                              </p>
+                            </div>
+                          </div>
+                        </td>
+                        <td>
+                          <p className="mb-0 fw-medium">{item.shopName}</p>
+                        </td>
+                        <td>
+                          <div>{formatVnd(item.effectivePrice)}</div>
+                          {item.salePrice != null && item.salePrice < item.basePrice ? (
+                            <div className="text-muted text-decoration-line-through fs-13">
+                              {formatVnd(item.basePrice)}
+                            </div>
+                          ) : null}
+                        </td>
+                        <td>{item.stockQuantity}</td>
+                        <td>{item.categoryName}</td>
+                        <td>{formatDate(item.updatedAt)}</td>
+                        <td>
+                          <span className={productModerationBadgeClass(item.status)}>
+                            {item.status}
+                          </span>
+                        </td>
+                        <td>
+                          <Link
+                            to={`/admin/products/${item.productId}`}
+                            className="btn btn-light btn-sm"
+                            title="Review"
+                          >
+                            <IconifyIcon icon="solar:eye-broken" className="align-middle fs-18" />
+                          </Link>
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
@@ -231,6 +329,23 @@ export function AdminProductListPage() {
           </div>
         </div>
       </div>
+
+      <AdminConfirmModal
+        open={bulkOpen}
+        title="Approve selected products"
+        confirmLabel="Approve all"
+        confirmVariant="success"
+        confirming={confirmingBulk}
+        onCancel={() => {
+          if (!confirmingBulk) setBulkOpen(false);
+        }}
+        onConfirm={() => void confirmBulkApprove()}
+      >
+        <p className="mb-0">
+          Approve <strong>{selectedIds.length}</strong> selected pending product
+          {selectedIds.length === 1 ? '' : 's'}? They will become visible in the catalog.
+        </p>
+      </AdminConfirmModal>
     </>
   );
 }

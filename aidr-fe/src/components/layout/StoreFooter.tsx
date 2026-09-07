@@ -52,7 +52,7 @@ export function StoreFooter() {
           <div className="col-xl-4">
             <div className="about-footer">
               <div className="footer-logo">
-                <img src="/theme/images/logo-white.svg" alt="AIDR" />
+                <img src="/theme/images/aidr-logo-header.png" alt="AIDR" />
               </div>
               <div className="about-footer-content">
                 <p>

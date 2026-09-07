@@ -10,6 +10,8 @@ import type {
   AdminProductListQuery,
   AdminProductStatusFilter,
   AdminSellerRegistration,
+  BulkApproveProductsPayload,
+  BulkApproveProductsResult,
   CreateCategoryPayload,
   ProductModerationHistoryResult,
   RejectProductPayload,
@@ -367,6 +369,18 @@ export const approveAdminProduct = createAsyncThunk(
   },
 );
 
+export const approveAdminProductsBulk = createAsyncThunk(
+  'admin/approveProductsBulk',
+  async (payload: BulkApproveProductsPayload, { rejectWithValue }) => {
+    try {
+      const result = await adminApi.approveAdminProductsBulk(payload);
+      return unwrap(result, 'Unable to approve products.') as BulkApproveProductsResult;
+    } catch (error) {
+      return rejectWithValue(getApiErrorMessage(error, 'Unable to approve products.'));
+    }
+  },
+);
+
 export const rejectAdminProduct = createAsyncThunk(
   'admin/rejectProduct',
   async ({ id, payload }: { id: string; payload: RejectProductPayload }, { rejectWithValue }) => {
@@ -641,6 +655,31 @@ export const adminSlice = createSlice({
       .addCase(approveAdminProduct.rejected, (state, action) => {
         state.productsMutating = false;
         state.productsError = (action.payload as string) || 'Unable to approve product.';
+      })
+      .addCase(approveAdminProductsBulk.pending, (state) => {
+        state.productsMutating = true;
+        state.productsError = null;
+      })
+      .addCase(approveAdminProductsBulk.fulfilled, (state, action) => {
+        state.productsMutating = false;
+        const approved = new Set(action.payload.approvedProductIds);
+        if (approved.size > 0) {
+          state.products = state.products.filter((item) => !approved.has(item.productId));
+          state.productsTotalCount = Math.max(0, state.productsTotalCount - approved.size);
+          state.productsSummary.pendingCount = Math.max(
+            0,
+            state.productsSummary.pendingCount - approved.size,
+          );
+          state.productsSummary.approvedCount += approved.size;
+          for (const id of approved) {
+            delete state.moderationHistoryByProductId[id];
+          }
+          state.productDetails = state.productDetails.filter((d) => !approved.has(d.productId));
+        }
+      })
+      .addCase(approveAdminProductsBulk.rejected, (state, action) => {
+        state.productsMutating = false;
+        state.productsError = (action.payload as string) || 'Unable to approve products.';
       })
       .addCase(rejectAdminProduct.pending, (state) => {
         state.productsMutating = true;

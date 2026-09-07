@@ -6,7 +6,7 @@
 }
 
 .cart-empty-state {
-  padding: 3rem 0 4.5rem;
+  padding: 1rem 0 2rem;
   text-align: center;
 }
 
@@ -343,8 +343,10 @@
 }
 
 .cart-qty-stepper__btn:disabled {
-  opacity: 0.35;
+  color: var(--btn-disabled-text, var(--text-color, #707070));
+  opacity: var(--btn-disabled-opacity, 0.52);
   cursor: not-allowed;
+  pointer-events: none;
 }
 
 .cart-qty-stepper__value {
@@ -401,8 +403,12 @@
 }
 
 .cart-action-btn:disabled {
-  opacity: 0.55;
+  background: var(--btn-disabled-bg, var(--secondary-color, #f3f3f3));
+  color: var(--btn-disabled-text, var(--text-color, #707070));
+  border-color: var(--btn-disabled-border, var(--cart-border));
+  opacity: var(--btn-disabled-opacity, 0.52);
   cursor: not-allowed;
+  pointer-events: none;
 }
 
 /* Order summary card */
@@ -509,8 +515,8 @@
   padding: 0.85rem 1.15rem;
   border: none;
   border-radius: 10px;
-  background: var(--primary-color, #16181d);
-  color: #fff;
+  background: var(--btn-primary-bg, var(--accent-color, #16181d));
+  color: var(--btn-primary-text, #fff);
   font-size: 0.95rem;
   font-weight: 600;
   text-decoration: none;
@@ -518,12 +524,15 @@
 }
 
 .cart-summary-checkout:hover {
-  color: #fff;
+  color: var(--btn-primary-text, #fff);
   opacity: 0.92;
 }
 
 .cart-summary-checkout.is-disabled {
-  opacity: 0.55;
+  background: var(--btn-disabled-bg, var(--secondary-color, #f3f3f3));
+  color: var(--btn-disabled-text, var(--text-color, #707070));
+  border: 1px solid var(--btn-disabled-border, transparent);
+  opacity: var(--btn-disabled-opacity, 0.52);
   pointer-events: none;
   cursor: not-allowed;
 }
@@ -601,17 +610,21 @@
   padding: 0.5rem 0.9rem;
   border: none;
   border-radius: 8px;
-  background: var(--primary-color, #16181d);
-  color: #fff;
+  background: var(--btn-primary-bg, var(--primary-color, #16181d));
+  color: var(--btn-primary-text, #fff);
   font-size: 0.8125rem;
   font-weight: 600;
   cursor: pointer;
-  transition: opacity 0.15s ease;
+  transition: background-color 0.15s ease, color 0.15s ease;
 }
 
 .voucher-promo-row__apply:disabled {
-  opacity: 0.45;
+  background: var(--btn-disabled-bg, var(--secondary-color, #f3f3f3));
+  color: var(--btn-disabled-text, var(--text-color, #707070));
+  border: 1px solid var(--btn-disabled-border, transparent);
+  opacity: var(--btn-disabled-opacity, 0.52);
   cursor: not-allowed;
+  pointer-events: none;
 }
 
 .voucher-promo-feedback {
@@ -787,23 +800,27 @@
 
 .voucher-card__apply {
   padding: 0.25rem 0.65rem;
-  border: 1px solid var(--primary-color, #16181d);
+  border: 1px solid var(--accent-color, var(--primary-color, #16181d));
   border-radius: 999px;
   background: transparent;
-  color: var(--primary-color, #16181d);
+  color: var(--accent-color, var(--primary-color, #16181d));
   font-size: 0.75rem;
   font-weight: 600;
   cursor: pointer;
 }
 
 .voucher-card__apply:hover:not(:disabled) {
-  background: var(--primary-color, #16181d);
-  color: #fff;
+  background: var(--accent-color, var(--primary-color, #16181d));
+  color: var(--on-accent, #fff);
 }
 
 .voucher-card__apply:disabled {
-  opacity: 0.45;
+  background: var(--btn-disabled-bg, transparent);
+  border-color: var(--btn-disabled-border, var(--cart-border, rgba(22, 24, 29, 0.12)));
+  color: var(--btn-disabled-text, var(--text-color, #707070));
+  opacity: var(--btn-disabled-opacity, 0.52);
   cursor: not-allowed;
+  pointer-events: none;
 }
 
 .voucher-card__name {
@@ -1023,8 +1040,8 @@
   height: 18px;
   padding: 0 5px;
   border-radius: 999px;
-  background: var(--primary-color, #16181d);
-  color: #fff;
+  background: var(--btn-primary-bg, var(--accent-color, #16181d));
+  color: var(--btn-primary-text, #fff);
   font-size: 10px;
   font-weight: 600;
   line-height: 1;
@@ -1378,8 +1395,8 @@ html[data-theme='dark'] .store-header-icon-wrap i {
 }
 
 html[data-theme='dark'] .store-header-badge {
-  background: #e8eaed;
-  color: #12141a;
+  background: var(--btn-primary-bg, #2dd4bf);
+  color: var(--btn-primary-text, #0c0e14);
 }
 
 /* Dark theme for the workspace controls: the light palette above hard-codes a
@@ -1553,6 +1570,99 @@ html[data-theme='dark'] .nav-menu-wrapper .nav-link--cta {
   color: var(--positive-text, #1a7f37);
 }
 
+/* Dark mode — cart controls need explicit contrast (hardcoded light rgba / #fff). */
+html[data-theme='dark'] .cart-page-layout {
+  --cart-border: rgba(232, 234, 237, 0.14);
+}
+
+html[data-theme='dark'] .cart-qty-stepper {
+  background: var(--card, #151922);
+  border-color: var(--cart-border);
+}
+
+html[data-theme='dark'] .cart-qty-stepper__btn {
+  color: var(--primary-color, #e8eaed);
+}
+
+html[data-theme='dark'] .cart-qty-stepper__btn:hover:not(:disabled) {
+  background: rgba(232, 234, 237, 0.08);
+}
+
+html[data-theme='dark'] .cart-qty-stepper__btn:disabled {
+  color: var(--btn-disabled-text, #6b7380);
+  opacity: var(--btn-disabled-opacity, 0.48);
+}
+
+html[data-theme='dark'] .cart-qty-stepper__value {
+  color: var(--primary-color, #e8eaed);
+}
+
+html[data-theme='dark'] .cart-action-btn--secondary {
+  background: var(--card, #151922);
+  border-color: var(--cart-border);
+  color: var(--primary-color, #e8eaed);
+}
+
+html[data-theme='dark'] .cart-action-btn--secondary:hover {
+  background: rgba(232, 234, 237, 0.06);
+}
+
+html[data-theme='dark'] .cart-action-btn:disabled {
+  background: var(--btn-disabled-bg, #1c2230);
+  color: var(--btn-disabled-text, #6b7380);
+  border-color: var(--btn-disabled-border);
+  opacity: var(--btn-disabled-opacity, 0.48);
+}
+
+html[data-theme='dark'] .voucher-promo-row {
+  background: rgba(232, 234, 237, 0.04);
+  border-color: var(--cart-border);
+}
+
+html[data-theme='dark'] .voucher-promo-row__apply {
+  background: var(--btn-primary-bg, #2dd4bf);
+  color: var(--btn-primary-text, #0c0e14);
+}
+
+html[data-theme='dark'] .voucher-promo-row__apply:disabled {
+  background: var(--btn-disabled-bg, #1c2230);
+  color: var(--btn-disabled-text, #6b7380);
+  border-color: var(--btn-disabled-border);
+  opacity: var(--btn-disabled-opacity, 0.48);
+}
+
+html[data-theme='dark'] .voucher-card__apply {
+  border-color: var(--accent-color, #2dd4bf);
+  color: var(--accent-color, #2dd4bf);
+}
+
+html[data-theme='dark'] .voucher-card__apply:hover:not(:disabled) {
+  background: var(--accent-color, #2dd4bf);
+  color: var(--on-accent, #0c0e14);
+}
+
+html[data-theme='dark'] .voucher-card__apply:disabled {
+  background: var(--btn-disabled-bg, transparent);
+  border-color: var(--btn-disabled-border);
+  color: var(--btn-disabled-text, #6b7380);
+  opacity: var(--btn-disabled-opacity, 0.48);
+}
+
+html[data-theme='dark'] .cart-summary-checkout {
+  background: var(--btn-primary-bg, #2dd4bf);
+  color: var(--btn-primary-text, #0c0e14);
+}
+
+html[data-theme='dark'] .cart-summary-checkout:hover {
+  color: var(--btn-primary-text, #0c0e14);
+}
+
+html[data-theme='dark'] .cart-summary-checkout.is-disabled {
+  background: var(--btn-disabled-bg, #1c2230);
+  color: var(--btn-disabled-text, #6b7380);
+  border-color: var(--btn-disabled-border);
+  opacity: var(--btn-disabled-opacity, 0.48);
+}
 
 /* The configuration sits between the product name and the shop: it is part of what
    was bought, not metadata about it. */

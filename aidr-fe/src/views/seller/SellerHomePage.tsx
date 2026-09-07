@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { AdminStatCard } from '../../components/admin/AdminStatCard';
+import { AiAnalyticsBriefCard } from '../../components/admin/AiAnalyticsBriefCard';
 import { IconifyIcon } from '../../components/admin/IconifyIcon';
 import { useSellerDashboard } from '../../hooks/useSellerFinance';
 import { formatOrderDate, formatOrderStatus } from '../../utils/orderUi';
@@ -93,6 +94,12 @@ export function SellerHomePage() {
             icon="solar:box-bold-duotone"
             tone="success"
           />
+        </div>
+      </div>
+
+      <div className="row">
+        <div className="col-12">
+          <AiAnalyticsBriefCard audience="seller" />
         </div>
       </div>
 

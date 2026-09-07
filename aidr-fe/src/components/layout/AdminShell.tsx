@@ -104,7 +104,8 @@ export function AdminShell({ variant = 'admin', children }: AdminShellProps) {
     }
   }, [pathname, variant]);
 
-  const homePath = variant === 'seller' ? '/seller' : '/admin';
+  // Seller logo goes to storefront home; admin stays on admin dashboard.
+  const homePath = variant === 'seller' ? '/' : '/admin';
   const title = pageTitle(pathname, variant);
 
   async function handleLogout() {
@@ -180,12 +181,12 @@ export function AdminShell({ variant = 'admin', children }: AdminShellProps) {
       <div className="main-nav">
         <div className="logo-box">
           <Link to={homePath} className="logo-dark">
-            <img src="/admin-theme/images/logo-sm.png" className="logo-sm" alt="AIDR" />
-            <img src="/admin-theme/images/logo-dark.png" className="logo-lg" alt="AIDR" />
+            <img src="/admin-theme/images/aidr-logo.png" className="logo-sm" alt="AIDR" />
+            <img src="/admin-theme/images/aidr-logo.png" className="logo-lg" alt="AIDR" />
           </Link>
           <Link to={homePath} className="logo-light">
-            <img src="/admin-theme/images/logo-sm.png" className="logo-sm" alt="AIDR" />
-            <img src="/admin-theme/images/logo-light.png" className="logo-lg" alt="AIDR" />
+            <img src="/admin-theme/images/aidr-logo.png" className="logo-sm" alt="AIDR" />
+            <img src="/admin-theme/images/aidr-logo.png" className="logo-lg" alt="AIDR" />
           </Link>
         </div>
 

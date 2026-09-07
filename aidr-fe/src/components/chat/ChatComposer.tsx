@@ -44,6 +44,11 @@ type Attachment = {
   uploading: boolean;
 };
 
+type ProductChip = {
+  productId: string;
+  name: string;
+};
+
 function linkError(url: string): string | null {
   if (!url) return null;
   if (url.length > MAX_ATTACHMENT_URL) {
@@ -60,6 +65,7 @@ export const ChatComposer = forwardRef<ChatComposerHandle, ChatComposerProps>(
   ) {
     const toast = useToast();
     const [draft, setDraft] = useState('');
+    const [productChips, setProductChips] = useState<ProductChip[]>([]);
     const [attachment, setAttachment] = useState<Attachment | null>(null);
     const [urlDraft, setUrlDraft] = useState('');
     const [showUrlField, setShowUrlField] = useState(false);
@@ -122,6 +128,7 @@ export const ChatComposer = forwardRef<ChatComposerHandle, ChatComposerProps>(
     // A draft belongs to the conversation it was typed in.
     useEffect(() => {
       setDraft('');
+      setProductChips([]);
       setUrlDraft('');
       setShowUrlField(false);
       setPickerOpen(false);
@@ -157,17 +164,27 @@ export const ChatComposer = forwardRef<ChatComposerHandle, ChatComposerProps>(
     const attachmentUrl = attachment?.url || trimmedUrl;
     const busy = sending || Boolean(attachment?.uploading);
     const canSend =
-      Boolean(threadId) && !busy && !urlError && Boolean(draft.trim() || attachmentUrl);
+      Boolean(threadId) &&
+      !busy &&
+      !urlError &&
+      Boolean(draft.trim() || attachmentUrl || productChips.length > 0);
 
     async function submit() {
       if (!canSend || !threadId) return;
 
+      const linkSuffix = productChips
+        .map((chip) => buildProductLink(chip.productId))
+        .join(' ');
+      const text = draft.trim();
+      const content = [text, linkSuffix].filter(Boolean).join(' ') || null;
+
       await onSend({
-        content: draft.trim() || null,
+        content,
         attachmentUrl: attachmentUrl || null,
       });
 
       setDraft('');
+      setProductChips([]);
       setUrlDraft('');
       setShowUrlField(false);
       clearAttachment();
@@ -202,10 +219,15 @@ export const ChatComposer = forwardRef<ChatComposerHandle, ChatComposerProps>(
 
     function handlePickProduct(product: ProductListItem) {
       setPickerOpen(false);
-      // The link travels in the message body, so the receiver renders a card either way.
-      const link = buildProductLink(product.productId);
-      setDraft((current) => (current.trim() ? `${current.trim()} ${link}` : link));
+      setProductChips((current) => {
+        if (current.some((chip) => chip.productId === product.productId)) return current;
+        return [...current, { productId: product.productId, name: product.name }];
+      });
       textareaRef.current?.focus();
+    }
+
+    function removeProductChip(productId: string) {
+      setProductChips((current) => current.filter((chip) => chip.productId !== productId));
     }
 
     return (
@@ -271,6 +293,25 @@ export const ChatComposer = forwardRef<ChatComposerHandle, ChatComposerProps>(
           <p className="chat-composer__error" role="alert">
             {urlError}
           </p>
+        ) : null}
+
+        {productChips.length > 0 ? (
+          <div className="chat-composer__chips" aria-label="Products to share">
+            {productChips.map((chip) => (
+              <span key={chip.productId} className="chat-composer__chip">
+                <TagIcon />
+                <span className="chat-composer__chip-name">{chip.name}</span>
+                <button
+                  type="button"
+                  className="chat-composer__chip-remove"
+                  onClick={() => removeProductChip(chip.productId)}
+                  aria-label={`Remove ${chip.name}`}
+                >
+                  <CloseIcon />
+                </button>
+              </span>
+            ))}
+          </div>
         ) : null}
 
         <div className="chat-composer__row">

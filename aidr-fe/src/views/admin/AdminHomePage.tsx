@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { AdminStatCard } from '../../components/admin/AdminStatCard';
+import { AiAnalyticsBriefCard } from '../../components/admin/AiAnalyticsBriefCard';
 import { getAdminDashboard } from '../../services/adminApi';
 import type { AdminDashboard } from '../../types/adminOps';
 import { getApiErrorMessage } from '../../utils/apiError';
@@ -151,6 +152,12 @@ export function AdminHomePage() {
                 </Link>
               </div>
             ))}
+          </div>
+
+          <div className="row mb-1">
+            <div className="col-12">
+              <AiAnalyticsBriefCard audience="admin" />
+            </div>
           </div>
 
           <div className="row">

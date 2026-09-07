@@ -87,6 +87,18 @@ public sealed class RejectProductRequest
     public string Reason { get; set; } = null!;
 }
 
+public sealed class BulkApproveProductsRequest
+{
+    public IReadOnlyList<Guid> ProductIds { get; set; } = Array.Empty<Guid>();
+}
+
+public sealed class BulkApproveProductsResultDto
+{
+    public int ApprovedCount { get; init; }
+    public int SkippedCount { get; init; }
+    public IReadOnlyList<Guid> ApprovedProductIds { get; init; } = Array.Empty<Guid>();
+}
+
 public sealed class ProductModerationHistoryItemDto
 {
     public long ModerationId { get; init; }

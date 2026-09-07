@@ -109,6 +109,59 @@ public sealed class AdminProductModerationService : IAdminProductModerationServi
         return MapDetail(record);
     }
 
+    public async Task<BulkApproveProductsResultDto> ApproveBulkAsync(
+        BulkApproveProductsRequest request,
+        Guid adminUserId,
+        CancellationToken cancellationToken = default)
+    {
+        EnsureUserId(adminUserId, "Admin user id");
+
+        if (request?.ProductIds is null || request.ProductIds.Count == 0)
+            throw new AppException("Select at least one product to approve.");
+
+        var ids = request.ProductIds
+            .Where(id => id != Guid.Empty)
+            .Distinct()
+            .Take(100)
+            .ToList();
+
+        if (ids.Count == 0)
+            throw new AppException("Select at least one product to approve.");
+
+        var approvedIds = new List<Guid>();
+        var skipped = 0;
+
+        foreach (var productId in ids)
+        {
+            var existing = await _repository.GetByIdAsync(productId, cancellationToken);
+            if (existing is null ||
+                !string.Equals(
+                    existing.Status,
+                    AdminConstants.ProductStatusPending,
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                skipped++;
+                continue;
+            }
+
+            var record = await _repository.ApproveAsync(productId, adminUserId, cancellationToken);
+            await InvalidateProductCacheAsync(productId, cancellationToken);
+            await NotifySellerModerationAsync(
+                record,
+                approved: true,
+                reason: null,
+                cancellationToken);
+            approvedIds.Add(productId);
+        }
+
+        return new BulkApproveProductsResultDto
+        {
+            ApprovedCount = approvedIds.Count,
+            SkippedCount = skipped,
+            ApprovedProductIds = approvedIds
+        };
+    }
+
     public async Task<AdminProductDetailDto> RejectAsync(
         Guid productId,
         Guid adminUserId,

@@ -13,6 +13,19 @@ public static class AiConstants
     public const string SourceHeuristic = "heuristic";
 
     public const string ChannelShoppingAssistant = "ShoppingAssistant";
+    public const string ChannelAnalytics = "Analytics";
+
+    public const string AudienceAdmin = "admin";
+    public const string AudienceSeller = "seller";
+
+    public const int DefaultAnalyticsDays = 30;
+    public const int MaxAnalyticsDays = 366;
+    public const int MinAnalyticsQuestionLength = 3;
+    public const int MaxAnalyticsQuestionLength = 500;
+
+    public const string AlertSeverityInfo = "info";
+    public const string AlertSeverityWarning = "warning";
+    public const string AlertSeverityDanger = "danger";
     public const string RoleUser = "user";
     public const string RoleAssistant = "assistant";
     public const string RoleSystem = "system";

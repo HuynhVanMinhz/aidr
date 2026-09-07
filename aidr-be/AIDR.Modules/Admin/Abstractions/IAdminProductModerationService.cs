@@ -20,6 +20,11 @@ public interface IAdminProductModerationService
         Guid adminUserId,
         CancellationToken cancellationToken = default);
 
+    Task<BulkApproveProductsResultDto> ApproveBulkAsync(
+        BulkApproveProductsRequest request,
+        Guid adminUserId,
+        CancellationToken cancellationToken = default);
+
     Task<AdminProductDetailDto> RejectAsync(
         Guid productId,
         Guid adminUserId,
