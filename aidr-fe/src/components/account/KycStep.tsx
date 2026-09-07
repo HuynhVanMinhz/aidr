@@ -99,7 +99,7 @@ export function KycStep({ kyc, onVerified }: Props) {
         {kyc?.isMock ? (
           <p className="kyc-step__warning">
             This result came from the local mock, not a real identity check. Set{' '}
-            <code>FptAi:ApiKey</code> and turn <code>FptAi:UseMock</code> off before going live.
+            <code>Gemini:ApiKey</code> (or another provider key) and turn <code>Ekyc:UseMock</code> off before going live.
           </p>
         ) : null}
 
@@ -176,7 +176,7 @@ export function KycStep({ kyc, onVerified }: Props) {
       ) : null}
 
       <p className="kyc-step__lead">
-        We verify your identity with FPT.AI before you can sell. Photos are used only for this
+        We verify your identity before you can sell. Photos are used only for this
         check — we store the document number masked.
       </p>
 

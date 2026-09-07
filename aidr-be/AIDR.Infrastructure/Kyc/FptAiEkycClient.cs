@@ -3,6 +3,7 @@ using System.Net;
 using System.Net.Http.Headers;
 using System.Text.Json;
 using AIDR.Modules.Kyc.Abstractions;
+using AIDR.Shared.Constants;
 using AIDR.Shared.Exceptions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -11,38 +12,35 @@ namespace AIDR.Infrastructure.Kyc;
 
 /// <summary>
 /// FPT.AI eKYC: ID-card OCR (/vision/idr/vnm) and face matching (/dmp/checkface/v1).
-///
-/// Images arrive as Cloudinary URLs from the browser; this client downloads them
-/// and forwards the bytes so the API key never reaches the client bundle.
 /// </summary>
-public sealed class FptAiEkycClient : IFptAiEkycClient
+public sealed class FptAiEkycClient : IEkycClient
 {
-    private const long MaxImageBytes = 8 * 1024 * 1024;
-
-    /// <summary>Reader (OCR) authenticates with a hyphen…</summary>
     private const string OcrKeyHeader = "api-key";
-
-    /// <summary>…while the face-match endpoint wants an underscore.</summary>
     private const string FaceKeyHeader = "api_key";
 
     private readonly HttpClient _http;
-    private readonly FptAiOptions _options;
+    private readonly FptAiOptions _fptOptions;
+    private readonly EkycOptions _ekycOptions;
     private readonly ILogger<FptAiEkycClient> _logger;
 
     public FptAiEkycClient(
         HttpClient http,
-        IOptions<FptAiOptions> options,
+        IOptions<FptAiOptions> fptOptions,
+        IOptions<EkycOptions> ekycOptions,
         ILogger<FptAiEkycClient> logger)
     {
-        _options = options.Value;
+        _fptOptions = fptOptions.Value;
+        _ekycOptions = ekycOptions.Value;
         _logger = logger;
         _http = http;
-        _http.Timeout = TimeSpan.FromSeconds(Math.Max(5, _options.TimeoutSeconds));
+        _http.Timeout = TimeSpan.FromSeconds(Math.Max(5, _ekycOptions.TimeoutSeconds));
     }
 
-    public bool UseMock => _options.UseMock;
+    public string ProviderName => KycConstants.ProviderFptAi;
 
-    public bool IsConfigured => _options.IsConfigured;
+    public bool UseMock => _ekycOptions.UseMock;
+
+    public bool IsConfigured => _fptOptions.IsConfigured;
 
     public async Task<IdCardOcrResult> ReadIdCardAsync(
         string frontImageUrl,
@@ -59,8 +57,6 @@ public sealed class FptAiEkycClient : IFptAiEkycClient
         if (string.IsNullOrWhiteSpace(backImageUrl))
             return front;
 
-        // The back carries issue date/place; a failure there must not sink the
-        // whole check, so fall back to the front-only result.
         try
         {
             var back = await ReadSideAsync(backImageUrl, ct);
@@ -79,7 +75,7 @@ public sealed class FptAiEkycClient : IFptAiEkycClient
 
     private async Task<IdCardOcrResult> ReadSideAsync(string imageUrl, CancellationToken ct)
     {
-        var bytes = await DownloadAsync(imageUrl, ct);
+        var bytes = await EkycImageFetcher.DownloadAsync(_http, imageUrl, _ekycOptions, ct);
 
         using var content = new MultipartFormDataContent();
         var file = new ByteArrayContent(bytes);
@@ -88,11 +84,11 @@ public sealed class FptAiEkycClient : IFptAiEkycClient
 
         using var request = new HttpRequestMessage(
             HttpMethod.Post,
-            $"{_options.BaseUrl.TrimEnd('/')}/vision/idr/vnm")
+            $"{_fptOptions.BaseUrl.TrimEnd('/')}/vision/idr/vnm")
         {
             Content = content,
         };
-        request.Headers.TryAddWithoutValidation(OcrKeyHeader, _options.ApiKey.Trim());
+        request.Headers.TryAddWithoutValidation(OcrKeyHeader, _fptOptions.ApiKey.Trim());
 
         using var response = await _http.SendAsync(request, ct);
         var raw = await response.Content.ReadAsStringAsync(ct);
@@ -127,8 +123,8 @@ public sealed class FptAiEkycClient : IFptAiEkycClient
 
         RequireConfigured();
 
-        var idBytes = await DownloadAsync(idCardImageUrl, ct);
-        var selfieBytes = await DownloadAsync(selfieImageUrl, ct);
+        var idBytes = await EkycImageFetcher.DownloadAsync(_http, idCardImageUrl, _ekycOptions, ct);
+        var selfieBytes = await EkycImageFetcher.DownloadAsync(_http, selfieImageUrl, _ekycOptions, ct);
 
         using var content = new MultipartFormDataContent();
         var idPart = new ByteArrayContent(idBytes);
@@ -141,11 +137,11 @@ public sealed class FptAiEkycClient : IFptAiEkycClient
 
         using var request = new HttpRequestMessage(
             HttpMethod.Post,
-            $"{_options.BaseUrl.TrimEnd('/')}/dmp/checkface/v1")
+            $"{_fptOptions.BaseUrl.TrimEnd('/')}/dmp/checkface/v1")
         {
             Content = content,
         };
-        request.Headers.TryAddWithoutValidation(FaceKeyHeader, _options.ApiKey.Trim());
+        request.Headers.TryAddWithoutValidation(FaceKeyHeader, _fptOptions.ApiKey.Trim());
 
         using var response = await _http.SendAsync(request, ct);
         var raw = await response.Content.ReadAsStringAsync(ct);
@@ -161,8 +157,6 @@ public sealed class FptAiEkycClient : IFptAiEkycClient
 
         return ParseFaceMatch(raw);
     }
-
-    /* ------------------------------------------------------------- parsing */
 
     private static IdCardOcrResult ParseOcr(string raw)
     {
@@ -225,7 +219,6 @@ public sealed class FptAiEkycClient : IFptAiEkycClient
             };
         }
 
-        // FPT.AI documents similarity as a percentage (0–100); store it as 0–1.
         similarity = Math.Clamp(similarity / 100m, 0m, 1m);
 
         var isMatch = data.TryGetProperty("isMatch", out var match)
@@ -240,48 +233,6 @@ public sealed class FptAiEkycClient : IFptAiEkycClient
         };
     }
 
-    /* ------------------------------------------------------------- helpers */
-
-    /// <summary>
-    /// Only fetch from hosts we allow — otherwise this endpoint becomes an SSRF
-    /// proxy that anyone with an account can point at internal services.
-    /// </summary>
-    private async Task<byte[]> DownloadAsync(string imageUrl, CancellationToken ct)
-    {
-        if (!Uri.TryCreate(imageUrl?.Trim(), UriKind.Absolute, out var uri)
-            || (uri.Scheme != Uri.UriSchemeHttp && uri.Scheme != Uri.UriSchemeHttps))
-        {
-            throw new AppException("Image URL must be an absolute http or https URL.");
-        }
-
-        var allowed = _options.AllowedImageHosts ?? [];
-        if (allowed.Length > 0
-            && !allowed.Any(h => string.Equals(h, uri.Host, StringComparison.OrdinalIgnoreCase)))
-        {
-            throw new AppException(
-                $"Images must be uploaded to an approved host ({string.Join(", ", allowed)}).");
-        }
-
-        using var response = await _http.GetAsync(uri, ct);
-        if (!response.IsSuccessStatusCode)
-            throw new AppException("The uploaded image could not be downloaded.", 502);
-
-        if (response.Content.Headers.ContentLength is > MaxImageBytes)
-            throw new AppException("The image is too large. Use a photo under 8 MB.");
-
-        var bytes = await response.Content.ReadAsByteArrayAsync(ct);
-        if (bytes.LongLength > MaxImageBytes)
-            throw new AppException("The image is too large. Use a photo under 8 MB.");
-
-        return bytes;
-    }
-
-    /// <summary>
-    /// Separate our problems from the applicant's. Auth, quota and provider
-    /// outages are ours: telling someone to retake a photo when we have run out
-    /// of API credit sends them round in circles for nothing. Only a plain 4xx
-    /// says anything about the image they sent.
-    /// </summary>
     private static void ThrowIfProviderProblem(HttpStatusCode status, string raw)
     {
         var ours = status switch
@@ -303,8 +254,7 @@ public sealed class FptAiEkycClient : IFptAiEkycClient
     {
         if (!IsConfigured)
         {
-            throw new ProviderUnavailableException(
-                "FptAi:ApiKey is not set.");
+            throw new ProviderUnavailableException("FptAi:ApiKey is not set.");
         }
     }
 
@@ -340,4 +290,15 @@ public sealed class FptAiEkycClient : IFptAiEkycClient
 
     private static string Trim(string value) =>
         value.Length <= 500 ? value : value[..500];
+
+    public async Task<EkycIdentityResult> VerifyIdentityAsync(
+        string frontImageUrl,
+        string? backImageUrl,
+        string selfieImageUrl,
+        CancellationToken ct = default)
+    {
+        var ocr = await ReadIdCardAsync(frontImageUrl, backImageUrl, ct);
+        var face = await MatchFaceAsync(frontImageUrl, selfieImageUrl, ct);
+        return new EkycIdentityResult(ocr, face);
+    }
 }

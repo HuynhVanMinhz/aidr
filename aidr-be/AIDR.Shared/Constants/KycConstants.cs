@@ -3,6 +3,7 @@ namespace AIDR.Shared.Constants;
 public static class KycConstants
 {
     public const string ProviderFptAi = "FPTAI";
+    public const string ProviderGemini = "GEMINI";
 
     /// <summary>Stamped on records produced by the local mock, never by a real check.</summary>
     public const string ProviderMock = "MOCK";
