@@ -26,8 +26,12 @@ public class AidrDbContext : DbContext
     public DbSet<ProductVariant> ProductVariants => Set<ProductVariant>();
     public DbSet<InventoryLot> InventoryLots => Set<InventoryLot>();
     public DbSet<ProductPriceHistory> ProductPriceHistories => Set<ProductPriceHistory>();
+    public DbSet<ProductPriceAlert> ProductPriceAlerts => Set<ProductPriceAlert>();
     public DbSet<InventoryTransaction> InventoryTransactions => Set<InventoryTransaction>();
     public DbSet<ProductReview> ProductReviews => Set<ProductReview>();
+    public DbSet<ProductReviewDigestSnapshot> ProductReviewDigestSnapshots => Set<ProductReviewDigestSnapshot>();
+    public DbSet<ProductQuestion> ProductQuestions => Set<ProductQuestion>();
+    public DbSet<ProductAnswer> ProductAnswers => Set<ProductAnswer>();
     public DbSet<SellerRating> SellerRatings => Set<SellerRating>();
     public DbSet<SellerFollow> SellerFollows => Set<SellerFollow>();
     public DbSet<ViewedProductHistory> ViewedProductHistories => Set<ViewedProductHistory>();
@@ -387,6 +391,20 @@ public class AidrDbContext : DbContext
             e.HasIndex(x => x.ProductId);
         });
 
+        modelBuilder.Entity<ProductPriceAlert>(e =>
+        {
+            e.ToTable("ProductPriceAlerts");
+            e.HasKey(x => x.PriceAlertId);
+            e.Property(x => x.AlertType).HasMaxLength(20).IsRequired();
+            e.Property(x => x.BaselinePrice).HasPrecision(18, 2);
+            e.Property(x => x.ThresholdPct).HasPrecision(5, 2);
+            e.Property(x => x.ThresholdAmount).HasPrecision(18, 2);
+            e.HasOne(x => x.User).WithMany().HasForeignKey(x => x.UserId);
+            e.HasOne(x => x.Product).WithMany().HasForeignKey(x => x.ProductId);
+            e.HasIndex(x => new { x.UserId, x.ProductId, x.AlertType }).IsUnique();
+            e.HasIndex(x => new { x.IsActive, x.ProductId });
+        });
+
         modelBuilder.Entity<InventoryTransaction>(e =>
         {
             e.ToTable("InventoryTransactions");
@@ -424,6 +442,50 @@ public class AidrDbContext : DbContext
                 .OnDelete(DeleteBehavior.Restrict);
             e.HasIndex(x => x.ProductId);
             e.HasIndex(x => new { x.BuyerUserId, x.ProductId, x.OrderId }).IsUnique();
+        });
+
+        modelBuilder.Entity<ProductReviewDigestSnapshot>(e =>
+        {
+            e.ToTable("ProductReviewDigestSnapshots");
+            e.HasKey(x => x.ProductId);
+            e.Property(x => x.Source).HasMaxLength(20).IsRequired();
+            e.HasOne(x => x.Product)
+                .WithMany()
+                .HasForeignKey(x => x.ProductId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<ProductQuestion>(e =>
+        {
+            e.ToTable("ProductQuestions");
+            e.HasKey(x => x.QuestionId);
+            e.Property(x => x.Content).HasMaxLength(1000).IsRequired();
+            e.Property(x => x.Status).HasMaxLength(20).IsRequired();
+            e.HasOne(x => x.Product)
+                .WithMany()
+                .HasForeignKey(x => x.ProductId)
+                .OnDelete(DeleteBehavior.Restrict);
+            e.HasOne(x => x.User)
+                .WithMany()
+                .HasForeignKey(x => x.UserId)
+                .OnDelete(DeleteBehavior.Restrict);
+            e.HasIndex(x => new { x.ProductId, x.Status, x.CreatedAt });
+        });
+
+        modelBuilder.Entity<ProductAnswer>(e =>
+        {
+            e.ToTable("ProductAnswers");
+            e.HasKey(x => x.AnswerId);
+            e.Property(x => x.Content).HasMaxLength(2000).IsRequired();
+            e.HasOne(x => x.Question)
+                .WithMany(x => x.Answers)
+                .HasForeignKey(x => x.QuestionId)
+                .OnDelete(DeleteBehavior.Cascade);
+            e.HasOne(x => x.User)
+                .WithMany()
+                .HasForeignKey(x => x.UserId)
+                .OnDelete(DeleteBehavior.Restrict);
+            e.HasIndex(x => new { x.QuestionId, x.CreatedAt });
         });
 
         modelBuilder.Entity<SellerRating>(e =>

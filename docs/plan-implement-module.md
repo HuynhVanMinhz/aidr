@@ -54,6 +54,7 @@ Cột **assign**: GitHub username — owner module (maintain, demo, bugfix).
 | 28 | AI — NL Filter & Compare | Natural language → filter; so sánh SP. | UC-90, UC-28 | Done | minhvanhuynh |
 | 29 | AI — Shopping Assistant | Chatbot mua sắm Groq + slot memory + NL retrieve + lưu AiConversations. | UC-56 | Done | minhvanhuynh |
 | 30 | Hardening & Observability | Grafana dashboards, rate-limit AI/login, E2E smoke, perf cache, docs API. | — (NFR) | Todo | thuandn03 |
+| 31 | v2 Growth & Trust | Price alerts/history, buyer protection timeline, review digest, bundle/compatibility, reorder, follow feed, Q&A, shop badges, restock advisor, KYC duplicate warn. | UC-51, UC-55, UC-68, UC-82–84, UC-86 + v2 extras | Done | — |
 
 ---
 

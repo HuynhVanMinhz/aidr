@@ -3716,3 +3716,74 @@
     max-width: calc(100% - 232px);
   }
 }
+
+.order-timeline__step--done .order-timeline__marker {
+  background: #16181d;
+}
+
+.order-timeline__step--warning .order-timeline__marker {
+  background: #c27803;
+}
+
+.order-timeline__step--cancelled .order-timeline__marker {
+  background: #9ca3af;
+}
+
+.order-timeline__detail {
+  margin: 4px 0 0;
+  font-size: 13px;
+  color: var(--acc-muted, #5e6167);
+}
+
+/* Following shop feed */
+.follow-feed-page .account-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+
+.follow-feed-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 16px;
+}
+
+.follow-feed-item {
+  padding: 16px;
+  border: 1px solid var(--acc-border, rgba(22, 24, 29, 0.1));
+  border-radius: var(--acc-radius, 12px);
+  background: #fff;
+}
+
+.follow-feed-item__meta {
+  margin: 0 0 8px;
+  font-size: 13px;
+  color: var(--acc-muted, #5e6167);
+}
+
+.follow-feed-item__meta a {
+  font-weight: 600;
+  color: var(--primary-color, #16181d);
+}
+
+.follow-feed-item__title {
+  margin: 0 0 6px;
+  font-size: 17px;
+}
+
+.follow-feed-item__code,
+.follow-feed-item__desc,
+.follow-feed-item__terms {
+  margin: 0 0 8px;
+  font-size: 14px;
+}
+
+.follow-feed-item--product .product-item {
+  margin: 0;
+}
+

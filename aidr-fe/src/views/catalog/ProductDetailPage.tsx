@@ -2,6 +2,10 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { CatalogBreadcrumb } from '../../components/catalog/CatalogBreadcrumb';
 import { ProductAdditionalInfo } from '../../components/catalog/ProductAdditionalInfo';
+import { ProductBundleSection } from '../../components/catalog/ProductBundleSection';
+import { ProductPriceAlertToggles } from '../../components/catalog/ProductPriceAlertToggles';
+import { ProductPriceHistorySection } from '../../components/catalog/ProductPriceHistorySection';
+import { ProductQaPanel } from '../../components/catalog/ProductQaPanel';
 import { ProductVariantPicker } from '../../components/catalog/ProductVariantPicker';
 import { SimilarProductsSection } from '../../components/catalog/SimilarProductsSection';
 import { ProductReviewsPanel } from '../../components/reviews/ProductReviewsPanel';
@@ -52,7 +56,7 @@ export function ProductDetailPage() {
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
   const { product, loading, error } = useProductDetail(id);
-  useToastMessage(error);
+  useToastMessage(error ? 'This Product is not available.' : null);
   const { addItem, buyNow, mutating, getErrorMessage } = useCart({ autoLoad: isAuthenticated });
   const {
     inWishlist,
@@ -64,7 +68,7 @@ export function ProductDetailPage() {
   const inCompare = Boolean(id && isSelected(id));
   const toast = useToast();
   const [activeImage, setActiveImage] = useState(0);
-  const [tab, setTab] = useState<'description' | 'specs' | 'reviews'>('description');
+  const [tab, setTab] = useState<'description' | 'specs' | 'reviews' | 'qa'>('description');
   const [qty, setQty] = useState(1);
   const [selection, setSelection] = useState<VariantSelection>({});
   const [adding, setAdding] = useState(false);
@@ -332,6 +336,28 @@ export function ProductDetailPage() {
                     )}
                   </div>
 
+                  {!hasVariants && (
+                    <>
+                      <ProductPriceHistorySection
+                        productId={productId}
+                        currency={product.currency}
+                      />
+                      <ProductPriceAlertToggles
+                        productId={productId}
+                        isAuthenticated={isAuthenticated}
+                        availableQuantity={availableQuantity}
+                      />
+                    </>
+                  )}
+
+                  {hasVariants && (
+                    <ProductPriceAlertToggles
+                      productId={productId}
+                      isAuthenticated={isAuthenticated}
+                      availableQuantity={availableQuantity}
+                    />
+                  )}
+
                   {hasVariants && (
                     <ProductVariantPicker
                       options={variantOptions}
@@ -555,6 +581,15 @@ export function ProductDetailPage() {
                           Reviews ({product.reviewCount})
                         </button>
                       </li>
+                      <li className="nav-item" role="presentation">
+                        <button
+                          type="button"
+                          className={`nav-link${tab === 'qa' ? ' active' : ''}`}
+                          onClick={() => setTab('qa')}
+                        >
+                          Q&amp;A
+                        </button>
+                      </li>
                     </ul>
                   </div>
 
@@ -588,6 +623,12 @@ export function ProductDetailPage() {
                       />
                     </div>
                   )}
+
+                  {tab === 'qa' && (
+                    <div className="product-tab-item-box tab-pane fade show active">
+                      <ProductQaPanel productId={product.productId} active={tab === 'qa'} />
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -601,6 +642,8 @@ export function ProductDetailPage() {
         categoryId={product.category.categoryId}
         limit={8}
       />
+
+      <ProductBundleSection productId={product.productId} productName={product.name} />
     </>
   );
 }

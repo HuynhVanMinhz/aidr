@@ -37,4 +37,9 @@ public interface ISellerInventoryService
         Guid productId,
         UpdateSellingPriceRequest request,
         CancellationToken cancellationToken = default);
+
+    Task<RestockAdviceResultDto> GetRestockAdviceAsync(
+        Guid ownerUserId,
+        int salesWindowDays,
+        CancellationToken cancellationToken = default);
 }

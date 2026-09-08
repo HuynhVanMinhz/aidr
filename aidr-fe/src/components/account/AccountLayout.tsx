@@ -13,6 +13,7 @@ const PAGE_META: Record<string, { title: string; breadcrumb: string }> = {
   '/account/notifications': { title: 'Notifications', breadcrumb: 'Notifications' },
   '/account/wishlist': { title: 'Wishlist', breadcrumb: 'Wishlist' },
   '/account/following': { title: 'Following', breadcrumb: 'Following' },
+  '/account/following/feed': { title: 'Shop feed', breadcrumb: 'Shop feed' },
 };
 
 export function AccountLayout() {

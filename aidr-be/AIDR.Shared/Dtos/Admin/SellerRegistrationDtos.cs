@@ -43,6 +43,19 @@ public sealed class AdminSellerRegistrationDto
     public string? KycStatus { get; init; }
 
     public KycVerificationDto? Kyc { get; init; }
+
+    /// <summary>Present when the identity hash matches another approved seller account.</summary>
+    public DuplicateIdentityWarningDto? DuplicateIdentityWarning { get; init; }
+}
+
+public sealed class DuplicateIdentityWarningDto
+{
+    public bool HasDuplicate { get; init; }
+    public string Message { get; init; } = null!;
+    public Guid? MatchedUserId { get; init; }
+    public string? MatchedUserEmail { get; init; }
+    public Guid? MatchedShopId { get; init; }
+    public string? MatchedShopName { get; init; }
 }
 
 public sealed class AdminSellerRegistrationListResultDto

@@ -24,6 +24,7 @@ import { OrdersPage } from '../views/account/OrdersPage';
 import { OrderDetailPage } from '../views/account/OrderDetailPage';
 import { WishlistPage } from '../views/account/WishlistPage';
 import { FollowingPage } from '../views/account/FollowingPage';
+import { FollowingFeedPage } from '../views/account/FollowingFeedPage';
 import { NotificationsPage } from '../views/account/NotificationsPage';
 import { BecomeSellerPage } from '../views/account/BecomeSellerPage';
 import { BuyerReturnsPage } from '../views/account/BuyerReturnsPage';
@@ -182,6 +183,7 @@ export function App() {
               <Route path="notifications" element={<NotificationsPage />} />
               <Route path="wishlist" element={<WishlistPage />} />
               <Route path="following" element={<FollowingPage />} />
+              <Route path="following/feed" element={<FollowingFeedPage />} />
               <Route path="addresses" element={<AddressesPage />} />
               <Route path="become-seller" element={<BecomeSellerPage />} />
               <Route path="security" element={<AccountSecurityPage />} />

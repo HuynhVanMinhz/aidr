@@ -612,4 +612,101 @@ public sealed class SellerInventoryRepository : ISellerInventoryRepository
 
     private static decimal? EstimatedMargin(decimal effectivePrice, decimal? avgCost) =>
         avgCost is { } cost ? effectivePrice - cost : null;
+
+    public async Task<IReadOnlyList<RestockAdviceItemDto>> GetRestockAdviceAsync(
+        Guid shopId,
+        int salesWindowDays,
+        CancellationToken cancellationToken = default)
+    {
+        var windowStart = DateTime.UtcNow.AddDays(-salesWindowDays);
+
+        var products = await _db.Products.AsNoTracking()
+            .Where(p => p.ShopId == shopId && p.Status != SellerProductConstants.StatusDeleted)
+            .Select(p => new
+            {
+                p.ProductId,
+                p.Name,
+                p.Slug,
+                p.StockQuantity,
+                p.ReservedQuantity,
+                p.LowStockThreshold
+            })
+            .ToListAsync(cancellationToken);
+
+        if (products.Count == 0)
+            return Array.Empty<RestockAdviceItemDto>();
+
+        var productIds = products.Select(p => p.ProductId).ToList();
+
+        var salesByProduct = await _db.OrderItems.AsNoTracking()
+            .Where(i => productIds.Contains(i.ProductId)
+                        && i.Order.ShopId == shopId
+                        && i.Order.Status == OrderConstants.StatusCompleted
+                        && i.Order.CompletedAt >= windowStart)
+            .GroupBy(i => i.ProductId)
+            .Select(g => new { ProductId = g.Key, Qty = g.Sum(x => x.Quantity) })
+            .ToDictionaryAsync(x => x.ProductId, x => x.Qty, cancellationToken);
+
+        var suggestions = new List<RestockAdviceItemDto>();
+
+        foreach (var product in products)
+        {
+            var available = Math.Max(0, product.StockQuantity - product.ReservedQuantity);
+            var soldQty = salesByProduct.GetValueOrDefault(product.ProductId, 0);
+            var avgDailySales = salesWindowDays <= 0 ? 0m : (decimal)soldQty / salesWindowDays;
+
+            if (avgDailySales <= 0 && available > product.LowStockThreshold)
+                continue;
+
+            decimal? daysUntilStockout = avgDailySales > 0
+                ? Math.Round(available / avgDailySales, 1)
+                : available <= product.LowStockThreshold ? 0m : null;
+
+            var targetCover = (int)Math.Ceiling(avgDailySales * ShopTrustBadgeConstants.RestockSuggestedCoverDays);
+            var suggestedQty = Math.Max(product.LowStockThreshold * 2, targetCover) - available;
+            if (suggestedQty <= 0 && available > product.LowStockThreshold)
+                continue;
+
+            suggestedQty = Math.Max(suggestedQty, product.LowStockThreshold);
+
+            var note = BuildRestockNote(available, product.LowStockThreshold, avgDailySales, daysUntilStockout, suggestedQty);
+
+            suggestions.Add(new RestockAdviceItemDto
+            {
+                ProductId = product.ProductId,
+                Name = product.Name,
+                Slug = product.Slug,
+                AvailableQuantity = available,
+                LowStockThreshold = product.LowStockThreshold,
+                AvgDailySales = Math.Round(avgDailySales, 2),
+                DaysUntilStockout = daysUntilStockout,
+                SuggestedQty = suggestedQty,
+                Note = note
+            });
+        }
+
+        return suggestions
+            .OrderBy(s => s.DaysUntilStockout ?? decimal.MaxValue)
+            .ThenBy(s => s.AvailableQuantity)
+            .ToList();
+    }
+
+    private static string BuildRestockNote(
+        int available,
+        int threshold,
+        decimal avgDailySales,
+        decimal? daysUntilStockout,
+        int suggestedQty)
+    {
+        if (available <= 0)
+            return $"Out of stock. Restock at least {suggestedQty} units to cover expected demand.";
+
+        if (available <= threshold)
+            return $"Low stock ({available} left, threshold {threshold}). Order about {suggestedQty} units.";
+
+        if (avgDailySales > 0 && daysUntilStockout is <= 7)
+            return $"Selling ~{avgDailySales:0.##}/day — stock may run out in ~{daysUntilStockout:0.#} days. Suggest ordering {suggestedQty} units.";
+
+        return $"Steady sales (~{avgDailySales:0.##}/day). Consider restocking {suggestedQty} units to stay ahead.";
+    }
 }

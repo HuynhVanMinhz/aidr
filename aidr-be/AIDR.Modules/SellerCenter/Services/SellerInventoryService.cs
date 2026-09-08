@@ -286,4 +286,27 @@ public sealed class SellerInventoryService : ISellerInventoryService
 
         return trimmed;
     }
+
+    public async Task<RestockAdviceResultDto> GetRestockAdviceAsync(
+        Guid ownerUserId,
+        int salesWindowDays,
+        CancellationToken cancellationToken = default)
+    {
+        var shop = await RequireActiveShopAsync(ownerUserId, cancellationToken);
+
+        var days = salesWindowDays <= 0
+            ? ShopTrustBadgeConstants.RestockDefaultSalesWindowDays
+            : Math.Clamp(
+                salesWindowDays,
+                ShopTrustBadgeConstants.RestockMinSalesWindowDays,
+                ShopTrustBadgeConstants.RestockMaxSalesWindowDays);
+
+        var items = await _inventory.GetRestockAdviceAsync(shop.ShopId, days, cancellationToken);
+
+        return new RestockAdviceResultDto
+        {
+            SalesWindowDays = days,
+            Items = items
+        };
+    }
 }

@@ -83,6 +83,46 @@ Cấu hình ở section `Shipping` trong `appsettings.json` — **bắt buộc**
 `dotnet user-secrets` hoặc biến môi trường `Shipping__Ghn__Token` thay vì commit.
 Thiếu credential thì job log cảnh báo và không chạy — không có mock thay thế.
 
+### 2f. Tính năng v2 (Planned — xem solution trước khi implement)
+
+Lộ trình và index: `docs/solution-v2-roadmap.md`.
+
+| Solution | UC | Ghi chú |
+|----------|-----|---------|
+| `solution-price-alerts-and-history.md` | UC-51, UC-55 | Chart giá PDP + alert wishlist |
+| `solution-buyer-protection-timeline.md` | UC-86 | Timeline escrow/return trên order buyer |
+| `solution-ai-review-digest.md` | UC-82 | Tóm tắt review AI trên PDP |
+| `solution-ai-bundle-and-compatibility.md` | UC-83, UC-84 | Bundle phụ kiện + check tương thích |
+| `solution-v2-engagement-growth.md` | UC-68, … | Reorder, follow feed, Q&A (outline) |
+| `solution-v2-seller-trust.md` | — | Badge, restock, flash sale (outline) |
+
+Schema/script sẽ có trong từng doc khi bắt đầu phase tương ứng (`scripts/price-alert-schema.sql`, …).
+
+**Seed v2 (dev):**
+
+```
+POST /api/dev/seed-price-alerts
+POST /api/dev/seed-review-digest
+POST /api/dev/seed-bundle-demo
+POST /api/dev/seed-product-qa
+POST /api/dev/seed-reorder-demo
+POST /api/dev/seed-kyc-duplicate
+```
+
+**Catalog đa dạng (leaf categories có SP):**
+
+```
+POST /api/dev/seed-categories          # hierarchy nếu chưa có
+POST /api/dev/seed-catalog-rich        # ~78 Approved SKU + remap leaf
+POST /api/dev/seed-inventory-lots      # bắt buộc để checkout
+```
+
+Script: `scripts/seed-catalog-rich.sql`.
+
+Chạy `scripts/price-alert-schema.sql`, `review-digest-schema.sql`, `product-qa-schema.sql` trước nếu DB chưa có bảng mới.
+
+Hướng dẫn test UI + phân biệt Groq thật / rule / heuristic: `docs/guide-v2-features-testing.md` (smoke: `scripts/smoke-test-v2.ps1`).
+
 ### 3. Backend (không Docker)
 
 ```bash

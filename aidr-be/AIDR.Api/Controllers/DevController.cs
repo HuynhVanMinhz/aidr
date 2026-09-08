@@ -50,6 +50,36 @@ public class DevController : ControllerBase
         });
     }
 
+    /// <summary>
+    /// Seed a diverse Approved catalog across leaf categories (phones/laptops/accessories/…)
+    /// and remap known demo SKUs onto leaf filters (dev only).
+    /// Prerequisites: seed-demo-accounts + seed-categories (or seed-electronics-refresh).
+    /// Follow with seed-inventory-lots for checkout stock.
+    /// </summary>
+    [HttpPost("seed-catalog-rich")]
+    public async Task<IActionResult> SeedCatalogRich(
+        [FromServices] AidrDbContext db,
+        [FromServices] IWebHostEnvironment env,
+        CancellationToken ct)
+    {
+        if (!env.IsDevelopment())
+            return NotFound();
+
+        await CatalogRichSeeder.SeedAsync(db, env.ContentRootPath, ct);
+
+        var approvedProducts = await db.Products.CountAsync(p => p.Status == "Approved", ct);
+        var richTagged = await db.Products.CountAsync(
+            p => p.Status == "Approved" && p.TagsJson != null && p.TagsJson.Contains("RICH"),
+            ct);
+
+        return Ok(new
+        {
+            message = "Rich catalog seed completed. Run POST /api/dev/seed-inventory-lots next.",
+            approvedProductCount = approvedProducts,
+            richProductCount = richTagged
+        });
+    }
+
     /// <summary>Normalize shops/categories/products for electronics storefront + mock image URLs (dev only).</summary>
     [HttpPost("seed-electronics-refresh")]
     public async Task<IActionResult> SeedElectronicsRefresh(
@@ -315,6 +345,83 @@ public class DevController : ControllerBase
             availableBalance = wallet?.AvailableBalance,
             transactionCount = txCount,
             seedTransactionCount = seedCount
+        });
+    }
+
+    /// <summary>Apply price-alert schema and seed demo history/alerts (dev only).</summary>
+    [HttpPost("seed-price-alerts")]
+    public async Task<IActionResult> SeedPriceAlerts(
+        [FromServices] AidrDbContext db,
+        [FromServices] IWebHostEnvironment env,
+        CancellationToken ct)
+    {
+        if (!env.IsDevelopment())
+            return NotFound();
+
+        await PriceAlertDemoSeeder.SeedAsync(db, env.ContentRootPath, ct);
+
+        var alertCount = await db.ProductPriceAlerts.CountAsync(a => a.IsActive, ct);
+        var historyCount = await db.ProductPriceHistories.CountAsync(
+            h => h.Reason == "SEED-PRICE-HISTORY",
+            ct);
+
+        return Ok(new
+        {
+            message = "Price alert demo seed completed.",
+            activeAlerts = alertCount,
+            seededHistoryRows = historyCount
+        });
+    }
+
+    /// <summary>Apply review-digest schema and seed demo reviews (dev only).</summary>
+    [HttpPost("seed-review-digest")]
+    public async Task<IActionResult> SeedReviewDigest(
+        [FromServices] AidrDbContext db,
+        [FromServices] IWebHostEnvironment env,
+        CancellationToken ct)
+    {
+        if (!env.IsDevelopment())
+            return NotFound();
+
+        await ReviewDigestDemoSeeder.SeedAsync(db, env.ContentRootPath, ct);
+
+        var reviewCount = await db.ProductReviews.CountAsync(
+            r => r.Title != null && r.Title.StartsWith("REV-DIGEST-SEED:"),
+            ct);
+        var snapshotCount = await db.ProductReviewDigestSnapshots.CountAsync(ct);
+
+        return Ok(new
+        {
+            message = "Review digest demo seed completed.",
+            seededReviews = reviewCount,
+            snapshotCount
+        });
+    }
+
+    /// <summary>Seed accessory bundle + compatibility demo products (dev only).</summary>
+    [HttpPost("seed-bundle-demo")]
+    public async Task<IActionResult> SeedBundleDemo(
+        [FromServices] AidrDbContext db,
+        [FromServices] IWebHostEnvironment env,
+        CancellationToken ct)
+    {
+        if (!env.IsDevelopment())
+            return NotFound();
+
+        await BundleDemoSeeder.SeedAsync(db, env.ContentRootPath, ct);
+
+        var bundleProducts = await db.Products.CountAsync(
+            p => p.TagsJson != null && p.TagsJson.Contains("BUNDLE-DEMO"),
+            ct);
+        var compatProducts = await db.Products.CountAsync(
+            p => p.TagsJson != null && p.TagsJson.Contains("COMPAT-DEMO"),
+            ct);
+
+        return Ok(new
+        {
+            message = "Bundle and compatibility demo seed completed.",
+            bundleProducts,
+            compatProducts
         });
     }
 
@@ -673,5 +780,57 @@ public class DevController : ControllerBase
 
         var result = await shipping.RunSweepAsync(ct);
         return Ok(result);
+    }
+
+    [HttpPost("seed-product-qa")]
+    public async Task<IActionResult> SeedProductQa(
+        [FromServices] AidrDbContext db,
+        [FromServices] IWebHostEnvironment env,
+        CancellationToken ct)
+    {
+        if (!env.IsDevelopment())
+            return NotFound();
+
+        await ProductQaDemoSeeder.SeedAsync(db, env.ContentRootPath, ct);
+        var questionCount = await db.ProductQuestions.CountAsync(ct);
+
+        return Ok(new
+        {
+            message = "Product Q&A demo seed completed.",
+            questionCount
+        });
+    }
+
+    [HttpPost("seed-reorder-demo")]
+    public async Task<IActionResult> SeedReorderDemo(
+        [FromServices] AidrDbContext db,
+        [FromServices] IWebHostEnvironment env,
+        CancellationToken ct)
+    {
+        if (!env.IsDevelopment())
+            return NotFound();
+
+        var (orderId, itemCount) = await ReorderDemoSeeder.SeedAsync(db, ct);
+
+        return Ok(new
+        {
+            message = "Reorder demo order seeded.",
+            orderId,
+            itemCount
+        });
+    }
+
+    [HttpPost("seed-kyc-duplicate")]
+    public async Task<IActionResult> SeedKycDuplicate(
+        [FromServices] AidrDbContext db,
+        [FromServices] IWebHostEnvironment env,
+        CancellationToken ct)
+    {
+        if (!env.IsDevelopment())
+            return NotFound();
+
+        await KycDuplicateDemoSeeder.SeedAsync(db, env.ContentRootPath, ct);
+
+        return Ok(new { message = "KYC duplicate identity demo seed completed." });
     }
 }

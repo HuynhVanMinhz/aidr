@@ -303,6 +303,17 @@ export function ShopPublicPage() {
                       </div>
                     </div>
 
+                    {shop?.badges && shop.badges.length > 0 ? (
+                      <ul className="shop-trust-badges" aria-label="Shop trust badges">
+                        {shop.badges.map((badge) => (
+                          <li key={badge.code} className="shop-trust-badge" title={badge.description}>
+                            <i className="fa-solid fa-shield-halved" aria-hidden />
+                            <span>{badge.label}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    ) : null}
+
                     <div className="shop-public-follow-row">
                       <button
                         type="button"

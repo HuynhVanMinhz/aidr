@@ -1,4 +1,5 @@
 import { createAsyncThunk, createSlice, type PayloadAction } from '@reduxjs/toolkit';
+import axios from 'axios';
 import * as categoryApi from '../services/categoryApi';
 import * as productApi from '../services/productApi';
 import type {
@@ -9,6 +10,7 @@ import type {
   ProductQuery,
   ProductSort,
 } from '../types/catalog';
+import { getApiErrorMessage } from '../utils/apiError';
 
 export type CatalogFilters = {
   q: string;
@@ -179,17 +181,22 @@ export const fetchCategories = createAsyncThunk(
   },
 );
 
+const PRODUCT_UNAVAILABLE_MESSAGE = 'This Product is not available.';
+
 export const fetchProductDetail = createAsyncThunk(
   'catalog/fetchProductDetail',
   async (productId: string, { rejectWithValue }) => {
     try {
       const result = await productApi.getProduct(productId);
       if (!result.success || !result.data) {
-        return rejectWithValue(result.message || 'Product not found.');
+        return rejectWithValue(result.message || PRODUCT_UNAVAILABLE_MESSAGE);
       }
       return result.data;
     } catch (error) {
-      return rejectWithValue(error instanceof Error ? error.message : 'Product not found.');
+      if (axios.isAxiosError(error) && error.response?.status === 404) {
+        return rejectWithValue(PRODUCT_UNAVAILABLE_MESSAGE);
+      }
+      return rejectWithValue(getApiErrorMessage(error, PRODUCT_UNAVAILABLE_MESSAGE));
     }
   },
 );
@@ -259,7 +266,7 @@ export const catalogSlice = createSlice({
       .addCase(fetchProductDetail.rejected, (state, action) => {
         state.detailLoading = false;
         state.selectedProduct = null;
-        state.detailError = (action.payload as string) || 'Product not found.';
+        state.detailError = (action.payload as string) || 'This Product is not available.';
       });
   },
 });

@@ -31,4 +31,9 @@ public interface IOrderService
         Guid buyerUserId,
         Guid orderId,
         CancellationToken cancellationToken = default);
+
+    Task<ReorderOrderResponse> ReorderAsync(
+        Guid buyerUserId,
+        Guid orderId,
+        CancellationToken cancellationToken = default);
 }

@@ -352,6 +352,7 @@ public sealed class DiscoveryRepository : IDiscoveryRepository
             .Select(s => new
             {
                 s.ShopId,
+                s.OwnerUserId,
                 s.ShopName,
                 s.Slug,
                 s.Tagline,
@@ -393,6 +394,7 @@ public sealed class DiscoveryRepository : IDiscoveryRepository
         return new ShopPublicRecord
         {
             ShopId = shop.ShopId,
+            OwnerUserId = shop.OwnerUserId,
             ShopName = shop.ShopName,
             Slug = shop.Slug,
             Tagline = shop.Tagline,

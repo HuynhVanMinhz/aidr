@@ -2,6 +2,14 @@ using AIDR.Shared.Dtos.Kyc;
 
 namespace AIDR.Modules.Kyc.Abstractions;
 
+public sealed class DuplicateApprovedSellerMatch
+{
+    public Guid UserId { get; init; }
+    public string UserEmail { get; init; } = null!;
+    public Guid ShopId { get; init; }
+    public string ShopName { get; init; } = null!;
+}
+
 public interface IKycRepository
 {
     Task<KycVerificationDto?> GetLatestForUserAsync(Guid userId, CancellationToken ct = default);
@@ -11,6 +19,16 @@ public interface IKycRepository
     /// <summary>True when another user already passed KYC with this identity.</summary>
     Task<bool> DocumentUsedByAnotherUserAsync(
         string documentNumberHash,
+        Guid userId,
+        CancellationToken ct = default);
+
+    Task<DuplicateApprovedSellerMatch?> FindDuplicateApprovedSellerAsync(
+        string documentNumberHash,
+        Guid userId,
+        CancellationToken ct = default);
+
+    Task<DuplicateApprovedSellerMatch?> FindDuplicateApprovedSellerForVerificationAsync(
+        Guid kycVerificationId,
         Guid userId,
         CancellationToken ct = default);
 

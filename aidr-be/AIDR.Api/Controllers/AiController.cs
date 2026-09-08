@@ -15,15 +15,18 @@ public sealed class AiController : ControllerBase
     private readonly IAiNlFilterService _nlFilter;
     private readonly IAiCompareService _compare;
     private readonly IAiShoppingAssistantService _assistant;
+    private readonly ICompatibilityService _compatibility;
 
     public AiController(
         IAiNlFilterService nlFilter,
         IAiCompareService compare,
-        IAiShoppingAssistantService assistant)
+        IAiShoppingAssistantService assistant,
+        ICompatibilityService compatibility)
     {
         _nlFilter = nlFilter;
         _compare = compare;
         _assistant = assistant;
+        _compatibility = compatibility;
     }
 
     /// <summary>Convert a natural-language shopping query into a validated catalog filter DSL.</summary>
@@ -46,6 +49,17 @@ public sealed class AiController : ControllerBase
     {
         var result = await _compare.CompareAsync(request, cancellationToken);
         return Ok(ApiResult<CompareProductsResultDto>.Ok(result));
+    }
+
+    /// <summary>Check hardware compatibility between two products or a product and described device.</summary>
+    [HttpPost("compatibility")]
+    [AllowAnonymous]
+    public async Task<ActionResult<ApiResult<CompatibilityResultDto>>> Compatibility(
+        [FromBody] CompatibilityCheckRequest request,
+        CancellationToken cancellationToken)
+    {
+        var result = await _compatibility.CheckAsync(request, cancellationToken);
+        return Ok(ApiResult<CompatibilityResultDto>.Ok(result));
     }
 
     /// <summary>Send a shopping-assistant message; creates or continues an AiConversation.</summary>

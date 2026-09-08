@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
+import { reorderOrder, requireReorderResult } from '../../services/reorderApi';
+import { BuyerProtectionTimelineCard } from '../../components/account/BuyerProtectionTimelineCard';
 import { OrderInvoice } from '../../components/checkout/OrderInvoice';
 import { OrderReviewSection } from '../../components/reviews/OrderReviewSection';
 import { OrderTrackingMap } from '../../components/shipping/OrderTrackingMap';
@@ -43,6 +45,7 @@ const emptyReturnForm: BuyerReturnFormValues = {
 
 export function OrderDetailPage() {
   const { orderId } = useParams<{ orderId: string }>();
+  const navigate = useNavigate();
   const toast = useToast();
   const { detail, loading, error, mutating, cancel, confirmReceived, refresh } =
     useBuyerOrderDetail(orderId);
@@ -66,6 +69,7 @@ export function OrderDetailPage() {
     Partial<Record<keyof BuyerReturnFormValues, boolean>>
   >({});
   const [returnSubmitted, setReturnSubmitted] = useState(false);
+  const [reordering, setReordering] = useState(false);
 
   useEffect(() => {
     setShowReturnForm(false);
@@ -179,6 +183,29 @@ export function OrderDetailPage() {
     }
   }
 
+  async function handleReorder() {
+    if (!orderId) return;
+    setReordering(true);
+    try {
+      const result = requireReorderResult(await reorderOrder(orderId));
+      if (result.skippedItems.length > 0) {
+        const skippedNames = result.skippedItems.map((item) => item.productName).join(', ');
+        toast.success(
+          `${result.addedCount} item${result.addedCount === 1 ? '' : 's'} added to cart. Some items were skipped: ${skippedNames}.`,
+        );
+      } else {
+        toast.success(
+          `${result.addedCount} item${result.addedCount === 1 ? '' : 's'} added to cart.`,
+        );
+      }
+      navigate('/cart');
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Unable to reorder items.');
+    } finally {
+      setReordering(false);
+    }
+  }
+
   if (!orderId) {
     return (
       <div className="view-order-content-box">
@@ -239,7 +266,11 @@ export function OrderDetailPage() {
     ? formatShipmentStatus(tracking.shipmentStatus)
     : formatOrderStatus(detail.status);
   const eligibleForReturn = canRequestReturn(detail.status) && !returnRequest;
-  const busy = mutating || returnMutating;
+  const busy = mutating || returnMutating || reordering;
+  const canReorder =
+    detail.status !== 'PendingPayment' &&
+    detail.status !== 'Cancelled' &&
+    detail.items.length > 0;
 
   const unpaid = detail.status === 'PendingPayment';
 
@@ -283,6 +314,8 @@ export function OrderDetailPage() {
           }))}
         />
       ) : null}
+
+      {orderId ? <BuyerProtectionTimelineCard orderId={orderId} /> : null}
 
       <div className="order-detail__grid">
         <div className="order-detail__main">
@@ -544,6 +577,17 @@ export function OrderDetailPage() {
 
       {/* Primary action first, destructive last, "back" as a quiet link. */}
       <div className="order-detail__actions">
+        {canReorder ? (
+          <button
+            type="button"
+            className="account-btn account-btn--primary"
+            disabled={busy}
+            onClick={() => void handleReorder()}
+          >
+            {reordering ? 'Adding to cart…' : 'Buy again'}
+          </button>
+        ) : null}
+
         {detail.canConfirmReceived ? (
           <button
             type="button"

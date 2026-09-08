@@ -63,6 +63,15 @@ export type SellerRegistrationStatus =
   | 'Approved'
   | 'Rejected';
 
+export type DuplicateIdentityWarning = {
+  hasDuplicate: boolean;
+  message: string;
+  matchedUserId: string | null;
+  matchedUserEmail: string | null;
+  matchedShopId: string | null;
+  matchedShopName: string | null;
+};
+
 export type AdminSellerRegistration = {
   requestId: string;
   userId: string;
@@ -92,6 +101,8 @@ export type AdminSellerRegistration = {
   kycStatus?: string | null;
   /** Identity check backing this application (detail endpoint only). */
   kyc?: KycVerification | null;
+  /** Present when the identity hash matches another approved seller account. */
+  duplicateIdentityWarning?: DuplicateIdentityWarning | null;
 };
 
 export type AdminSellerRegistrationListResult = {

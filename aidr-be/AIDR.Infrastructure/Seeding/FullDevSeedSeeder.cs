@@ -25,6 +25,9 @@ public static class FullDevSeedSeeder
         await CatalogDemoSeeder.SeedAsync(db, contentRootPath, ct);
         steps.Add("catalog");
 
+        await CatalogRichSeeder.SeedAsync(db, contentRootPath, ct);
+        steps.Add("catalog-rich");
+
         await CatalogImagesSeeder.SeedAsync(db, contentRootPath, ct);
         steps.Add("catalog-images");
 

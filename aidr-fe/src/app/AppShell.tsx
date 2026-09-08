@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { CompareTray } from '../components/catalog/CompareTray';
 import { ShoppingAssistantWidget } from '../components/ai/ShoppingAssistantWidget';
 import { StoreFooter } from '../components/layout/StoreFooter';
@@ -11,6 +12,10 @@ export function AppShell() {
   const location = useLocation();
   const isAccount = location.pathname.startsWith('/account');
   const hideCompareTray = location.pathname.startsWith('/compare');
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+  }, [location.pathname]);
 
   return (
     <div className="store-shell">

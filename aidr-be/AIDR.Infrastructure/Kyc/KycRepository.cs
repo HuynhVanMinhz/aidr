@@ -40,6 +40,52 @@ public sealed class KycRepository : IKycRepository
                      && k.Status == KycConstants.StatusPassed,
                 ct);
 
+    public async Task<DuplicateApprovedSellerMatch?> FindDuplicateApprovedSellerAsync(
+        string documentNumberHash,
+        Guid userId,
+        CancellationToken ct = default)
+    {
+        if (string.IsNullOrWhiteSpace(documentNumberHash))
+            return null;
+
+        return await _db.KycVerifications.AsNoTracking()
+            .Where(k => k.DocumentNumberHash == documentNumberHash
+                        && k.UserId != userId
+                        && k.Status == KycConstants.StatusPassed)
+            .Join(
+                _db.Shops.AsNoTracking().Where(s => s.Status == OrderConstants.ActiveShopStatus),
+                k => k.UserId,
+                s => s.OwnerUserId,
+                (k, s) => new { k.UserId, s.ShopId, s.ShopName })
+            .Join(
+                _db.Users.AsNoTracking(),
+                x => x.UserId,
+                u => u.UserId,
+                (x, u) => new DuplicateApprovedSellerMatch
+                {
+                    UserId = x.UserId,
+                    UserEmail = u.Email,
+                    ShopId = x.ShopId,
+                    ShopName = x.ShopName
+                })
+            .FirstOrDefaultAsync(ct);
+    }
+
+    public async Task<DuplicateApprovedSellerMatch?> FindDuplicateApprovedSellerForVerificationAsync(
+        Guid kycVerificationId,
+        Guid userId,
+        CancellationToken ct = default)
+    {
+        var hash = await _db.KycVerifications.AsNoTracking()
+            .Where(k => k.KycVerificationId == kycVerificationId)
+            .Select(k => k.DocumentNumberHash)
+            .FirstOrDefaultAsync(ct);
+
+        return string.IsNullOrWhiteSpace(hash)
+            ? null
+            : await FindDuplicateApprovedSellerAsync(hash, userId, ct);
+    }
+
     public async Task<KycVerificationDto> SaveAsync(
         KycVerificationRecord record,
         CancellationToken ct = default)
