@@ -28,6 +28,7 @@ builder.Services.AddHostedService<SettlementBackgroundService>();
 // Fulfillment pipeline: book a shipment per paid order, then let the carrier's
 // events carry it through Confirmed -> Shipping -> Delivered.
 builder.Services.AddHostedService<ShippingBackgroundService>();
+builder.Services.AddHostedService<PriceAlertBackgroundService>();
 builder.Services.AddAidrJwtAuthentication(builder.Configuration);
 builder.Services.AddScoped<INotificationRealtimePublisher, SignalRNotificationRealtimePublisher>();
 builder.Services.AddScoped<IChatRealtimePublisher, SignalRChatRealtimePublisher>();

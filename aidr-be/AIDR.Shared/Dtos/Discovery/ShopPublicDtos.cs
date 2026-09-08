@@ -77,5 +77,6 @@ public sealed class ShopPublicDetailDto
     public ShopPublicContactDto Contact { get; init; } = null!;
     public ShopPublicAddressDto Address { get; init; } = null!;
     public DateTime CreatedAt { get; init; }
+    public IReadOnlyList<ShopTrustBadgeDto> Badges { get; init; } = Array.Empty<ShopTrustBadgeDto>();
     public PagedResult<ProductListItemDto> Products { get; init; } = null!;
 }

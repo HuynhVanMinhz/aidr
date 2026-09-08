@@ -26,15 +26,18 @@ public sealed class DiscoveryService : IDiscoveryService
     private readonly IDiscoveryRepository _repository;
     private readonly ICacheService _cache;
     private readonly ILogger<DiscoveryService> _logger;
+    private readonly IShopTrustBadgeService _badges;
 
     public DiscoveryService(
         IDiscoveryRepository repository,
         ICacheService cache,
-        ILogger<DiscoveryService> logger)
+        ILogger<DiscoveryService> logger,
+        IShopTrustBadgeService badges)
     {
         _repository = repository;
         _cache = cache;
         _logger = logger;
+        _badges = badges;
     }
 
     public Task<PagedResult<ProductListItemDto>> ListProductsAsync(
@@ -234,7 +237,12 @@ public sealed class DiscoveryService : IDiscoveryService
             Page = productQuery.Page,
             PageSize = productQuery.PageSize,
             TotalCount = total
-        });
+        }, await _badges.ComputeAsync(
+            shop.ShopId,
+            shop.OwnerUserId,
+            shop.AvgRating,
+            shop.RatingCount,
+            cancellationToken));
 
         await _cache.SetAsync(cacheKey, detail, DiscoveryConstants.ShopDetailCacheTtl, cancellationToken);
         return detail;
@@ -739,7 +747,10 @@ public sealed class DiscoveryService : IDiscoveryService
             : r.Variants.Max(v => v.SalePrice ?? v.Price)
     };
 
-    private static ShopPublicDetailDto MapShopDetail(ShopPublicRecord shop, PagedResult<ProductListItemDto> products)
+    private static ShopPublicDetailDto MapShopDetail(
+        ShopPublicRecord shop,
+        PagedResult<ProductListItemDto> products,
+        IReadOnlyList<ShopTrustBadgeDto> badges)
         => new()
         {
             ShopId = shop.ShopId,
@@ -775,6 +786,7 @@ public sealed class DiscoveryService : IDiscoveryService
                 StreetAddress = shop.StreetAddress
             },
             CreatedAt = shop.CreatedAt,
+            Badges = badges,
             Products = products
         };
 }

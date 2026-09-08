@@ -55,6 +55,12 @@ export type ShopListQuery = {
   sort?: 'rating' | 'followers' | 'newest' | string;
 };
 
+export type ShopTrustBadge = {
+  code: string;
+  label: string;
+  description: string;
+};
+
 export type ShopPublicDetail = {
   shopId: string;
   shopName: string;
@@ -76,6 +82,7 @@ export type ShopPublicDetail = {
   contact: ShopPublicContact;
   address: ShopPublicAddress;
   createdAt: string;
+  badges?: ShopTrustBadge[];
   products: PagedResult<ProductListItem>;
 };
 

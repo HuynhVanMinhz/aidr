@@ -10,11 +10,16 @@ public sealed class ProductReviewService : IProductReviewService
 {
     private readonly IProductReviewRepository _reviews;
     private readonly ICacheService _cache;
+    private readonly IReviewDigestService _reviewDigest;
 
-    public ProductReviewService(IProductReviewRepository reviews, ICacheService cache)
+    public ProductReviewService(
+        IProductReviewRepository reviews,
+        ICacheService cache,
+        IReviewDigestService reviewDigest)
     {
         _reviews = reviews;
         _cache = cache;
+        _reviewDigest = reviewDigest;
     }
 
     public async Task<ProductReviewListResult> ListAsync(
@@ -82,6 +87,7 @@ public sealed class ProductReviewService : IProductReviewService
             cancellationToken);
 
         await InvalidateProductCacheAsync(productId, cancellationToken);
+        await _reviewDigest.InvalidateAsync(productId, cancellationToken);
         return created;
     }
 
@@ -109,6 +115,7 @@ public sealed class ProductReviewService : IProductReviewService
 
         var updated = await _reviews.UpdateAsync(reviewId, request.Rating, title, content, cancellationToken);
         await InvalidateProductCacheAsync(updated.ProductId, cancellationToken);
+        await _reviewDigest.InvalidateAsync(updated.ProductId, cancellationToken);
         return updated;
     }
 
@@ -128,6 +135,7 @@ public sealed class ProductReviewService : IProductReviewService
 
         await _reviews.HideAsync(reviewId, cancellationToken);
         await InvalidateProductCacheAsync(existing.ProductId, cancellationToken);
+        await _reviewDigest.InvalidateAsync(existing.ProductId, cancellationToken);
     }
 
     private static void ValidateRatingAndContent(

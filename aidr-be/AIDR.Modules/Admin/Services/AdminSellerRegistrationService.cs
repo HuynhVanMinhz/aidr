@@ -80,7 +80,29 @@ public sealed class AdminSellerRegistrationService : IAdminSellerRegistrationSer
             ? await _kyc.GetByIdAsync(id, cancellationToken)
             : null;
 
-        return Map(record, kyc);
+        DuplicateIdentityWarningDto? duplicateWarning = null;
+        if (kycId is { } linkedKycId)
+        {
+            var match = await _kyc.FindDuplicateApprovedSellerForVerificationAsync(
+                linkedKycId,
+                record.UserId,
+                cancellationToken);
+
+            if (match is not null)
+            {
+                duplicateWarning = new DuplicateIdentityWarningDto
+                {
+                    HasDuplicate = true,
+                    Message = "This identity is linked to another approved seller account.",
+                    MatchedUserId = match.UserId,
+                    MatchedUserEmail = match.UserEmail,
+                    MatchedShopId = match.ShopId,
+                    MatchedShopName = match.ShopName
+                };
+            }
+        }
+
+        return Map(record, kyc, duplicateWarning);
     }
 
     public async Task<ApproveSellerRegistrationResultDto> ApproveAsync(
@@ -306,9 +328,11 @@ public sealed class AdminSellerRegistrationService : IAdminSellerRegistrationSer
 
     private static AdminSellerRegistrationDto Map(
         AdminSellerRegistrationRecord record,
-        AIDR.Shared.Dtos.Kyc.KycVerificationDto? kyc = null) => new()
+        AIDR.Shared.Dtos.Kyc.KycVerificationDto? kyc = null,
+        DuplicateIdentityWarningDto? duplicateIdentityWarning = null) => new()
     {
         Kyc = kyc,
+        DuplicateIdentityWarning = duplicateIdentityWarning,
         HasIdentityCheck =
             record.KycVerificationId is not null || record.LatestKycVerificationId is not null,
         KycLinkedToApplication = record.KycVerificationId is not null,

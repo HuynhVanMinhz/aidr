@@ -42,6 +42,7 @@ export function AccountSidebar() {
   const secondaryItems: NavItem[] = [
     { to: '/account/wishlist', label: 'Wishlist', icon: 'fa-regular fa-heart', end: true },
     { to: '/account/following', label: 'Following', icon: 'fa-solid fa-user-plus', end: true },
+    { to: '/account/following/feed', label: 'Shop feed', icon: 'fa-solid fa-rss', end: true },
     { to: '/account/addresses', label: 'Shipping addresses', icon: 'fa-solid fa-location-dot', end: true },
     {
       to: '/account/change-password',

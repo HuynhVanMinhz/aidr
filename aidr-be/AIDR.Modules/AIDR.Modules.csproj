@@ -16,4 +16,8 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <ItemGroup>
+    <EmbeddedResource Include="AI\Data\accessory-rules.json" />
+  </ItemGroup>
+
 </Project>

@@ -102,6 +102,18 @@
 | UC-91 | Import Stock Lot | **Actor:** Seller. Nhập lô: LotCode unique, qty > 0, UnitCost ≥ 0, supplier/invoice/date; tăng tồn; cập nhật Avg/LastCost; **không** sửa UnitCost lô cũ (BR-I01, BR-C02); **phiếu nhập kho in được**. **Business:** Theo dõi giá vốn & lãi gộp đúng khi giá nhập thay đổi. | Done | P0 |
 | UC-92 | Update Selling Price | **Actor:** Seller. Đổi BasePrice/SalePrice; ghi ProductPriceHistories; độc lập giá vốn lô. **Business:** Phản ứng thị trường mà không phá lịch sử cost/đơn. | Done | P0 |
 
+### v2 — Done
+
+| id | name | description (chi tiết + business) | status | priority |
+|----|------|-------------------------------------|--------|----------|
+| UC-51 | Manage Product Price Alerts | **Actor:** Buyer. Bật/tắt alert giá giảm hoặc có hàng lại trên SP (wishlist/PDP); nhận notification. **Business:** Retention, quay lại mua khi deal. Doc: `solution-price-alerts-and-history.md`. | Done | P1 |
+| UC-55 | View Product Price History | **Actor:** Guest/Buyer. Biểu đồ lịch sử giá bán công khai trên PDP (từ ProductPriceHistories). **Business:** Minh bạch giá, tăng trust. Doc: `solution-price-alerts-and-history.md`. | Done | P1 |
+| UC-68 | One-Click Reorder | **Actor:** Buyer. Mua lại đơn cũ — add cart với giá/tồn hiện tại. **Business:** Repeat purchase. Doc: `solution-v2-engagement-growth.md`. | Done | P2 |
+| UC-82 | View AI Review Digest | **Actor:** Guest/Buyer. Tóm tắt pros/cons review bằng AI trên PDP. **Business:** Social proof nhanh. Doc: `solution-ai-review-digest.md`. | Done | P2 |
+| UC-83 | View Smart Accessory Bundle | **Actor:** Guest/Buyer. Gợi ý combo phụ kiện khi xem SP chính. **Business:** Tăng AOV. Doc: `solution-ai-bundle-and-compatibility.md`. | Done | P2 |
+| UC-84 | Check Product Compatibility | **Actor:** Guest/Buyer. Kiểm tra tương thích spec giữa 2 SP hoặc SP + thiết bị mô tả. **Business:** Giảm mua nhầm phụ kiện điện tử. Doc: `solution-ai-bundle-and-compatibility.md`. | Done | P2 |
+| UC-86 | View Buyer Protection Timeline | **Actor:** Buyer. Timeline minh bạch escrow, giao hàng, return window trên order detail. **Business:** Trust sàn. Doc: `solution-buyer-protection-timeline.md`. | Done | P1 |
+
 ---
 
 ## Thống kê nhanh
@@ -113,4 +125,6 @@
 | P2 | ~15 | AI / social / polish |
 | P3 | 0 (hiện tại) | Dự phòng |
 
-**ID trống (reserved / out of scope MVP):** UC-51, UC-55, UC-68, UC-82–84, UC-86.
+**v2 Done:** UC-51, UC-55, UC-68, UC-82–84, UC-86 — xem `solution-v2-roadmap.md`.
+
+**ID trống còn lại:** reserved cho Q&A, referral, flash sale… (xem `solution-v2-engagement-growth.md`, `solution-v2-seller-trust.md`).

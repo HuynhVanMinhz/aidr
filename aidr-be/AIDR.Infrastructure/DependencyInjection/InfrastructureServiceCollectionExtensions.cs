@@ -28,6 +28,7 @@ using AIDR.Modules.Profile.Abstractions;
 using AIDR.Modules.SellerCenter.Abstractions;
 using AIDR.Modules.Settlement.Abstractions;
 using AIDR.Modules.Shipping.Abstractions;
+using AIDR.Modules.Engagement.Services;
 using AIDR.Shared.Caching;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
@@ -75,6 +76,9 @@ public static class InfrastructureServiceCollectionExtensions
         services.Configure<FptAiOptions>(configuration.GetSection(FptAiOptions.SectionName));
         services.Configure<GeminiEkycOptions>(configuration.GetSection(GeminiEkycOptions.SectionName));
         services.Configure<ShippingOptions>(configuration.GetSection(ShippingOptions.SectionName));
+        services.Configure<PriceAlertOptions>(configuration.GetSection(PriceAlertOptions.SectionName));
+        services.Configure<BuyerProtectionOptions>(configuration.GetSection(BuyerProtectionOptions.SectionName));
+        services.Configure<ReviewDigestOptions>(configuration.GetSection(ReviewDigestOptions.SectionName));
 
         services.AddHttpClient<FptAiEkycClient>();
         services.AddHttpClient<GeminiEkycClient>();
@@ -112,9 +116,16 @@ public static class InfrastructureServiceCollectionExtensions
         services.AddScoped<IPaymentRepository, PaymentRepository>();
         services.AddScoped<IShipmentRepository, ShipmentRepository>();
         services.AddScoped<IWishlistRepository, WishlistRepository>();
+        services.AddScoped<IPriceAlertRepository, PriceAlertRepository>();
+        services.AddScoped<IProductPriceHistoryService, ProductPriceHistoryService>();
+        services.AddScoped<IReviewDigestRepository, ReviewDigestRepository>();
         services.AddScoped<IProductReviewRepository, ProductReviewRepository>();
+        services.AddScoped<IProductBundleRepository, ProductBundleRepository>();
         services.AddScoped<ISellerRatingRepository, SellerRatingRepository>();
         services.AddScoped<IFollowRepository, FollowRepository>();
+        services.AddScoped<IFollowFeedRepository, FollowFeedRepository>();
+        services.AddScoped<IProductQaRepository, ProductQaRepository>();
+        services.AddScoped<IShopTrustBadgeRepository, ShopTrustBadgeRepository>();
         services.AddScoped<INotificationRepository, NotificationRepository>();
         services.AddScoped<ILowStockNotifier, LowStockNotifier>();
         services.AddScoped<IChatRepository, ChatRepository>();

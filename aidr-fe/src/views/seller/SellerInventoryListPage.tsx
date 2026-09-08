@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { AdminPagination, AdminStatCard } from '../../components/admin/AdminStatCard';
 import { AdminSelect } from '../../components/admin/AdminSelect';
 import { IconifyIcon } from '../../components/admin/IconifyIcon';
+import { RestockAdviceCard } from '../../components/seller/RestockAdviceCard';
 import { useSellerInventory } from '../../hooks/useSellerInventory';
 import { formatVnd, sellerProductStatusBadgeClass } from '../../utils/sellerProductUi';
 
@@ -41,6 +42,8 @@ export function SellerInventoryListPage() {
 
   return (
     <>
+      <RestockAdviceCard />
+
       <div className="row">
         <div className="col-md-6 col-xl-3">
           <AdminStatCard

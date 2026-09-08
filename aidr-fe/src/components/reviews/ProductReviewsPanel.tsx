@@ -1,5 +1,6 @@
 import { useMemo, useState, type FormEvent } from 'react';
 import { Link } from 'react-router-dom';
+import { ReviewDigestSection } from '../catalog/ReviewDigestSection';
 import { useAuth } from '../../hooks/useAuth';
 import { useProductReviews } from '../../hooks/useProductReviews';
 import { useToast } from '../../hooks/useToast';
@@ -326,6 +327,8 @@ export function ProductReviewsPanel({ productId, active = true }: Props) {
 
   return (
     <div className="product-review-form-content catalog-review-layout">
+      <ReviewDigestSection productId={productId} active={active} />
+
       <aside className="catalog-review-sidebar">
         <div className="catalog-detail-review-summary">
           <p className="catalog-review-summary__score">{avgRating > 0 ? avgRating.toFixed(1) : '—'}</p>

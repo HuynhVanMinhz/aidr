@@ -432,6 +432,24 @@ public class ProductPriceHistory
     public Product Product { get; set; } = null!;
 }
 
+public class ProductPriceAlert
+{
+    public Guid PriceAlertId { get; set; }
+    public Guid UserId { get; set; }
+    public Guid ProductId { get; set; }
+    public string AlertType { get; set; } = null!;
+    public decimal? BaselinePrice { get; set; }
+    public decimal ThresholdPct { get; set; }
+    public decimal ThresholdAmount { get; set; }
+    public bool IsActive { get; set; }
+    public DateTime? LastTriggeredAt { get; set; }
+    public DateTime? ExpiresAt { get; set; }
+    public DateTime CreatedAt { get; set; }
+
+    public User User { get; set; } = null!;
+    public Product Product { get; set; } = null!;
+}
+
 public class InventoryTransaction
 {
     public long InventoryTxId { get; set; }
@@ -472,6 +490,17 @@ public class ProductReview
     public Order? Order { get; set; }
 }
 
+public class ProductReviewDigestSnapshot
+{
+    public Guid ProductId { get; set; }
+    public int ReviewCount { get; set; }
+    public string DigestJson { get; set; } = null!;
+    public string Source { get; set; } = null!;
+    public DateTime GeneratedAt { get; set; }
+
+    public Product Product { get; set; } = null!;
+}
+
 public class SellerRating
 {
     public Guid SellerRatingId { get; set; }
@@ -496,6 +525,33 @@ public class SellerFollow
 
     public User Buyer { get; set; } = null!;
     public Shop Shop { get; set; } = null!;
+}
+
+public class ProductQuestion
+{
+    public Guid QuestionId { get; set; }
+    public Guid ProductId { get; set; }
+    public Guid UserId { get; set; }
+    public string Content { get; set; } = null!;
+    public string Status { get; set; } = "Visible";
+    public DateTime CreatedAt { get; set; }
+
+    public Product Product { get; set; } = null!;
+    public User User { get; set; } = null!;
+    public ICollection<ProductAnswer> Answers { get; set; } = new List<ProductAnswer>();
+}
+
+public class ProductAnswer
+{
+    public Guid AnswerId { get; set; }
+    public Guid QuestionId { get; set; }
+    public Guid UserId { get; set; }
+    public string Content { get; set; } = null!;
+    public bool IsOfficial { get; set; }
+    public DateTime CreatedAt { get; set; }
+
+    public ProductQuestion Question { get; set; } = null!;
+    public User User { get; set; } = null!;
 }
 
 public class ViewedProductHistory

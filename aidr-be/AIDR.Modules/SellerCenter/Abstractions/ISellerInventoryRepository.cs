@@ -80,4 +80,9 @@ public interface ISellerInventoryRepository
         Guid productId,
         UpdateSellingPriceWriteModel model,
         CancellationToken cancellationToken = default);
+
+    Task<IReadOnlyList<RestockAdviceItemDto>> GetRestockAdviceAsync(
+        Guid shopId,
+        int salesWindowDays,
+        CancellationToken cancellationToken = default);
 }

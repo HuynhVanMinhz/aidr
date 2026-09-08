@@ -185,6 +185,28 @@ export function AdminSellerRegistrationDetailPage() {
             </Link>
           </div>
           <div className="card-body">
+            {item.duplicateIdentityWarning?.hasDuplicate ? (
+              <div className="alert alert-warning d-flex gap-2 align-items-start mb-3" role="alert">
+                <IconifyIcon icon="solar:danger-triangle-bold" className="fs-20 flex-shrink-0 mt-1" />
+                <div>
+                  <p className="fw-semibold mb-1">Duplicate identity warning</p>
+                  <p className="mb-1">{item.duplicateIdentityWarning.message}</p>
+                  {item.duplicateIdentityWarning.matchedUserEmail ||
+                  item.duplicateIdentityWarning.matchedShopName ? (
+                    <p className="mb-0 fs-13 text-muted">
+                      Matches{' '}
+                      {item.duplicateIdentityWarning.matchedUserEmail
+                        ? item.duplicateIdentityWarning.matchedUserEmail
+                        : 'another account'}
+                      {item.duplicateIdentityWarning.matchedShopName
+                        ? ` · Shop: ${item.duplicateIdentityWarning.matchedShopName}`
+                        : ''}
+                    </p>
+                  ) : null}
+                </div>
+              </div>
+            ) : null}
+
             {actionError ? (
               <div className="alert alert-danger" role="alert">
                 {actionError}

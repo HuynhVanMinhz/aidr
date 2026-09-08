@@ -8,8 +8,13 @@ namespace AIDR.Modules.Order.Services;
 public sealed class OrderService : IOrderService
 {
     private readonly IOrderRepository _orders;
+    private readonly ICartRepository _carts;
 
-    public OrderService(IOrderRepository orders) => _orders = orders;
+    public OrderService(IOrderRepository orders, ICartRepository carts)
+    {
+        _orders = orders;
+        _carts = carts;
+    }
 
     public async Task<CreateOrderResponse> CreateOrderAsync(
         Guid buyerUserId,
@@ -124,6 +129,132 @@ public sealed class OrderService : IOrderService
     {
         EnsureOrderId(orderId);
         return await _orders.ConfirmReceivedAsync(buyerUserId, orderId, cancellationToken);
+    }
+
+    public async Task<ReorderOrderResponse> ReorderAsync(
+        Guid buyerUserId,
+        Guid orderId,
+        CancellationToken cancellationToken = default)
+    {
+        EnsureOrderId(orderId);
+
+        var order = await _orders.GetBuyerOrderAsync(buyerUserId, orderId, cancellationToken)
+            ?? throw new NotFoundException("Order not found.");
+
+        if (string.Equals(order.Status, OrderConstants.StatusCancelled, StringComparison.OrdinalIgnoreCase))
+            throw new AppException("Cancelled orders cannot be reordered.");
+
+        var skipped = new List<ReorderSkippedItemDto>();
+        var added = 0;
+
+        foreach (var item in order.Items)
+        {
+            var result = await TryAddReorderItemAsync(buyerUserId, item, cancellationToken);
+            if (result.Added)
+                added++;
+
+            if (result.SkipReason is not null)
+            {
+                skipped.Add(new ReorderSkippedItemDto
+                {
+                    ProductId = item.ProductId,
+                    VariantId = item.VariantId,
+                    ProductName = item.ProductName,
+                    Reason = result.SkipReason
+                });
+            }
+        }
+
+        return new ReorderOrderResponse
+        {
+            AddedCount = added,
+            SkippedItems = skipped
+        };
+    }
+
+    private async Task<(bool Added, string? SkipReason)> TryAddReorderItemAsync(
+        Guid buyerUserId,
+        BuyerOrderItemDto item,
+        CancellationToken cancellationToken)
+    {
+        var product = await _carts.GetPurchasableProductAsync(item.ProductId, cancellationToken);
+        if (product is null)
+            return (false, "Product is no longer available.");
+
+        if (!string.Equals(product.Status, CartConstants.ApprovedStatus, StringComparison.OrdinalIgnoreCase))
+            return (false, "Product is not approved for sale.");
+
+        if (!product.CategoryIsActive)
+            return (false, "Product category is not active.");
+
+        if (!string.Equals(product.ShopStatus, CartConstants.ActiveShopStatus, StringComparison.OrdinalIgnoreCase))
+            return (false, "Shop is not available.");
+
+        CartVariantSnapshot? variant;
+        try
+        {
+            variant = ResolveReorderVariant(product, item.VariantId);
+        }
+        catch (AppException ex)
+        {
+            return (false, ex.Message);
+        }
+
+        var unitPrice = variant?.EffectivePrice ?? product.EffectivePrice;
+        var available = variant?.AvailableQuantity ?? product.AvailableQuantity;
+
+        if (available < 1)
+        {
+            return (false, variant is null
+                ? "Product is out of stock."
+                : "Selected variant is out of stock.");
+        }
+
+        var quantity = Math.Min(item.Quantity, available);
+        if (quantity < 1)
+            return (false, "Insufficient stock.");
+
+        if (quantity > CartConstants.MaxQuantityPerItem)
+            quantity = CartConstants.MaxQuantityPerItem;
+
+        await _carts.AddOrMergeItemAsync(
+            buyerUserId,
+            product.ProductId,
+            variant?.VariantId,
+            quantity,
+            unitPrice,
+            available,
+            cancellationToken);
+
+        if (quantity < item.Quantity)
+        {
+            return (true,
+                $"Only {quantity} of {item.Quantity} unit(s) added due to limited stock.");
+        }
+
+        return (true, null);
+    }
+
+    private static CartVariantSnapshot? ResolveReorderVariant(CartProductSnapshot product, Guid? variantId)
+    {
+        if (!product.HasVariants)
+        {
+            if (variantId is not null && variantId != Guid.Empty)
+                throw new AppException("This product is no longer sold in variants.");
+
+            return null;
+        }
+
+        if (variantId is null || variantId == Guid.Empty)
+            throw new AppException("Variant from the original order is no longer available.");
+
+        var variant = product.Variants.FirstOrDefault(v => v.VariantId == variantId.Value)
+            ?? throw new NotFoundException("Variant is not available.");
+
+        if (!variant.IsActive)
+            throw new AppException("Selected variant is no longer for sale.");
+
+        return variant;
     }
 
     private static string? NormalizeStatusFilter(string? status)

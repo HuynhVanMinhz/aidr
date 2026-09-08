@@ -25,4 +25,17 @@ public sealed class SellerInventoryController : ControllerBase
         var result = await _inventory.ListAsync(User.GetUserId(), request, cancellationToken);
         return Ok(ApiResult<SellerInventoryListResult>.Ok(result));
     }
+
+    /// <summary>Rule-based restock suggestions from recent sales velocity.</summary>
+    [HttpGet("inventory/restock-advice")]
+    public async Task<ActionResult<ApiResult<RestockAdviceResultDto>>> RestockAdvice(
+        [FromQuery] RestockAdviceQueryRequest request,
+        CancellationToken cancellationToken)
+    {
+        var result = await _inventory.GetRestockAdviceAsync(
+            User.GetUserId(),
+            request.Days,
+            cancellationToken);
+        return Ok(ApiResult<RestockAdviceResultDto>.Ok(result));
+    }
 }

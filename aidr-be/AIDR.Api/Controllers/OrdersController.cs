@@ -84,4 +84,16 @@ public sealed class OrdersController : ControllerBase
         var result = await _orders.ConfirmReceivedAsync(User.GetUserId(), orderId, cancellationToken);
         return Ok(ApiResult<BuyerOrderDetailDto>.Ok(result, "Order marked as completed."));
     }
+
+    /// <summary>
+    /// Copy order line items into the cart using current prices and stock (partial success when unavailable).
+    /// </summary>
+    [HttpPost("{orderId:guid}/reorder")]
+    public async Task<ActionResult<ApiResult<ReorderOrderResponse>>> Reorder(
+        Guid orderId,
+        CancellationToken cancellationToken)
+    {
+        var result = await _orders.ReorderAsync(User.GetUserId(), orderId, cancellationToken);
+        return Ok(ApiResult<ReorderOrderResponse>.Ok(result, "Items added to cart."));
+    }
 }

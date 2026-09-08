@@ -146,6 +146,7 @@ public sealed class BrandFilterRecord
 public sealed class ShopPublicRecord
 {
     public Guid ShopId { get; init; }
+    public Guid OwnerUserId { get; init; }
     public string ShopName { get; init; } = null!;
     public string Slug { get; init; } = null!;
     public string? Tagline { get; init; }

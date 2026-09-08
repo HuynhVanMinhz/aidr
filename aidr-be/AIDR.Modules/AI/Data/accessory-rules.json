@@ -1,0 +1,34 @@
+{
+  "dien-thoai": {
+    "accessoryCategories": ["phu-kien-op", "phu-kien-sac", "phu-kien-tai-nghe", "phu-kien"],
+    "maxItems": 3
+  },
+  "dien-thoai-samsung": {
+    "accessoryCategories": ["phu-kien-op", "phu-kien-sac", "phu-kien-tai-nghe"],
+    "maxItems": 3
+  },
+  "dien-thoai-apple": {
+    "accessoryCategories": ["phu-kien-op", "phu-kien-sac", "phu-kien-tai-nghe"],
+    "maxItems": 3
+  },
+  "laptop": {
+    "accessoryCategories": ["phu-kien-sac", "gaming-gear", "phu-kien", "am-thanh"],
+    "maxItems": 4
+  },
+  "laptop-gaming": {
+    "accessoryCategories": ["gaming-gear", "phu-kien-sac", "am-thanh"],
+    "maxItems": 4
+  },
+  "laptop-van-phong": {
+    "accessoryCategories": ["phu-kien-sac", "phu-kien", "am-thanh"],
+    "maxItems": 3
+  },
+  "tablet": {
+    "accessoryCategories": ["phu-kien-op", "phu-kien-sac", "phu-kien"],
+    "maxItems": 3
+  },
+  "gaming-gear": {
+    "accessoryCategories": ["phu-kien-sac", "am-thanh"],
+    "maxItems": 2
+  }
+}

@@ -178,6 +178,10 @@ internal sealed class RecordingInventoryService : ISellerInventoryService
     public Task<SellerPriceUpdateDto> UpdateSellingPriceAsync(
         Guid ownerUserId, Guid productId, UpdateSellingPriceRequest request, CancellationToken ct = default) =>
         throw new NotSupportedException();
+
+    public Task<RestockAdviceResultDto> GetRestockAdviceAsync(
+        Guid ownerUserId, int salesWindowDays, CancellationToken ct = default) =>
+        throw new NotSupportedException();
 }
 
 /// <summary>Hands the service preset sheets, so planning is tested without Excel.</summary>
