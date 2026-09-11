@@ -9,6 +9,7 @@ SET NOCOUNT ON;
 ;WITH C AS (
   SELECT CategoryId, ROW_NUMBER() OVER (ORDER BY CategoryId) AS rn
   FROM dbo.Categories
+  WHERE ImageUrl IS NULL OR ImageUrl = N'' OR ImageUrl NOT LIKE N'/theme/images/category-icons/%'
 )
 UPDATE cat
 SET ImageUrl = N'/theme/images/category-item-image-' + CAST(((c.rn - 1) % 6) + 1 AS NVARCHAR(10)) + N'.png',

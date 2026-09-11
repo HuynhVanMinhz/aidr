@@ -75,15 +75,36 @@ export function ProductDetailPage() {
   const [buying, setBuying] = useState(false);
   const [wishlistPending, setWishlistPending] = useState(false);
 
+  // The gallery is the product's own photos plus any photo a variant carries that is not
+  // already among them, so "Pink" can be reached from the thumbnail strip as well as from
+  // the picker, and picking it can highlight the thumbnail that is now showing.
   const images = useMemo(() => {
     if (!product) return [];
-    if (product.images.length > 0) {
-      return product.images.map((img, index) => ({
-        ...img,
-        imageUrl: resolveProductImageUrl(img.imageUrl, index),
-      }));
-    }
-    return [{ productImageId: 'placeholder', imageUrl: PLACEHOLDER, sortOrder: 0, isPrimary: true }];
+
+    const gallery =
+      product.images.length > 0
+        ? product.images.map((img, index) => ({
+            productImageId: img.productImageId,
+            imageUrl: resolveProductImageUrl(img.imageUrl, index),
+            sortOrder: img.sortOrder,
+            isPrimary: img.isPrimary,
+          }))
+        : [{ productImageId: 'placeholder', imageUrl: PLACEHOLDER, sortOrder: 0, isPrimary: true }];
+
+    const seen = new Set(gallery.map((img) => img.imageUrl));
+    (product.variants ?? []).forEach((variant) => {
+      const url = variant.imageUrl?.trim();
+      if (!url || seen.has(url)) return;
+      seen.add(url);
+      gallery.push({
+        productImageId: `variant-${variant.variantId}`,
+        imageUrl: url,
+        sortOrder: gallery.length,
+        isPrimary: false,
+      });
+    });
+
+    return gallery;
   }, [product]);
 
   const specs = useMemo(() => parseSpecsJson(product?.specsJson), [product?.specsJson]);
@@ -97,6 +118,7 @@ export function ProductDetailPage() {
   useEffect(() => {
     if (!product) return;
     setSelection(defaultSelection(product.variants ?? [], product.variantOptions ?? []));
+    setActiveImage(0);
     setQty(1);
   }, [product]);
 
@@ -104,6 +126,16 @@ export function ProductDetailPage() {
     () => findSelectedVariant(variants, variantOptions, selection),
     [variants, variantOptions, selection],
   );
+
+  // Picking "Pink" moves the gallery to the pink photo. Done as a jump to that thumbnail
+  // rather than by overriding the main image, so the strip keeps showing which photo is on
+  // screen and the shopper can still browse the other angles afterwards.
+  const variantImageUrl = selectedVariant?.imageUrl?.trim() || null;
+  useEffect(() => {
+    if (!variantImageUrl) return;
+    const index = images.findIndex((img) => img.imageUrl === variantImageUrl);
+    if (index >= 0) setActiveImage(index);
+  }, [variantImageUrl, images]);
 
   if (loading) {
     return (
@@ -134,11 +166,9 @@ export function ProductDetailPage() {
   }
 
   const detail = product;
-  // A variant's own image wins over the gallery, so picking "Orange" changes the photo.
-  const mainImage =
-    selectedVariant?.imageUrl ??
-    images[Math.min(activeImage, images.length - 1)]?.imageUrl ??
-    PLACEHOLDER;
+  // The gallery already carries every variant photo, and selecting a variant scrolls the
+  // strip to it, so the main image is simply whichever thumbnail is active.
+  const mainImage = images[Math.min(activeImage, images.length - 1)]?.imageUrl ?? PLACEHOLDER;
 
   // With variants the product's own price and stock only describe its cheapest one; every
   // figure the buyer acts on has to come from the configuration actually selected.

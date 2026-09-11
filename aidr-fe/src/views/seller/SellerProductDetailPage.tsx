@@ -120,7 +120,7 @@ export function SellerProductDetailPage() {
                   <img
                     src={activeImage.imageUrl}
                     alt={product.name}
-                    className="img-fluid bg-light rounded w-100"
+                    className="img-fluid bg-light rounded w-100 admin-product-image"
                   />
                 ) : (
                   <div
@@ -144,7 +144,7 @@ export function SellerProductDetailPage() {
                       onClick={() => setActiveImageIndex(index)}
                       aria-label={`Show image ${index + 1}`}
                     >
-                      <img src={img.imageUrl} alt="" className="d-block avatar-xl rounded" />
+                      <img src={img.imageUrl} alt="" className="d-block avatar-xl rounded admin-product-thumb" />
                     </button>
                   ))}
                 </div>

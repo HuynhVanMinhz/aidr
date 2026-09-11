@@ -267,8 +267,7 @@ export function AdminProductListPage() {
                                 <img
                                   src={item.primaryImageUrl}
                                   alt=""
-                                  className="avatar-md"
-                                  style={{ objectFit: 'cover' }}
+                                  className="avatar-md admin-product-thumb"
                                 />
                               ) : (
                                 <IconifyIcon

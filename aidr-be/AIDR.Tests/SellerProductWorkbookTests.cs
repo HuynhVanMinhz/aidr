@@ -1,4 +1,4 @@
-using AIDR.Infrastructure.SellerCenter;
+﻿using AIDR.Infrastructure.SellerCenter;
 using AIDR.Modules.SellerCenter.Abstractions;
 using AIDR.Shared.Exceptions;
 using ClosedXML.Excel;
@@ -15,6 +15,8 @@ namespace AIDR.Tests;
 public class SellerProductWorkbookTests
 {
     private readonly ClosedXmlSellerProductWorkbook _workbook = new();
+
+    private static readonly IReadOnlyList<SellerProductVariantSheetExport> NoVariants = [];
 
     private static readonly IReadOnlyList<SellerCategoryChoice> Categories =
     [
@@ -57,7 +59,7 @@ public class SellerProductWorkbookTests
     {
         // The whole safety story of the Inventory sheet: the export never fills in
         // a quantity, so re-importing it cannot silently double a shop's stock.
-        var file = _workbook.WriteProducts(OneProduct(), TwoStockLines(), Categories);
+        var file = _workbook.WriteProducts(OneProduct(), NoVariants, TwoStockLines(), Categories);
 
         var read = _workbook.Read(new MemoryStream(file));
 
@@ -68,7 +70,7 @@ public class SellerProductWorkbookTests
     [Fact]
     public void Export_round_trips_the_product_columns_it_wrote()
     {
-        var file = _workbook.WriteProducts(OneProduct(), TwoStockLines(), Categories);
+        var file = _workbook.WriteProducts(OneProduct(), NoVariants, TwoStockLines(), Categories);
 
         var row = Assert.Single(_workbook.Read(new MemoryStream(file)).Products);
 
@@ -82,7 +84,7 @@ public class SellerProductWorkbookTests
     [Fact]
     public void Typing_a_quantity_into_an_export_receives_exactly_that_line()
     {
-        var file = _workbook.WriteProducts(OneProduct(), TwoStockLines(), Categories);
+        var file = _workbook.WriteProducts(OneProduct(), NoVariants, TwoStockLines(), Categories);
 
         // The seller fills in the first stock line only.
         var edited = EditInventory(file, dataRow: 2, quantity: 8, unitCost: 24_000_000m);
@@ -97,7 +99,7 @@ public class SellerProductWorkbookTests
     [Fact]
     public void A_variant_line_keeps_the_sku_that_addresses_it()
     {
-        var file = _workbook.WriteProducts(OneProduct(), TwoStockLines(), Categories);
+        var file = _workbook.WriteProducts(OneProduct(), NoVariants, TwoStockLines(), Categories);
 
         var edited = EditInventory(file, dataRow: 3, quantity: 4, unitCost: 25_000_000m);
 
@@ -128,7 +130,7 @@ public class SellerProductWorkbookTests
     public void A_workbook_with_no_inventory_sheet_still_imports_its_products()
     {
         // What every file saved before the Inventory sheet existed looks like.
-        var file = DeleteSheet(_workbook.WriteProducts(OneProduct(), TwoStockLines(), Categories), "Inventory");
+        var file = DeleteSheet(_workbook.WriteProducts(OneProduct(), NoVariants, TwoStockLines(), Categories), "Inventory");
 
         var read = _workbook.Read(new MemoryStream(file));
 
@@ -140,7 +142,7 @@ public class SellerProductWorkbookTests
     public void A_workbook_with_only_an_inventory_sheet_is_a_stock_delivery()
     {
         // Receiving stock should not require carrying the whole catalogue along.
-        var file = _workbook.WriteProducts(OneProduct(), TwoStockLines(), Categories);
+        var file = _workbook.WriteProducts(OneProduct(), NoVariants, TwoStockLines(), Categories);
         var edited = EditInventory(file, dataRow: 2, quantity: 6, unitCost: 1_000m);
         var stockOnly = DeleteSheet(edited, "Products");
 
@@ -154,7 +156,7 @@ public class SellerProductWorkbookTests
     [Fact]
     public void Header_names_are_matched_loosely()
     {
-        var file = _workbook.WriteProducts(OneProduct(), TwoStockLines(), Categories);
+        var file = _workbook.WriteProducts(OneProduct(), NoVariants, TwoStockLines(), Categories);
         var renamed = Mutate(file, book =>
         {
             var sheet = book.Worksheet("Inventory");
@@ -173,7 +175,7 @@ public class SellerProductWorkbookTests
     public void A_products_sheet_without_a_name_column_is_rejected_by_name()
     {
         var file = Mutate(
-            _workbook.WriteProducts(OneProduct(), TwoStockLines(), Categories),
+            _workbook.WriteProducts(OneProduct(), NoVariants, TwoStockLines(), Categories),
             book => book.Worksheet("Products").Cell(1, 6).SetValue("Titel"));
 
         var error = Assert.Throws<AppException>(() => _workbook.Read(new MemoryStream(file)));

@@ -80,6 +80,29 @@ public class DevController : ControllerBase
         });
     }
 
+    /// <summary>Round the active catalog out to 25 smart-device/electronics categories with new Approved products (dev only).</summary>
+    [HttpPost("seed-electronics-expansion")]
+    public async Task<IActionResult> SeedElectronicsExpansion(
+        [FromServices] AidrDbContext db,
+        [FromServices] IWebHostEnvironment env,
+        CancellationToken ct)
+    {
+        if (!env.IsDevelopment())
+            return NotFound();
+
+        await ElectronicsCatalogExpansionSeeder.SeedAsync(db, env.ContentRootPath, ct);
+
+        var activeCategories = await db.Categories.CountAsync(c => c.IsActive, ct);
+        var approvedProducts = await db.Products.CountAsync(p => p.Status == "Approved", ct);
+
+        return Ok(new
+        {
+            message = "Electronics catalog expansion completed.",
+            activeCategoryCount = activeCategories,
+            approvedProductCount = approvedProducts
+        });
+    }
+
     /// <summary>Normalize shops/categories/products for electronics storefront + mock image URLs (dev only).</summary>
     [HttpPost("seed-electronics-refresh")]
     public async Task<IActionResult> SeedElectronicsRefresh(
@@ -125,6 +148,26 @@ public class DevController : ControllerBase
             message = "Catalog images mapped to /theme/images assets.",
             categoryImageCount = categories,
             productImageCount = productImages
+        });
+    }
+
+    /// <summary>Assign each active category its own transparent-background SVG icon (dev only).</summary>
+    [HttpPost("seed-category-icons")]
+    public async Task<IActionResult> SeedCategoryIcons(
+        [FromServices] AidrDbContext db,
+        [FromServices] IWebHostEnvironment env,
+        CancellationToken ct)
+    {
+        if (!env.IsDevelopment())
+            return NotFound();
+
+        await CategoryIconsSeeder.SeedAsync(db, env.ContentRootPath, ct);
+        var updated = await db.Categories.CountAsync(c => c.IsActive && c.ImageUrl != null && c.ImageUrl.StartsWith("/theme/images/category-icons/"), ct);
+
+        return Ok(new
+        {
+            message = "Category icon URLs assigned.",
+            iconedCategoryCount = updated
         });
     }
 

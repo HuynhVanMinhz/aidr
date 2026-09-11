@@ -192,6 +192,7 @@ header.main-header .main-menu .navbar-collapse {
 .catalog-thumb-slide img {
   width: 100%;
   aspect-ratio: 1 / 1;
+  /* contain, not cover: previews must match the (uncropped) main image. */
   object-fit: cover;
   border-radius: 8px;
 }
@@ -199,19 +200,52 @@ header.main-header .main-menu .navbar-collapse {
 .catalog-main-image {
   flex: 1;
   min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .catalog-main-image figure {
   margin: 0;
-  display: block;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
   height: 100%;
 }
 
+/*
+ * Product photos come in mixed aspect ratios, so `cover` cropped the subject
+ * (e.g. the top/bottom of a mouse). `contain` + centering shows the whole
+ * product inside the square frame instead.
+ */
 .catalog-main-image img {
   width: 100%;
+  height: 100%;
+  max-height: 100%;
   aspect-ratio: 1 / 1;
   object-fit: cover;
   border-radius: 10px;
+  padding: 16px;
+}
+
+/*
+ * Product photography is never cropped.
+ *
+ * theme/css/custom.css fits every catalogue image with `object-fit: cover`, which fills the
+ * square tile by cutting the subject off — a phone loses its top and bottom, a mouse its
+ * ends. Seller photos arrive in whatever ratio the seller had, so they are fitted with
+ * `contain`: the whole product shows, centred, and the tile's own surface fills the rest.
+ * Overridden here rather than edited in the vendor file, and the app's stylesheet loads
+ * after it.
+ */
+.product-item-image figure img,
+.best-selling-product-item-image figure img,
+.product-total-item-image figure img,
+.category-item-image figure img {
+  object-fit: contain;
+  object-position: center;
+  background: var(--secondary-color, #f3f4f6);
 }
 
 .product-single-image-box:has(.catalog-thumbs) .catalog-main-image {
@@ -2548,7 +2582,8 @@ html[data-theme='dark'] .store-shell .upcoming-offer-item:not(.dark-section) {
 }
 
 .compare-tray__item img {
-  object-fit: cover;
+  object-fit: contain;
+  object-position: center;
   width: 48px;
   height: 48px;
 }
@@ -2775,7 +2810,8 @@ html[data-theme='dark'] .store-shell .upcoming-offer-item:not(.dark-section) {
 .compare-card__media img {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
+  object-position: center;
   display: block;
 }
 

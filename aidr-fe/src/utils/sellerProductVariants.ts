@@ -1,8 +1,15 @@
+import { SELLER_PRODUCT_MAX_IMAGE_URL } from '../components/seller/sellerProductFormConstants';
 import type {
   SellerProductDetail,
   SellerProductVariantInput,
   SellerProductVariantOption,
 } from '../types/seller';
+
+/**
+ * The API rejects anything that is not an absolute http(s) URL for a variant photo, so the
+ * same rule is applied here rather than letting the save fail on the server.
+ */
+const VARIANT_IMAGE_URL_REGEX = /^https?:\/\/.+\..+/i;
 
 /**
  * The seller-side variant editor.
@@ -204,6 +211,19 @@ export function validateVariantDrafts(
       }
     }
 
+    const imageUrl = row.imageUrl.trim();
+    if (imageUrl) {
+      if (imageUrl.length > SELLER_PRODUCT_MAX_IMAGE_URL) {
+        rowErrors[row.key] =
+          `Image URL must not exceed ${SELLER_PRODUCT_MAX_IMAGE_URL} characters.`;
+        continue;
+      }
+      if (!VARIANT_IMAGE_URL_REGEX.test(imageUrl)) {
+        rowErrors[row.key] = 'Image URL must be a valid http or https URL.';
+        continue;
+      }
+    }
+
     const sku = row.sku.trim().toLowerCase();
     if (sku) {
       const clash = skus.get(sku);
@@ -220,6 +240,29 @@ export function validateVariantDrafts(
   }
 
   return { rowErrors, formError: null };
+}
+
+/**
+ * Everything about the variant editor that a save would persist, in a form two states can
+ * be compared by. Editing only a variant — its photo, say — leaves every product field
+ * untouched, so without this the form would look unchanged and Save would stay disabled.
+ */
+export function variantDraftsSignature(
+  options: VariantOptionDraft[],
+  rows: VariantDraft[],
+): string {
+  return JSON.stringify({
+    options: options.map((o) => ({ name: o.name.trim(), values: o.values })),
+    // Order matters: it becomes each variant's SortOrder.
+    rows: rows.map((r) => ({
+      key: r.key,
+      sku: r.sku.trim(),
+      price: r.price.trim(),
+      salePrice: r.salePrice.trim(),
+      imageUrl: r.imageUrl.trim(),
+      isActive: r.isActive,
+    })),
+  });
 }
 
 export function draftsToPayload(

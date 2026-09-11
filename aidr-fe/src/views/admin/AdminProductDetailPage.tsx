@@ -218,7 +218,8 @@ export function AdminProductDetailPage() {
                   <img
                     src={primaryImage}
                     alt=""
-                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                    className="admin-product-thumb"
+                    style={{ width: '100%', height: '100%' }}
                   />
                 ) : (
                   <IconifyIcon icon="solar:gallery-bold-duotone" className="fs-36 text-muted" />
@@ -332,7 +333,8 @@ export function AdminProductDetailPage() {
                       <img
                         src={img.imageUrl}
                         alt=""
-                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                        className="admin-product-thumb"
+                        style={{ width: '100%', height: '100%' }}
                       />
                     </a>
                   ))}

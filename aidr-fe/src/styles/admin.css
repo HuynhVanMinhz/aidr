@@ -659,6 +659,65 @@ html[data-aidr-shell='admin'] .wrapper .page-content > .container-xxl:has(.chat-
   min-width: 8.5rem;
 }
 
+/*
+ * Product photos in the seller and admin views.
+ *
+ * The template's sizing classes (.avatar-xl and friends) set a square box and nothing else,
+ * so a portrait photo was being stretched into it; a plain `cover` would crop it instead.
+ * Both are wrong for a catalogue picture that a seller has to check, so it is fitted whole
+ * and centred, with the muted surface showing around it.
+ */
+.admin-product-thumb {
+  object-fit: contain;
+  object-position: center;
+  background: var(--bs-tertiary-bg, rgba(22, 24, 29, 0.04));
+}
+
+/* The large preview: fitted to the column, capped so a tall photo cannot take over. */
+.admin-product-image {
+  width: 100%;
+  max-height: 420px;
+  object-fit: contain;
+  object-position: center;
+}
+
+/* Per-variant photo: thumbnail beside the controls that set it. */
+.variant-image {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+
+.variant-image__thumb {
+  flex: 0 0 auto;
+  width: 48px;
+  height: 48px;
+  border-radius: 6px;
+  border: 1px solid rgba(22, 24, 29, 0.12);
+  object-fit: contain;
+  background: rgba(22, 24, 29, 0.03);
+}
+
+/* A URL that does not load would otherwise leave a broken-image glyph in the row. */
+.variant-image__thumb.is-broken {
+  visibility: hidden;
+}
+
+.variant-image__thumb--empty {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--bs-secondary-color, #8a8d93);
+  font-size: 20px;
+}
+
+.variant-image__controls {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  min-width: 12rem;
+}
+
 /* Stock-in / stock-out printable vouchers */
 .stock-voucher__sheet {
   padding: 0.25rem 0.15rem 0.5rem;

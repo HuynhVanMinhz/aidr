@@ -6,6 +6,7 @@ using AIDR.Modules.SellerCenter.Abstractions;
 using AIDR.Shared.Constants;
 using AIDR.Shared.Dtos.Seller;
 using AIDR.Shared.Exceptions;
+using AIDR.Shared.Serialization;
 
 namespace AIDR.Modules.SellerCenter.Services;
 
@@ -45,12 +46,14 @@ public sealed class SellerProductExcelService : ISellerProductExcelService
     private readonly ISellerProductService _products;
     private readonly ISellerInventoryService _inventory;
     private readonly ISellerProductWorkbook _workbook;
+    private readonly ISellerImportImageStore _images;
 
     public SellerProductExcelService(
         ISellerProductRepository repository,
         ISellerProductService products,
         ISellerInventoryService inventory,
-        ISellerProductWorkbook workbook)
+        ISellerProductWorkbook workbook,
+        ISellerImportImageStore images)
     {
         _repository = repository;
         _products = products;
@@ -58,6 +61,9 @@ public sealed class SellerProductExcelService : ISellerProductExcelService
         // spreadsheet can never receive a lot the form would have refused.
         _inventory = inventory;
         _workbook = workbook;
+        // A catalogue photo is a URL, so a picture pasted into the sheet has to be
+        // given one before any of it can be saved.
+        _images = images;
     }
 
     public async Task<byte[]> ExportAsync(
@@ -119,6 +125,25 @@ public sealed class SellerProductExcelService : ISellerProductExcelService
             ImageUrls = string.Join(", ", imagesByProduct.GetValueOrDefault(item.ProductId) ?? []),
         }).ToList();
 
+        // Every configuration the shop sells, so a seller can edit prices and swap a
+        // colour's photo in the same file they edit the products in.
+        var variantExports = records
+            .SelectMany(item => item.Variants
+                .OrderBy(v => v.SortOrder)
+                .Select(v => new SellerProductVariantSheetExport
+                {
+                    Slug = item.Slug,
+                    ProductName = item.Name,
+                    Sku = v.Sku,
+                    VariantName = v.VariantName,
+                    Attributes = AttributesToText(v.AttributesJson),
+                    Price = v.Price,
+                    SalePrice = v.SalePrice,
+                    ImageUrl = v.ImageUrl,
+                    IsActive = v.IsActive,
+                }))
+            .ToList();
+
         // One line per sellable configuration: that is the grain stock is held at,
         // and the grain the seller has to type a quantity against.
         var stock = records.SelectMany(item => item.Variants.Count == 0
@@ -138,7 +163,7 @@ public sealed class SellerProductExcelService : ISellerProductExcelService
                 }))
             .ToList();
 
-        return _workbook.WriteProducts(exports, stock, categories.Choices);
+        return _workbook.WriteProducts(exports, variantExports, stock, categories.Choices);
     }
 
     public async Task<byte[]> BuildTemplateAsync(Guid ownerUserId, CancellationToken cancellationToken = default)
@@ -200,7 +225,7 @@ public sealed class SellerProductExcelService : ISellerProductExcelService
                     await _products.UpdateAsync(
                         ownerUserId,
                         productId,
-                        BuildUpdateRequest(row),
+                        await BuildUpdateRequestAsync(row, cancellationToken),
                         cancellationToken);
 
                     await ApplyImagesAsync(ownerUserId, productId, row, cancellationToken);
@@ -210,14 +235,16 @@ public sealed class SellerProductExcelService : ISellerProductExcelService
                 {
                     var detail = await _products.CreateAsync(
                         ownerUserId,
-                        BuildCreateRequest(row),
+                        await BuildCreateRequestAsync(row, cancellationToken),
                         cancellationToken);
 
                     created++;
 
                     // The slug is now taken, so a later duplicate row in the same
-                    // sheet updates this product instead of colliding with it.
-                    plan.RegisterCreated(row.Slug!, detail.ProductId);
+                    // sheet updates this product instead of colliding with it. The
+                    // variant ids come too: a stock row naming a SKU this file has
+                    // only just created has no other way to find it.
+                    plan.RegisterCreated(row.Slug!, detail.ProductId, detail.Variants);
                 }
             }
             catch (AppException ex)
@@ -279,6 +306,21 @@ public sealed class SellerProductExcelService : ISellerProductExcelService
                 continue;
             }
 
+            // A configuration created by this same run had no id at planning time.
+            var variantId = row.VariantId;
+            if (variantId is null && row.VariantSku is not null)
+            {
+                variantId = plan.CreatedVariantIdFor(row.Slug!, row.VariantSku);
+                if (variantId is null)
+                {
+                    failed.Add(ToDto(row) with
+                    {
+                        Errors = [$"No configuration with SKU \"{row.VariantSku}\" — the Variants row that would have created it did not run."],
+                    });
+                    continue;
+                }
+            }
+
             try
             {
                 await _inventory.ImportLotAsync(
@@ -286,7 +328,7 @@ public sealed class SellerProductExcelService : ISellerProductExcelService
                     productId.Value,
                     new ImportStockLotRequest
                     {
-                        VariantId = row.VariantId,
+                        VariantId = variantId,
                         LotCode = row.LotCode,
                         Quantity = row.Quantity!.Value,
                         UnitCost = row.UnitCost!.Value,
@@ -309,6 +351,421 @@ public sealed class SellerProductExcelService : ISellerProductExcelService
         return (lots, units, failed);
     }
 
+
+    /* ------------------------------------------------------------- variants */
+
+    /// <summary>
+    /// Attaches the Variants sheet to the products it describes.
+    ///
+    /// Variants are declared against a product's slug rather than in the product's
+    /// own row, because a configuration is a row in its own right: it has its own
+    /// price, its own SKU and its own photo. A sheet that mentions no variants for
+    /// a product leaves that product's configurations exactly as they are — the
+    /// alternative would let an untouched export wipe them.
+    /// </summary>
+    private async Task PlanVariantsAsync(
+        Guid shopId,
+        IReadOnlyList<SellerProductVariantSheetRow> sheetRows,
+        List<PlannedRow> planned,
+        List<string> warnings,
+        CancellationToken cancellationToken)
+    {
+        if (sheetRows.Count == 0) return;
+
+        if (sheetRows.Count > MaxRows)
+            throw new AppException($"The Variants sheet has {sheetRows.Count} rows; the limit is {MaxRows} per import.");
+
+        // The later row wins for a repeated slug on the Products sheet, so the
+        // variants have to attach to that same row.
+        var bySlug = planned
+            .Where(r => r.Slug is not null)
+            .GroupBy(r => r.Slug!, StringComparer.OrdinalIgnoreCase)
+            .ToDictionary(g => g.Key, g => g.Last(), StringComparer.OrdinalIgnoreCase);
+
+        foreach (var group in sheetRows.GroupBy(
+                     r => r.Slug?.Trim().ToLowerInvariant() ?? string.Empty,
+                     StringComparer.OrdinalIgnoreCase))
+        {
+            var rows = group.OrderBy(r => r.RowNumber).ToList();
+            var where = $"Variants sheet, row{(rows.Count == 1 ? string.Empty : "s")} " +
+                        string.Join(", ", rows.Select(r => r.RowNumber));
+
+            if (group.Key.Length == 0)
+            {
+                warnings.Add($"{where}: no Slug, so there is no product to attach the configuration to. Skipped.");
+                continue;
+            }
+
+            if (!bySlug.TryGetValue(group.Key, out var product))
+            {
+                warnings.Add(
+                    $"{where}: {Quoted(group.Key)} is not on the Products sheet, so its variants were skipped. " +
+                    "Add the product's own row to the Products sheet as well — an export contains both.");
+                continue;
+            }
+
+            // Matching against what the product already has is what keeps each
+            // variant's id, and with it the stock and orders hanging off that id.
+            var existing = product.ProductId is { } id
+                ? await _repository.GetByIdForShopAsync(shopId, id, cancellationToken)
+                : null;
+
+            BuildVariantsFor(product, rows, existing);
+
+            if (product.Errors.Count > 0)
+            {
+                product.Action = ActionError;
+                product.ProductId = null;
+            }
+        }
+    }
+
+    private void BuildVariantsFor(
+        PlannedRow product,
+        IReadOnlyList<SellerProductVariantSheetRow> rows,
+        SellerProductRecord? existing)
+    {
+        var errors = product.Errors;
+        var slug = Quoted(product.Slug ?? string.Empty);
+        var variants = new List<PlannedVariant>(rows.Count);
+        var axes = new List<ProductVariantJson.OptionAxis>();
+        var seenCombinations = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var seenSkus = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        if (rows.Count > SellerProductConstants.MaxVariantsPerProduct)
+        {
+            errors.Add(
+                $"Variants sheet: {slug} has {rows.Count} configurations; " +
+                $"the limit is {SellerProductConstants.MaxVariantsPerProduct}.");
+            return;
+        }
+
+        foreach (var row in rows)
+        {
+            var at = $"Variants sheet, row {row.RowNumber}";
+
+            var attributes = ParseAttributes(row.Attributes, at, errors);
+            if (attributes is null) continue;
+
+            // Every row of one product has to answer the same questions; otherwise the
+            // picker would show an axis some configurations have no value for.
+            if (axes.Count == 0)
+            {
+                foreach (var name in attributes.Keys)
+                    axes.Add(new ProductVariantJson.OptionAxis { Name = name, Values = [] });
+
+                if (axes.Count > SellerProductConstants.MaxVariantOptions)
+                {
+                    errors.Add(
+                        $"{at}: {axes.Count} options were given; the limit is " +
+                        $"{SellerProductConstants.MaxVariantOptions}.");
+                    return;
+                }
+            }
+            else if (!axes.Select(a => a.Name)
+                         .OrderBy(n => n, StringComparer.OrdinalIgnoreCase)
+                         .SequenceEqual(
+                             attributes.Keys.OrderBy(n => n, StringComparer.OrdinalIgnoreCase),
+                             StringComparer.OrdinalIgnoreCase))
+            {
+                errors.Add(
+                    $"{at}: this row lists {Quoted(string.Join(", ", attributes.Keys))} while the first row of " +
+                    $"{slug} lists {Quoted(string.Join(", ", axes.Select(a => a.Name)))}. " +
+                    "Every configuration of one product must use the same option names.");
+                continue;
+            }
+
+            foreach (var axis in axes)
+            {
+                var value = attributes[axis.Name];
+                if (!axis.Values.Contains(value, StringComparer.OrdinalIgnoreCase))
+                    axis.Values.Add(value);
+            }
+
+            var combination = string.Join(" / ", axes.Select(a => attributes[a.Name]));
+            if (!seenCombinations.Add(combination))
+            {
+                errors.Add($"{at}: {Quoted(combination)} is listed twice.");
+                continue;
+            }
+
+            /* price */
+            if (string.IsNullOrWhiteSpace(row.Price))
+            {
+                errors.Add($"{at}: Price is required.");
+                continue;
+            }
+
+            if (!TryParseMoney(row.Price, out var price) || price < 0)
+            {
+                errors.Add($"{at}: Price {Quoted(row.Price)} is not a number of 0 or more.");
+                continue;
+            }
+
+            decimal? salePrice = null;
+            if (!string.IsNullOrWhiteSpace(row.SalePrice))
+            {
+                if (!TryParseMoney(row.SalePrice, out var sale) || sale < 0)
+                {
+                    errors.Add($"{at}: SalePrice {Quoted(row.SalePrice)} is not a number of 0 or more.");
+                    continue;
+                }
+
+                if (sale > price)
+                {
+                    errors.Add($"{at}: SalePrice must not be above this row's own Price.");
+                    continue;
+                }
+
+                salePrice = sale;
+            }
+
+            /* sku */
+            var sku = Trimmed(row.Sku);
+            if (sku is not null)
+            {
+                if (sku.Length > SellerProductConstants.MaxVariantSkuLength)
+                {
+                    errors.Add($"{at}: Sku must not exceed {SellerProductConstants.MaxVariantSkuLength} characters.");
+                    continue;
+                }
+
+                if (!seenSkus.Add(sku))
+                {
+                    errors.Add($"{at}: Sku {Quoted(sku)} is used by another configuration of this product.");
+                    continue;
+                }
+            }
+
+            /* photo: a link if there is one, otherwise the picture pasted on the row */
+            var imageUrl = Trimmed(row.ImageUrl);
+            var imageFile = row.Images.FirstOrDefault();
+
+            if (imageUrl is not null)
+            {
+                if (!HttpUrlRegex.IsMatch(imageUrl))
+                {
+                    errors.Add($"{at}: ImageUrl {Quoted(imageUrl)} must start with http:// or https://.");
+                    continue;
+                }
+
+                if (imageUrl.Length > SellerProductConstants.MaxImageUrlLength)
+                {
+                    errors.Add($"{at}: ImageUrl exceeds {SellerProductConstants.MaxImageUrlLength} characters.");
+                    continue;
+                }
+
+                // Both were given; the typed link is the deliberate one.
+                imageFile = null;
+            }
+            else if (imageFile is not null)
+            {
+                var before = errors.Count;
+                ValidateSheetImage(imageFile, $"the configuration on row {row.RowNumber}", errors);
+                if (errors.Count != before) continue;
+            }
+
+            /* active */
+            var isActive = true;
+            if (!string.IsNullOrWhiteSpace(row.IsActive) && !TryParseFlag(row.IsActive, out isActive))
+            {
+                errors.Add($"{at}: Active {Quoted(row.IsActive)} is not yes/no.");
+                continue;
+            }
+
+            variants.Add(new PlannedVariant
+            {
+                RowNumber = row.RowNumber,
+                Sku = sku,
+                Attributes = new Dictionary<string, string>(attributes, StringComparer.Ordinal),
+                Price = price,
+                SalePrice = salePrice,
+                ImageUrl = imageUrl,
+                ImageFile = imageFile,
+                IsActive = isActive,
+                SortOrder = variants.Count,
+            });
+        }
+
+        if (errors.Count > 0) return;
+
+        if (variants.Count == 0)
+        {
+            errors.Add($"Variants sheet: no usable configuration was read for {slug}.");
+            return;
+        }
+
+        if (!variants.Any(v => v.IsActive))
+        {
+            errors.Add($"Variants sheet: at least one configuration of {slug} must be Active.");
+            return;
+        }
+
+        foreach (var axis in axes)
+        {
+            if (axis.Name.Length > SellerProductConstants.MaxVariantOptionNameLength)
+                errors.Add($"Variants sheet: option name {Quoted(axis.Name)} is too long.");
+
+            if (axis.Values.Count > SellerProductConstants.MaxVariantOptionValues)
+            {
+                errors.Add(
+                    $"Variants sheet: option {Quoted(axis.Name)} has {axis.Values.Count} values; " +
+                    $"the limit is {SellerProductConstants.MaxVariantOptionValues}.");
+            }
+
+            foreach (var value in axis.Values)
+            {
+                if (value.Length > SellerProductConstants.MaxVariantOptionValueLength)
+                    errors.Add($"Variants sheet: option value {Quoted(value)} is too long.");
+            }
+        }
+
+        if (errors.Count > 0) return;
+
+        MatchExistingVariants(variants, existing, errors);
+        if (errors.Count > 0) return;
+
+        product.VariantOptions = axes;
+        product.Variants = variants;
+    }
+
+    /// <summary>
+    /// Gives each row the id of the configuration it is really editing.
+    ///
+    /// Without this, re-importing an export would read as "delete every variant and
+    /// add these" — which the repository refuses for anything holding stock or
+    /// sitting on an order, and which would strand inventory lots for the rest. A
+    /// row is matched by SKU first, because that is the handle the seller controls,
+    /// and by its combination of option values otherwise.
+    /// </summary>
+    private static void MatchExistingVariants(
+        List<PlannedVariant> variants,
+        SellerProductRecord? existing,
+        List<string> errors)
+    {
+        if (existing is null || existing.Variants.Count == 0) return;
+
+        var claimed = new HashSet<Guid>();
+
+        foreach (var variant in variants.Where(v => v.Sku is not null))
+        {
+            var match = existing.Variants.FirstOrDefault(v =>
+                v.Sku is not null &&
+                string.Equals(v.Sku, variant.Sku, StringComparison.OrdinalIgnoreCase));
+
+            if (match is not null && claimed.Add(match.VariantId))
+                variant.VariantId = match.VariantId;
+        }
+
+        foreach (var variant in variants.Where(v => v.VariantId is null))
+        {
+            var match = existing.Variants.FirstOrDefault(v =>
+                !claimed.Contains(v.VariantId) &&
+                SameCombination(ProductVariantJson.ParseAttributes(v.AttributesJson), variant.Attributes));
+
+            if (match is not null && claimed.Add(match.VariantId))
+                variant.VariantId = match.VariantId;
+        }
+
+        // Anything the sheet no longer lists is a deletion, and one the seller may
+        // not have meant. Say what it would cost before the repository refuses it.
+        var dropped = existing.Variants.Where(v => !claimed.Contains(v.VariantId));
+        foreach (var stocked in dropped.Where(v => v.StockQuantity > 0))
+        {
+            errors.Add(
+                $"Variants sheet: {Quoted(stocked.VariantName)} is not listed, and it still holds " +
+                $"{stocked.StockQuantity} unit(s) in stock. Add its row back, or write the stock off first.");
+        }
+    }
+
+    private static bool SameCombination(
+        IReadOnlyDictionary<string, string> left,
+        IReadOnlyDictionary<string, string> right)
+    {
+        if (left.Count != right.Count) return false;
+
+        foreach (var (name, value) in left)
+        {
+            if (!right.TryGetValue(name, out var other) ||
+                !string.Equals(other, value, StringComparison.OrdinalIgnoreCase))
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /// <summary>Reads "Color=Pink; Storage=256GB" into the pairs it names, in that order.</summary>
+    private static Dictionary<string, string>? ParseAttributes(string? raw, string at, List<string> errors)
+    {
+        const string shape = "\"Color=Pink; Storage=256GB\"";
+
+        if (string.IsNullOrWhiteSpace(raw))
+        {
+            errors.Add($"{at}: Attributes is required, e.g. {shape}.");
+            return null;
+        }
+
+        var attributes = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var part in raw.Split([';', '\n'], StringSplitOptions.RemoveEmptyEntries))
+        {
+            var pair = part.Split('=', 2);
+            if (pair.Length != 2)
+            {
+                errors.Add($"{at}: {Quoted(part)} is not an option; they look like {shape}.");
+                return null;
+            }
+
+            var name = pair[0].Trim();
+            var value = pair[1].Trim();
+
+            if (name.Length == 0 || value.Length == 0)
+            {
+                errors.Add($"{at}: {Quoted(part)} is missing an option name or its value.");
+                return null;
+            }
+
+            if (!attributes.TryAdd(name, value))
+            {
+                errors.Add($"{at}: option {Quoted(name)} is given twice on the same row.");
+                return null;
+            }
+        }
+
+        if (attributes.Count == 0)
+        {
+            errors.Add($"{at}: Attributes is required, e.g. {shape}.");
+            return null;
+        }
+
+        return attributes;
+    }
+
+    /// <summary>Sellers write Yes, No, TRUE, 0 — all of them mean the obvious thing.</summary>
+    private static bool TryParseFlag(string raw, out bool value)
+    {
+        switch (raw.Trim().ToLowerInvariant())
+        {
+            case "y" or "yes" or "true" or "1" or "on" or "active":
+                value = true;
+                return true;
+            case "n" or "no" or "false" or "0" or "off" or "hidden" or "inactive":
+                value = false;
+                return true;
+            default:
+                value = true;
+                return false;
+        }
+    }
+
+    /// <summary>Writes an attributes JSON back out the way the sheet asks for it.</summary>
+    private static string AttributesToText(string? attributesJson) =>
+        string.Join(
+            "; ",
+            ProductVariantJson.ParseAttributes(attributesJson).Select(pair => $"{pair.Key}={pair.Value}"));
+
     /* ------------------------------------------------------------ planning */
 
     /// <summary>
@@ -325,7 +782,9 @@ public sealed class SellerProductExcelService : ISellerProductExcelService
         var sheets = _workbook.Read(file);
         var sheetRows = sheets.Products;
 
-        if (sheetRows.Count == 0 && sheets.Inventory.Count == 0)
+        // A file may legitimately carry only stock, or only variants; what it may not
+        // do is carry nothing at all.
+        if (sheetRows.Count == 0 && sheets.Inventory.Count == 0 && sheets.Variants.Count == 0)
             throw new AppException("The sheet has no product rows.");
 
         if (sheetRows.Count > MaxRows)
@@ -364,6 +823,7 @@ public sealed class SellerProductExcelService : ISellerProductExcelService
         }
 
         await ValidateImagesAsync(planned, cancellationToken);
+        await PlanVariantsAsync(shop.ShopId, sheets.Variants, planned, warnings, cancellationToken);
 
         var stock = await PlanStockAsync(shop.ShopId, sheets.Inventory, planned, cancellationToken);
         WarnOnRepeatedStockRows(stock, warnings);
@@ -510,12 +970,34 @@ public sealed class SellerProductExcelService : ISellerProductExcelService
                     }
                     else
                     {
-                        // It cannot have variants yet: the Products sheet has no way
-                        // to describe them, so a new product is single-configuration.
                         row.ProductName = creating.Name;
 
-                        if (row.VariantSku is not null)
-                            errors.Add("VariantSku cannot be used for a product this file is creating; import it first, then add its stock.");
+                        // A product this file creates may still be sold in variants —
+                        // the Variants sheet says so — and its ids only exist once it
+                        // has been written, so the SKU is checked against the plan.
+                        if (creating.Variants is { Count: > 0 } plannedVariants)
+                        {
+                            if (row.VariantSku is null)
+                            {
+                                var known = plannedVariants
+                                    .Where(v => v.Sku is not null)
+                                    .Select(v => v.Sku!)
+                                    .ToList();
+
+                                errors.Add(known.Count == 0
+                                    ? $"{Quoted(creating.Name ?? slug)} is being created with variants, but none of them has a Sku on the Variants sheet to address it by."
+                                    : $"{Quoted(creating.Name ?? slug)} is being created with variants; set VariantSku to one of: {string.Join(", ", known)}.");
+                            }
+                            else if (!plannedVariants.Any(v =>
+                                         string.Equals(v.Sku, row.VariantSku, StringComparison.OrdinalIgnoreCase)))
+                            {
+                                errors.Add($"The Variants sheet has no configuration with Sku {Quoted(row.VariantSku)} for {Quoted(slug)}.");
+                            }
+                        }
+                        else if (row.VariantSku is not null)
+                        {
+                            errors.Add("VariantSku cannot be used for a product this file is creating without a Variants sheet row; add one, or leave it blank.");
+                        }
                     }
                 }
             }
@@ -686,6 +1168,7 @@ public sealed class SellerProductExcelService : ISellerProductExcelService
         // depends on whether the row actually changes them, and that is not known
         // until the slug has been matched against the shop.
         row.ImageUrls = SplitImageUrls(sheet.ImageUrls);
+        row.ImageFiles = sheet.Images.ToList();
 
         if (errors.Count == 0)
             row.Action = ActionCreate;
@@ -752,23 +1235,114 @@ public sealed class SellerProductExcelService : ISellerProductExcelService
         PlannedRow row,
         CancellationToken cancellationToken)
     {
-        // A blank ImageUrls cell on an update means "leave the photos alone".
-        // Reading it as "delete every photo" would destroy uploads that the
-        // spreadsheet has no way to put back.
-        if (row.ImageUrls.Count == 0) return;
+        var urls = await ResolveImageUrlsAsync(row, cancellationToken);
+
+        // A blank ImageUrls cell and no pasted picture on an update means "leave the
+        // photos alone". Reading it as "delete every photo" would destroy uploads
+        // that the spreadsheet has no way to put back.
+        if (urls.Count == 0) return;
 
         await _products.UploadImagesAsync(
             ownerUserId,
             productId,
             new UploadSellerProductImagesRequest
             {
-                Images = BuildImageInputs(row.ImageUrls),
+                Images = BuildImageInputs(urls),
                 ReplaceExisting = true,
             },
             cancellationToken);
     }
 
-    private static CreateSellerProductRequest BuildCreateRequest(PlannedRow row) => new()
+    /// <summary>
+    /// The row's photos as URLs: the links it typed, then anything it pasted.
+    ///
+    /// Uploading happens here rather than while planning, so a preview stays a
+    /// read: a seller who looks at the plan and walks away has uploaded nothing.
+    /// The result is written back onto the row, because create and update each
+    /// ask for it and the picture must not be sent twice.
+    /// </summary>
+    private async Task<List<string>> ResolveImageUrlsAsync(
+        PlannedRow row,
+        CancellationToken cancellationToken)
+    {
+        if (row.ImageFiles.Count == 0) return row.ImageUrls;
+
+        var uploaded = new List<string>(row.ImageFiles.Count);
+        foreach (var file in row.ImageFiles)
+            uploaded.Add(await _images.SaveAsync(file, cancellationToken));
+
+        row.ImageUrls = [.. row.ImageUrls, .. uploaded];
+        row.ImageFiles = [];
+        return row.ImageUrls;
+    }
+
+    /// <summary>
+    /// The variants to write, with every pasted picture turned into a URL first.
+    /// Null when the file said nothing about this product's configurations.
+    /// </summary>
+    private async Task<List<SellerProductVariantInput>?> ResolveVariantInputsAsync(
+        PlannedRow row,
+        CancellationToken cancellationToken)
+    {
+        if (row.Variants is null) return null;
+
+        var inputs = new List<SellerProductVariantInput>(row.Variants.Count);
+
+        foreach (var variant in row.Variants)
+        {
+            if (variant.ImageUrl is null && variant.ImageFile is not null)
+                variant.ImageUrl = await _images.SaveAsync(variant.ImageFile, cancellationToken);
+
+            inputs.Add(new SellerProductVariantInput
+            {
+                VariantId = variant.VariantId,
+                Sku = variant.Sku,
+                // Left blank so the API derives "Pink / 256GB" — one place decides the format.
+                VariantName = null,
+                Attributes = variant.Attributes,
+                Price = variant.Price,
+                SalePrice = variant.SalePrice,
+                ImageUrl = variant.ImageUrl,
+                SortOrder = variant.SortOrder,
+                IsActive = variant.IsActive,
+            });
+        }
+
+        return inputs;
+    }
+
+    private static List<SellerProductVariantOptionInput>? BuildVariantOptions(PlannedRow row) =>
+        row.Variants is null
+            ? null
+            : row.VariantOptions
+                .Select(axis => new SellerProductVariantOptionInput
+                {
+                    Name = axis.Name,
+                    Values = axis.Values.ToList(),
+                })
+                .ToList();
+
+    private async Task<CreateSellerProductRequest> BuildCreateRequestAsync(
+        PlannedRow row,
+        CancellationToken cancellationToken)
+    {
+        var urls = await ResolveImageUrlsAsync(row, cancellationToken);
+        var variants = await ResolveVariantInputsAsync(row, cancellationToken);
+        return BuildCreateRequest(row, urls, variants);
+    }
+
+    private async Task<UpdateSellerProductRequest> BuildUpdateRequestAsync(
+        PlannedRow row,
+        CancellationToken cancellationToken)
+    {
+        var variants = await ResolveVariantInputsAsync(row, cancellationToken);
+        return BuildUpdateRequest(row, variants);
+    }
+
+    private static CreateSellerProductRequest BuildCreateRequest(
+        PlannedRow row,
+        IReadOnlyList<string> imageUrls,
+        List<SellerProductVariantInput>? variants) => new()
     {
         CategoryId = row.CategoryId!.Value,
         Name = row.Name!,
@@ -784,10 +1358,14 @@ public sealed class SellerProductExcelService : ISellerProductExcelService
         OriginCountry = row.OriginCountry,
         TagsJson = row.TagsJson,
         SpecsJson = row.SpecsJson,
-        Images = row.ImageUrls.Count == 0 ? null : BuildImageInputs(row.ImageUrls),
+        Images = imageUrls.Count == 0 ? null : BuildImageInputs(imageUrls),
+        VariantOptions = variants is null ? null : BuildVariantOptions(row),
+        Variants = variants,
     };
 
-    private static UpdateSellerProductRequest BuildUpdateRequest(PlannedRow row) => new()
+    private static UpdateSellerProductRequest BuildUpdateRequest(
+        PlannedRow row,
+        List<SellerProductVariantInput>? variants) => new()
     {
         CategoryId = row.CategoryId!.Value,
         Name = row.Name!,
@@ -803,6 +1381,10 @@ public sealed class SellerProductExcelService : ISellerProductExcelService
         OriginCountry = row.OriginCountry,
         TagsJson = row.TagsJson,
         SpecsJson = row.SpecsJson,
+        // Null leaves the product's configurations alone, which is what a file with
+        // no Variants sheet has to mean.
+        VariantOptions = variants is null ? null : BuildVariantOptions(row),
+        Variants = variants,
     };
 
     private static List<SellerProductImageInput> BuildImageInputs(IReadOnlyList<string> urls) =>
@@ -1004,13 +1586,19 @@ public sealed class SellerProductExcelService : ISellerProductExcelService
 
         foreach (var row in rows)
         {
-            if (row.ImageUrls.Count == 0) continue;
+            foreach (var file in row.ImageFiles)
+                ValidateSheetImage(file, "the product's photo", row.Errors);
 
-            if (row.ProductId is { } productId &&
+            if (row.ImageUrls.Count == 0 && row.ImageFiles.Count == 0) continue;
+
+            if (row.ImageFiles.Count == 0 &&
+                row.ProductId is { } productId &&
                 existing.TryGetValue(productId, out var current) &&
                 row.ImageUrls.SequenceEqual(current, StringComparer.Ordinal))
             {
                 // Unchanged, so an empty list here means "leave the photos alone".
+                // A pasted picture is never "unchanged": it is a photo the product
+                // does not have yet.
                 row.ImageUrls = [];
                 continue;
             }
@@ -1023,7 +1611,7 @@ public sealed class SellerProductExcelService : ISellerProductExcelService
                     row.Errors.Add($"An image URL exceeds {SellerProductConstants.MaxImageUrlLength} characters.");
             }
 
-            if (row.ImageUrls.Count > SellerProductConstants.MaxImagesPerProduct)
+            if (row.ImageUrls.Count + row.ImageFiles.Count > SellerProductConstants.MaxImagesPerProduct)
             {
                 row.Errors.Add(
                     $"A product can have at most {SellerProductConstants.MaxImagesPerProduct} images.");
@@ -1034,6 +1622,42 @@ public sealed class SellerProductExcelService : ISellerProductExcelService
                 row.Action = ActionError;
                 row.ProductId = null;
             }
+        }
+    }
+
+    /// <summary>
+    /// What can be said about a pasted picture without touching the network. The
+    /// upload itself waits for the import, so a preview never costs anything.
+    /// </summary>
+    private void ValidateSheetImage(SheetImage image, string what, List<string> errors)
+    {
+        if (!_images.IsConfigured)
+        {
+            errors.Add(
+                $"A picture is pasted on this row for {what}, but this server has no image host " +
+                "configured. Put an http(s) link in the cell instead.");
+            return;
+        }
+
+        if (image.Content.Length == 0)
+        {
+            errors.Add($"The picture pasted for {what} is empty.");
+            return;
+        }
+
+        if (image.Content.Length > _images.MaxBytes)
+        {
+            errors.Add(
+                $"The picture pasted for {what} is {image.Content.Length / 1024f / 1024f:0.#} MB; " +
+                $"the limit is {_images.MaxBytes / 1024 / 1024} MB.");
+            return;
+        }
+
+        if (!_images.AllowedExtensions.Contains(image.Extension))
+        {
+            errors.Add(
+                $"The picture pasted for {what} is a .{image.Extension} file. " +
+                $"Use one of: {string.Join(", ", _images.AllowedExtensions.OrderBy(e => e))}.");
         }
     }
 
@@ -1245,6 +1869,24 @@ public sealed class SellerProductExcelService : ISellerProductExcelService
         public List<string> Errors { get; } = [];
     }
 
+    /// <summary>One row of the Variants sheet, once it has been understood.</summary>
+    private sealed class PlannedVariant
+    {
+        public int RowNumber { get; init; }
+
+        /// <summary>The existing variant this row updates, if the product already has one.</summary>
+        public Guid? VariantId { get; set; }
+
+        public string? Sku { get; init; }
+        public Dictionary<string, string> Attributes { get; init; } = [];
+        public decimal Price { get; init; }
+        public decimal? SalePrice { get; init; }
+        public string? ImageUrl { get; set; }
+        public SheetImage? ImageFile { get; init; }
+        public bool IsActive { get; init; }
+        public int SortOrder { get; init; }
+    }
+
     private sealed class ImportPlan
     {
         public ImportPlan(List<PlannedRow> rows, List<string> warnings, List<PlannedStockRow> stockRows)
@@ -1273,7 +1915,10 @@ public sealed class SellerProductExcelService : ISellerProductExcelService
         /// Once a row has created a product, later rows with the same slug must
         /// update it rather than fail on the shop's unique slug index.
         /// </summary>
-        public void RegisterCreated(string slug, Guid productId)
+        public void RegisterCreated(
+            string slug,
+            Guid productId,
+            IReadOnlyList<SellerProductVariantDto>? variants = null)
         {
             foreach (var row in Rows)
             {
@@ -1285,7 +1930,21 @@ public sealed class SellerProductExcelService : ISellerProductExcelService
                     row.Action = ActionUpdate;
                 }
             }
+
+            foreach (var variant in variants ?? [])
+            {
+                if (variant.Sku is { Length: > 0 } sku)
+                    _createdVariants[Key(slug, sku)] = variant.VariantId;
+            }
         }
+
+        /// <summary>The id of a configuration this run created, addressed the way a stock row does.</summary>
+        public Guid? CreatedVariantIdFor(string slug, string sku) =>
+            _createdVariants.TryGetValue(Key(slug, sku), out var id) ? id : null;
+
+        private readonly Dictionary<string, Guid> _createdVariants = new(StringComparer.OrdinalIgnoreCase);
+
+        private static string Key(string slug, string sku) => $"{slug}|{sku}";
     }
 
     private sealed class PlannedRow
@@ -1309,6 +1968,20 @@ public sealed class SellerProductExcelService : ISellerProductExcelService
         public string? TagsJson { get; set; }
         public string? SpecsJson { get; set; }
         public List<string> ImageUrls { get; set; } = [];
+
+        /// <summary>Pictures pasted onto the row; uploaded during the import, not the preview.</summary>
+        public List<SheetImage> ImageFiles { get; set; } = [];
+
+        /// <summary>
+        /// Null when the file said nothing about this product's variants, which has to
+        /// stay different from an empty list: one leaves the configurations alone, the
+        /// other would delete them.
+        /// </summary>
+        public List<PlannedVariant>? Variants { get; set; }
+
+        /// <summary>The axes the variants are built from, in the order shoppers see them.</summary>
+        public List<ProductVariantJson.OptionAxis> VariantOptions { get; set; } = [];
+
         public List<string> Errors { get; } = [];
     }
 }

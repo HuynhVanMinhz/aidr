@@ -1,4 +1,4 @@
-using AIDR.Modules.SellerCenter.Abstractions;
+﻿using AIDR.Modules.SellerCenter.Abstractions;
 using AIDR.Modules.SellerCenter.Services;
 using AIDR.Shared.Dtos.Seller;
 using Xunit;
@@ -19,12 +19,13 @@ public class SellerProductImportTests
     private readonly FakeProductService _products;
     private readonly RecordingInventoryService _inventory = new();
     private readonly StubWorkbook _workbook = new();
+    private readonly StubImportImageStore _images = new();
     private readonly SellerProductExcelService _service;
 
     public SellerProductImportTests()
     {
         _products = new FakeProductService(_repository);
-        _service = new SellerProductExcelService(_repository, _products, _inventory, _workbook);
+        _service = new SellerProductExcelService(_repository, _products, _inventory, _workbook, _images);
     }
 
     private Task<SellerProductImportPreviewDto> Preview() =>

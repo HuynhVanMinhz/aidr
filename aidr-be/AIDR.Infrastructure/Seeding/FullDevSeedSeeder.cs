@@ -28,8 +28,14 @@ public static class FullDevSeedSeeder
         await CatalogRichSeeder.SeedAsync(db, contentRootPath, ct);
         steps.Add("catalog-rich");
 
+        await ElectronicsCatalogExpansionSeeder.SeedAsync(db, contentRootPath, ct);
+        steps.Add("catalog-expansion");
+
         await CatalogImagesSeeder.SeedAsync(db, contentRootPath, ct);
         steps.Add("catalog-images");
+
+        await CategoryIconsSeeder.SeedAsync(db, contentRootPath, ct);
+        steps.Add("category-icons");
 
         await InventoryLotsDemoSeeder.SeedAsync(db, contentRootPath, ct);
         steps.Add("inventory-lots");
