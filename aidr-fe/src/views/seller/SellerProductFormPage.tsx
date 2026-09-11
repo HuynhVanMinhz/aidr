@@ -11,6 +11,7 @@ import {
   PRODUCT_SPEC_SUGGESTIONS,
   PRODUCT_TAG_SUGGESTIONS,
   SELLER_PRODUCT_MAX_IMAGES,
+  SELLER_PRODUCT_MAX_IMAGE_URL,
   type SellerProductFormValues,
   type SellerProductStagedImage,
 } from '../../components/seller/sellerProductFormConstants';
@@ -29,7 +30,7 @@ import { useSellerProducts } from '../../hooks/useSellerProducts';
 import { useToast } from '../../hooks/useToast';
 import type { CategoryTreeNode } from '../../types/catalog';
 import type { SellerProductDetail } from '../../types/seller';
-import { visibleFieldErrors } from '../../utils/formValidation';
+import { tryValidateField, visibleFieldErrors } from '../../utils/formValidation';
 import {
   isCloudinaryConfigured,
   uploadProductImageToCloudinary,
@@ -46,10 +47,11 @@ import {
   detailToVariantDrafts,
   draftsToPayload,
   validateVariantDrafts,
+  variantDraftsSignature,
   type VariantDraft,
   type VariantOptionDraft,
 } from '../../utils/sellerProductVariants';
-import { slugFromName } from '../../utils/validators';
+import { slugFromName, validateImageUrl } from '../../utils/validators';
 
 type Mode = 'create' | 'edit';
 
@@ -135,6 +137,10 @@ export function SellerProductFormPage() {
   // Kept so an edit that never touches the variant editor can omit them from the payload,
   // which the API reads as "leave the stored variants alone".
   const [variantsTouched, setVariantsTouched] = useState(false);
+  // The variant grid as it was loaded, so an edit confined to it still enables Save.
+  const [initialVariantSignature, setInitialVariantSignature] = useState(() =>
+    variantDraftsSignature([], []),
+  );
   // Stock rides alongside the product form but is written through the inventory
   // service afterwards: a lot can only be received once the product has an id.
   const [stock, setStock] = useState<StockDelivery>(emptyStockDelivery());
@@ -150,6 +156,8 @@ export function SellerProductFormPage() {
   const [touched, setTouched] = useState<Partial<Record<SellerProductFormField, boolean>>>({});
   const [uploadingImage, setUploadingImage] = useState(false);
   const [imageUploadError, setImageUploadError] = useState<string | null>(null);
+  const [imageUrlInput, setImageUrlInput] = useState('');
+  const [imageUrlError, setImageUrlError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -170,6 +178,7 @@ export function SellerProductFormPage() {
         const drafts = detailToVariantDrafts(item);
         setVariantOptions(drafts.options);
         setVariantRows(drafts.rows);
+        setInitialVariantSignature(variantDraftsSignature(drafts.options, drafts.rows));
         setVariantsTouched(false);
         setCurrentStock(item.stockQuantity);
         // A delivery is per-save; reopening the product must not re-receive one.
@@ -217,6 +226,11 @@ export function SellerProductFormPage() {
     variantValidation.formError === null &&
     Object.keys(variantValidation.rowErrors).length === 0;
 
+  const variantsDirty = useMemo(
+    () => variantDraftsSignature(variantOptions, variantRows) !== initialVariantSignature,
+    [variantOptions, variantRows, initialVariantSignature],
+  );
+
   const canSubmit =
     canSubmitSellerProductForm(
       form,
@@ -226,6 +240,7 @@ export function SellerProductFormPage() {
       mode,
       errors,
       hasPendingStock,
+      variantsDirty,
     ) && variantsValid;
 
   const previewImage = images.find((i) => i.isPrimary)?.imageUrl ?? images[0]?.imageUrl ?? null;
@@ -306,6 +321,56 @@ export function SellerProductFormPage() {
       setUploadingImage(false);
       if (fileInputRef.current) fileInputRef.current.value = '';
     }
+  }
+
+  function addImageFromUrl() {
+    setImageUploadError(null);
+    setSubmitError(null);
+
+    const urlError = tryValidateField(() =>
+      validateImageUrl(imageUrlInput, SELLER_PRODUCT_MAX_IMAGE_URL),
+    );
+    if (urlError) {
+      setImageUrlError(urlError);
+      markTouched('images');
+      return;
+    }
+
+    const trimmed = imageUrlInput.trim();
+    if (images.some((img) => img.imageUrl === trimmed)) {
+      setImageUrlError('This image URL is already added.');
+      markTouched('images');
+      return;
+    }
+
+    if (images.length >= SELLER_PRODUCT_MAX_IMAGES) {
+      const message = `A product can have at most ${SELLER_PRODUCT_MAX_IMAGES} images.`;
+      setImageUrlError(message);
+      markTouched('images');
+      toast.error(message);
+      return;
+    }
+
+    setImages((prev) => {
+      const next = [
+        ...prev,
+        {
+          localId: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+          imageUrl: trimmed,
+          publicId: null,
+          sortOrder: prev.length,
+          isPrimary: false,
+        },
+      ];
+      if (!next.some((i) => i.isPrimary) && next.length > 0) {
+        next[0] = { ...next[0], isPrimary: true };
+      }
+      return next.map((img, index) => ({ ...img, sortOrder: index }));
+    });
+    setImageUrlInput('');
+    setImageUrlError(null);
+    markTouched('images');
+    toast.success('Image URL added.');
   }
 
   function setPrimary(localId: string) {
@@ -414,6 +479,7 @@ export function SellerProductFormPage() {
         mode,
         nextErrors,
         hasPendingStock,
+        variantsDirty,
       ) ||
       !variantsValid
     ) {
@@ -582,6 +648,43 @@ export function SellerProductFormPage() {
                   </div>
                 </div>
               </FormField>
+
+              <div className="mt-3">
+                <FormField
+                  label="Or paste image URL"
+                  htmlFor="product-image-url"
+                  error={imageUrlError ?? undefined}
+                >
+                  <div className="input-group">
+                    <input
+                      id="product-image-url"
+                      type="url"
+                      className="form-control"
+                      placeholder="https://example.com/image.jpg"
+                      value={imageUrlInput}
+                      disabled={uploadingImage || mutating}
+                      onChange={(e) => {
+                        setImageUrlInput(e.target.value);
+                        if (imageUrlError) setImageUrlError(null);
+                      }}
+                      onKeyDown={(ev) => {
+                        if (ev.key !== 'Enter') return;
+                        ev.preventDefault();
+                        if (uploadingImage || mutating || !imageUrlInput.trim()) return;
+                        addImageFromUrl();
+                      }}
+                    />
+                    <button
+                      type="button"
+                      className="btn btn-outline-primary"
+                      disabled={uploadingImage || mutating || !imageUrlInput.trim()}
+                      onClick={addImageFromUrl}
+                    >
+                      Add
+                    </button>
+                  </div>
+                </FormField>
+              </div>
 
               {images.length > 0 ? (
                 <div className="row g-2 mt-2">
@@ -916,6 +1019,16 @@ export function SellerProductFormPage() {
                 rowErrors={variantValidation.rowErrors}
                 formError={submitted || variantsTouched ? variantValidation.formError : null}
                 disabled={mutating || uploadingImage}
+                galleryImages={images.map((img) => img.imageUrl)}
+                onUploadImage={
+                  isCloudinaryConfigured()
+                    ? async (file) => {
+                        validateProductImageFile(file);
+                        const result = await uploadProductImageToCloudinary(file);
+                        return result.secureUrl;
+                      }
+                    : undefined
+                }
               />
             </div>
           </div>

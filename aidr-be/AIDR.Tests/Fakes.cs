@@ -1,4 +1,4 @@
-using AIDR.Modules.SellerCenter.Abstractions;
+﻿using AIDR.Modules.SellerCenter.Abstractions;
 using AIDR.Shared.Dtos.Discovery;
 using AIDR.Shared.Dtos.Seller;
 using AIDR.Shared.Exceptions;
@@ -89,6 +89,11 @@ internal sealed class FakeProductService : ISellerProductService
     public List<string> Created { get; } = [];
     public List<Guid> Updated { get; } = [];
 
+    /// <summary>The requests themselves, for tests about what the sheet turned into.</summary>
+    public List<CreateSellerProductRequest> CreateRequests { get; } = [];
+    public List<UpdateSellerProductRequest> UpdateRequests { get; } = [];
+    public List<UploadSellerProductImagesRequest> ImageUploads { get; } = [];
+
     public Task<SellerProductDetailDto> CreateAsync(
         Guid ownerUserId,
         CreateSellerProductRequest request,
@@ -99,6 +104,7 @@ internal sealed class FakeProductService : ISellerProductService
 
         var id = Guid.NewGuid();
         Created.Add(request.Slug!);
+        CreateRequests.Add(request);
 
         // Registered so a stock row pointing at this slug can resolve after create.
         _repository.Add(new SellerProductRecord
@@ -111,7 +117,29 @@ internal sealed class FakeProductService : ISellerProductService
             Status = "Pending",
         });
 
-        return Task.FromResult(new SellerProductDetailDto { ProductId = id, Slug = request.Slug! });
+        // The real service answers with the variants it wrote, ids and all; a stock
+        // row naming a SKU created by this same file has nothing else to go on.
+        var variants = (request.Variants ?? [])
+            .Select((v, index) => new SellerProductVariantDto
+            {
+                VariantId = Guid.NewGuid(),
+                Sku = v.Sku,
+                VariantName = string.Join(" / ", v.Attributes.Values),
+                Attributes = v.Attributes,
+                Price = v.Price,
+                SalePrice = v.SalePrice,
+                ImageUrl = v.ImageUrl,
+                SortOrder = index,
+                IsActive = v.IsActive,
+            })
+            .ToList();
+
+        return Task.FromResult(new SellerProductDetailDto
+        {
+            ProductId = id,
+            Slug = request.Slug!,
+            Variants = variants,
+        });
     }
 
     public Task<SellerProductDetailDto> UpdateAsync(
@@ -121,6 +149,7 @@ internal sealed class FakeProductService : ISellerProductService
         CancellationToken ct = default)
     {
         Updated.Add(productId);
+        UpdateRequests.Add(request);
         return Task.FromResult(new SellerProductDetailDto { ProductId = productId });
     }
 
@@ -132,8 +161,14 @@ internal sealed class FakeProductService : ISellerProductService
         throw new NotSupportedException();
 
     public Task<SellerProductDetailDto> UploadImagesAsync(
-        Guid ownerUserId, Guid productId, UploadSellerProductImagesRequest request, CancellationToken ct = default) =>
-        throw new NotSupportedException();
+        Guid ownerUserId,
+        Guid productId,
+        UploadSellerProductImagesRequest request,
+        CancellationToken ct = default)
+    {
+        ImageUploads.Add(request);
+        return Task.FromResult(new SellerProductDetailDto { ProductId = productId });
+    }
 
     public Task DeleteAsync(Guid ownerUserId, Guid productId, CancellationToken ct = default) =>
         throw new NotSupportedException();
@@ -188,18 +223,54 @@ internal sealed class RecordingInventoryService : ISellerInventoryService
 internal sealed class StubWorkbook : ISellerProductWorkbook
 {
     public List<SellerProductSheetRow> Products { get; } = [];
+    public List<SellerProductVariantSheetRow> Variants { get; } = [];
     public List<SellerInventorySheetRow> Inventory { get; } = [];
+
+    /// <summary>What the last export was asked to write, so a test can read it back.</summary>
+    public IReadOnlyList<SellerProductVariantSheetExport> WrittenVariants { get; private set; } = [];
 
     public SellerImportSheets Read(Stream stream) => new()
     {
         Products = Products,
+        Variants = Variants,
         Inventory = Inventory,
     };
 
     public byte[] WriteProducts(
         IReadOnlyList<SellerProductSheetExport> products,
+        IReadOnlyList<SellerProductVariantSheetExport> variants,
         IReadOnlyList<SellerInventorySheetExport> inventory,
-        IReadOnlyList<SellerCategoryChoice> categories) => [];
+        IReadOnlyList<SellerCategoryChoice> categories)
+    {
+        WrittenVariants = variants;
+        return [];
+    }
 
     public byte[] WriteTemplate(IReadOnlyList<SellerCategoryChoice> categories) => [];
+}
+
+/// <summary>
+/// Stands in for the image host. Records what it was asked to store and hands back
+/// a URL, so an import test never touches the network.
+/// </summary>
+internal sealed class StubImportImageStore : ISellerImportImageStore
+{
+    public bool IsConfigured { get; set; } = true;
+    public int MaxBytes { get; set; } = 5 * 1024 * 1024;
+    public IReadOnlyCollection<string> AllowedExtensions { get; set; } =
+        new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "png", "jpg", "jpeg", "webp" };
+
+    public List<SheetImage> Saved { get; } = [];
+
+    /// <summary>Set to make the upload itself fail, the way a rejected file would.</summary>
+    public string? FailWith { get; set; }
+
+    public Task<string> SaveAsync(SheetImage image, CancellationToken cancellationToken = default)
+    {
+        if (FailWith is not null)
+            throw new AppException(FailWith);
+
+        Saved.Add(image);
+        return Task.FromResult($"https://cdn.test/import/{Saved.Count}.{image.Extension}");
+    }
 }

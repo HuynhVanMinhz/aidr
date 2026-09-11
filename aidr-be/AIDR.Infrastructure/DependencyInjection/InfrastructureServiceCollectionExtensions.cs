@@ -79,6 +79,7 @@ public static class InfrastructureServiceCollectionExtensions
         services.Configure<PriceAlertOptions>(configuration.GetSection(PriceAlertOptions.SectionName));
         services.Configure<BuyerProtectionOptions>(configuration.GetSection(BuyerProtectionOptions.SectionName));
         services.Configure<ReviewDigestOptions>(configuration.GetSection(ReviewDigestOptions.SectionName));
+        services.Configure<CloudinaryOptions>(configuration.GetSection(CloudinaryOptions.SectionName));
 
         services.AddHttpClient<FptAiEkycClient>();
         services.AddHttpClient<GeminiEkycClient>();
@@ -102,6 +103,9 @@ public static class InfrastructureServiceCollectionExtensions
         services.AddScoped<IAdminOrderRepository, AdminOrderRepository>();
         services.AddScoped<ISellerProductRepository, SellerProductRepository>();
         services.AddSingleton<ISellerProductWorkbook, ClosedXmlSellerProductWorkbook>();
+        // Pictures pasted into an import sheet need a host before they can be saved
+        // as product photos; typed HttpClient so the upload has its own timeout.
+        services.AddHttpClient<ISellerImportImageStore, CloudinaryImportImageStore>();
         services.AddScoped<ISellerInventoryRepository, SellerInventoryRepository>();
         services.AddScoped<ISellerOrderRepository, SellerOrderRepository>();
         services.AddScoped<ISellerShopVoucherRepository, SellerShopVoucherRepository>();

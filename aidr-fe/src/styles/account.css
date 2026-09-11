@@ -354,7 +354,8 @@
 .buyer-order-thumb {
   width: 44px;
   height: 44px;
-  object-fit: cover;
+  object-fit: contain;
+  object-position: center;
   border-radius: 4px;
   border: 1px solid var(--divider-color, rgba(22, 24, 29, 0.12));
   flex-shrink: 0;
@@ -504,7 +505,8 @@
 .follow-shop-card__media img {
   width: 72px;
   height: 72px;
-  object-fit: cover;
+  object-fit: contain;
+  object-position: center;
   border-radius: 8px;
   background: var(--surface-muted, #f5f5f5);
 }
@@ -851,7 +853,8 @@
 .wishlist-card__image img {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
+  object-position: center;
   transition: transform 0.25s ease;
 }
 
@@ -1270,7 +1273,8 @@
 .return-item__thumb img {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
+  object-position: center;
   display: block;
 }
 
@@ -1828,7 +1832,8 @@
 .account-row__thumb img {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
+  object-position: center;
   display: block;
 }
 
@@ -2089,7 +2094,8 @@
 .shop-card__media img {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
+  object-position: center;
   display: block;
 }
 
@@ -2311,7 +2317,8 @@
 .order-line__thumb img {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
+  object-position: center;
   display: block;
 }
 

@@ -252,6 +252,11 @@ function PickStage({ busy, inputRef, onChoose, onFileChosen, onTemplate }: PickS
         The template carries the column list, your category ids and a sheet explaining each
         column. An exported file can be edited and imported straight back.
       </p>
+      <p className="text-muted fs-13 mt-2 mb-0">
+        The Variants sheet prices each configuration and gives it its own photo. For any photo
+        you can paste the picture straight onto the row instead of hunting for a link — it is
+        uploaded when you confirm the import, never while you are only previewing it.
+      </p>
     </div>
   );
 }

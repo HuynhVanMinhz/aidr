@@ -3,6 +3,23 @@
 namespace AIDR.Modules.SellerCenter.Abstractions;
 
 /// <summary>
+/// A picture the seller pasted into the sheet instead of typing a link.
+///
+/// It arrives as bytes because a workbook stores the file itself, not a URL; the
+/// import hands it to <see cref="ISellerImportImageStore"/> to become one.
+/// </summary>
+public sealed class SheetImage
+{
+    public required byte[] Content { get; init; }
+
+    /// <summary>Lower-case, no dot — "png", "jpg", "webp". Decides the upload's file name.</summary>
+    public required string Extension { get; init; }
+
+    /// <summary>Which sheet row the picture sits on, so an error can name it.</summary>
+    public int RowNumber { get; init; }
+}
+
+/// <summary>
 /// One row as it came out of the spreadsheet: every cell is still a string,
 /// because a seller's typo has to survive parsing long enough to be reported
 /// against the row it came from.
@@ -26,6 +43,9 @@ public sealed class SellerProductSheetRow
     public string? Tags { get; init; }
     public string? Specs { get; init; }
     public string? ImageUrls { get; init; }
+
+    /// <summary>Pictures pasted onto this row, in the order the sheet holds them.</summary>
+    public IReadOnlyList<SheetImage> Images { get; init; } = Array.Empty<SheetImage>();
 
     /// <summary>True when every cell was blank, so trailing rows can be dropped.</summary>
     public bool IsEmpty =>
@@ -58,6 +78,60 @@ public sealed class SellerProductSheetExport
     public string? Tags { get; init; }
     public string? Specs { get; init; }
     public string? ImageUrls { get; init; }
+}
+
+/// <summary>
+/// One variant as read from the Variants sheet.
+///
+/// Variants belong to the product the Products sheet declares on the same slug,
+/// which is what lets one file create a product and its configurations together.
+/// </summary>
+public sealed class SellerProductVariantSheetRow
+{
+    public int RowNumber { get; init; }
+
+    /// <summary>Which product this configuration belongs to. Matches the Products sheet slug.</summary>
+    public string? Slug { get; init; }
+
+    public string? Sku { get; init; }
+
+    /// <summary>The axes and their chosen values, e.g. "Color=Pink; Storage=256GB".</summary>
+    public string? Attributes { get; init; }
+
+    public string? Price { get; init; }
+    public string? SalePrice { get; init; }
+
+    /// <summary>An http(s) link. A picture pasted on the row is used when this is blank.</summary>
+    public string? ImageUrl { get; init; }
+
+    /// <summary>Blank means the variant is on sale.</summary>
+    public string? IsActive { get; init; }
+
+    /// <summary>Pictures pasted onto this row; the first one is the variant's photo.</summary>
+    public IReadOnlyList<SheetImage> Images { get; init; } = Array.Empty<SheetImage>();
+
+    /// <summary>An export row nobody touched still carries Slug and Product; that is not a variant to write.</summary>
+    public bool IsEmpty =>
+        string.IsNullOrWhiteSpace(Attributes) &&
+        string.IsNullOrWhiteSpace(Sku) &&
+        string.IsNullOrWhiteSpace(Price) &&
+        string.IsNullOrWhiteSpace(SalePrice) &&
+        string.IsNullOrWhiteSpace(ImageUrl) &&
+        Images.Count == 0;
+}
+
+/// <summary>One variant as written out to the Variants sheet.</summary>
+public sealed class SellerProductVariantSheetExport
+{
+    public string Slug { get; init; } = null!;
+    public string ProductName { get; init; } = null!;
+    public string? Sku { get; init; }
+    public string VariantName { get; init; } = null!;
+    public string Attributes { get; init; } = null!;
+    public decimal Price { get; init; }
+    public decimal? SalePrice { get; init; }
+    public string? ImageUrl { get; init; }
+    public bool IsActive { get; init; }
 }
 
 /// <summary>
@@ -106,11 +180,14 @@ public sealed class SellerInventorySheetExport
     public int OnHand { get; init; }
 }
 
-/// <summary>Both sheets of an uploaded workbook, read in a single pass.</summary>
+/// <summary>Every sheet of an uploaded workbook, read in a single pass.</summary>
 public sealed class SellerImportSheets
 {
     public IReadOnlyList<SellerProductSheetRow> Products { get; init; } =
         Array.Empty<SellerProductSheetRow>();
+
+    public IReadOnlyList<SellerProductVariantSheetRow> Variants { get; init; } =
+        Array.Empty<SellerProductVariantSheetRow>();
 
     public IReadOnlyList<SellerInventorySheetRow> Inventory { get; init; } =
         Array.Empty<SellerInventorySheetRow>();
@@ -137,10 +214,36 @@ public interface ISellerProductWorkbook
 
     byte[] WriteProducts(
         IReadOnlyList<SellerProductSheetExport> products,
+        IReadOnlyList<SellerProductVariantSheetExport> variants,
         IReadOnlyList<SellerInventorySheetExport> inventory,
         IReadOnlyList<SellerCategoryChoice> categories);
 
     byte[] WriteTemplate(IReadOnlyList<SellerCategoryChoice> categories);
+}
+
+/// <summary>
+/// Where a picture pasted into a spreadsheet ends up.
+///
+/// The catalogue stores photos as URLs, so an embedded image has to be given one
+/// before it can be saved. Kept behind a port: the import rules do not care which
+/// host serves the file, only that it comes back addressable.
+/// </summary>
+public interface ISellerImportImageStore
+{
+    /// <summary>
+    /// False when the deployment has no image host configured. The import says so
+    /// against the row instead of failing halfway through with a stack trace.
+    /// </summary>
+    bool IsConfigured { get; }
+
+    /// <summary>The largest picture worth accepting from a sheet.</summary>
+    int MaxBytes { get; }
+
+    /// <summary>Extensions this store accepts, lower-case and without the dot.</summary>
+    IReadOnlyCollection<string> AllowedExtensions { get; }
+
+    /// <summary>Uploads the picture and returns the URL it is served from.</summary>
+    Task<string> SaveAsync(SheetImage image, CancellationToken cancellationToken = default);
 }
 
 public interface ISellerProductExcelService

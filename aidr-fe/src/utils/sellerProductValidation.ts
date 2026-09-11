@@ -204,11 +204,17 @@ export function canSubmitSellerProductForm(
    * product's own fields moved.
    */
   hasPendingStock = false,
+  /**
+   * Same for the variant grid: giving the "Pink" variant its own photo changes nothing
+   * about the product's own fields, and Save has to notice it all the same.
+   */
+  hasVariantChanges = false,
 ): boolean {
   if (Object.keys(errors).length > 0) return false;
   if (
     !isSellerProductFormDirty(form, initial, images, initialImages, mode) &&
-    !hasPendingStock
+    !hasPendingStock &&
+    !hasVariantChanges
   ) {
     return false;
   }

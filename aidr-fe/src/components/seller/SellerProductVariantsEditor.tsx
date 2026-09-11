@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState, type ChangeEvent } from 'react';
 import { IconifyIcon } from '../admin/IconifyIcon';
 import { TagsField } from '../admin/TagsField';
 import { parseTagList, serializeTagList } from '../../utils/structuredJson';
@@ -23,6 +23,10 @@ type Props = {
   rowErrors: Record<string, string>;
   formError: string | null;
   disabled?: boolean;
+  /** The product's own photos, offered as the quickest source for a variant image. */
+  galleryImages?: string[];
+  /** Uploads one file and resolves to its URL. Omitted when uploading is unavailable. */
+  onUploadImage?: (file: File) => Promise<string>;
 };
 
 /**
@@ -45,9 +49,17 @@ export function SellerProductVariantsEditor({
   rowErrors,
   formError,
   disabled,
+  galleryImages = [],
+  onUploadImage,
 }: Props) {
   const [bulkPrice, setBulkPrice] = useState('');
   const [generateHint, setGenerateHint] = useState<string | null>(null);
+  // Which row is currently uploading, so only that row's controls lock up.
+  const [uploadingKey, setUploadingKey] = useState<string | null>(null);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  // One hidden input, retargeted at whichever row asked for it.
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const uploadTargetRef = useRef<string | null>(null);
 
   const expected = combinationCount(options);
   const enabled = options.length > 0;
@@ -90,6 +102,32 @@ export function SellerProductVariantsEditor({
 
   function patchRow(key: string, patch: Partial<VariantDraft>) {
     onRowsChange(rows.map((r) => (r.key === key ? { ...r, ...patch } : r)));
+  }
+
+  function pickImageFile(key: string) {
+    if (!onUploadImage) return;
+    setUploadError(null);
+    uploadTargetRef.current = key;
+    fileInputRef.current?.click();
+  }
+
+  async function handleImageFile(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    const key = uploadTargetRef.current;
+    event.target.value = '';
+    uploadTargetRef.current = null;
+    if (!file || !key || !onUploadImage) return;
+
+    setUploadingKey(key);
+    setUploadError(null);
+    try {
+      const url = await onUploadImage(file);
+      patchRow(key, { imageUrl: url });
+    } catch (err) {
+      setUploadError(err instanceof Error ? err.message : 'Image upload failed.');
+    } finally {
+      setUploadingKey(null);
+    }
   }
 
   function applyBulkPrice() {
@@ -227,6 +265,7 @@ export function SellerProductVariantsEditor({
               <thead className="bg-light-subtle">
                 <tr>
                   <th>Configuration</th>
+                  <th>Image</th>
                   <th>SKU</th>
                   <th>Price (VND)</th>
                   <th>Sale price</th>
@@ -245,6 +284,78 @@ export function SellerProductVariantsEditor({
                         {error && (
                           <span className="d-block text-danger fs-12 text-wrap">{error}</span>
                         )}
+                      </td>
+                      <td>
+                        {/* A colour variant that keeps the product's default photo is the
+                            usual complaint from shoppers, so the picture is edited right
+                            here: reuse one of the product's photos, or upload a new one. */}
+                        <div className="variant-image">
+                          {row.imageUrl.trim() ? (
+                            <img
+                              /* Remounts on a URL change, so a previous failed load stops
+                                 hiding a picture that now works. */
+                              key={row.imageUrl.trim()}
+                              src={row.imageUrl.trim()}
+                              alt=""
+                              className="variant-image__thumb"
+                              onError={(e) => {
+                                e.currentTarget.classList.add('is-broken');
+                              }}
+                            />
+                          ) : (
+                            <span className="variant-image__thumb variant-image__thumb--empty">
+                              <IconifyIcon icon="solar:gallery-outline" />
+                            </span>
+                          )}
+                          <div className="variant-image__controls">
+                            {galleryImages.length > 0 && (
+                              <select
+                                className="form-select form-select-sm"
+                                aria-label={`Product photo for ${variantLabel(options, row.attributes)}`}
+                                value={
+                                  galleryImages.indexOf(row.imageUrl.trim()) >= 0
+                                    ? String(galleryImages.indexOf(row.imageUrl.trim()))
+                                    : ''
+                                }
+                                disabled={disabled || uploadingKey === row.key}
+                                onChange={(e) =>
+                                  patchRow(row.key, {
+                                    imageUrl:
+                                      e.target.value === ''
+                                        ? ''
+                                        : (galleryImages[Number(e.target.value)] ?? ''),
+                                  })
+                                }
+                              >
+                                <option value="">None — falls back to the product photo</option>
+                                {galleryImages.map((url, i) => (
+                                  <option key={url} value={String(i)}>
+                                    Photo {i + 1}
+                                  </option>
+                                ))}
+                              </select>
+                            )}
+                            <input
+                              type="url"
+                              className="form-control form-control-sm"
+                              placeholder="Or paste an image URL"
+                              value={row.imageUrl}
+                              disabled={disabled || uploadingKey === row.key}
+                              onChange={(e) => patchRow(row.key, { imageUrl: e.target.value })}
+                            />
+                            {onUploadImage && (
+                              <button
+                                type="button"
+                                className="btn btn-sm btn-outline-secondary"
+                                disabled={disabled || uploadingKey !== null}
+                                onClick={() => pickImageFile(row.key)}
+                              >
+                                <IconifyIcon icon="solar:upload-outline" className="me-1" />
+                                {uploadingKey === row.key ? 'Uploading…' : 'Upload'}
+                              </button>
+                            )}
+                          </div>
+                        </div>
                       </td>
                       <td>
                         <input
@@ -316,6 +427,21 @@ export function SellerProductVariantsEditor({
             </table>
           </div>
 
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            className="d-none"
+            onChange={handleImageFile}
+          />
+
+          {uploadError && <p className="text-danger fs-13 mt-2 mb-0">{uploadError}</p>}
+
+          <p className="text-muted fs-13 mt-2 mb-0">
+            A variant with its own photo swaps the storefront gallery when a shopper picks it —
+            give each colour its picture. Variants left without one keep the product&apos;s
+            default photo.
+          </p>
           <p className="text-muted fs-13 mt-2 mb-0">
             With variants, the product&apos;s own base price becomes the cheapest variant, which
             is what the storefront shows as &ldquo;from&rdquo;. Stock for each configuration comes

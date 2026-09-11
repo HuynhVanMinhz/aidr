@@ -7,6 +7,7 @@ export const SELLER_PRODUCT_MAX_ORIGIN = 80;
 export const SELLER_PRODUCT_MAX_TAGS_JSON = 4000;
 export const SELLER_PRODUCT_MAX_SPECS_JSON = 8000;
 export const SELLER_PRODUCT_MAX_IMAGES = 20;
+export const SELLER_PRODUCT_MAX_IMAGE_URL = 512;
 export const SELLER_PRODUCT_DEFAULT_PAGE_SIZE = 20;
 
 export const SELLER_PRODUCT_CONDITIONS = ['New', 'LikeNew', 'Refurbished', 'Used'] as const;
