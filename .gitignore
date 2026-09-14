@@ -7,6 +7,10 @@
 !**/.env.example
 **/appsettings.*.local.json
 **/secrets.json
+infra/env/github_actions_deploy
+infra/env/github_actions_deploy.pub
+infra/env/github_actions_deploy_rsa
+infra/env/.env.vps
 
 # =========================
 # .NET / build
