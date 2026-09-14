@@ -1,43 +1,41 @@
 # AIDR — Solution: Kế hoạch deploy Production
 
-**Phạm vi:** hướng dẫn triển khai website AIDR lên môi trường production — kiến trúc, cấu hình từng thành phần, ước tính chi phí, checklist go-live.  
+**Phạm vi:** hướng dẫn triển khai website AIDR lên production với **VPS + Docker + NGINX + CI/CD (GitHub Actions)** — kiến trúc, cấu hình từng thành phần, runbook từng phase, ước tính chi phí, checklist go-live.  
 **Tham chiếu:** `architecture-aidr-be.md`, `architecture-aidr-fe.md`, `docker-compose.yml`, `docs/handover-run-src.md`, `docs/guide-payos-settlement-testing.md`.
 
 > **Lưu ý:** Giá dịch vụ cloud thay đổi theo thời điểm và khu vực. Các con số dưới đây là **ước tính tham khảo** (Q3–Q4 2025, quy đổi ~25.000 VND/USD). Luôn kiểm tra bảng giá chính thức trước khi mua.
+>
+> **Bắt đầu nhanh (làm theo từng bước):** [`docs/guide-deploy-vps-step-by-step.md`](guide-deploy-vps-step-by-step.md) — VPS all-in-one, **SQL Server trong Docker** (không bắt buộc Azure SQL).  
+> Tài liệu này (§1–§5) là kiến trúc + chi phí + CI/CD chi tiết.
 
 ---
 
 ## 1. Tổng quan kiến trúc Production
 
-### 1.1 Sơ đồ đề xuất (MVP → scale vừa)
+### 1.1 Sơ đồ đề xuất (MVP — VPS + Docker + NGINX)
 
 ```
                          ┌─────────────────────────────────────────┐
-                         │  Cloudflare (DNS + CDN + WAF + SSL)     │
+                         │  Cloudflare (DNS + optional CDN/WAF)    │
                          └──────────────────┬──────────────────────┘
-                                            │ HTTPS
+                                            │ HTTPS :443
+                                            ▼
+                         ┌─────────────────────────────────────────┐
+                         │  VPS — Docker Compose                   │
+                         │  NGINX (TLS + reverse proxy + FE dist)  │
+                         │  api · redis · keycloak · kc-postgres   │
+                         └──────────────────┬──────────────────────┘
               ┌─────────────────────────────┼─────────────────────────────┐
-              │                             │                             │
               ▼                             ▼                             ▼
-     www.aidr.example.com          api.aidr.example.com          auth.aidr.example.com
-     (Static FE — Pages/S3)        (NGINX → .NET API)            (Keycloak OIDC)
-              │                             │                             │
-              │                    ┌────────┴────────┐                    │
-              │                    │  Docker host    │                    │
-              │                    │  api + nginx    │                    │
-              │                    │  redis          │                    │
-              │                    │  keycloak       │                    │
-              │                    └────────┬────────┘                    │
-              │                             │                             │
-              └──────── upload ảnh ─────────┼─────────────────────────────┘
+     www / apex (static)           api ( /api + /hubs )          auth (Keycloak)
                                             │
               ┌─────────────────────────────┼─────────────────────────────┐
               ▼                             ▼                             ▼
-     SQL Server (managed)            Redis (managed hoặc          Dịch vụ bên thứ 3
-     Aiven / Azure SQL               container cùng host)         payOS · GHN · Groq
-                                                                    FPT.AI · SMTP · Google
+     SQL Server (managed)            Redis (trên VPS)            payOS · GHN · Groq
+     Azure SQL / tương đương                                   FPT.AI · SMTP · Cloudinary
 ```
 
+CI/CD: **GitHub Actions** build image API → **GHCR** → SSH VPS `compose pull/up`; build FE → rsync `dist/` → `nginx reload`.
 ### 1.2 Domain & subdomain gợi ý
 
 | Subdomain | Dịch vụ | Ghi chú |
@@ -52,10 +50,10 @@
 
 | Mô hình | Phù hợp | Ưu | Nhược |
 |---------|---------|-----|-------|
-| **A — Tách lớp (khuyến nghị)** | Go-live thật, traffic ổn định | FE CDN rẻ, DB managed, scale từng phần | Nhiều dịch vụ cần cấu hình |
-| **B — All-in-one VPS** | Demo / staging / ngân sách thấp | 1 máy chạy hết compose | Single point of failure; SQL container không phù hợp prod |
+| **A — VPS + Docker + NGINX + CI/CD (chuẩn vận hành)** | Go-live MVP / staging → prod | Một stack kiểm soát được: reverse proxy, container, pipeline | Single VPS = SPOF; cần tự backup/monitor |
+| **B — Tách lớp CDN** | Traffic lớn, FE global | FE trên Cloudflare Pages, API trên VPS | Nhiều điểm cấu hình hơn |
 
-Phần còn lại của tài liệu mô tả **Mô hình A** làm chuẩn; Mô hình B ghi chú ở §12.
+**Chuẩn làm việc hiện tại:** all-in-one VPS (`docker-compose.prod.yml`) — FE static + API + **SQL Server container** + Redis + Keycloak + NGINX. Azure SQL là tùy chọn khi cần backup/HA managed. CI/CD: GitHub Actions → GHCR → SSH deploy (làm sau khi deploy tay ổn).
 
 ---
 
@@ -652,63 +650,647 @@ Health endpoints để alert:
 
 ---
 
-## 5. Quy trình deploy (runbook)
+## 5. Plan triển khai chi tiết — VPS + Docker + NGINX + CI/CD
 
-### 5.1 Chuẩn bị môi trường
+Đây là **runbook vận hành chuẩn** cho AIDR. Mục tiêu: một VPS production ổn định, deploy tự động từ `main`, HTTPS, WebSocket SignalR hoạt động, không lộ secret.
 
-```mermaid
-flowchart LR
-    A[Provision DB] --> B[Run database.sql + scripts]
-    B --> C[Provision VPS + Redis]
-    C --> D[Deploy Keycloak + import realm]
-    D --> E[Build & push API image]
-    E --> F[Configure NGINX + SSL]
-    F --> G[Build FE + deploy Pages]
-    G --> H[Configure 3rd party webhooks]
-    H --> I[Smoke test + go-live]
+### 5.1 Kiến trúc mục tiêu trên VPS
+
+```
+Internet
+   │
+   ▼
+Cloudflare (DNS + proxy optional) ──► VPS :443 / :80
+                                          │
+                                    ┌─────▼─────┐
+                                    │   NGINX   │
+                                    │  (TLS)    │
+                                    └─────┬─────┘
+              ┌───────────────────────────┼───────────────────────────┐
+              │                           │                           │
+              ▼                           ▼                           ▼
+     www / apex                    api.<domain>                auth.<domain>
+     static FE (dist/)             /api → aidr-api:8080         → keycloak:8080
+     SPA fallback                  /hubs → WebSocket
+              │                           │
+              │                           ▼
+              │                      Redis :6379
+              │                           │
+              └───────────────────────────┼──► Azure SQL (managed, ngoài VPS)
+                                          │
+                                   payOS · GHN · Groq · FPT.AI · SMTP · Cloudinary
 ```
 
-### 5.2 Thứ tự triển khai
+| Container | Image | Port nội bộ | Public? |
+|-----------|-------|-------------|---------|
+| `nginx` | `nginx:1.27-alpine` | 80/443 | **Có** (host 80/443) |
+| `api` | `ghcr.io/<org>/aidr-api:<tag>` | 8080 | Không |
+| `redis` | `redis:7-alpine` | 6379 | Không |
+| `keycloak` | `quay.io/keycloak/keycloak:26.0` | 8080 | Không |
+| `kc-db` | `postgres:16-alpine` | 5432 | Không (chỉ Keycloak) |
 
-1. **Database:** tạo instance → chạy schema → tạo user app (least privilege).
-2. **Keycloak:** deploy → import realm production → cấu hình Google IdP → test login.
-3. **API:** deploy container với env production → verify `/api/health/ready`.
-4. **NGINX:** SSL + proxy `/api`, `/hubs`, `/auth` → test WebSocket (chat).
-5. **Frontend:** build với `.env.production` → deploy → test CORS + login flow.
-6. **Webhooks:**
-   - payOS: `confirm-webhook` + test 1 đơn nhỏ.
-   - GHN: test tạo vận đơn staging trước khi bật prod gateway.
-7. **Tắt dev endpoints:** xác nhận `ASPNETCORE_ENVIRONMENT=Production`.
-8. **Monitoring:** uptime check + log aggregation.
+**Không** publish `1433`/`6379`/`8080` ra internet. Chỉ NGINX lắng nghe public.
 
-### 5.3 CI/CD gợi ý (GitHub Actions)
+### 5.2 Spec VPS & phần mềm nền
+
+| Hạng mục | Staging | Production MVP |
+|----------|---------|----------------|
+| Provider | Contabo / Vultr / DigitalOcean / Lightsail / VNG | Cùng hoặc gần user VN |
+| Spec | 2 vCPU, 4 GB RAM, 40 GB SSD | **4 vCPU, 8 GB RAM, 80 GB SSD** |
+| OS | Ubuntu 24.04 LTS | Ubuntu 24.04 LTS |
+| Swap | 2 GB | 4 GB |
+| Firewall | UFW: 22 (SSH key only), 80, 443 | Giống + fail2ban |
+
+Cài trên VPS (một lần):
+
+```bash
+# Docker Engine + Compose plugin
+sudo apt update && sudo apt install -y ca-certificates curl ufw fail2ban
+# Cài Docker theo docs.docker.com (ubuntu) — không dùng snap nếu có thể
+sudo usermod -aG docker $USER
+
+# Xác nhận
+docker --version
+docker compose version
+```
+
+SSH: tắt password login, chỉ key; user deploy không dùng `root` cho pipeline (sudo hạn chế hoặc group `docker`).
+
+### 5.3 Layout thư mục trên VPS
+
+```text
+/opt/aidr/
+├── docker-compose.prod.yml
+├── .env                    # secrets — chmod 600, không git
+├── nginx/
+│   ├── nginx.conf
+│   └── conf.d/
+│       └── aidr.conf
+├── certbot/                # nếu dùng Let's Encrypt volume
+├── fe/                     # rsync/artifact dist/ từ CI
+│   └── dist/
+├── backups/                # dump DB / realm (nếu tự backup)
+└── scripts/
+    ├── deploy.sh
+    └── healthcheck.sh
+```
+
+Repo GitHub **không** chứa `.env` production. Chỉ chứa template: `docker-compose.prod.yml`, `infra/nginx/*`, workflow CI.
+
+### 5.4 `docker-compose.prod.yml` (mẫu)
+
+Đặt tại `/opt/aidr/docker-compose.prod.yml` (hoặc `infra/docker-compose.prod.yml` trong repo, copy lên VPS).
 
 ```yaml
-# Pseudocode pipeline
+services:
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: ["redis-server", "--requirepass", "${REDIS_PASSWORD}"]
+    volumes:
+      - redis_data:/data
+    networks: [aidr]
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  kc-db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: keycloak
+      POSTGRES_USER: keycloak
+      POSTGRES_PASSWORD: ${KC_DB_PASSWORD}
+    volumes:
+      - kc_pg_data:/var/lib/postgresql/data
+    networks: [aidr]
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.0
+    restart: unless-stopped
+    command: ["start", "--optimized"]
+    environment:
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://kc-db:5432/keycloak
+      KC_DB_USERNAME: keycloak
+      KC_DB_PASSWORD: ${KC_DB_PASSWORD}
+      KC_HOSTNAME: auth.${DOMAIN}
+      KC_PROXY_HEADERS: xforwarded
+      KC_HTTP_ENABLED: "true"
+      KEYCLOAK_ADMIN: ${KC_ADMIN_USER}
+      KEYCLOAK_ADMIN_PASSWORD: ${KC_ADMIN_PASSWORD}
+    depends_on: [kc-db]
+    networks: [aidr]
+
+  api:
+    image: ghcr.io/${GHCR_OWNER}/aidr-api:${API_IMAGE_TAG:-latest}
+    restart: unless-stopped
+    env_file: [.env]
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_URLS: http://+:8080
+      ConnectionStrings__Redis: redis:6379,password=${REDIS_PASSWORD},abortConnect=False
+      Caching__UseInMemory: "false"
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks: [aidr]
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/api/health/live"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 40s
+
+  nginx:
+    image: nginx:1.27-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+      - ./fe/dist:/var/www/aidr-fe:ro
+      - ./certbot/conf:/etc/letsencrypt:ro
+      - ./certbot/www:/var/www/certbot:ro
+    depends_on: [api, keycloak]
+    networks: [aidr]
+
+volumes:
+  redis_data:
+  kc_pg_data:
+
+networks:
+  aidr:
+    driver: bridge
+```
+
+Khác `docker-compose.yml` (dev):
+
+| Dev | Production |
+|-----|------------|
+| SQL Server container + Mailhog | Azure SQL + SMTP thật |
+| Keycloak `start-dev` | `start --optimized` + Postgres |
+| Build API local | Pull image từ GHCR |
+| FE Vite `:5173` | Static `dist/` qua NGINX |
+| Port API/Keycloak expose | Chỉ 80/443 |
+
+> Image API cần có `curl` trong stage final **hoặc** đổi healthcheck sang `wget`/dotnet — Dockerfile hiện tại không có curl; có thể healthcheck từ NGINX/host: `curl https://api.$DOMAIN/api/health/live`.
+
+### 5.5 NGINX production — cấu hình mẫu
+
+`nginx/nginx.conf` — worker + gzip + upstream:
+
+```nginx
+worker_processes auto;
+events { worker_connections 2048; }
+
+http {
+    include       /etc/nginx/mime.types;
+    default_type  application/octet-stream;
+    sendfile      on;
+    keepalive_timeout 65;
+    client_max_body_size 20m;
+
+    # Cloudflare real IP (nếu proxy cam)
+    # set_real_ip_from ...; real_ip_header CF-Connecting-IP;
+
+    upstream aidr_api { server api:8080; }
+    upstream aidr_keycloak { server keycloak:8080; }
+
+    include /etc/nginx/conf.d/*.conf;
+}
+```
+
+`nginx/conf.d/aidr.conf` — 3 server blocks:
+
+```nginx
+# --- Frontend (www + apex) ---
+server {
+    listen 443 ssl http2;
+    server_name www.aidr.example.com aidr.example.com;
+
+    ssl_certificate     /etc/letsencrypt/live/aidr.example.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/aidr.example.com/privkey.pem;
+
+    root /var/www/aidr-fe;
+    index index.html;
+
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+
+    location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg|woff2?)$ {
+        expires 7d;
+        add_header Cache-Control "public, immutable";
+    }
+
+    add_header X-Frame-Options "SAMEORIGIN" always;
+    add_header X-Content-Type-Options "nosniff" always;
+}
+
+# --- API + SignalR ---
+server {
+    listen 443 ssl http2;
+    server_name api.aidr.example.com;
+
+    ssl_certificate     /etc/letsencrypt/live/aidr.example.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/aidr.example.com/privkey.pem;
+
+    location /api/ {
+        proxy_pass http://aidr_api;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Correlation-Id $request_id;
+    }
+
+    location /hubs/ {
+        proxy_pass http://aidr_api;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_read_timeout 3600s;
+        proxy_send_timeout 3600s;
+        proxy_cache_bypass $http_upgrade;
+    }
+}
+
+# --- Keycloak ---
+server {
+    listen 443 ssl http2;
+    server_name auth.aidr.example.com;
+
+    ssl_certificate     /etc/letsencrypt/live/aidr.example.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/aidr.example.com/privkey.pem;
+
+    location / {
+        proxy_pass http://aidr_keycloak;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_buffer_size 128k;
+        proxy_buffers 4 256k;
+        proxy_busy_buffers_size 256k;
+    }
+}
+
+# HTTP → HTTPS + ACME challenge
+server {
+    listen 80;
+    server_name www.aidr.example.com aidr.example.com api.aidr.example.com auth.aidr.example.com;
+
+    location /.well-known/acme-challenge/ {
+        root /var/www/certbot;
+    }
+
+    location / {
+        return 301 https://$host$request_uri;
+    }
+}
+```
+
+Tham chiếu logic proxy từ `infra/nginx/nginx.conf` (dev) — production thêm TLS, SPA root, tách `server_name`.
+
+### 5.6 File `.env` trên VPS (không commit)
+
+```bash
+DOMAIN=aidr.example.com
+GHCR_OWNER=your-github-org-or-user
+API_IMAGE_TAG=latest
+
+REDIS_PASSWORD=<random-32>
+KC_DB_PASSWORD=<random-32>
+KC_ADMIN_USER=admin
+KC_ADMIN_PASSWORD=<strong>
+
+ConnectionStrings__AidrDb=Server=xxx.database.windows.net;Database=AIDR;User Id=aidr_app;Password=...;Encrypt=True;TrustServerCertificate=False;
+
+Jwt__SigningKey=<random-64-min>
+Jwt__Issuer=aidr-api
+Jwt__Audience=aidr-fe
+
+Keycloak__Authority=https://auth.aidr.example.com/realms/aidr
+Keycloak__Audience=aidr-api
+Keycloak__RequireHttpsMetadata=true
+Keycloak__BaseUrl=https://auth.aidr.example.com
+Keycloak__Realm=aidr
+Keycloak__FrontendClientId=aidr-fe
+
+Cors__Origins__0=https://www.aidr.example.com
+Cors__Origins__1=https://aidr.example.com
+
+# + Smtp__* PayOS__* Shipping__* Groq__* FptAi__* (xem §3.2)
+```
+
+`chmod 600 /opt/aidr/.env`.
+
+### 5.7 Phase 0 — Bootstrap (ngày 1)
+
+| # | Việc | Done khi |
+|---|------|----------|
+| 0.1 | Mua domain, tạo Cloudflare zone | DNS nameserver active |
+| 0.2 | Tạo VPS Ubuntu 24.04, gắn IP | SSH bằng key OK |
+| 0.3 | UFW: allow 22/80/443; enable | `ufw status` đúng |
+| 0.4 | Cài Docker + Compose | `docker compose version` |
+| 0.5 | Tạo `/opt/aidr`, user `deploy` trong group `docker` | Ghi được file |
+| 0.6 | A/AAAA: `www`, `@`, `api`, `auth` → IP VPS | `dig` trả đúng IP |
+| 0.7 | Tạo Azure SQL (hoặc DB managed) + user `aidr_app` | Firewall chỉ IP VPS |
+
+### 5.8 Phase 1 — Database schema (ngày 1–2)
+
+1. Mở Azure Data Studio / `sqlcmd` từ máy admin (IP whitelist tạm).
+2. Chạy `database.sql`.
+3. Chạy các script còn thiếu trong `scripts/` (settlement, shipping, seller-kyc…) theo thứ tự dependency.
+4. Tạo login app **least privilege** (không `sa`).
+5. **Không** chạy seed demo trên production.
+
+Smoke: kết nối từ VPS `docker run --rm mcr.microsoft.com/mssql-tools...` hoặc tạm test từ API sau khi lên.
+
+### 5.9 Phase 2 — Stack container lần đầu (ngày 2–3)
+
+```bash
+cd /opt/aidr
+# Điền .env, copy nginx config, tạo thư mục fe/dist (placeholder index.html)
+docker compose -f docker-compose.prod.yml pull
+docker compose -f docker-compose.prod.yml up -d redis kc-db
+# Đợi healthy
+docker compose -f docker-compose.prod.yml up -d keycloak
+# Import/cấu hình realm aidr (Admin console qua SSH tunnel lần đầu, hoặc volume import)
+docker compose -f docker-compose.prod.yml up -d api nginx
+```
+
+Keycloak production checklist:
+
+- [ ] Client `aidr-fe`: redirect `https://www.<domain>/*`, web origin đúng.
+- [ ] Google IdP + redirect URI Google Console.
+- [ ] `sslRequired` = external/all.
+- [ ] Đổi mật khẩu admin; không mở port Keycloak ra ngoài.
+
+Smoke API (sau SSL hoặc tạm HTTP nội bộ):
+
+```bash
+curl -fsS https://api.<domain>/api/health/live
+curl -fsS https://api.<domain>/api/health/ready
+```
+
+### 5.10 Phase 3 — SSL (Let's Encrypt hoặc Cloudflare Origin)
+
+**Option 1 — Certbot (khuyến nghị nếu origin direct):**
+
+```bash
+# Lần đầu: dùng nginx tạm chỉ serve ACME, hoặc certbot standalone dừng nginx ngắn
+docker run --rm -v /opt/aidr/certbot/conf:/etc/letsencrypt \
+  -v /opt/aidr/certbot/www:/var/www/certbot \
+  -p 80:80 certbot/certbot certonly --standalone \
+  -d aidr.example.com -d www.aidr.example.com \
+  -d api.aidr.example.com -d auth.aidr.example.com \
+  --email ops@aidr.example.com --agree-tos
+```
+
+Renew: cron / systemd timer gọi `certbot renew` + `docker compose exec nginx nginx -s reload`.
+
+**Option 2 — Cloudflare Full (Strict) + Origin Certificate:** tạo Origin Cert trên CF, mount vào NGINX — không cần mở port 80 cho ACME nếu CF proxy cam.
+
+### 5.11 Phase 4 — Frontend build & serve (ngày 3)
+
+Trên CI hoặc local (một lần trước khi bật pipeline):
+
+```bash
+cd aidr-fe
+cp .env.example .env.production
+# Điền VITE_* trỏ https://api... / https://auth... / https://www...
+npm ci && npm run build
+rsync -az --delete dist/ deploy@VPS:/opt/aidr/fe/dist/
+docker compose -f /opt/aidr/docker-compose.prod.yml exec nginx nginx -s reload
+```
+
+SPA: mọi path không phải file → `index.html` (đã có `try_files` ở §5.5).
+
+### 5.12 Phase 5 — Tích hợp bên thứ 3 & go-live (ngày 4–5)
+
+| Thứ tự | Việc |
+|--------|------|
+| 1 | payOS production keys + webhook URL + `confirm-webhook` |
+| 2 | GHN production gateway + webhook token |
+| 3 | SMTP thật (tắt Mailhog) |
+| 4 | Cloudinary preset + `FptAi__AllowedImageHosts` |
+| 5 | Groq / FPT.AI: tắt mock |
+| 6 | UptimeRobot: probe `https://api.../api/health/ready` mỗi 5 phút |
+| 7 | Smoke E2E: đăng ký/login → browse → cart → checkout → webhook |
+
+### 5.13 Phase 6 — CI/CD (GitHub Actions)
+
+#### Biến & secrets trên GitHub repo
+
+| Name | Loại | Dùng cho |
+|------|------|----------|
+| `GHCR` | Packages (builtin `GITHUB_TOKEN`) | Push image |
+| `VPS_HOST` | Variable | IP/hostname |
+| `VPS_USER` | Variable | `deploy` |
+| `VPS_SSH_KEY` | Secret | Private key |
+| `VITE_API_BASE_URL` … | Variables/Secrets | Build FE |
+| `API_IMAGE_NAME` | Variable | `ghcr.io/org/aidr-api` |
+
+#### Workflow đề xuất — `.github/workflows/deploy-production.yml`
+
+```yaml
+name: Deploy production
+
 on:
   push:
     branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: production-deploy
+  cancel-in-progress: false
 
 jobs:
   build-api:
-    - docker build → push GHCR/ACR
-    - ssh deploy VPS: docker compose pull && up -d api
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      image_tag: ${{ steps.meta.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Image tag
+        id: meta
+        run: echo "tag=${GITHUB_SHA::12}" >> "$GITHUB_OUTPUT"
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: docker/build-push-action@v6
+        with:
+          context: ./aidr-be
+          file: ./aidr-be/AIDR.Api/Dockerfile
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository_owner }}/aidr-api:${{ steps.meta.outputs.tag }}
+            ghcr.io/${{ github.repository_owner }}/aidr-api:latest
 
   build-fe:
-    - npm ci && npm run build
-    - deploy to Cloudflare Pages (wrangler/pages-action)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: aidr-fe/package-lock.json
+      - working-directory: aidr-fe
+        run: npm ci
+      - working-directory: aidr-fe
+        env:
+          VITE_API_BASE_URL: ${{ vars.VITE_API_BASE_URL }}
+          VITE_SIGNALR_HUB_URL: ${{ vars.VITE_SIGNALR_HUB_URL }}
+          VITE_KEYCLOAK_URL: ${{ vars.VITE_KEYCLOAK_URL }}
+          VITE_KEYCLOAK_REALM: ${{ vars.VITE_KEYCLOAK_REALM }}
+          VITE_KEYCLOAK_CLIENT_ID: ${{ vars.VITE_KEYCLOAK_CLIENT_ID }}
+          VITE_AUTH_GOOGLE_REDIRECT_URI: ${{ vars.VITE_AUTH_GOOGLE_REDIRECT_URI }}
+          VITE_CLOUDINARY_CLOUD_NAME: ${{ vars.VITE_CLOUDINARY_CLOUD_NAME }}
+          VITE_CLOUDINARY_UPLOAD_PRESET: ${{ secrets.VITE_CLOUDINARY_UPLOAD_PRESET }}
+        run: npm run build
+      - uses: actions/upload-artifact@v4
+        with:
+          name: fe-dist
+          path: aidr-fe/dist
+          retention-days: 7
+
+  deploy:
+    needs: [build-api, build-fe]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: fe-dist
+          path: dist
+
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.VPS_SSH_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -H ${{ vars.VPS_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Login GHCR on VPS & pull API
+        env:
+          TAG: ${{ needs.build-api.outputs.image_tag }}
+        run: |
+          ssh ${{ vars.VPS_USER }}@${{ vars.VPS_HOST }} bash -s << EOF
+            set -euo pipefail
+            echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+            cd /opt/aidr
+            export API_IMAGE_TAG=$TAG
+            # ghi tag vào .env hoặc override
+            sed -i "s/^API_IMAGE_TAG=.*/API_IMAGE_TAG=$TAG/" .env || echo "API_IMAGE_TAG=$TAG" >> .env
+            docker compose -f docker-compose.prod.yml pull api
+            docker compose -f docker-compose.prod.yml up -d api
+          EOF
+
+      - name: Rsync FE + reload NGINX
+        run: |
+          rsync -az --delete -e ssh dist/ ${{ vars.VPS_USER }}@${{ vars.VPS_HOST }}:/opt/aidr/fe/dist/
+          ssh ${{ vars.VPS_USER }}@${{ vars.VPS_HOST }} \
+            'docker compose -f /opt/aidr/docker-compose.prod.yml exec -T nginx nginx -s reload'
+
+      - name: Smoke test
+        run: |
+          sleep 8
+          curl -fsS "${{ vars.VITE_API_BASE_URL }}/health/live"
+          curl -fsS "${{ vars.VITE_API_BASE_URL }}/health/ready"
 ```
 
-**Chi phí CI:** GitHub Actions free tier **2.000 phút/tháng** — đủ cho repo nhỏ (**$0**).
+**Ghi chú triển khai CI:**
 
-### 5.4 Rollback
+1. Package GHCR của repo cần **public** hoặc VPS login bằng PAT/`GITHUB_TOKEN` (workflow trên đã login).
+2. Image API Dockerfile: nếu healthcheck trong compose dùng `curl`, bổ sung `curl` vào stage final hoặc bỏ healthcheck container, chỉ smoke từ CI.
+3. Nên tách workflow `ci.yml` (PR: build + test) và `deploy-production.yml` (chỉ `main` / manual).
+4. **Chi phí CI:** GitHub Actions free ~2.000 phút/tháng — đủ MVP (**$0**).
 
-| Thành phần | Cách rollback |
-|------------|---------------|
-| API | Deploy lại image tag trước (`docker compose up` với tag cũ) |
-| FE | Cloudflare Pages → rollback deployment trước |
-| DB | Point-in-time restore (Azure) — **cẩn thận data loss** |
-| Keycloak | Backup realm export trước mỗi thay đổi |
+#### Script `/opt/aidr/scripts/deploy.sh` (deploy tay khi CI down)
+
+```bash
+#!/usr/bin/env bash
+set -euo pipefail
+cd /opt/aidr
+TAG="${1:-latest}"
+sed -i "s/^API_IMAGE_TAG=.*/API_IMAGE_TAG=${TAG}/" .env
+docker compose -f docker-compose.prod.yml pull api
+docker compose -f docker-compose.prod.yml up -d api
+docker compose -f docker-compose.prod.yml exec -T nginx nginx -s reload
+curl -fsS "https://api.${DOMAIN}/api/health/ready"
+echo "Deployed API_IMAGE_TAG=${TAG}"
+```
+
+### 5.14 Luồng deploy hàng ngày (sau khi CI bật)
+
+```mermaid
+flowchart LR
+    A[Push main] --> B[Build API image]
+    A --> C[Build FE dist]
+    B --> D[Push GHCR]
+    D --> E[SSH: pull + up api]
+    C --> F[rsync dist → VPS]
+    F --> G[nginx reload]
+    E --> H[Smoke /health]
+    G --> H
+    H --> I{OK?}
+    I -->|Yes| J[Done]
+    I -->|No| K[Rollback tag cũ]
+```
+
+Quy ước tag: **git SHA 12 ký tự** để rollback chính xác; `latest` chỉ tiện tay.
+
+### 5.15 Rollback
+
+| Thành phần | Cách |
+|------------|------|
+| API | `API_IMAGE_TAG=<sha-cũ>` → `docker compose pull api && up -d api` |
+| FE | Giữ artifact CI 7 ngày hoặc git checkout SHA cũ → build → rsync lại |
+| NGINX config | Giữ bản `aidr.conf.bak` trước khi sửa; `nginx -t` rồi reload |
+| DB | Azure PITR — chỉ khi migration lỗi; **không** rollback schema tùy tiện |
+| Keycloak | Export realm trước mọi đổi IdP/client |
+
+### 5.16 Lịch triển khai gợi ý (2 tuần)
+
+| Ngày | Việc |
+|------|------|
+| 1 | VPS + Docker + DNS + UFW (§5.7) |
+| 2 | Azure SQL + schema (§5.8) |
+| 3 | Compose: Redis, Keycloak, API, NGINX HTTP (§5.9) |
+| 4 | SSL + domain HTTPS (§5.10) |
+| 5 | FE `dist` + CORS + login smoke (§5.11) |
+| 6–7 | Keycloak Google + realm production |
+| 8–9 | payOS / GHN / SMTP staging→prod keys |
+| 10 | GitHub Actions deploy pipeline (§5.13) |
+| 11 | Staging full E2E trên subdomain `staging.*` (nếu có) |
+| 12 | Production smoke + monitoring |
+| 13–14 | Buffer fix bug / go-live |
+
+### 5.17 Staging trên cùng pattern
+
+Tách VPS nhỏ **hoặc** cùng VPS khác project name:
+
+- Compose file: `docker-compose.staging.yml`
+- Domain: `staging.`, `api.staging.`, `auth.staging.`
+- DB instance riêng; payOS **sandbox**; `Groq__UseMock` / `FptAi__UseMock` tùy ý
+- Workflow: deploy khi push `develop` / tag `staging-*`
 
 ---
 
@@ -716,15 +1298,17 @@ jobs:
 
 | Mục | Hành động |
 |-----|-----------|
-| Secrets | Env vars / Azure Key Vault / Docker secrets — không commit |
-| `appsettings.json` | Xóa/rotate mọi key dev đã lộ trong repo |
-| DB | User riêng, firewall IP, TLS |
-| Keycloak admin | Password mạnh, không expose port 8080 public (chỉ qua NGINX) |
+| Secrets | `.env` trên VPS + GitHub Secrets — không commit |
+| SSH | Key only, disable password, optionally allowlist IP |
+| `appsettings.json` | Không dùng secret dev; rotate key đã lộ trong repo |
+| DB | User riêng, firewall chỉ IP VPS, TLS |
+| Keycloak admin | Password mạnh; chỉ qua `auth.` + IP restrict admin nếu được |
+| Ports | Không expose 1433/6379/8080 |
 | CORS | Whitelist đúng domain FE |
-| Rate limit | Login, AI endpoints (architecture §8) |
-| payOS webhook | Verify checksum; chỉ HTTPS |
-| GHN webhook | Verify `WebhookToken` |
-| Headers | HSTS, CSP, X-Frame-Options qua Cloudflare/NGINX |
+| Rate limit | Login, AI endpoints |
+| payOS / GHN webhook | Verify checksum / token; chỉ HTTPS |
+| Headers | HSTS, X-Frame-Options, nosniff qua NGINX/Cloudflare |
+| Image | Pull theo digest/tag SHA; không chạy `:latest` mù trên prod lâu dài |
 
 ---
 
@@ -738,26 +1322,20 @@ jobs:
 | Groq / FPT.AI | Mock hoặc key riêng | Key production, quota monitor |
 | DB | Instance riêng | Instance riêng — **không share** |
 | Seed data | `seed-all` OK | **Không seed** |
+| CI branch | `develop` | `main` |
 
 ---
 
-## 8. Mô hình B — All-in-one VPS (ngân sách tối thiểu)
+## 8. Biến thể — FE trên Cloudflare Pages
 
-Chạy gần như `docker-compose.yml` hiện tại trên 1 VPS 8 GB:
+Nếu sau này tách FE khỏi VPS (tiết kiệm băng thông, CDN global):
 
-```bash
-# Chỉnh compose: ASPNETCORE_ENVIRONMENT=Production, connection string external DB
-docker compose up -d --build
-```
+1. Giữ VPS chỉ cho `api` + `auth` + Redis + Keycloak + NGINX (không serve `dist`).
+2. Cloudflare Pages build `aidr-fe` từ Git; env `VITE_*` trong Pages settings.
+3. Workflow CI: bỏ bước rsync FE; chỉ deploy API image.
+4. DNS `www` → Pages; `api`/`auth` → VPS.
 
-| Thành phần | Ghi chú |
-|------------|---------|
-| SQL Server container | Chấp nhận được cho demo; prod nên managed DB |
-| Keycloak `start-dev` | **Đổi** sang `start` + DB riêng |
-| Mailhog | **Bỏ** — dùng SMTP thật |
-| FE | Build `dist/` serve qua NGINX cùng máy |
-
-**Chi phí:** **~$24–48/tháng** (VPS 8 GB) + domain + phí giao dịch.
+Chi phí FE: **$0** (Pages Free). VPS có thể hạ xuống 4 GB.
 
 ---
 
@@ -768,6 +1346,8 @@ docker compose up -d --build
 - [ ] Review số dư tài khoản chi hộ payOS trước mỗi đợt payout.
 - [ ] Rotate secrets định kỳ (90 ngày).
 - [ ] Backup restore drill hàng quý.
+- [ ] Certbot renew hoạt động; test `nginx -t` sau renew.
+- [ ] Giữ lại ít nhất 3 image tag API gần nhất trên GHCR để rollback.
 
 ---
 
@@ -782,9 +1362,13 @@ docker compose up -d --build
 | `docs/solution-escrow-settlement.md` | Settlement & payout |
 | `docs/solution-auto-fulfillment-shipping.md` | GHN integration |
 | `docs/solution-seller-onboarding-ekyc.md` | FPT.AI eKYC |
-| `docker-compose.yml` | Reference stack dev |
-| `infra/nginx/nginx.conf` | NGINX routing |
+| `docs/guide-deploy-vps-step-by-step.md` | **Runbook từng bước** deploy VPS |
+| `docker-compose.yml` | Stack **dev** |
+| `docker-compose.prod.yml` | Stack **production** (SQL trên VPS) |
+| `infra/nginx/nginx.prod*.conf` | NGINX prod (HTTP bootstrap + HTTPS) |
+| `infra/env/prod.env.example` | Template `.env` production |
 | `infra/keycloak/aidr-realm.json` | Realm template |
+| `aidr-be/AIDR.Api/Dockerfile` | Image API cho GHCR |
 
 ---
 
@@ -809,3 +1393,14 @@ VITE_CLOUDINARY_UPLOAD_PRESET=your_unsigned_preset
 | GHN shipping webhook | `https://api.<domain>/api/shipping/ghn/webhook` |
 | Google OAuth redirect | `https://auth.<domain>/realms/aidr/broker/google/endpoint` |
 | payOS return | `https://www.<domain>/order-received` |
+
+## 13. Phụ lục — Checklist go-live ngắn
+
+- [ ] `ASPNETCORE_ENVIRONMENT=Production` — không gọi được `/api/dev/*`
+- [ ] HTTPS mọi subdomain; HTTP redirect 301
+- [ ] `/api/health/live` + `/ready` = 200
+- [ ] Login email + Google; SignalR chat/notification OK
+- [ ] Checkout + webhook payOS xác nhận đơn
+- [ ] CORS chỉ domain FE
+- [ ] Backup DB bật; rollback API đã thử 1 lần
+- [ ] CI deploy từ `main` thành công ít nhất 1 lần
