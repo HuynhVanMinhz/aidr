@@ -330,13 +330,11 @@ Mở `https://aidr.example.com` trên trình duyệt.
 
 ---
 
-## Bước 13 — CI/CD (làm sau khi tay đã chạy ổn)
+## Bước 13 — CI/CD (GitHub Actions)
 
-1. Tạo GitHub Actions workflow: build Dockerfile API → push GHCR → SSH VPS `compose pull api && up -d api`.
-2. Job FE: `npm run build` → `rsync` vào `/opt/aidr/fe-dist/`.
-3. Secrets: `VPS_HOST`, `VPS_SSH_KEY`, `GITHUB_TOKEN` / PAT GHCR.
+Xem hướng dẫn đầy đủ: [`docs/guide-github-actions-deploy.md`](guide-github-actions-deploy.md).
 
-Chi tiết mẫu YAML: `docs/solution-production-deployment.md` §5.13.
+Workflow: `.github/workflows/deploy-production.yml` — push `main` → build API/FE → deploy VPS.
 
 ---
 

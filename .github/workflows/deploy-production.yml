@@ -1,0 +1,152 @@
+name: Deploy production
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: production-deploy
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository_owner }}/aidr-api
+
+jobs:
+  build-api:
+    runs-on: ubuntu-latest
+    outputs:
+      image: ${{ steps.meta.outputs.image }}
+      tag: ${{ steps.meta.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Image tags
+        id: meta
+        run: |
+          TAG="${GITHUB_SHA::12}"
+          IMAGE="${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}"
+          echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
+          echo "image=${IMAGE}" >> "$GITHUB_OUTPUT"
+
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: docker/build-push-action@v6
+        with:
+          context: ./aidr-be
+          file: ./aidr-be/AIDR.Api/Dockerfile
+          push: true
+          tags: |
+            ${{ steps.meta.outputs.image }}:${{ steps.meta.outputs.tag }}
+            ${{ steps.meta.outputs.image }}:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  build-fe:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: aidr-fe/package-lock.json
+
+      - name: Install & build
+        working-directory: aidr-fe
+        env:
+          VITE_API_BASE_URL: /api
+          VITE_SIGNALR_HUB_URL: /hubs
+          VITE_KEYCLOAK_URL: https://aidr.id.vn/auth
+          VITE_KEYCLOAK_REALM: aidr
+          VITE_KEYCLOAK_CLIENT_ID: aidr-fe
+          VITE_AUTH_GOOGLE_REDIRECT_URI: https://aidr.id.vn/auth/callback
+          VITE_CLOUDINARY_CLOUD_NAME: ${{ vars.VITE_CLOUDINARY_CLOUD_NAME }}
+          VITE_CLOUDINARY_UPLOAD_PRESET: ${{ vars.VITE_CLOUDINARY_UPLOAD_PRESET }}
+        run: |
+          export VITE_CLOUDINARY_CLOUD_NAME="${VITE_CLOUDINARY_CLOUD_NAME:-lfml2w9a}"
+          export VITE_CLOUDINARY_UPLOAD_PRESET="${VITE_CLOUDINARY_UPLOAD_PRESET:-aidr_unsigned}"
+          npm ci
+          npm run build
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: fe-dist
+          path: aidr-fe/dist
+          retention-days: 3
+
+  deploy:
+    needs: [build-api, build-fe]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: fe-dist
+          path: fe-dist
+
+      - name: Setup SSH
+        env:
+          VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$VPS_SSH_KEY" > ~/.ssh/id_ed25519
+          # Support RSA keys pasted as VPS_SSH_KEY as well
+          if grep -q "BEGIN.*RSA PRIVATE KEY" ~/.ssh/id_ed25519; then
+            mv ~/.ssh/id_ed25519 ~/.ssh/id_rsa
+            chmod 600 ~/.ssh/id_rsa
+            KEY_FILE=~/.ssh/id_rsa
+          else
+            chmod 600 ~/.ssh/id_ed25519
+            KEY_FILE=~/.ssh/id_ed25519
+          fi
+          echo "KEY_FILE=$KEY_FILE" >> "$GITHUB_ENV"
+          ssh-keyscan -H "${{ vars.VPS_HOST }}" >> ~/.ssh/known_hosts
+
+      - name: Sync infra + FE to VPS
+        env:
+          VPS: ${{ vars.VPS_USER }}@${{ vars.VPS_HOST }}
+        run: |
+          rsync -az --delete \
+            -e "ssh -i $KEY_FILE -o IdentitiesOnly=yes" \
+            fe-dist/ "$VPS:/opt/aidr/fe-dist/"
+          rsync -az \
+            -e "ssh -i $KEY_FILE -o IdentitiesOnly=yes" \
+            docker-compose.prod.yml "$VPS:/opt/aidr/"
+          rsync -az \
+            -e "ssh -i $KEY_FILE -o IdentitiesOnly=yes" \
+            infra/nginx/nginx.prod.conf "$VPS:/opt/aidr/infra/nginx/"
+          rsync -az \
+            -e "ssh -i $KEY_FILE -o IdentitiesOnly=yes" \
+            scripts/vps-ci-deploy.sh "$VPS:/opt/aidr/scripts/"
+
+      - name: Pull API image & restart stack
+        env:
+          VPS: ${{ vars.VPS_USER }}@${{ vars.VPS_HOST }}
+          IMAGE: ${{ needs.build-api.outputs.image }}
+          TAG: ${{ needs.build-api.outputs.tag }}
+          GHCR_USER: ${{ github.actor }}
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          ssh -i "$KEY_FILE" -o IdentitiesOnly=yes "$VPS" \
+            "bash /opt/aidr/scripts/vps-ci-deploy.sh '$IMAGE' '$TAG' '$GHCR_USER' '$GHCR_TOKEN'"
+
+      - name: Smoke test
+        run: |
+          sleep 10
+          curl -fsS "https://aidr.id.vn/api/health/live"
+          curl -fsS "https://aidr.id.vn/api/health/ready"
+          curl -fsS -o /dev/null -w "%{http_code}\n" "https://aidr.id.vn/" | grep -E '200|301|302'
