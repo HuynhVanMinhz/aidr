@@ -19,10 +19,17 @@
       "enabled": true,
       "publicClient": true,
       "redirectUris": [
+        "https://aidr.id.vn/*",
+        "https://www.aidr.id.vn/*",
         "http://localhost:5173/*",
         "http://localhost:3000/*"
       ],
-      "webOrigins": ["http://localhost:5173", "http://localhost:3000"],
+      "webOrigins": [
+        "https://aidr.id.vn",
+        "https://www.aidr.id.vn",
+        "http://localhost:5173",
+        "http://localhost:3000"
+      ],
       "standardFlowEnabled": true,
       "directAccessGrantsEnabled": true
     },
@@ -37,7 +44,7 @@
     {
       "alias": "google",
       "providerId": "google",
-      "enabled": false,
+      "enabled": true,
       "updateProfileFirstLoginMode": "missing",
       "trustEmail": true,
       "storeToken": false,
