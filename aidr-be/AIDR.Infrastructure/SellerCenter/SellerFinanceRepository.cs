@@ -34,10 +34,12 @@ public sealed class SellerFinanceRepository : ISellerFinanceRepository
             r => r.Count,
             StringComparer.OrdinalIgnoreCase);
 
+        // Recognized revenue sticks through open return disputes; reverse only when
+        // the order is Returned (refund/exchange done) or Cancelled.
         var completedQuery = _db.Orders.AsNoTracking()
             .Where(o => o.ShopId == shopId
-                        && o.Status == OrderConstants.StatusCompleted
-                        && o.CompletedAt != null);
+                        && o.CompletedAt != null
+                        && !SellerFinanceConstants.RecognizedRevenueExcludedStatuses.Contains(o.Status));
 
         var revenueToday = await completedQuery
             .Where(o => o.CompletedAt >= today && o.CompletedAt < tomorrow)

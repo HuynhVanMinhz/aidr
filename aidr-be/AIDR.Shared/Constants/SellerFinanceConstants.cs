@@ -43,14 +43,29 @@ public static class SellerFinanceConstants
         SettlementConstants.TxSettlementReversal
     };
 
-    /// <summary>Paid shop orders that count as sales (excludes unpaid, cancelled, returned).</summary>
+    /// <summary>
+    /// Paid shop orders that count as sales / product revenue.
+    /// Keeps open return disputes (<see cref="OrderConstants.StatusReturnRequested"/>);
+    /// drops only after refund/exchange completes (<see cref="OrderConstants.StatusReturned"/>)
+    /// or cancel — not when the buyer first requests a return.
+    /// </summary>
     public static readonly HashSet<string> SalesOrderStatuses = new(StringComparer.OrdinalIgnoreCase)
     {
         OrderConstants.StatusPaid,
         OrderConstants.StatusConfirmed,
         OrderConstants.StatusShipping,
         OrderConstants.StatusDelivered,
-        OrderConstants.StatusCompleted
+        OrderConstants.StatusCompleted,
+        OrderConstants.StatusReturnRequested
+    };
+
+    /// <summary>
+    /// Statuses that reverse dashboard recognized revenue (orders with <c>CompletedAt</c>).
+    /// </summary>
+    public static readonly HashSet<string> RecognizedRevenueExcludedStatuses = new(StringComparer.OrdinalIgnoreCase)
+    {
+        OrderConstants.StatusCancelled,
+        OrderConstants.StatusReturned
     };
 
     /// <summary>Orders waiting on seller fulfillment action.</summary>
