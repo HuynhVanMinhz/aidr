@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { reorderOrder, requireReorderResult } from '../../services/reorderApi';
 import { BuyerProtectionTimelineCard } from '../../components/account/BuyerProtectionTimelineCard';
+import { VideoDropzone } from '../../components/account/VideoDropzone';
 import { OrderInvoice } from '../../components/checkout/OrderInvoice';
 import { OrderReviewSection } from '../../components/reviews/OrderReviewSection';
 import { OrderTrackingMap } from '../../components/shipping/OrderTrackingMap';
@@ -10,6 +11,11 @@ import { useBuyerOrderReturn } from '../../hooks/useBuyerOrderReturn';
 import { useToast } from '../../hooks/useToast';
 import { useToastMessage } from '../../hooks/useToastMessage';
 import { PRODUCT_IMAGE_PLACEHOLDER, resolveProductImageUrl } from '../../utils/catalogImage';
+import {
+  isCloudinaryConfigured,
+  uploadReturnVideoToCloudinary,
+  validateReturnVideoFile,
+} from '../../utils/cloudinaryUpload';
 import { formatMoney } from '../../utils/formatCatalog';
 import { formatShipmentStatus } from '../../utils/shipmentUi';
 import { tryValidateField, visibleFieldErrors } from '../../utils/formValidation';
@@ -69,7 +75,13 @@ export function OrderDetailPage() {
     Partial<Record<keyof BuyerReturnFormValues, boolean>>
   >({});
   const [returnSubmitted, setReturnSubmitted] = useState(false);
+  const [videoUploadError, setVideoUploadError] = useState<{
+    unboxingUrl?: string;
+    testingUrl?: string;
+  }>({});
   const [reordering, setReordering] = useState(false);
+
+  const uploadsEnabled = isCloudinaryConfigured();
 
   useEffect(() => {
     setShowReturnForm(false);
@@ -77,6 +89,7 @@ export function OrderDetailPage() {
     setReturnDirty(false);
     setReturnTouched({});
     setReturnSubmitted(false);
+    setVideoUploadError({});
   }, [orderId]);
 
   const returnErrors = useMemo(
@@ -103,6 +116,15 @@ export function OrderDetailPage() {
   function patchReturnField<K extends keyof BuyerReturnFormValues>(key: K, value: string) {
     setReturnForm((prev) => ({ ...prev, [key]: value }));
     setReturnDirty(true);
+    if (key === 'unboxingUrl' || key === 'testingUrl') {
+      setVideoUploadError((prev) => ({ ...prev, [key]: undefined }));
+    }
+  }
+
+  function pickReturnVideo(key: 'unboxingUrl' | 'testingUrl', url: string) {
+    patchReturnField(key, url);
+    setReturnTouched((prev) => ({ ...prev, [key]: true }));
+    toast.success(key === 'unboxingUrl' ? 'Unboxing video uploaded.' : 'Testing video uploaded.');
   }
 
   async function handleCancel(event: FormEvent) {
@@ -176,6 +198,7 @@ export function OrderDetailPage() {
       setReturnDirty(false);
       setReturnTouched({});
       setReturnSubmitted(false);
+      setVideoUploadError({});
     } catch (err) {
       const message =
         err instanceof Error ? err.message : 'Unable to submit return request.';
@@ -628,30 +651,43 @@ export function OrderDetailPage() {
       </div>
 
       {showCancelForm ? (
-        <form className="account-card order-form" onSubmit={(event) => void handleCancel(event)}>
-          <h3>Cancel order</h3>
-          <p className="account-muted">
-            Only unpaid orders can be cancelled. Reserved stock will be released.
-          </p>
-          <div className="form-group">
-            <label htmlFor="cancel-reason">Reason (optional)</label>
-            <textarea
-              id="cancel-reason"
-              className="form-control"
-              rows={3}
-              maxLength={MAX_CANCEL_REASON}
-              value={cancelReason}
-              onChange={(event) => {
-                setCancelReason(event.target.value);
-                if (cancelReasonError) setCancelReasonError(null);
-              }}
-              placeholder="Tell us why you are cancelling"
-            />
-            {cancelReasonError ? (
-              <p className="form-field-error">{cancelReasonError}</p>
-            ) : null}
+        <form
+          className="account-card order-return-form"
+          onSubmit={(event) => void handleCancel(event)}
+          noValidate
+        >
+          <header className="order-return-form__head">
+            <p className="order-return-form__eyebrow">Cancellation</p>
+            <h3 className="order-card__title">Cancel order</h3>
+            <p className="account-muted order-return-form__lead">
+              Only unpaid orders can be cancelled. Reserved stock will be released.
+            </p>
+          </header>
+
+          <div className="order-return-form__fields">
+            <div className="form-group">
+              <label htmlFor="cancel-reason">
+                Reason <span className="order-review__optional">Optional</span>
+              </label>
+              <textarea
+                id="cancel-reason"
+                className="form-control"
+                rows={3}
+                maxLength={MAX_CANCEL_REASON}
+                value={cancelReason}
+                onChange={(event) => {
+                  setCancelReason(event.target.value);
+                  if (cancelReasonError) setCancelReasonError(null);
+                }}
+                placeholder="Tell us why you are cancelling"
+              />
+              {cancelReasonError ? (
+                <p className="form-field-error">{cancelReasonError}</p>
+              ) : null}
+            </div>
           </div>
-          <div className="order-detail__actions">
+
+          <div className="order-return-form__actions">
             <button type="submit" className="account-btn account-btn--danger" disabled={busy}>
               {mutating ? 'Cancelling…' : 'Confirm cancel'}
             </button>
@@ -672,80 +708,185 @@ export function OrderDetailPage() {
       ) : null}
 
       {showReturnForm ? (
-        <form className="account-card order-form" onSubmit={(event) => void handleSubmitReturn(event)}>
-          <h3>Request return / refund</h3>
-          <p className="account-muted">
-            Return and refund only (no exchange). Upload Cloudinary video URLs for Unboxing
-            (six sides of the package + shipping label) and Testing (device power-on / defect proof).
-          </p>
+        <form
+          className="account-card order-return-form"
+          onSubmit={(event) => void handleSubmitReturn(event)}
+          noValidate
+        >
+          <header className="order-return-form__head">
+            <p className="order-return-form__eyebrow">Return &amp; refund</p>
+            <h3 className="order-card__title">Request return / refund</h3>
+            <p className="account-muted order-return-form__lead">
+              Return and refund only — exchanges are not available. Upload Unboxing and Testing
+              evidence videos (or paste Cloudinary URLs).
+            </p>
+          </header>
 
-          <div className="form-group">
-            <label htmlFor="return-reason">Reason</label>
-            <input
-              id="return-reason"
-              className="form-control"
-              value={returnForm.reason}
-              maxLength={500}
-              onBlur={() => setReturnTouched((prev) => ({ ...prev, reason: true }))}
-              onChange={(event) => patchReturnField('reason', event.target.value)}
-              placeholder="Describe the issue"
-            />
-            {visibleReturnErrors.reason ? (
-              <p className="form-field-error">{visibleReturnErrors.reason}</p>
-            ) : null}
+          <div className="order-return-form__hint" role="note">
+            <i className="fa-solid fa-circle-info" aria-hidden />
+            <p>
+              Film the package from six sides plus the shipping label (Unboxing), then show the
+              device powering on or the defect (Testing).
+            </p>
           </div>
 
-          <div className="form-group">
-            <label htmlFor="return-description">Description (optional)</label>
-            <textarea
-              id="return-description"
-              className="form-control"
-              rows={3}
-              maxLength={2000}
-              value={returnForm.description}
-              onBlur={() => setReturnTouched((prev) => ({ ...prev, description: true }))}
-              onChange={(event) => patchReturnField('description', event.target.value)}
-              placeholder="Additional details"
-            />
-            {visibleReturnErrors.description ? (
-              <p className="form-field-error">{visibleReturnErrors.description}</p>
-            ) : null}
-          </div>
+          <section className="order-return-form__section">
+            <div className="order-review__step">
+              <span className="order-review__step-badge" aria-hidden>
+                1
+              </span>
+              <div className="order-review__step-copy">
+                <h4 className="order-review__step-title">Describe the issue</h4>
+                <p className="account-muted">What went wrong with this order?</p>
+              </div>
+            </div>
 
-          <div className="form-group">
-            <label htmlFor="return-unboxing">Unboxing video URL</label>
-            <input
-              id="return-unboxing"
-              className="form-control"
-              value={returnForm.unboxingUrl}
-              maxLength={512}
-              onBlur={() => setReturnTouched((prev) => ({ ...prev, unboxingUrl: true }))}
-              onChange={(event) => patchReturnField('unboxingUrl', event.target.value)}
-              placeholder="https://res.cloudinary.com/..."
-            />
-            {visibleReturnErrors.unboxingUrl ? (
-              <p className="form-field-error">{visibleReturnErrors.unboxingUrl}</p>
-            ) : null}
-          </div>
+            <div className="order-return-form__fields">
+              <div className="form-group">
+                <label htmlFor="return-reason">Reason *</label>
+                <input
+                  id="return-reason"
+                  className="form-control"
+                  value={returnForm.reason}
+                  maxLength={500}
+                  onBlur={() => setReturnTouched((prev) => ({ ...prev, reason: true }))}
+                  onChange={(event) => patchReturnField('reason', event.target.value)}
+                  placeholder="e.g. Screen cracked on arrival"
+                />
+                {visibleReturnErrors.reason ? (
+                  <p className="form-field-error">{visibleReturnErrors.reason}</p>
+                ) : null}
+              </div>
 
-          <div className="form-group">
-            <label htmlFor="return-testing">Testing video URL</label>
-            <input
-              id="return-testing"
-              className="form-control"
-              value={returnForm.testingUrl}
-              maxLength={512}
-              onBlur={() => setReturnTouched((prev) => ({ ...prev, testingUrl: true }))}
-              onChange={(event) => patchReturnField('testingUrl', event.target.value)}
-              placeholder="https://res.cloudinary.com/..."
-            />
-            {visibleReturnErrors.testingUrl ? (
-              <p className="form-field-error">{visibleReturnErrors.testingUrl}</p>
-            ) : null}
-          </div>
+              <div className="form-group">
+                <label htmlFor="return-description">
+                  Description <span className="order-review__optional">Optional</span>
+                </label>
+                <textarea
+                  id="return-description"
+                  className="form-control"
+                  rows={3}
+                  maxLength={2000}
+                  value={returnForm.description}
+                  onBlur={() => setReturnTouched((prev) => ({ ...prev, description: true }))}
+                  onChange={(event) => patchReturnField('description', event.target.value)}
+                  placeholder="Additional details that help us review faster"
+                />
+                {visibleReturnErrors.description ? (
+                  <p className="form-field-error">{visibleReturnErrors.description}</p>
+                ) : null}
+              </div>
+            </div>
+          </section>
 
-          <div className="order-detail__actions">
-            <button type="submit" className="account-btn account-btn--primary" disabled={!canSubmitReturn || busy}>
+          <section className="order-return-form__section">
+            <div className="order-review__step">
+              <span className="order-review__step-badge" aria-hidden>
+                2
+              </span>
+              <div className="order-review__step-copy">
+                <h4 className="order-review__step-title">Evidence videos</h4>
+                <p className="account-muted">
+                  {uploadsEnabled
+                    ? 'Drop or browse a video for each slot — or paste a Cloudinary URL below.'
+                    : 'Paste Cloudinary video URLs for both required clips.'}
+                </p>
+              </div>
+            </div>
+
+            <div className="order-return-form__evidence">
+              <div className="order-return-evidence">
+                <div className="order-return-evidence__body order-return-evidence__body--full">
+                  <label htmlFor="return-unboxing-file">Unboxing video *</label>
+                  <p className="order-return-evidence__hint">
+                    Six sides of the package and the shipping label.
+                  </p>
+                  <VideoDropzone
+                    id="return-unboxing-file"
+                    value={returnForm.unboxingUrl}
+                    onChange={(url) => pickReturnVideo('unboxingUrl', url)}
+                    upload={uploadReturnVideoToCloudinary}
+                    validate={validateReturnVideoFile}
+                    disabled={busy || !uploadsEnabled}
+                    emptyLabel={uploadsEnabled ? 'Drop unboxing video here' : 'Uploads unavailable'}
+                    hint={
+                      uploadsEnabled
+                        ? 'MP4, WebM or MOV · up to 50MB'
+                        : 'Video hosting is not configured — paste a URL below instead.'
+                    }
+                    onError={(message) =>
+                      setVideoUploadError((prev) => ({ ...prev, unboxingUrl: message }))
+                    }
+                  />
+                  <input
+                    id="return-unboxing"
+                    className="form-control form-control-sm order-return-evidence__url"
+                    value={returnForm.unboxingUrl}
+                    maxLength={512}
+                    onBlur={() => setReturnTouched((prev) => ({ ...prev, unboxingUrl: true }))}
+                    onChange={(event) => patchReturnField('unboxingUrl', event.target.value)}
+                    placeholder="…or paste a video URL"
+                    aria-label="Unboxing video URL"
+                  />
+                  {videoUploadError.unboxingUrl ? (
+                    <p className="form-field-error">{videoUploadError.unboxingUrl}</p>
+                  ) : null}
+                  {visibleReturnErrors.unboxingUrl ? (
+                    <p className="form-field-error">{visibleReturnErrors.unboxingUrl}</p>
+                  ) : null}
+                </div>
+              </div>
+
+              <div className="order-return-evidence">
+                <div className="order-return-evidence__body order-return-evidence__body--full">
+                  <label htmlFor="return-testing-file">Testing video *</label>
+                  <p className="order-return-evidence__hint">
+                    Device power-on or clear proof of the defect.
+                  </p>
+                  <VideoDropzone
+                    id="return-testing-file"
+                    value={returnForm.testingUrl}
+                    onChange={(url) => pickReturnVideo('testingUrl', url)}
+                    upload={uploadReturnVideoToCloudinary}
+                    validate={validateReturnVideoFile}
+                    disabled={busy || !uploadsEnabled}
+                    emptyLabel={uploadsEnabled ? 'Drop testing video here' : 'Uploads unavailable'}
+                    hint={
+                      uploadsEnabled
+                        ? 'MP4, WebM or MOV · up to 50MB'
+                        : 'Video hosting is not configured — paste a URL below instead.'
+                    }
+                    onError={(message) =>
+                      setVideoUploadError((prev) => ({ ...prev, testingUrl: message }))
+                    }
+                  />
+                  <input
+                    id="return-testing"
+                    className="form-control form-control-sm order-return-evidence__url"
+                    value={returnForm.testingUrl}
+                    maxLength={512}
+                    onBlur={() => setReturnTouched((prev) => ({ ...prev, testingUrl: true }))}
+                    onChange={(event) => patchReturnField('testingUrl', event.target.value)}
+                    placeholder="…or paste a video URL"
+                    aria-label="Testing video URL"
+                  />
+                  {videoUploadError.testingUrl ? (
+                    <p className="form-field-error">{videoUploadError.testingUrl}</p>
+                  ) : null}
+                  {visibleReturnErrors.testingUrl ? (
+                    <p className="form-field-error">{visibleReturnErrors.testingUrl}</p>
+                  ) : null}
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <div className="order-return-form__actions">
+            <button
+              type="submit"
+              className="account-btn account-btn--primary"
+              disabled={!canSubmitReturn || busy}
+            >
               {returnMutating ? 'Submitting…' : 'Submit return request'}
             </button>
             <button
@@ -758,6 +899,7 @@ export function OrderDetailPage() {
                 setReturnDirty(false);
                 setReturnTouched({});
                 setReturnSubmitted(false);
+                setVideoUploadError({});
               }}
             >
               Cancel
