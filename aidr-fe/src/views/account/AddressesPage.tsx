@@ -200,7 +200,17 @@ export function AddressesPage() {
 
   async function persistAddresses(nextAddresses: AddressUpsert[]) {
     if (!profile) return;
-    const phone = validateVnPhone(profile.phone, 'Profile phone number');
+
+    // Profile phone is required by the update API, but address phone is what
+    // the buyer edits here. Keep an existing profile phone; if missing, backfill
+    // from the address list so they are not forced to Account information first.
+    const existingPhone = profile.phone?.trim() ?? '';
+    const fallbackPhone =
+      nextAddresses.find((a) => a.isDefault)?.phone?.trim() ||
+      nextAddresses[0]?.phone?.trim() ||
+      '';
+    const phone = validateVnPhone(existingPhone || fallbackPhone, 'Phone number');
+
     await updateProfile({
       fullName: profile.fullName,
       phone,
