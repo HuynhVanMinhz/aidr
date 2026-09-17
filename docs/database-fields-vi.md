@@ -577,7 +577,7 @@ PendingPayment → Paid → Confirmed → Shipping → Delivered → Completed
 | `Reason` | NVARCHAR(500) | Lý do trả | `Device does not power on` |
 | `Description` | NVARCHAR(2000) | Mô tả chi tiết | |
 | `EvidenceUrls` | NVARCHAR(MAX) | JSON URL phụ (legacy) | `[]` |
-| `ResolutionType` | NVARCHAR(20) | Hình thức xử lý | `ReturnRefund` (duy nhất) |
+| `ResolutionType` | NVARCHAR(20) | Hình thức xử lý | `ReturnRefund` \| `Exchange` |
 | **`Status`** | NVARCHAR(30) | Trạng thái | `Pending`, `Approved`, `Rejected`, `Receiving`, `Refunded`, `Closed` |
 | `RefundAmount` | DECIMAL(18,2) | Số tiền hoàn | `12500000` |
 | `AdminNote` | NVARCHAR(500) | Ghi chú admin | |

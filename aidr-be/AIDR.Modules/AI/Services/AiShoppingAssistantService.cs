@@ -1887,9 +1887,10 @@ public sealed class AiShoppingAssistantService : IAiShoppingAssistantService
         => topic switch
         {
             AiConstants.FaqTopicReturn =>
-                "You can request a return with full refund from your order detail after delivery (or within the return window while the order is in transit/delivered). " +
-                "Upload unboxing and testing video evidence; our team reviews requests manually. " +
-                "AIDR does not offer same-item exchange — after a refund you can place a new order.",
+                "You can request a return & refund or an exchange from your order detail after delivery " +
+                "(or while the order is shipping/delivered/completed). " +
+                "Upload unboxing and testing video evidence. Admin reviews first, then the seller confirms handling, " +
+                "inspects the returned goods, and Admin completes the refund or exchange.",
             AiConstants.FaqTopicShipping =>
                 "After payment, the seller prepares and ships your order. Track status under My Orders " +
                 "(Paid → Processing → Shipped → Delivered). Confirm received when the package arrives.",

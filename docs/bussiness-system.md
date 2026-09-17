@@ -40,7 +40,7 @@ Hệ thống giải quyết các pain point chính:
 | FE-02b | Pricing & Stock Lot | Nhập lô hàng (cost), cập nhật giá bán catalog độc lập |
 | FE-03 | Search & AI Filter | Tìm kiếm, lọc/sắp xếp, AI so sánh, NL → filter |
 | FE-04 | Cart / Order / Payment | Giỏ hàng, voucher, tạo đơn, thanh toán payOS, hủy/nhận hàng |
-| FE-05 | Return & Refund | Buyer yêu cầu Trả hàng/Hoàn tiền (+ video Unboxing & Testing); Admin duyệt; **không Đổi máy** |
+| FE-05 | Return & Refund / Exchange | Buyer yêu cầu Trả hàng+Hoàn tiền **hoặc Đổi hàng** (+ video Unboxing & Testing); Admin duyệt → Seller xác nhận & kiểm hàng → Admin hoàn tất |
 | FE-06 | Wishlist & Follow | Wishlist; follow/unfollow seller |
 | FE-07 | Review & Rating | Đánh giá SP; đánh giá seller |
 | FE-08 | AI & Recommendation | Gợi ý SP, SP tương tự, chatbot mua sắm |
@@ -49,8 +49,8 @@ Hệ thống giải quyết các pain point chính:
 | FE-11 | Admin | Tài khoản, đăng ký seller, voucher hệ thống, insights |
 
 ### Giới hạn (từ Report + policy sàn)
-- **Không hỗ trợ Đổi hàng (Exchange)** — chỉ **Trả hàng + Hoàn tiền** (Return & Refund). Buyer nhận lại tiền rồi tự đặt đơn mới nếu muốn máy khác.
-- Không auto-moderation tranh chấp return phức tạp (Admin xử lý thủ công; bắt buộc video bằng chứng)
+- Return hỗ trợ **Trả hàng + Hoàn tiền** và **Đổi hàng (Exchange)**; pipeline Admin → Seller → Admin (không AI auto-approve).
+- Không auto-moderation tranh chấp return phức tạp (Admin/Seller xử lý thủ công; bắt buộc video bằng chứng)
 - Không tích hợp API vận chuyển realtime (GHN/GHTK) — seller tự cập nhật tracking
 - Không live streaming
 - Phân loại màu / dung lượng (GB): dùng **ProductVariants** / SpecsJson — không CRUD master Color/GB riêng
@@ -141,15 +141,18 @@ Hệ thống giải quyết các pain point chính:
 | UC-46 | View Order List | Seller |
 | UC-47 | Update Order Status | Seller |
 
-### 4.8 Return / Refund
+### 4.8 Return / Refund / Exchange
 
 | UC | Use Case | Actor |
 |----|----------|-------|
-| UC-43 | Request Return / Refund | Buyer |
+| UC-43 | Request Return / Refund / Exchange | Buyer |
 | UC-48 | View Return Requests | Admin |
 | UC-49 | View Return Request Details | Admin |
-| UC-50 | Approve / Reject Return Request | Admin |
-| UC-52 | Update Return Request Status | Admin |
+| UC-50 | Approve / Reject Return Request (forward to Seller) | Admin |
+| UC-52 | Complete Return (Refund / Exchange → Closed) | Admin |
+| UC-93 | View Shop Return Requests | Seller |
+| UC-94 | Confirm Return Handling / Reject | Seller |
+| UC-95 | Receive & Accept Returned Goods | Seller |
 
 ### 4.9 Notifications & Chat
 
@@ -238,17 +241,21 @@ Hệ thống giải quyết các pain point chính:
 3. System ghi nhận Payment Succeeded → Seller nhận notification đơn mới (UC-44).
 4. Seller cập nhật fulfillment (UC-47); Buyer Confirm Received (UC-42) hoặc Cancel theo BR-O01.
 
-### 5.5 Return & Refund (không Đổi hàng)
-**Kết quả duy nhất:** Trả hàng thành công → Hoàn **100%** số tiền đã thanh toán. AIDR **không** có tính năng đổi máy mới cùng loại trên app.
+### 5.5 Return / Refund / Exchange
+**Hai kết quả:** `ReturnRefund` (hoàn 100% tiền đã thanh toán) hoặc `Exchange` (Seller đổi hàng thay thế; không hoàn tiền qua payOS).
 
-1. Buyer gặp lỗi thiết bị / vấn đề ship → **Yêu cầu Trả hàng/Hoàn tiền** (UC-43), kể cả khi chưa bấm Confirm Received (trong cửa sổ policy đơn đang giao / đã giao theo rule implement).
+1. Buyer gặp lỗi thiết bị / vấn đề ship → **Yêu cầu Trả hàng+Hoàn tiền hoặc Đổi hàng** (UC-43), chọn `ResolutionType`; kể cả khi chưa Confirm Received (Shipping / Delivered / Completed).
 2. Bắt buộc upload bằng chứng video:
    - **Unboxing:** 6 mặt kiện hàng, mã vận đơn còn nguyên trước khi khui, quá trình mở hộp lấy thiết bị.
    - **Testing:** cận cảnh máy, cắm sạc/bật nguồn, thao tác chứng minh lỗi kỹ thuật / nứt vỡ / móp méo do vận chuyển.
-3. System ghi `ReturnRequest` (`ResolutionType=ReturnRefund`) + `ReturnEvidences` → Admin xử lý (UC-48..52): xem video → Approve hoặc Reject kèm lý do rõ ràng.
-4. **Approve path:** Buyer gửi trả hàng → Admin/System xác nhận Receiving → **Refund** buyer trước → ghi `WalletTransactions.RefundDebit` trừ vào số dư seller (có thể âm / trừ dần khi seller bán đơn khác — BR-R04).
-5. **Reject path:** ghi AdminNote → notify Buyer.
-6. Muốn máy khác: Buyer **tự đặt đơn mới** sau khi đã hoàn tiền.
+3. System ghi `ReturnRequest` (`Pending`) + `ReturnEvidences` → notify Admin queue (UC-48..49).
+4. **Admin duyệt (UC-50):** Approve → `Approved` + **chuyển yêu cầu cho Seller** (notify Seller); hoặc Reject + note bắt buộc (BR-R03) → notify Buyer.
+5. **Seller xác nhận phương án (UC-94):** `Approved` → `SellerConfirmed` (xác nhận / chỉnh `ResolutionType`) + notify Buyer gửi hàng về; hoặc Reject (khi `Approved` / `Receiving`) + note.
+6. **Buyer gửi hàng về** → Seller đánh dấu nhận & kiểm (`SellerConfirmed` → `Receiving`) rồi **Accepted** nếu hàng OK (UC-95) → **notify Admin**.
+7. **Admin hoàn tất (UC-52):**
+   - `ReturnRefund`: `Accepted` → `Refunded` (payOS payout buyer + `RefundDebit` wallet seller — BR-R04) → `Closed`.
+   - `Exchange`: `Accepted` → `Exchanged` (Seller đã/đang gửi hàng thay thế; không payout) → `Closed`.
+8. Admin giám sát toàn bộ status history; đóng yêu cầu ở bước cuối.
 
 ### 5.6 AI-assisted shopping
 1. **UC-90:** câu tiếng tự nhiên → bộ filter/search.
@@ -287,11 +294,12 @@ Hệ thống giải quyết các pain point chính:
 | BR-C07 | `Products.StockQuantity` là **denormalized** (= Σ Lot.QuantityRemaining) để query nhanh; nguồn chân lý tồn là InventoryLots |
 | BR-CA01 | Category bắt buộc có Description (≤ 500 ký tự) khi tạo hoặc cập nhật |
 | BR-CA02 | Category bắt buộc có ImageUrl (http/https hoặc đường dẫn tương đối, ≤ 512 ký tự) khi tạo hoặc cập nhật |
-| BR-R01 | **Không Exchange** — chỉ ResolutionType `ReturnRefund`; sau hoàn tiền buyer tự mua lại nếu cần |
+| BR-R01 | ResolutionType `ReturnRefund` hoặc `Exchange`; Buyer chọn lúc tạo; Seller có thể xác nhận/chỉnh khi `SellerConfirmed` |
 | BR-R02 | Return request bắt buộc ≥1 evidence `Unboxing` + ≥1 `Testing` (video URL Cloudinary) |
-| BR-R03 | Reject return phải có AdminNote / lý do rõ ràng gửi buyer |
-| BR-R04 | Hoàn tiền buyer trước; sau đó `RefundDebit` vào Wallet seller (có thể chờ đối soát / trừ dần) |
-| BR-R05 | Admin duyệt thủ công dựa trên video; không AI auto-approve return |
+| BR-R03 | Reject return (Admin hoặc Seller) phải có note / lý do rõ ràng gửi buyer |
+| BR-R04 | Path hoàn tiền: refund buyer trước; sau đó `RefundDebit` vào Wallet seller (có thể âm / trừ dần). Path Exchange: không payOS refund |
+| BR-R05 | Admin duyệt rồi forward Seller; Seller kiểm hàng → Accepted mới cho Admin hoàn tất; không AI auto-approve |
+| BR-R06 | Pipeline status: `Pending` → `Approved` → `SellerConfirmed` → `Receiving` → `Accepted` → (`Refunded`\|`Exchanged`) → `Closed` (hoặc `Rejected`) |
 | BR-P03 | Seller sửa SP đã Rejected/Approved → status về `Pending` để Admin duyệt lại |
 | BR-I01 | Phiếu nhập lô: LotCode unique theo product; Quantity > 0; UnitCost ≥ 0; validate đầy đủ field bắt buộc trên FE+BE |
 
@@ -333,7 +341,7 @@ Hệ thống giải quyết các pain point chính:
 | Cart / CartItem | Giỏ hàng |
 | Voucher / VoucherRedemption | Khuyến mãi |
 | Order / OrderItem / Payment | Đơn & thanh toán |
-| ReturnRequest | Yêu cầu **Trả hàng + Hoàn tiền** (`ResolutionType=ReturnRefund` only) |
+| ReturnRequest | Yêu cầu trả hàng (`ResolutionType=ReturnRefund` \| `Exchange`) |
 | ReturnEvidence | Video/ảnh bằng chứng: Unboxing, Testing, Other |
 | WishlistItem | Yêu thích |
 | ProductReview / SellerRating | Đánh giá |

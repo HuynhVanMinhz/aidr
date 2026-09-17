@@ -1,27 +1,20 @@
-using AIDR.Shared.Dtos.Admin;
+using AIDR.Shared.Dtos.SellerCenter;
 
-namespace AIDR.Modules.Admin.Abstractions;
+namespace AIDR.Modules.SellerCenter.Abstractions;
 
-public sealed class AdminReturnRequestListSummary
+public sealed class SellerReturnListSummary
 {
-    public int PendingCount { get; init; }
     public int ApprovedCount { get; init; }
-    public int RejectedCount { get; init; }
     public int SellerConfirmedCount { get; init; }
     public int ReceivingCount { get; init; }
     public int AcceptedCount { get; init; }
-    public int RefundedCount { get; init; }
-    public int ExchangedCount { get; init; }
-    public int ClosedCount { get; init; }
 }
 
-public sealed class AdminReturnListRecord
+public sealed class SellerReturnListRecord
 {
     public Guid ReturnRequestId { get; init; }
     public Guid OrderId { get; init; }
     public string OrderCode { get; init; } = null!;
-    public Guid ShopId { get; init; }
-    public string ShopName { get; init; } = null!;
     public Guid BuyerUserId { get; init; }
     public string BuyerEmail { get; init; } = null!;
     public string BuyerFullName { get; init; } = null!;
@@ -35,68 +28,84 @@ public sealed class AdminReturnListRecord
     public DateTime UpdatedAt { get; init; }
 }
 
-public interface IAdminReturnService
+public interface ISellerReturnService
 {
-    Task<AdminReturnRequestListResultDto> ListAsync(
+    Task<SellerReturnListResultDto> ListAsync(
+        Guid sellerUserId,
         string? status,
-        string? q,
         int page,
         int pageSize,
         CancellationToken cancellationToken = default);
 
-    Task<AdminReturnRequestDetailDto> GetByIdAsync(
+    Task<SellerReturnDetailDto> GetByIdAsync(
+        Guid sellerUserId,
         Guid returnRequestId,
         CancellationToken cancellationToken = default);
 
-    Task<AdminReturnRequestDetailDto> ApproveAsync(
+    Task<SellerReturnDetailDto> ConfirmAsync(
+        Guid sellerUserId,
         Guid returnRequestId,
-        Guid adminUserId,
+        ConfirmSellerReturnRequest request,
         CancellationToken cancellationToken = default);
 
-    Task<AdminReturnRequestDetailDto> RejectAsync(
+    Task<SellerReturnDetailDto> MarkReceivingAsync(
+        Guid sellerUserId,
         Guid returnRequestId,
-        Guid adminUserId,
-        RejectReturnRequestRequest request,
+        SellerReturnActionRequest? request,
         CancellationToken cancellationToken = default);
 
-    Task<AdminReturnRequestDetailDto> UpdateStatusAsync(
+    Task<SellerReturnDetailDto> AcceptGoodsAsync(
+        Guid sellerUserId,
         Guid returnRequestId,
-        Guid adminUserId,
-        UpdateReturnStatusRequest request,
+        SellerReturnActionRequest? request,
+        CancellationToken cancellationToken = default);
+
+    Task<SellerReturnDetailDto> RejectAsync(
+        Guid sellerUserId,
+        Guid returnRequestId,
+        RejectSellerReturnRequest request,
         CancellationToken cancellationToken = default);
 }
 
-public interface IAdminReturnRepository
+public interface ISellerReturnRepository
 {
-    Task<(IReadOnlyList<AdminReturnListRecord> Items, int TotalCount, int Page, AdminReturnRequestListSummary Summary)>
-        ListPagedAsync(
+    Task<(IReadOnlyList<SellerReturnListRecord> Items, int TotalCount, int Page, SellerReturnListSummary Summary)>
+        ListPagedForShopAsync(
+            Guid shopId,
             string? status,
-            string? keyword,
             int page,
             int pageSize,
             CancellationToken cancellationToken = default);
 
-    Task<AdminReturnRequestDetailDto?> GetDetailAsync(
+    Task<SellerReturnDetailDto?> GetDetailForShopAsync(
+        Guid shopId,
         Guid returnRequestId,
         CancellationToken cancellationToken = default);
 
-    Task<AdminReturnRequestDetailDto> ApproveAsync(
+    Task<SellerReturnDetailDto> ConfirmAsync(
+        Guid shopId,
         Guid returnRequestId,
-        Guid adminUserId,
+        Guid sellerUserId,
+        string resolutionType,
+        string? note,
         CancellationToken cancellationToken = default);
 
-    Task<AdminReturnRequestDetailDto> RejectAsync(
+    Task<SellerReturnDetailDto> AdvanceAsync(
+        Guid shopId,
         Guid returnRequestId,
-        Guid adminUserId,
-        string adminNote,
-        CancellationToken cancellationToken = default);
-
-    Task<AdminReturnRequestDetailDto> UpdateStatusAsync(
-        Guid returnRequestId,
-        Guid adminUserId,
+        Guid sellerUserId,
         string toStatus,
         string? note,
-        string? refundToBin,
-        string? refundToAccountNumber,
         CancellationToken cancellationToken = default);
+
+    Task<SellerReturnDetailDto> RejectAsync(
+        Guid shopId,
+        Guid returnRequestId,
+        Guid sellerUserId,
+        string note,
+        CancellationToken cancellationToken = default);
+
+    Task<Guid?> GetShopOwnerUserIdAsync(Guid shopId, CancellationToken cancellationToken = default);
+
+    Task<IReadOnlyList<Guid>> ListAdminUserIdsAsync(CancellationToken cancellationToken = default);
 }

@@ -35,6 +35,7 @@ import {
   canRequestReturn,
   canSubmitBuyerReturnForm,
   validateEvidenceMediaUrl,
+  validateResolutionType,
   validateReturnDescription,
   validateReturnReason,
   type BuyerReturnFormValues,
@@ -45,6 +46,7 @@ const MAX_CANCEL_REASON = 300;
 const emptyReturnForm: BuyerReturnFormValues = {
   reason: '',
   description: '',
+  resolutionType: 'ReturnRefund',
   unboxingUrl: '',
   testingUrl: '',
 };
@@ -99,6 +101,9 @@ export function OrderDetailPage() {
       }),
       description: tryValidateField(() => {
         validateReturnDescription(returnForm.description);
+      }),
+      resolutionType: tryValidateField(() => {
+        validateResolutionType(returnForm.resolutionType);
       }),
       unboxingUrl: tryValidateField(() => {
         validateEvidenceMediaUrl(returnForm.unboxingUrl, 'Unboxing video URL');
@@ -170,6 +175,7 @@ export function OrderDetailPage() {
     setReturnTouched({
       reason: true,
       description: true,
+      resolutionType: true,
       unboxingUrl: true,
       testingUrl: true,
     });
@@ -177,6 +183,7 @@ export function OrderDetailPage() {
     if (
       returnErrors.reason ||
       returnErrors.description ||
+      returnErrors.resolutionType ||
       returnErrors.unboxingUrl ||
       returnErrors.testingUrl
     ) {
@@ -187,6 +194,7 @@ export function OrderDetailPage() {
       await submitReturn({
         reason: returnForm.reason.trim(),
         description: returnForm.description.trim() || null,
+        resolutionType: returnForm.resolutionType,
         evidences: [
           { evidenceType: 'Unboxing', mediaUrl: returnForm.unboxingUrl.trim() },
           { evidenceType: 'Testing', mediaUrl: returnForm.testingUrl.trim() },
@@ -742,6 +750,65 @@ export function OrderDetailPage() {
             </div>
 
             <div className="order-return-form__fields">
+              <div className="form-group">
+                <span className="d-block" id="return-resolution-label">
+                  Resolution *
+                </span>
+                <div
+                  className="order-return-resolution"
+                  role="radiogroup"
+                  aria-labelledby="return-resolution-label"
+                >
+                  <label
+                    className={`order-return-resolution__option${
+                      returnForm.resolutionType === 'ReturnRefund'
+                        ? ' order-return-resolution__option--active'
+                        : ''
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="return-resolution"
+                      value="ReturnRefund"
+                      checked={returnForm.resolutionType === 'ReturnRefund'}
+                      onChange={() => patchReturnField('resolutionType', 'ReturnRefund')}
+                      onBlur={() =>
+                        setReturnTouched((prev) => ({ ...prev, resolutionType: true }))
+                      }
+                    />
+                    <span className="order-return-resolution__title">Return &amp; refund</span>
+                    <span className="order-return-resolution__hint">
+                      Send the item back and get a full refund
+                    </span>
+                  </label>
+                  <label
+                    className={`order-return-resolution__option${
+                      returnForm.resolutionType === 'Exchange'
+                        ? ' order-return-resolution__option--active'
+                        : ''
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="return-resolution"
+                      value="Exchange"
+                      checked={returnForm.resolutionType === 'Exchange'}
+                      onChange={() => patchReturnField('resolutionType', 'Exchange')}
+                      onBlur={() =>
+                        setReturnTouched((prev) => ({ ...prev, resolutionType: true }))
+                      }
+                    />
+                    <span className="order-return-resolution__title">Exchange</span>
+                    <span className="order-return-resolution__hint">
+                      Send the item back and receive a replacement
+                    </span>
+                  </label>
+                </div>
+                {visibleReturnErrors.resolutionType ? (
+                  <p className="form-field-error">{visibleReturnErrors.resolutionType}</p>
+                ) : null}
+              </div>
+
               <div className="form-group">
                 <label htmlFor="return-reason">Reason *</label>
                 <input

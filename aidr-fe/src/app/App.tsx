@@ -62,6 +62,8 @@ import { SellerInventoryListPage } from '../views/seller/SellerInventoryListPage
 import { SellerOrderDetailPage } from '../views/seller/SellerOrderDetailPage';
 import { SellerOrderListPage } from '../views/seller/SellerOrderListPage';
 import { SellerProductDetailPage } from '../views/seller/SellerProductDetailPage';
+import { SellerReturnDetailPage } from '../views/seller/SellerReturnDetailPage';
+import { SellerReturnListPage } from '../views/seller/SellerReturnListPage';
 import { SellerShopVoucherListPage } from '../views/seller/SellerShopVoucherListPage';
 import { SellerShopVoucherFormPage } from '../views/seller/SellerShopVoucherFormPage';
 import { SellerNotificationsPage } from '../views/seller/SellerNotificationsPage';
@@ -141,6 +143,8 @@ export function App() {
             <Route path="inventory" element={<SellerInventoryListPage />} />
             <Route path="orders" element={<SellerOrderListPage />} />
             <Route path="orders/:orderId" element={<SellerOrderDetailPage />} />
+            <Route path="returns" element={<SellerReturnListPage />} />
+            <Route path="returns/:id" element={<SellerReturnDetailPage />} />
             <Route path="reports" element={<SellerReportsPage />} />
             <Route path="wallet" element={<SellerWalletPage />} />
             <Route path="settlements" element={<SellerSettlementsPage />} />

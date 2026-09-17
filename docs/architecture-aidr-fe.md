@@ -149,7 +149,7 @@ aidr-fe/
 | `voucherApi.ts` | UC-32/33, 78..81, 87..89 |
 | `orderApi.ts` | UC-34, 39..47 |
 | `paymentApi.ts` | UC-35 |
-| `returnApi.ts` | UC-43, 48..52 |
+| `returnApi.ts` | UC-43, 48..52, 93..95 |
 | `wishlistApi.ts` | UC-36..38 |
 | `notificationApi.ts` | UC-44/45 |
 | `chatApi.ts` | UC-57/58 |
@@ -261,13 +261,14 @@ VITE_SIGNALR_HUB_URL=https://api.aidr.local/hubs
 | Become a seller (buyer apply) | UC-77 (`/account/become-seller`, `sellerRegistrationApi`) |
 | Cart / Checkout | UC-29..31 (`/cart`, `cartApi`); UC-32/33 (`voucherApi`, `voucherSlice`, apply on cart + checkout + `/account/vouchers`); UC-34 (`/checkout`, `orderApi` + `vouchers` on create); UC-35 (`paymentApi`, payOS + `/order-received`) |
 | My orders / detail | UC-39..43 (`/account/orders`, `/account/orders/:orderId`, `ordersSlice` + `returnsSlice` / `returnApi`, cancel + confirm received + request return with Unboxing/Testing evidence) |
-| My returns | UC-43 (`/account/returns`, `/account/returns/:returnId`, `GET /api/returns`) |
+| My returns | UC-43 (`/account/returns`, `/account/returns/:returnId`, `GET /api/returns`; ReturnRefund\|Exchange) |
 | Wishlist | UC-36..38 (`/wishlist` → `/account/wishlist`, `wishlistApi`, `wishlistSlice`, add/remove on catalog + detail) |
 | Following | UC-65..67 (`/following` → `/account/following`, `followApi`, `followSlice`, follow/unfollow on shop page + list) |
 | Notifications | UC-44/45 (`/account/notifications`, `/seller/notifications`, `notificationApi`, `notificationSlice`, SignalR `NotificationHub` → unread badge + prepend inbox) |
 | Seller orders | UC-46/47 (`/seller/orders`, `/seller/orders/:orderId`, `sellerOrdersSlice`, update status + tracking) |
+| Seller returns | UC-93..95 (`/seller/returns`, `/seller/returns/:id`, confirm → receiving → accept; notify Admin on Accepted) |
 | Seller shop settings / alerts | `/seller/shop-settings`, `/seller/alerts` (`sellerApi` shop GET/PUT; inventory low-stock) |
-| Admin returns | UC-48..52 (`/admin/return-requests`, `/admin/return-requests/:id`, `returnApi`, `adminReturnsSlice`, approve/reject + Receiving→Refunded→Closed) |
+| Admin returns | UC-48..52 (`/admin/return-requests`, approve→forward Seller; after Accepted: Refunded\|Exchanged→Closed) |
 | Admin orders / dashboard | `/admin/orders`, `/admin/dashboard` KPI (`adminApi`) |
 | Recommend / Similar blocks | UC-53/54 (`RecommendedProductsSection` on home; `SimilarProductsSection` on product detail; `aiApi` + `recommendationSlice`) |
 | NL filter + Compare | UC-90 (`NlSearchBar` on `/products` → `POST /ai/nl-filter` → bind catalog filters); UC-28 (compare icon on card/detail → tray → `/compare` + `POST /ai/compare`, Buyer) |

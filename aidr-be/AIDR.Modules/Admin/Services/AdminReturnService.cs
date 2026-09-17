@@ -51,8 +51,11 @@ public sealed class AdminReturnService : IAdminReturnService
             PendingCount = summary.PendingCount,
             ApprovedCount = summary.ApprovedCount,
             RejectedCount = summary.RejectedCount,
+            SellerConfirmedCount = summary.SellerConfirmedCount,
             ReceivingCount = summary.ReceivingCount,
+            AcceptedCount = summary.AcceptedCount,
             RefundedCount = summary.RefundedCount,
+            ExchangedCount = summary.ExchangedCount,
             ClosedCount = summary.ClosedCount
         };
     }
@@ -82,11 +85,24 @@ public sealed class AdminReturnService : IAdminReturnService
             throw new ConflictException("Only pending return requests can be approved.");
 
         var result = await _repository.ApproveAsync(returnRequestId, adminUserId, cancellationToken);
-        await NotifyBuyerReturnAsync(
-            result,
+
+        await NotifyUserAsync(
+            result.BuyerUserId,
+            result.ReturnRequestId,
             "Return request approved",
-            $"Your return request for order {result.OrderCode} was approved.",
+            $"Your return request for order {result.OrderCode} was approved and sent to the seller.",
             cancellationToken);
+
+        if (result.ShopOwnerUserId != Guid.Empty)
+        {
+            await NotifyUserAsync(
+                result.ShopOwnerUserId,
+                result.ReturnRequestId,
+                "New return request for your shop",
+                $"Admin forwarded a {FormatResolution(result.ResolutionType)} request for order {result.OrderCode}. Please review and confirm handling.",
+                cancellationToken);
+        }
+
         return result;
     }
 
@@ -111,8 +127,9 @@ public sealed class AdminReturnService : IAdminReturnService
             throw new ConflictException("Only pending return requests can be rejected.");
 
         var result = await _repository.RejectAsync(returnRequestId, adminUserId, adminNote, cancellationToken);
-        await NotifyBuyerReturnAsync(
-            result,
+        await NotifyUserAsync(
+            result.BuyerUserId,
+            result.ReturnRequestId,
             "Return request rejected",
             $"Your return request for order {result.OrderCode} was rejected. Note: {adminNote}",
             cancellationToken);
@@ -132,17 +149,15 @@ public sealed class AdminReturnService : IAdminReturnService
             throw new AppException("Status update body is required.");
 
         var toStatus = request.Status?.Trim() ?? string.Empty;
-        var canonical = ReturnConstants.StatusTransitions.Values
-            .Concat(ReturnConstants.StatusTransitions.Keys)
-            .Distinct(StringComparer.OrdinalIgnoreCase)
-            .FirstOrDefault(s => string.Equals(s, toStatus, StringComparison.OrdinalIgnoreCase));
+        var canonical = ReturnConstants.AllStatuses.FirstOrDefault(s =>
+            string.Equals(s, toStatus, StringComparison.OrdinalIgnoreCase));
 
         if (canonical is null
-            || (!string.Equals(canonical, ReturnConstants.StatusReceiving, StringComparison.OrdinalIgnoreCase)
-                && !string.Equals(canonical, ReturnConstants.StatusRefunded, StringComparison.OrdinalIgnoreCase)
+            || (!string.Equals(canonical, ReturnConstants.StatusRefunded, StringComparison.OrdinalIgnoreCase)
+                && !string.Equals(canonical, ReturnConstants.StatusExchanged, StringComparison.OrdinalIgnoreCase)
                 && !string.Equals(canonical, ReturnConstants.StatusClosed, StringComparison.OrdinalIgnoreCase)))
         {
-            throw new AppException("Status must be Receiving, Refunded, or Closed.");
+            throw new AppException("Status must be Refunded, Exchanged, or Closed.");
         }
 
         string? note = null;
@@ -159,8 +174,8 @@ public sealed class AdminReturnService : IAdminReturnService
         var existing = await _repository.GetDetailAsync(returnRequestId, cancellationToken)
             ?? throw new NotFoundException("Return request not found.");
 
-        if (!ReturnConstants.StatusTransitions.TryGetValue(existing.Status, out var expected)
-            || !string.Equals(expected, canonical, StringComparison.OrdinalIgnoreCase))
+        if (!ReturnConstants.AdminStatusTransitions.TryGetValue(existing.Status, out var allowed)
+            || !allowed.Contains(canonical, StringComparer.OrdinalIgnoreCase))
         {
             throw new ConflictException(
                 $"Cannot transition return request from {existing.Status} to {canonical}.");
@@ -194,23 +209,34 @@ public sealed class AdminReturnService : IAdminReturnService
 
         if (string.Equals(canonical, ReturnConstants.StatusRefunded, StringComparison.OrdinalIgnoreCase))
         {
-            await NotifyBuyerReturnAsync(
-                result,
+            await NotifyUserAsync(
+                result.BuyerUserId,
+                result.ReturnRequestId,
                 "Refund completed",
                 $"Your refund for order {result.OrderCode} has been completed.",
+                cancellationToken);
+        }
+        else if (string.Equals(canonical, ReturnConstants.StatusExchanged, StringComparison.OrdinalIgnoreCase))
+        {
+            await NotifyUserAsync(
+                result.BuyerUserId,
+                result.ReturnRequestId,
+                "Exchange completed",
+                $"Your exchange for order {result.OrderCode} has been marked complete.",
                 cancellationToken);
         }
 
         return result;
     }
 
-    private async Task NotifyBuyerReturnAsync(
-        AdminReturnRequestDetailDto detail,
+    private async Task NotifyUserAsync(
+        Guid userId,
+        Guid returnRequestId,
         string title,
         string body,
         CancellationToken cancellationToken)
     {
-        if (detail.BuyerUserId == Guid.Empty)
+        if (userId == Guid.Empty)
             return;
 
         try
@@ -218,14 +244,14 @@ public sealed class AdminReturnService : IAdminReturnService
             await _notifications.CreateAsync(
                 new CreateNotificationRequest
                 {
-                    UserId = detail.BuyerUserId,
+                    UserId = userId,
                     Title = title,
                     Body = body.Length <= NotificationConstants.MaxBodyLength
                         ? body
                         : body[..NotificationConstants.MaxBodyLength],
                     Type = NotificationConstants.TypeReturn,
                     ReferenceType = NotificationConstants.RefReturnRequest,
-                    ReferenceId = detail.ReturnRequestId
+                    ReferenceId = returnRequestId
                 },
                 cancellationToken);
         }
@@ -233,9 +259,9 @@ public sealed class AdminReturnService : IAdminReturnService
         {
             _logger.LogWarning(
                 ex,
-                "Failed to notify buyer {BuyerId} about return {ReturnRequestId}",
-                detail.BuyerUserId,
-                detail.ReturnRequestId);
+                "Failed to notify user {UserId} about return {ReturnRequestId}",
+                userId,
+                returnRequestId);
         }
     }
 
@@ -275,7 +301,7 @@ public sealed class AdminReturnService : IAdminReturnService
         if (match is null)
         {
             throw new AppException(
-                "Status filter must be Pending, Approved, Rejected, Receiving, Refunded, Closed, or all.");
+                "Status filter must be a known return status or all.");
         }
 
         return match;
@@ -310,6 +336,11 @@ public sealed class AdminReturnService : IAdminReturnService
 
         return trimmed;
     }
+
+    private static string FormatResolution(string resolutionType) =>
+        string.Equals(resolutionType, ReturnConstants.ResolutionExchange, StringComparison.OrdinalIgnoreCase)
+            ? "exchange"
+            : "return and refund";
 
     private static void EnsureReturnId(Guid returnRequestId)
     {

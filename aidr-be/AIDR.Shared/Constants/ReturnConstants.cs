@@ -3,12 +3,16 @@ namespace AIDR.Shared.Constants;
 public static class ReturnConstants
 {
     public const string ResolutionReturnRefund = "ReturnRefund";
+    public const string ResolutionExchange = "Exchange";
 
     public const string StatusPending = "Pending";
     public const string StatusApproved = "Approved";
     public const string StatusRejected = "Rejected";
+    public const string StatusSellerConfirmed = "SellerConfirmed";
     public const string StatusReceiving = "Receiving";
+    public const string StatusAccepted = "Accepted";
     public const string StatusRefunded = "Refunded";
+    public const string StatusExchanged = "Exchanged";
     public const string StatusClosed = "Closed";
 
     public const string EvidenceTypeUnboxing = "Unboxing";
@@ -31,13 +35,22 @@ public static class ReturnConstants
     public const int MaxListPageSize = 100;
     public const int MaxListSearchLength = 100;
 
+    public static readonly HashSet<string> ResolutionTypes = new(StringComparer.OrdinalIgnoreCase)
+    {
+        ResolutionReturnRefund,
+        ResolutionExchange
+    };
+
     public static readonly HashSet<string> AllStatuses = new(StringComparer.OrdinalIgnoreCase)
     {
         StatusPending,
         StatusApproved,
         StatusRejected,
+        StatusSellerConfirmed,
         StatusReceiving,
+        StatusAccepted,
         StatusRefunded,
+        StatusExchanged,
         StatusClosed
     };
 
@@ -61,18 +74,51 @@ public static class ReturnConstants
     {
         StatusPending,
         StatusApproved,
+        StatusSellerConfirmed,
         StatusReceiving,
-        StatusRefunded
+        StatusAccepted,
+        StatusRefunded,
+        StatusExchanged
     };
 
-    /// <summary>Admin pipeline transitions for UC-52.</summary>
-    public static readonly IReadOnlyDictionary<string, string> StatusTransitions =
+    /// <summary>
+    /// Admin pipeline after seller accepts goods: Accepted→Refunded|Exchanged→Closed.
+    /// </summary>
+    public static readonly IReadOnlyDictionary<string, string[]> AdminStatusTransitions =
+        new Dictionary<string, string[]>(StringComparer.OrdinalIgnoreCase)
+        {
+            [StatusAccepted] = [StatusRefunded, StatusExchanged],
+            [StatusRefunded] = [StatusClosed],
+            [StatusExchanged] = [StatusClosed]
+        };
+
+    /// <summary>Seller pipeline after admin forwards the request.</summary>
+    public static readonly IReadOnlyDictionary<string, string> SellerStatusTransitions =
         new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
         {
-            [StatusApproved] = StatusReceiving,
-            [StatusReceiving] = StatusRefunded,
-            [StatusRefunded] = StatusClosed
+            [StatusApproved] = StatusSellerConfirmed,
+            [StatusSellerConfirmed] = StatusReceiving,
+            [StatusReceiving] = StatusAccepted
         };
+
+    /// <summary>Statuses from which seller may reject the request.</summary>
+    public static readonly HashSet<string> SellerRejectableStatuses = new(StringComparer.OrdinalIgnoreCase)
+    {
+        StatusApproved,
+        StatusReceiving
+    };
+
+    public static string CanonicalResolutionType(string resolutionType)
+    {
+        var match = ResolutionTypes.FirstOrDefault(r =>
+            string.Equals(r, resolutionType, StringComparison.OrdinalIgnoreCase));
+        return match ?? throw new ArgumentException("Invalid resolution type.", nameof(resolutionType));
+    }
+
+    public static string ExpectedResolutionOutcome(string resolutionType) =>
+        string.Equals(resolutionType, ResolutionExchange, StringComparison.OrdinalIgnoreCase)
+            ? StatusExchanged
+            : StatusRefunded;
 
     public static (int Page, int PageSize) NormalizePaging(int page, int pageSize)
     {

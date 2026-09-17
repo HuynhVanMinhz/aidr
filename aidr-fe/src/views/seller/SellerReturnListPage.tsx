@@ -3,25 +3,16 @@ import { Link } from 'react-router-dom';
 import { AdminPagination, AdminStatCard } from '../../components/admin/AdminStatCard';
 import { AdminSelect } from '../../components/admin/AdminSelect';
 import { IconifyIcon } from '../../components/admin/IconifyIcon';
-import { useAdminReturnRequests } from '../../hooks/useAdminReturnRequests';
-import type { AdminReturnStatusFilter } from '../../types/return';
+import { useSellerReturns } from '../../hooks/useSellerReturns';
 import { formatMoney } from '../../utils/formatCatalog';
-import { formatReturnStatus, returnStatusBadgeClass } from '../../utils/returnUi';
+import {
+  formatResolutionType,
+  formatReturnStatus,
+  returnStatusBadgeClass,
+  SELLER_RETURN_STATUS_FILTERS,
+} from '../../utils/returnUi';
 
 const PAGE_SIZE = 10;
-
-const STATUS_FILTERS: { value: AdminReturnStatusFilter; label: string }[] = [
-  { value: 'Pending', label: 'Pending' },
-  { value: 'Approved', label: 'With seller' },
-  { value: 'SellerConfirmed', label: 'Seller confirmed' },
-  { value: 'Receiving', label: 'Receiving' },
-  { value: 'Accepted', label: 'Accepted' },
-  { value: 'Refunded', label: 'Refunded' },
-  { value: 'Exchanged', label: 'Exchanged' },
-  { value: 'Closed', label: 'Closed' },
-  { value: 'Rejected', label: 'Rejected' },
-  { value: 'all', label: 'All' },
-];
 
 function formatDate(value: string) {
   const date = new Date(value);
@@ -29,60 +20,40 @@ function formatDate(value: string) {
   return date.toLocaleString();
 }
 
-export function AdminReturnRequestListPage() {
-  const [status, setStatus] = useState<AdminReturnStatusFilter>('Pending');
-  const [q, setQ] = useState('');
-  const [debouncedQ, setDebouncedQ] = useState('');
+export function SellerReturnListPage() {
+  const [status, setStatus] = useState('Approved');
   const [page, setPage] = useState(1);
-
-  useEffect(() => {
-    const timer = window.setTimeout(() => setDebouncedQ(q.trim()), 300);
-    return () => window.clearTimeout(timer);
-  }, [q]);
-
-  useEffect(() => {
-    setPage(1);
-  }, [debouncedQ, status]);
-
-  const { items, loading, error, summary, totalCount, page: serverPage } = useAdminReturnRequests({
-    status,
-    q: debouncedQ,
+  const { list, loading, error } = useSellerReturns({
+    status: status || null,
     page,
     pageSize: PAGE_SIZE,
   });
 
+  const items = list?.items ?? [];
+  const totalCount = list?.totalCount ?? 0;
+  const summary = {
+    approvedCount: list?.approvedCount ?? 0,
+    sellerConfirmedCount: list?.sellerConfirmedCount ?? 0,
+    receivingCount: list?.receivingCount ?? 0,
+    acceptedCount: list?.acceptedCount ?? 0,
+  };
+
   useEffect(() => {
-    if (serverPage !== page) setPage(serverPage);
-  }, [serverPage, page]);
+    if (list && list.page !== page && list.totalPages > 0) {
+      setPage(list.page);
+    }
+  }, [list, page]);
 
   const viewTotal =
-    status === 'Pending'
-      ? summary.pendingCount
-      : status === 'Approved'
-        ? summary.approvedCount
-        : status === 'Rejected'
-          ? summary.rejectedCount
-          : status === 'SellerConfirmed'
-            ? summary.sellerConfirmedCount
-            : status === 'Receiving'
-              ? summary.receivingCount
-              : status === 'Accepted'
-                ? summary.acceptedCount
-                : status === 'Refunded'
-                  ? summary.refundedCount
-                  : status === 'Exchanged'
-                    ? summary.exchangedCount
-                    : status === 'Closed'
-                      ? summary.closedCount
-                      : summary.pendingCount +
-                        summary.approvedCount +
-                        summary.rejectedCount +
-                        summary.sellerConfirmedCount +
-                        summary.receivingCount +
-                        summary.acceptedCount +
-                        summary.refundedCount +
-                        summary.exchangedCount +
-                        summary.closedCount;
+    status === 'Approved'
+      ? summary.approvedCount
+      : status === 'SellerConfirmed'
+        ? summary.sellerConfirmedCount
+        : status === 'Receiving'
+          ? summary.receivingCount
+          : status === 'Accepted'
+            ? summary.acceptedCount
+            : totalCount;
 
   return (
     <>
@@ -90,7 +61,7 @@ export function AdminReturnRequestListPage() {
         <div className="col-md-6 col-xl-3">
           <AdminStatCard
             title="In This View"
-            value={debouncedQ ? totalCount : viewTotal}
+            value={viewTotal}
             unit="Requests"
             icon="solar:clipboard-list-bold-duotone"
             tone="primary"
@@ -98,8 +69,8 @@ export function AdminReturnRequestListPage() {
         </div>
         <div className="col-md-6 col-xl-3">
           <AdminStatCard
-            title="Pending"
-            value={summary.pendingCount}
+            title="Needs confirmation"
+            value={summary.approvedCount}
             unit="Queue"
             icon="solar:hourglass-bold-duotone"
             tone="warning"
@@ -118,7 +89,7 @@ export function AdminReturnRequestListPage() {
           <AdminStatCard
             title="Accepted"
             value={summary.acceptedCount}
-            unit="Awaiting complete"
+            unit="Ready for admin"
             icon="solar:check-circle-bold-duotone"
             tone="success"
           />
@@ -132,24 +103,19 @@ export function AdminReturnRequestListPage() {
               <h4 className="card-title mb-0">All Return Items</h4>
               <div className="d-flex flex-nowrap align-items-center gap-2">
                 <AdminSelect
-                  id="return-request-status"
+                  id="seller-return-status"
                   size="sm"
                   block={false}
                   menuAlign="end"
                   value={status}
-                  options={STATUS_FILTERS.map((option) => ({
-                    value: option.value,
-                    label: option.label,
+                  options={SELLER_RETURN_STATUS_FILTERS.map((opt) => ({
+                    value: opt.value,
+                    label: opt.label,
                   }))}
-                  onChange={(next) => setStatus(next as AdminReturnStatusFilter)}
-                />
-                <input
-                  type="search"
-                  className="form-control form-control-sm"
-                  placeholder="Search order / shop / buyer..."
-                  value={q}
-                  onChange={(e) => setQ(e.target.value)}
-                  style={{ width: 260, flex: '0 0 auto' }}
+                  onChange={(next) => {
+                    setStatus(next);
+                    setPage(1);
+                  }}
                 />
               </div>
             </div>
@@ -166,7 +132,6 @@ export function AdminReturnRequestListPage() {
                   <tr>
                     <th>Order</th>
                     <th>Order By</th>
-                    <th>Shop</th>
                     <th>Resolution</th>
                     <th>Return Date</th>
                     <th>Total</th>
@@ -177,7 +142,7 @@ export function AdminReturnRequestListPage() {
                 <tbody>
                   {loading && items.length === 0 ? (
                     <tr>
-                      <td colSpan={8} className="text-center py-4 text-muted">
+                      <td colSpan={7} className="text-center py-4 text-muted">
                         Loading...
                       </td>
                     </tr>
@@ -185,47 +150,47 @@ export function AdminReturnRequestListPage() {
 
                   {!loading && items.length === 0 ? (
                     <tr>
-                      <td colSpan={8} className="text-center py-4 text-muted">
+                      <td colSpan={7} className="text-center py-4 text-muted">
                         No return requests found.
                       </td>
                     </tr>
                   ) : null}
 
-                  {items.map((item) => (
-                    <tr key={item.returnRequestId}>
+                  {items.map((row) => (
+                    <tr key={row.returnRequestId}>
                       <td>
                         <Link
-                          to={`/admin/return-requests/${item.returnRequestId}`}
+                          to={`/seller/returns/${row.returnRequestId}`}
                           className="fw-medium link-primary"
                         >
-                          {item.orderCode}
+                          {row.orderCode}
                         </Link>
                         <div className="text-muted fs-12 text-truncate" style={{ maxWidth: 220 }}>
-                          {item.reason}
+                          {row.reason}
                         </div>
                       </td>
                       <td>
-                        <div className="fw-medium">{item.buyerFullName}</div>
-                        <div className="text-muted fs-12">{item.buyerEmail}</div>
+                        <div className="fw-medium">{row.buyerFullName}</div>
+                        <div className="text-muted fs-12">{row.buyerEmail}</div>
                       </td>
-                      <td>{item.shopName}</td>
+                      <td>{formatResolutionType(row.resolutionType)}</td>
+                      <td>{formatDate(row.createdAt)}</td>
+                      <td>{formatMoney(row.orderTotalAmount, 'VND')}</td>
                       <td>
-                        {item.resolutionType === 'Exchange' ? 'Exchange' : 'Return & refund'}
-                      </td>
-                      <td>{formatDate(item.createdAt)}</td>
-                      <td>{formatMoney(item.orderTotalAmount, 'VND')}</td>
-                      <td>
-                        <span className={returnStatusBadgeClass(item.status)}>
-                          {formatReturnStatus(item.status)}
+                        <span className={returnStatusBadgeClass(row.status)}>
+                          {formatReturnStatus(row.status)}
                         </span>
                       </td>
                       <td>
                         <Link
-                          to={`/admin/return-requests/${item.returnRequestId}`}
+                          to={`/seller/returns/${row.returnRequestId}`}
                           className="btn btn-soft-primary btn-sm"
                           title="View"
                         >
-                          <IconifyIcon icon="solar:eye-bold-duotone" className="align-middle fs-18" />
+                          <IconifyIcon
+                            icon="solar:eye-bold-duotone"
+                            className="align-middle fs-18"
+                          />
                         </Link>
                       </td>
                     </tr>

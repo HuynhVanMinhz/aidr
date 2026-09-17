@@ -4,10 +4,15 @@ export type ReturnStatus =
   | 'Pending'
   | 'Approved'
   | 'Rejected'
+  | 'SellerConfirmed'
   | 'Receiving'
+  | 'Accepted'
   | 'Refunded'
+  | 'Exchanged'
   | 'Closed'
   | string;
+
+export type ReturnResolutionType = 'ReturnRefund' | 'Exchange' | string;
 
 export type ReturnEvidenceType = 'Unboxing' | 'Testing' | 'Other' | string;
 
@@ -25,6 +30,7 @@ export type CreateReturnItemPayload = {
 export type CreateReturnPayload = {
   reason: string;
   description?: string | null;
+  resolutionType?: ReturnResolutionType | null;
   items?: CreateReturnItemPayload[] | null;
   evidences: CreateReturnEvidencePayload[];
 };
@@ -76,10 +82,13 @@ export type BuyerReturnRequest = {
 export type AdminReturnStatusFilter =
   | 'Pending'
   | 'Approved'
-  | 'Rejected'
+  | 'SellerConfirmed'
   | 'Receiving'
+  | 'Accepted'
   | 'Refunded'
+  | 'Exchanged'
   | 'Closed'
+  | 'Rejected'
   | 'all';
 
 export type AdminReturnListQuery = {
@@ -117,8 +126,11 @@ export type AdminReturnListResult = {
   pendingCount: number;
   approvedCount: number;
   rejectedCount: number;
+  sellerConfirmedCount: number;
   receivingCount: number;
+  acceptedCount: number;
   refundedCount: number;
+  exchangedCount: number;
   closedCount: number;
 };
 
@@ -158,6 +170,7 @@ export type AdminReturnDetail = {
   orderStatus: string;
   shopId: string;
   shopName: string;
+  shopOwnerUserId?: string;
   buyerUserId: string;
   buyerEmail: string;
   buyerFullName: string;
@@ -189,6 +202,74 @@ export type UpdateReturnStatusPayload = {
   refundToAccountNumber?: string | null;
 };
 
+export type SellerReturnListItem = {
+  returnRequestId: string;
+  orderId: string;
+  orderCode: string;
+  buyerUserId: string;
+  buyerEmail: string;
+  buyerFullName: string;
+  reason: string;
+  status: ReturnStatus;
+  resolutionType: string;
+  refundAmount?: number | null;
+  orderTotalAmount: number;
+  evidenceCount: number;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type SellerReturnListResult = {
+  items: SellerReturnListItem[];
+  page: number;
+  pageSize: number;
+  totalCount: number;
+  totalPages: number;
+  approvedCount: number;
+  sellerConfirmedCount: number;
+  receivingCount: number;
+  acceptedCount: number;
+};
+
+export type SellerReturnDetail = {
+  returnRequestId: string;
+  orderId: string;
+  orderCode: string;
+  orderStatus: string;
+  shopId: string;
+  shopName: string;
+  buyerUserId: string;
+  buyerEmail: string;
+  buyerFullName: string;
+  reason: string;
+  description?: string | null;
+  resolutionType: string;
+  status: ReturnStatus;
+  refundAmount?: number | null;
+  orderTotalAmount: number;
+  adminNote?: string | null;
+  createdAt: string;
+  updatedAt: string;
+  items: AdminReturnItem[];
+  evidences: AdminReturnEvidence[];
+  statusHistories: AdminReturnStatusHistory[];
+};
+
+export type ConfirmSellerReturnPayload = {
+  resolutionType?: ReturnResolutionType | null;
+  note?: string | null;
+};
+
+export type RejectSellerReturnPayload = {
+  note: string;
+};
+
+export type SellerReturnActionPayload = {
+  note?: string | null;
+};
+
 export type BuyerReturnApiResult = ApiResult<BuyerReturnRequest>;
 export type AdminReturnListApiResult = ApiResult<AdminReturnListResult>;
 export type AdminReturnDetailApiResult = ApiResult<AdminReturnDetail>;
+export type SellerReturnListApiResult = ApiResult<SellerReturnListResult>;
+export type SellerReturnDetailApiResult = ApiResult<SellerReturnDetail>;

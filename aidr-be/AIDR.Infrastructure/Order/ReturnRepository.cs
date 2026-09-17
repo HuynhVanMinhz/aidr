@@ -11,12 +11,7 @@ namespace AIDR.Infrastructure.Ordering;
 public sealed class ReturnRepository : IReturnRepository
 {
     private static readonly string[] ActiveReturnStatusValues =
-    [
-        ReturnConstants.StatusPending,
-        ReturnConstants.StatusApproved,
-        ReturnConstants.StatusReceiving,
-        ReturnConstants.StatusRefunded
-    ];
+        ReturnConstants.ActiveReturnStatuses.ToArray();
 
     private readonly AidrDbContext _db;
 
@@ -27,6 +22,7 @@ public sealed class ReturnRepository : IReturnRepository
         Guid orderId,
         string reason,
         string? description,
+        string resolutionType,
         IReadOnlyList<(Guid OrderItemId, int Quantity)> items,
         IReadOnlyList<(string EvidenceType, string MediaUrl, string? PublicId)> evidences,
         CancellationToken cancellationToken = default)
@@ -65,7 +61,7 @@ public sealed class ReturnRepository : IReturnRepository
             BuyerUserId = buyerUserId,
             Reason = reason,
             Description = description,
-            ResolutionType = ReturnConstants.ResolutionReturnRefund,
+            ResolutionType = resolutionType,
             Status = ReturnConstants.StatusPending,
             CreatedAt = now,
             UpdatedAt = now
@@ -115,7 +111,7 @@ public sealed class ReturnRepository : IReturnRepository
             FromStatus = fromOrderStatus,
             ToStatus = OrderConstants.StatusReturnRequested,
             ChangedBy = buyerUserId,
-            Note = "Buyer requested return / refund",
+            Note = "Buyer requested return / refund / exchange",
             CreatedAt = now
         });
 

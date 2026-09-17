@@ -26,6 +26,10 @@ public sealed class ReturnService : IReturnService
 
         var reason = RequireText(request.Reason, "Reason", ReturnConstants.MaxReasonLength);
 
+        var resolutionType = string.IsNullOrWhiteSpace(request.ResolutionType)
+            ? ReturnConstants.ResolutionReturnRefund
+            : ReturnConstants.CanonicalResolutionType(request.ResolutionType.Trim());
+
         string? description = null;
         if (!string.IsNullOrWhiteSpace(request.Description))
         {
@@ -48,6 +52,7 @@ public sealed class ReturnService : IReturnService
             orderId,
             reason,
             description,
+            resolutionType,
             items,
             evidences,
             cancellationToken);

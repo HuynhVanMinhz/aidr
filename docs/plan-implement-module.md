@@ -45,7 +45,7 @@ Cột **assign**: GitHub username — owner module (maintain, demo, bugfix).
 | 19 | Engagement — Wishlist | Wishlist CRUD. | UC-36, UC-37, UC-38 | Done | minhvanhuynh |
 | 20 | Engagement — Reviews & Ratings | Review SP + rate seller. | UC-59, UC-60, UC-61, UC-62a, UC-63 | Done | minhvanhuynh |
 | 21 | Engagement — Follow | Follow / unfollow / list. | UC-65, UC-66, UC-67 | Done | minhvanhuynh |
-| 22 | Return & Refund | Buyer request **Trả hàng+Hoàn tiền** (video Unboxing/Testing); Admin duyệt; **không Exchange**; refund buyer rồi debit seller wallet. | UC-43, UC-48, UC-49, UC-50, UC-52 | Done | Ha20203 |
+| 22 | Return & Refund / Exchange | Buyer request Trả hàng+Hoàn tiền **hoặc Đổi hàng** (video Unboxing/Testing); Admin duyệt → forward Seller; Seller xác nhận & Accepted → Admin Refunded/Exchanged→Closed. | UC-43, UC-48, UC-49, UC-50, UC-52, UC-93, UC-94, UC-95 | Done | Ha20203 |
 | 23 | Notifications | REST inbox + SignalR push (order/payment/moderation). | UC-44, UC-45 | Done | thuandn03 |
 | 24 | Chat | Thread list + gửi tin SignalR. | UC-57, UC-58 | Done | hoang2211 |
 | 25 | SellerCenter — Finance & Insights | Wallet, dashboard, sales reports (dùng cost lot → margin). | UC-69, UC-70, UC-85 | Done | manhisme10 |
