@@ -8,6 +8,7 @@ export const CloudinaryFolders = {
   shop: 'shop',
   chat: 'chat',
   kyc: 'kyc',
+  returns: 'returns',
 } as const;
 
 export type CloudinaryFolder = (typeof CloudinaryFolders)[keyof typeof CloudinaryFolders];
@@ -151,4 +152,68 @@ export function validateKycImageFile(file: File): void {
 export async function uploadKycImageToCloudinary(file: File): Promise<CloudinaryUploadResult> {
   validateKycImageFile(file);
   return uploadImageToCloudinary(file, CloudinaryFolders.kyc);
+}
+
+const MAX_RETURN_VIDEO_BYTES = 50 * 1024 * 1024;
+
+const RETURN_VIDEO_TYPES = new Set([
+  'video/mp4',
+  'video/webm',
+  'video/quicktime',
+  'video/x-msvideo',
+  'video/x-matroska',
+]);
+
+/** Return evidence videos — Unboxing / Testing. */
+export function validateReturnVideoFile(file: File): void {
+  const typeOk =
+    file.type.startsWith('video/') || RETURN_VIDEO_TYPES.has(file.type) || /\.(mp4|webm|mov|m4v|avi|mkv)$/i.test(file.name);
+  if (!typeOk) {
+    throw new Error('Please choose a video file (MP4, WebM, or MOV).');
+  }
+  if (file.size > MAX_RETURN_VIDEO_BYTES) {
+    throw new Error('Video must be 50MB or smaller.');
+  }
+}
+
+async function uploadVideoToCloudinary(
+  file: File,
+  folder: CloudinaryFolder,
+): Promise<CloudinaryUploadResult> {
+  const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
+  const uploadPreset = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
+
+  if (!cloudName || !uploadPreset) {
+    throw new Error('Cloudinary is not configured. Add VITE_CLOUDINARY_* to .env.');
+  }
+
+  const form = new FormData();
+  form.append('file', file);
+  form.append('upload_preset', uploadPreset);
+  form.append('folder', folder);
+
+  const response = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/video/upload`, {
+    method: 'POST',
+    body: form,
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to upload video to Cloudinary.');
+  }
+
+  const payload = (await response.json()) as { secure_url?: string; public_id?: string };
+  if (!payload.secure_url || !payload.public_id) {
+    throw new Error('Cloudinary did not return a video URL.');
+  }
+
+  return {
+    secureUrl: payload.secure_url,
+    publicId: payload.public_id,
+  };
+}
+
+/** Upload a return evidence video to folder `returns`. */
+export async function uploadReturnVideoToCloudinary(file: File): Promise<CloudinaryUploadResult> {
+  validateReturnVideoFile(file);
+  return uploadVideoToCloudinary(file, CloudinaryFolders.returns);
 }
