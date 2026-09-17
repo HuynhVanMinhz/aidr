@@ -20,12 +20,24 @@ export const VN_DEFAULT_CENTER: LatLng = { lat: 21.0278, lng: 105.8342 };
 /** Keeps a search for "Ward 5" from landing in another country. */
 const VN_BBOX = '102.1,8.2,109.6,23.5';
 
+/** Points awarded when a Photon feature's admin fields match the buyer's picks. */
+const SCORE_DISTRICT = 100;
+const SCORE_WARD = 40;
+const SCORE_PROVINCE = 20;
+
 export type ReverseGeocodeResult = {
   displayName: string;
   street: string | null;
   ward: string | null;
   district: string | null;
   province: string | null;
+};
+
+/** Optional admin context so "Lý Thánh Tông" lands in the selected district, not a namesake. */
+export type GeocodePrefer = {
+  province?: string | null;
+  district?: string | null;
+  ward?: string | null;
 };
 
 type PhotonProperties = {
@@ -79,6 +91,21 @@ export function normalizeAdminName(value: string | null | undefined): string {
     .trim();
 }
 
+function namesMatch(a: string | null | undefined, b: string | null | undefined): boolean {
+  const left = normalizeAdminName(a);
+  const right = normalizeAdminName(b);
+  if (!left || !right) return false;
+  if (left === right) return true;
+
+  const leftFlat = left.replace(/ /g, '');
+  const rightFlat = right.replace(/ /g, '');
+  if (leftFlat === rightFlat) return true;
+
+  return (
+    (left.length > 2 && right.includes(left)) || (right.length > 2 && left.includes(right))
+  );
+}
+
 /** Best match for an OSM name inside a carrier list; null when nothing is close. */
 export function matchLocation<T extends { name: string }>(
   options: readonly T[],
@@ -112,6 +139,85 @@ function pointOf(feature: PhotonFeature | undefined): LatLng | null {
   return Number.isFinite(lat) && Number.isFinite(lng) ? { lat, lng } : null;
 }
 
+/** OSM/Photon scatter VN admin labels across several keys — check them all. */
+function featureAdminBag(props: PhotonProperties | undefined): string {
+  if (!props) return '';
+  return [
+    props.locality,
+    props.suburb,
+    props.quarter,
+    props.neighbourhood,
+    props.district,
+    props.county,
+    props.city,
+    props.state,
+    props.name,
+  ]
+    .filter(Boolean)
+    .join(' | ');
+}
+
+function scoreFeature(props: PhotonProperties | undefined, prefer?: GeocodePrefer): number {
+  if (!props || !prefer) return 0;
+
+  const bag = featureAdminBag(props);
+  let score = 0;
+
+  if (prefer.district?.trim()) {
+    const districtKeys = [props.district, props.county, props.city, props.suburb];
+    if (districtKeys.some((k) => namesMatch(k, prefer.district)) || namesMatch(bag, prefer.district)) {
+      score += SCORE_DISTRICT;
+    }
+  }
+
+  if (prefer.ward?.trim()) {
+    const wardKeys = [props.locality, props.suburb, props.quarter, props.neighbourhood, props.name];
+    if (wardKeys.some((k) => namesMatch(k, prefer.ward)) || namesMatch(bag, prefer.ward)) {
+      score += SCORE_WARD;
+    }
+  }
+
+  if (prefer.province?.trim()) {
+    const provinceKeys = [props.city, props.state];
+    if (provinceKeys.some((k) => namesMatch(k, prefer.province)) || namesMatch(bag, prefer.province)) {
+      score += SCORE_PROVINCE;
+    }
+  }
+
+  return score;
+}
+
+function pickBestFeature(
+  features: PhotonFeature[],
+  prefer?: GeocodePrefer,
+): PhotonFeature | undefined {
+  const inVietnam = features.filter(
+    (f) => !f.properties?.countrycode || f.properties.countrycode === 'VN',
+  );
+  const pool = inVietnam.length > 0 ? inVietnam : features;
+  if (pool.length === 0) return undefined;
+
+  const ranked = [...pool]
+    .map((feature, index) => ({
+      feature,
+      // Stable tie-break: Photon already ranks by relevance to the query text.
+      score: scoreFeature(feature.properties, prefer) * 1000 - index,
+      adminScore: scoreFeature(feature.properties, prefer),
+    }))
+    .sort((a, b) => b.score - a.score);
+
+  const best = ranked[0];
+  if (!best) return undefined;
+
+  // Same street name in two districts (e.g. Lý Thánh Tông in Ngũ Hành Sơn vs Sơn Trà):
+  // if the buyer picked a district, never land on a namesake that does not match it.
+  if (prefer?.district?.trim() && best.adminScore < SCORE_DISTRICT) {
+    return undefined;
+  }
+
+  return best.feature;
+}
+
 async function readFeatures(url: URL, signal?: AbortSignal): Promise<PhotonFeature[]> {
   const response = await fetch(url, { signal, headers: { Accept: 'application/json' } });
   if (!response.ok) return [];
@@ -119,20 +225,23 @@ async function readFeatures(url: URL, signal?: AbortSignal): Promise<PhotonFeatu
   return body.features ?? [];
 }
 
-export async function geocodeAddress(query: string, signal?: AbortSignal): Promise<LatLng | null> {
+export async function geocodeAddress(
+  query: string,
+  signal?: AbortSignal,
+  prefer?: GeocodePrefer,
+): Promise<LatLng | null> {
   const q = query.trim();
   if (q.length < 6) return null;
 
   return throttled(async () => {
     const url = new URL(`${PHOTON}/api/`);
     url.searchParams.set('q', q);
-    url.searchParams.set('limit', '5');
+    // Several candidates so we can prefer the one in the selected district.
+    url.searchParams.set('limit', '10');
     url.searchParams.set('bbox', VN_BBOX);
 
     const features = await readFeatures(url, signal);
-    // The bbox is a hint, not a filter — drop anything that landed abroad.
-    const inVietnam = features.find((f) => f.properties?.countrycode === 'VN');
-    return pointOf(inVietnam ?? features[0]);
+    return pointOf(pickBestFeature(features, prefer));
   });
 }
 
