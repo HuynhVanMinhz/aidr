@@ -75,14 +75,18 @@ public static class AdminConstants
         InsightGranularityMonth
     };
 
-    /// <summary>Paid shop orders that count toward platform GMV / top products.</summary>
+    /// <summary>
+    /// Paid shop orders that count toward platform GMV / top products.
+    /// Includes open return disputes; excludes only after Returned or Cancelled.
+    /// </summary>
     public static readonly HashSet<string> InsightSalesOrderStatuses = new(StringComparer.OrdinalIgnoreCase)
     {
         OrderConstants.StatusPaid,
         OrderConstants.StatusConfirmed,
         OrderConstants.StatusShipping,
         OrderConstants.StatusDelivered,
-        OrderConstants.StatusCompleted
+        OrderConstants.StatusCompleted,
+        OrderConstants.StatusReturnRequested
     };
 
     public static (int Page, int PageSize) NormalizePaging(int page, int pageSize)
