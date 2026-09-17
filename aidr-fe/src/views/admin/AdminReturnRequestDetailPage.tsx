@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { AdminConfirmModal } from '../../components/admin/AdminConfirmModal';
 import { FormField } from '../../components/admin/FormField';
+import { ReturnEvidencePanel } from '../../components/returns/ReturnEvidenceMedia';
 import {
   useAdminReturnById,
   useAdminReturnRequests,
@@ -343,36 +344,7 @@ export function AdminReturnRequestDetailPage() {
 
             <div className="mb-3">
               <p className="text-muted mb-2">Evidence videos</p>
-              {item.evidences.length === 0 ? (
-                <p className="text-muted mb-0">No evidence uploaded.</p>
-              ) : (
-                <div className="row g-3">
-                  {item.evidences.map((evidence) => (
-                    <div className="col-md-6" key={evidence.evidenceId}>
-                      <div className="border rounded p-2 h-100">
-                        <p className="fw-medium mb-2">{evidence.evidenceType}</p>
-                        <video
-                          className="w-100 rounded bg-dark"
-                          controls
-                          preload="metadata"
-                          src={evidence.mediaUrl}
-                          style={{ maxHeight: 240 }}
-                        >
-                          <track kind="captions" />
-                        </video>
-                        <a
-                          href={evidence.mediaUrl}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="link-primary fs-12"
-                        >
-                          Open in new tab
-                        </a>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
+              <ReturnEvidencePanel evidences={item.evidences} />
             </div>
 
             <div className="mb-0">

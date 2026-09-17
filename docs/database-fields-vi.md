@@ -578,7 +578,7 @@ PendingPayment → Paid → Confirmed → Shipping → Delivered → Completed
 | `Description` | NVARCHAR(2000) | Mô tả chi tiết | |
 | `EvidenceUrls` | NVARCHAR(MAX) | JSON URL phụ (legacy) | `[]` |
 | `ResolutionType` | NVARCHAR(20) | Hình thức xử lý | `ReturnRefund` \| `Exchange` |
-| **`Status`** | NVARCHAR(30) | Trạng thái | `Pending`, `Approved`, `Rejected`, `Receiving`, `Refunded`, `Closed` |
+| **`Status`** | NVARCHAR(30) | Trạng thái | `Pending` → `Approved` → `SellerConfirmed` → `Receiving` → `Accepted` → (`Refunded`\|`Exchanged`) → `Closed` (hoặc `Rejected`) |
 | `RefundAmount` | DECIMAL(18,2) | Số tiền hoàn | `12500000` |
 | `AdminNote` | NVARCHAR(500) | Ghi chú admin | |
 | `ReviewedBy` / `ReviewedAt` | | Admin duyệt | GUID, UTC |

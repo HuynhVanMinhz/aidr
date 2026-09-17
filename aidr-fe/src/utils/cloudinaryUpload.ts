@@ -201,13 +201,28 @@ async function uploadVideoToCloudinary(
     throw new Error('Failed to upload video to Cloudinary.');
   }
 
-  const payload = (await response.json()) as { secure_url?: string; public_id?: string };
+  const payload = (await response.json()) as {
+    secure_url?: string;
+    public_id?: string;
+    resource_type?: string;
+    format?: string;
+  };
   if (!payload.secure_url || !payload.public_id) {
     throw new Error('Cloudinary did not return a video URL.');
   }
 
+  let secureUrl = payload.secure_url;
+  // Guard against presets that echo an image delivery path for video uploads
+  if (secureUrl.includes('/image/upload/')) {
+    secureUrl = secureUrl.replace('/image/upload/', '/video/upload/');
+  }
+  const pathOnly = secureUrl.split('?')[0] ?? secureUrl;
+  if (payload.format && !/\.[a-z0-9]+$/i.test(pathOnly)) {
+    secureUrl = `${secureUrl}.${payload.format}`;
+  }
+
   return {
-    secureUrl: payload.secure_url,
+    secureUrl,
     publicId: payload.public_id,
   };
 }

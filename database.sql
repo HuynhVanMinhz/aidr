@@ -699,9 +699,10 @@ CREATE TABLE dbo.ReturnRequests (
     -- Deprecated generic bag; prefer ReturnEvidences (Unboxing / Testing). Kept for optional extra media.
     EvidenceUrls    NVARCHAR(MAX)    NULL,             -- JSON array of extra URLs (optional)
     ResolutionType  NVARCHAR(20)     NOT NULL CONSTRAINT DF_ReturnRequests_Resolution DEFAULT (N'ReturnRefund'),
-        -- Chỉ hỗ trợ Trả hàng + Hoàn tiền. KHÔNG có Exchange / Đổi máy mới.
+        -- ReturnRefund (trả + hoàn) | Exchange (đổi hàng)
     Status          NVARCHAR(30)     NOT NULL CONSTRAINT DF_ReturnRequests_Status DEFAULT (N'Pending'),
-        -- Pending | Approved | Rejected | Receiving | Refunded | Closed
+        -- Pending → Approved → SellerConfirmed → Receiving → Accepted → (Refunded|Exchanged) → Closed
+        -- (hoặc Rejected)
     RefundAmount    DECIMAL(18,2)    NULL,
     AdminNote       NVARCHAR(500)    NULL,
     ReviewedBy      UNIQUEIDENTIFIER NULL,
@@ -712,8 +713,9 @@ CREATE TABLE dbo.ReturnRequests (
     CONSTRAINT FK_ReturnRequests_Buyer FOREIGN KEY (BuyerUserId) REFERENCES dbo.Users (UserId),
     CONSTRAINT FK_ReturnRequests_Reviewer FOREIGN KEY (ReviewedBy) REFERENCES dbo.Users (UserId),
     CONSTRAINT CK_ReturnRequests_Status CHECK (Status IN (
-        N'Pending', N'Approved', N'Rejected', N'Receiving', N'Refunded', N'Closed')),
-    CONSTRAINT CK_ReturnRequests_Resolution CHECK (ResolutionType IN (N'ReturnRefund'))
+        N'Pending', N'Approved', N'Rejected', N'SellerConfirmed', N'Receiving',
+        N'Accepted', N'Refunded', N'Exchanged', N'Closed')),
+    CONSTRAINT CK_ReturnRequests_Resolution CHECK (ResolutionType IN (N'ReturnRefund', N'Exchange'))
 );
 GO
 

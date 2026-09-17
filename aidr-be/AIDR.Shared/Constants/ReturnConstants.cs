@@ -112,7 +112,9 @@ public static class ReturnConstants
     {
         var match = ResolutionTypes.FirstOrDefault(r =>
             string.Equals(r, resolutionType, StringComparison.OrdinalIgnoreCase));
-        return match ?? throw new ArgumentException("Invalid resolution type.", nameof(resolutionType));
+        if (match is null)
+            throw new Exceptions.AppException("Resolution type must be ReturnRefund or Exchange.");
+        return match;
     }
 
     public static string ExpectedResolutionOutcome(string resolutionType) =>
