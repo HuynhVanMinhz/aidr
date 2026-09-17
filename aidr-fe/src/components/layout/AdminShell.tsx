@@ -106,8 +106,10 @@ export function AdminShell({ variant = 'admin', children }: AdminShellProps) {
     }
   }, [pathname, variant]);
 
-  // Seller logo goes to storefront home; admin stays on admin dashboard.
-  const homePath = variant === 'seller' ? '/' : '/admin';
+  // Logo: seller can jump to storefront; admin stays in admin area.
+  const logoPath = variant === 'seller' ? '/' : '/admin';
+  // Sidebar Dashboard must stay inside the workspace (not storefront home).
+  const dashboardPath = variant === 'seller' ? '/seller' : '/admin';
   const title = pageTitle(pathname, variant);
 
   async function handleLogout() {
@@ -182,11 +184,11 @@ export function AdminShell({ variant = 'admin', children }: AdminShellProps) {
 
       <div className="main-nav">
         <div className="logo-box">
-          <Link to={homePath} className="logo-dark">
+          <Link to={logoPath} className="logo-dark">
             <img src="/admin-theme/images/aidr-logo.png" className="logo-sm" alt="AIDR" />
             <img src="/admin-theme/images/aidr-logo.png" className="logo-lg" alt="AIDR" />
           </Link>
-          <Link to={homePath} className="logo-light">
+          <Link to={logoPath} className="logo-light">
             <img src="/admin-theme/images/aidr-logo.png" className="logo-sm" alt="AIDR" />
             <img src="/admin-theme/images/aidr-logo.png" className="logo-lg" alt="AIDR" />
           </Link>
@@ -200,7 +202,7 @@ export function AdminShell({ variant = 'admin', children }: AdminShellProps) {
           <ul className="navbar-nav" id="navbar-nav">
             <li className="menu-title">General</li>
             <li className="nav-item">
-              <NavLink className={({ isActive }) => `nav-link${isActive ? ' active' : ''}`} to={homePath} end>
+              <NavLink className={({ isActive }) => `nav-link${isActive ? ' active' : ''}`} to={dashboardPath} end>
                 <span className="nav-icon">
                   <IconifyIcon icon="solar:widget-5-bold-duotone" />
                 </span>

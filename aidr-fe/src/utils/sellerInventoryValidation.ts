@@ -255,6 +255,146 @@ export function buildAdjustPayload(form: AdjustInventoryFormValues): AdjustSelle
   };
 }
 
+/** One lot slice that will be reduced (or increased) by a manual adjustment. */
+export type AdjustLotPreviewLine = {
+  lotId: string;
+  lotCode: string;
+  variantName?: string | null;
+  unitCost: number;
+  quantityRemaining: number;
+  takeQty: number;
+  remainingAfter: number;
+  receivedAt: string;
+};
+
+export type AdjustLotPreview = {
+  lines: AdjustLotPreviewLine[];
+  requestedQty: number;
+  allocatedQty: number;
+  shortfall: number;
+};
+
+type LotForAdjustPreview = {
+  lotId: string;
+  lotCode: string;
+  variantId?: string | null;
+  variantName?: string | null;
+  unitCost: number;
+  quantityRemaining: number;
+  status: string;
+  receivedAt: string;
+};
+
+/**
+ * Preview which open lots FIFO will touch for a decrease (oldest receivedAt first).
+ * Mirrors BE ordering: ReceivedAt ASC among Open lots with remaining qty.
+ */
+export function previewFifoDecrease(
+  lots: LotForAdjustPreview[],
+  quantityRaw: string,
+  variantId?: string | null,
+): AdjustLotPreview | null {
+  const trimmed = quantityRaw.trim();
+  if (!trimmed) return null;
+  const qty = Number(trimmed);
+  if (!Number.isInteger(qty) || qty <= 0) return null;
+
+  const variantFilter = variantId?.trim() || '';
+  const candidates = lots
+    .filter((lot) => lot.status === 'Open' && lot.quantityRemaining > 0)
+    .filter((lot) => {
+      if (!variantFilter) return true;
+      return (lot.variantId ?? '') === variantFilter;
+    })
+    .slice()
+    .sort((a, b) => {
+      const byReceived = new Date(a.receivedAt).getTime() - new Date(b.receivedAt).getTime();
+      if (byReceived !== 0) return byReceived;
+      return a.lotCode.localeCompare(b.lotCode);
+    });
+
+  const lines: AdjustLotPreviewLine[] = [];
+  let remaining = qty;
+  for (const lot of candidates) {
+    if (remaining === 0) break;
+    const take = Math.min(lot.quantityRemaining, remaining);
+    lines.push({
+      lotId: lot.lotId,
+      lotCode: lot.lotCode,
+      variantName: lot.variantName,
+      unitCost: lot.unitCost,
+      quantityRemaining: lot.quantityRemaining,
+      takeQty: take,
+      remainingAfter: lot.quantityRemaining - take,
+      receivedAt: lot.receivedAt,
+    });
+    remaining -= take;
+  }
+
+  return {
+    lines,
+    requestedQty: qty,
+    allocatedQty: qty - remaining,
+    shortfall: remaining,
+  };
+}
+
+/** Preview for increase / decrease against one named lot. */
+export function previewSpecificLotAdjust(
+  lots: LotForAdjustPreview[],
+  mode: 'increase' | 'decrease-lot',
+  quantityRaw: string,
+  lotId: string,
+): AdjustLotPreview | null {
+  const trimmedQty = quantityRaw.trim();
+  const trimmedLot = lotId.trim();
+  if (!trimmedQty || !trimmedLot) return null;
+  const qty = Number(trimmedQty);
+  if (!Number.isInteger(qty) || qty <= 0) return null;
+
+  const lot = lots.find((item) => item.lotId === trimmedLot);
+  if (!lot) return null;
+
+  if (mode === 'decrease-lot') {
+    const take = Math.min(lot.quantityRemaining, qty);
+    return {
+      lines: [
+        {
+          lotId: lot.lotId,
+          lotCode: lot.lotCode,
+          variantName: lot.variantName,
+          unitCost: lot.unitCost,
+          quantityRemaining: lot.quantityRemaining,
+          takeQty: take,
+          remainingAfter: lot.quantityRemaining - take,
+          receivedAt: lot.receivedAt,
+        },
+      ],
+      requestedQty: qty,
+      allocatedQty: take,
+      shortfall: Math.max(0, qty - take),
+    };
+  }
+
+  return {
+    lines: [
+      {
+        lotId: lot.lotId,
+        lotCode: lot.lotCode,
+        variantName: lot.variantName,
+        unitCost: lot.unitCost,
+        quantityRemaining: lot.quantityRemaining,
+        takeQty: qty,
+        remainingAfter: lot.quantityRemaining + qty,
+        receivedAt: lot.receivedAt,
+      },
+    ],
+    requestedQty: qty,
+    allocatedQty: qty,
+    shortfall: 0,
+  };
+}
+
 export function validateSellingPriceForm(
   form: SellingPriceFormValues,
 ): FieldErrors<SellingPriceField> {
