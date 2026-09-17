@@ -38,7 +38,7 @@ export function AddressMapPicker({
   onPick,
   caption,
   title = 'Pin the delivery point',
-  hint = 'Click the map or drag the pin. The address fields fill themselves in from wherever it lands.',
+  hint = 'Click the map or drag the pin. Address fields follow the pin. When the form drives the map, the selected district wins over a street with the same name elsewhere.',
   busy,
 }: AddressMapPickerProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);

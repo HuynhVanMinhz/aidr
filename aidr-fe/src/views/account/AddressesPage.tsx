@@ -112,6 +112,8 @@ export function AddressesPage() {
   }, [provinceId, districtId, wardId, provinceName, districtName, wardName, locationsTouched]);
 
   // Re-pin whenever the written address changes — unless the buyer moved the pin.
+  // Province + district are required so "Lý Thánh Tông" resolves in the chosen
+  // district, not a namesake street in another one (e.g. Sơn Trà vs Ngũ Hành Sơn).
   const addressQuery = [form.streetAddress, form.ward, form.district, form.province]
     .map((part) => part.trim())
     .filter(Boolean)
@@ -120,15 +122,25 @@ export function AddressesPage() {
   useEffect(() => {
     if (!showForm || pinSourceRef.current === 'manual') return;
     if (!form.province.trim() || !form.district.trim()) return;
+    // Street-less lookups only centre on the district — wait until there is
+    // something more specific, or the buyer clicks the map themselves.
+    if (!form.streetAddress.trim() && !form.ward.trim()) return;
 
     const controller = new AbortController();
+    const prefer = {
+      province: form.province,
+      district: form.district,
+      ward: form.ward,
+    };
     const timer = setTimeout(() => {
       setMapBusy(true);
-      void geocodeAddress(addressQuery, controller.signal)
+      void geocodeAddress(addressQuery, controller.signal, prefer)
         .then((found) => {
-          if (controller.signal.aborted || !found) return;
+          if (controller.signal.aborted) return;
+          // No district-matching hit → drop a stale pin rather than keep the
+          // previous district's street under a new selection.
           setPoint(found);
-          setMapCaption(addressQuery);
+          setMapCaption(found ? addressQuery : null);
         })
         .catch(() => undefined)
         .finally(() => {
@@ -140,7 +152,7 @@ export function AddressesPage() {
       controller.abort();
       clearTimeout(timer);
     };
-  }, [addressQuery, form.district, form.province, showForm]);
+  }, [addressQuery, form.district, form.province, form.ward, form.streetAddress, showForm]);
 
   function handlePickOnMap(next: LatLng) {
     pinSourceRef.current = 'manual';
@@ -484,7 +496,11 @@ export function AddressesPage() {
                       disabled={locations.loadingProvinces}
                       onChange={(e) => {
                         setLocationsTouched(true);
+                        // Admin change invalidates the old pin — a street name
+                        // can exist in more than one district.
                         pinSourceRef.current = 'auto';
+                        setPoint(null);
+                        setMapCaption(null);
                         locations.selectProvince(e.target.value);
                       }}
                     >
@@ -512,6 +528,8 @@ export function AddressesPage() {
                       onChange={(e) => {
                         setLocationsTouched(true);
                         pinSourceRef.current = 'auto';
+                        setPoint(null);
+                        setMapCaption(null);
                         locations.selectDistrict(e.target.value);
                       }}
                     >
@@ -547,6 +565,7 @@ export function AddressesPage() {
                       onChange={(e) => {
                         setLocationsTouched(true);
                         pinSourceRef.current = 'auto';
+                        // Keep the street text; re-geocode will re-pin inside this ward.
                         locations.selectWard(e.target.value);
                       }}
                     >
@@ -607,6 +626,7 @@ export function AddressesPage() {
                   onPick={handlePickOnMap}
                   caption={mapCaption}
                   busy={mapBusy}
+                  hint="Click or drag the pin to set the delivery point — fields follow it. Change district and the pin moves to that street inside the new district; a namesake street in another district is ignored."
                 />
               </aside>
             </div>
