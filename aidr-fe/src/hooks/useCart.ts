@@ -41,27 +41,6 @@ export function useCart(options?: { autoLoad?: boolean }) {
     [dispatch],
   );
 
-  /**
-   * Add the product then narrow the checkout selection to just that line, so
-   * "Buy now" goes straight to payment without dragging the rest of the cart in.
-   */
-  const buyNow = useCallback(
-    async (productId: string, quantity: number, variantId?: string | null) => {
-      const updated = await addItem(productId, quantity, variantId);
-      // Two configurations of one product are two lines, so the product id alone no
-      // longer identifies the line that was just added.
-      const line = updated.items.find(
-        (i) => i.productId === productId && (i.variantId ?? null) === (variantId ?? null),
-      );
-      if (!line) {
-        throw new Error('Unable to start checkout for this product.');
-      }
-      dispatch(selectOnlyCartItem(line.cartItemId));
-      return line;
-    },
-    [addItem, dispatch],
-  );
-
   const setItemQuantity = useCallback(
     async (cartItemId: string, quantity: number) => {
       const result = await dispatch(updateCartItemQty({ cartItemId, quantity }));
@@ -71,6 +50,45 @@ export function useCart(options?: { autoLoad?: boolean }) {
       return result.payload;
     },
     [dispatch],
+  );
+
+  /**
+   * Check out one product line without stacking onto an existing cart quantity
+   * (add would merge and double qty when the item is already in the cart).
+   */
+  const buyNow = useCallback(
+    async (productId: string, quantity: number, variantId?: string | null) => {
+      const sameLine = (i: { productId: string; variantId?: string | null }) =>
+        i.productId === productId && (i.variantId ?? null) === (variantId ?? null);
+
+      // Cart may not be loaded yet (e.g. Buy Now from a product card).
+      let items = cart.items;
+      if (!loaded) {
+        const fresh = await refresh();
+        items = fresh.items;
+      }
+
+      const existing = items.find(sameLine);
+      if (existing) {
+        let line = existing;
+        // Honour a higher Buy Now qty without shrinking what the buyer already saved.
+        if (existing.quantity < quantity) {
+          const updated = await setItemQuantity(existing.cartItemId, quantity);
+          line = updated.items.find(sameLine) ?? existing;
+        }
+        dispatch(selectOnlyCartItem(line.cartItemId));
+        return line;
+      }
+
+      const updated = await addItem(productId, quantity, variantId);
+      const line = updated.items.find(sameLine);
+      if (!line) {
+        throw new Error('Unable to start checkout for this product.');
+      }
+      dispatch(selectOnlyCartItem(line.cartItemId));
+      return line;
+    },
+    [addItem, cart.items, dispatch, loaded, refresh, setItemQuantity],
   );
 
   const removeItem = useCallback(
