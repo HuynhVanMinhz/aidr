@@ -28,11 +28,14 @@ import {
   canSubmitSellingPriceForm,
   emptyAdjustForm,
   emptyImportLotForm,
+  previewFifoDecrease,
+  previewSpecificLotAdjust,
   validateAdjustForm,
   validateImportLotForm,
   validateLowStockForm,
   validateSellingPriceForm,
   type AdjustInventoryFormValues,
+  type AdjustLotPreview,
   type ImportLotFormValues,
   type LowStockFormValues,
   type SellingPriceFormValues,
@@ -187,8 +190,8 @@ export function SellerInventoryDetailPage() {
                 setActionError(message);
                 if (message) toast.error(message);
               }}
-              onSuccess={async () => {
-                toast.success('Inventory adjusted.');
+              onSuccess={async (summary) => {
+                toast.success(summary);
                 await loadOne(detail.productId);
               }}
               submit={(payload) => adjust(detail.productId, payload)}
@@ -429,12 +432,13 @@ function AdjustStockCard({
   variants: SellerInventoryVariant[];
   mutating: boolean;
   onError: (message: string | null) => void;
-  onSuccess: () => Promise<void>;
+  onSuccess: (summary: string) => Promise<void>;
   submit: (payload: ReturnType<typeof buildAdjustPayload>) => Promise<unknown>;
 }) {
-  const [form, setForm] = useState<AdjustInventoryFormValues>(emptyAdjustForm);
+  const [form, setForm] = useState<AdjustInventoryFormValues>(emptyAdjustForm());
   const [touched, setTouched] = useState<Partial<Record<keyof AdjustInventoryFormValues, boolean>>>({});
   const [submitted, setSubmitted] = useState(false);
+  const [lastApplied, setLastApplied] = useState<AdjustLotPreview | null>(null);
   const requireVariant = variants.length > 0;
 
   const lotOptions = useMemo(() => {
@@ -451,22 +455,46 @@ function AdjustStockCard({
     ];
   }, [form.mode, lots]);
 
+  const lotPreview = useMemo((): AdjustLotPreview | null => {
+    if (form.mode === 'decrease-fifo') {
+      return previewFifoDecrease(lots, form.quantity, form.variantId);
+    }
+    if (form.mode === 'decrease-lot' || form.mode === 'increase') {
+      return previewSpecificLotAdjust(lots, form.mode, form.quantity, form.lotId);
+    }
+    return null;
+  }, [form.lotId, form.mode, form.quantity, form.variantId, lots]);
+
   const errors = validateAdjustForm(form, requireVariant);
   const visible = visibleFieldErrors(errors, touched, submitted);
   const canSubmit = canSubmitAdjustForm(form, errors, requireVariant);
   const showLot = form.mode === 'increase' || form.mode === 'decrease-lot';
+
+  function summarizePreview(preview: AdjustLotPreview, mode: AdjustInventoryFormValues['mode']): string {
+    if (preview.lines.length === 0) return 'Inventory adjusted.';
+    if (mode === 'increase') {
+      return `Added ${preview.allocatedQty} to ${preview.lines[0]?.lotCode ?? 'lot'}.`;
+    }
+    const parts = preview.lines.map((line) => `${line.takeQty} from ${line.lotCode}`);
+    return `Took ${parts.join(', ')}.`;
+  }
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     setSubmitted(true);
     if (!canSubmitAdjustForm(form, validateAdjustForm(form, requireVariant), requireVariant)) return;
     onError(null);
+    const previewSnapshot = lotPreview;
     try {
       await submit(buildAdjustPayload(form));
+      if (previewSnapshot) setLastApplied(previewSnapshot);
+      const summary = previewSnapshot
+        ? summarizePreview(previewSnapshot, form.mode)
+        : 'Inventory adjusted.';
       setForm(emptyAdjustForm());
       setTouched({});
       setSubmitted(false);
-      await onSuccess();
+      await onSuccess(summary);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Unable to adjust inventory.';
       onError(message);
@@ -481,8 +509,24 @@ function AdjustStockCard({
       <div className="card-body">
         <p className="text-muted fs-13">
           Record a recount or write-off. Available stock cannot go below reserved quantity. Increases
-          must target an existing lot.
+          must target an existing lot. Decreases without a named lot use oldest open lots first
+          (FIFO).
         </p>
+        {lastApplied && lastApplied.lines.length > 0 ? (
+          <div className="alert alert-success py-2" role="status">
+            <div className="fw-medium mb-1">Last adjustment applied</div>
+            <ul className="mb-0 ps-3">
+              {lastApplied.lines.map((line) => (
+                <li key={`applied-${line.lotId}`}>
+                  <strong>{line.lotCode}</strong>
+                  {line.variantName ? ` (${line.variantName})` : ''}:{' '}
+                  {line.takeQty} unit{line.takeQty === 1 ? '' : 's'} · remaining now{' '}
+                  {line.remainingAfter}
+                </li>
+              ))}
+            </ul>
+          </div>
+        ) : null}
         <form onSubmit={(e) => void handleSubmit(e)}>
           <FormField label="Adjustment type" htmlFor="adj-mode">
             <AdminSelect
@@ -493,7 +537,14 @@ function AdjustStockCard({
                 { value: 'decrease-lot', label: 'Decrease a specific lot' },
                 { value: 'increase', label: 'Increase a specific lot' },
               ]}
-              onChange={(mode) => setForm((prev) => ({ ...prev, mode: mode as AdjustInventoryFormValues['mode'] }))}
+              onChange={(mode) =>
+                setForm((prev) => ({
+                  ...prev,
+                  mode: mode as AdjustInventoryFormValues['mode'],
+                  lotId: '',
+                  variantId: '',
+                }))
+              }
             />
           </FormField>
           <FormField label="Quantity" htmlFor="adj-qty" error={visible.quantity}>
@@ -541,7 +592,85 @@ function AdjustStockCard({
               onBlur={() => setTouched((t) => ({ ...t, note: true }))}
             />
           </FormField>
-          <button type="submit" className="btn btn-primary" disabled={!canSubmit || mutating}>
+
+          {lotPreview && lotPreview.lines.length > 0 ? (
+            <div className="border rounded p-3 mb-3 bg-light-subtle">
+              <div className="fw-medium mb-2">
+                {form.mode === 'increase'
+                  ? 'Lot that will receive stock'
+                  : form.mode === 'decrease-fifo'
+                    ? 'Lots that will be reduced (oldest first)'
+                    : 'Lot that will be reduced'}
+              </div>
+              <div className="table-responsive">
+                <table className="table table-sm table-centered mb-0">
+                  <thead>
+                    <tr>
+                      <th>Lot</th>
+                      <th>On hand</th>
+                      <th>{form.mode === 'increase' ? 'Add' : 'Take'}</th>
+                      <th>After</th>
+                      <th>Unit cost</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {lotPreview.lines.map((line, index) => (
+                      <tr key={line.lotId}>
+                        <td>
+                          <div className="fw-medium">
+                            {form.mode === 'decrease-fifo' ? `${index + 1}. ` : null}
+                            {line.lotCode}
+                          </div>
+                          {line.variantName ? (
+                            <small className="text-muted">{line.variantName}</small>
+                          ) : null}
+                          {form.mode === 'decrease-fifo' ? (
+                            <small className="d-block text-muted">
+                              Received {formatDateTime(line.receivedAt)}
+                            </small>
+                          ) : null}
+                        </td>
+                        <td>{line.quantityRemaining}</td>
+                        <td className={form.mode === 'increase' ? 'text-success' : 'text-danger'}>
+                          {form.mode === 'increase' ? '+' : '−'}
+                          {line.takeQty}
+                        </td>
+                        <td>{line.remainingAfter}</td>
+                        <td>{formatVnd(line.unitCost)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              {lotPreview.shortfall > 0 ? (
+                <p className="text-danger mb-0 mt-2 fs-13">
+                  Short by {lotPreview.shortfall} unit{lotPreview.shortfall === 1 ? '' : 's'} — open
+                  lots only cover {lotPreview.allocatedQty} of {lotPreview.requestedQty}. The server
+                  will reject this adjustment.
+                </p>
+              ) : (
+                <p className="text-muted mb-0 mt-2 fs-13">
+                  {form.mode === 'decrease-fifo'
+                    ? 'Stock is taken from the oldest open lot first, then the next, until the quantity is met.'
+                    : form.mode === 'increase'
+                      ? 'Quantity is added to the selected lot only (unit cost stays the same).'
+                      : 'Quantity is taken only from the selected lot.'}
+                </p>
+              )}
+            </div>
+          ) : form.mode === 'decrease-fifo' && form.quantity.trim() && Number(form.quantity) > 0 ? (
+            <div className="alert alert-warning py-2" role="status">
+              {requireVariant && !form.variantId.trim()
+                ? 'Select a variant to preview which lots will be reduced.'
+                : 'No open lots with remaining stock match this selection.'}
+            </div>
+          ) : null}
+
+          <button
+            type="submit"
+            className="btn btn-primary"
+            disabled={!canSubmit || mutating || Boolean(lotPreview && lotPreview.shortfall > 0)}
+          >
             Apply adjustment
           </button>
         </form>
