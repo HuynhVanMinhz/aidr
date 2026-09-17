@@ -1,0 +1,102 @@
+/* Shared return evidence players (storefront lightbox + admin/seller panel) */
+
+.return-evidence-player__video {
+  display: block;
+  width: 100%;
+  max-height: 240px;
+  border-radius: 0.375rem;
+  background: #111;
+}
+
+.return-evidence-player__fallback {
+  padding: 1rem;
+  border-radius: 0.375rem;
+  background: #f8f9fa;
+  color: #6c757d;
+  font-size: 0.875rem;
+}
+
+.return-evidence-lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.25rem;
+  background: rgba(10, 12, 16, 0.72);
+}
+
+.return-evidence-lightbox__panel {
+  width: min(920px, 100%);
+  max-height: min(90vh, 860px);
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 1rem 1rem 1.1rem;
+  border-radius: 14px;
+  background: #111318;
+  color: #f5f6f8;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.45);
+}
+
+.return-evidence-lightbox__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.return-evidence-lightbox__title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.return-evidence-lightbox__close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.1);
+  color: inherit;
+  cursor: pointer;
+}
+
+.return-evidence-lightbox__close:hover {
+  background: rgba(255, 255, 255, 0.18);
+}
+
+.return-evidence-lightbox__body {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 200px;
+  max-height: calc(90vh - 8rem);
+  overflow: hidden;
+  border-radius: 10px;
+  background: #000;
+}
+
+.return-evidence-lightbox__body video,
+.return-evidence-lightbox__body img {
+  display: block;
+  width: 100%;
+  max-height: calc(90vh - 8rem);
+  object-fit: contain;
+  background: #000;
+}
+
+.return-evidence-lightbox__open {
+  font-size: 0.8125rem;
+  color: rgba(245, 246, 248, 0.78);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.return-evidence-lightbox__open:hover {
+  color: #fff;
+}

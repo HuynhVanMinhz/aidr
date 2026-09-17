@@ -18,17 +18,11 @@ ELSE
     PRINT N'ResolutionType already present';
 GO
 
-IF NOT EXISTS (
-    SELECT 1 FROM sys.check_constraints
-    WHERE name = N'CK_ReturnRequests_Resolution'
-      AND parent_object_id = OBJECT_ID(N'dbo.ReturnRequests')
-)
-BEGIN
-    ALTER TABLE dbo.ReturnRequests
-        ADD CONSTRAINT CK_ReturnRequests_Resolution
-            CHECK (ResolutionType IN (N'ReturnRefund'));
-    PRINT N'Added CK_ReturnRequests_Resolution';
-END
+/*
+  Resolution + Status CHECKs: see alter-return-pipeline-statuses.sql
+  (SellerConfirmed / Accepted / Exchanged / Exchange). Do not re-add the
+  legacy ReturnRefund-only resolution constraint here.
+*/
 GO
 
 IF OBJECT_ID(N'dbo.ReturnEvidences', N'U') IS NULL

@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
+import { ReturnEvidenceGallery } from '../../components/returns/ReturnEvidenceMedia';
 import { useToastMessage } from '../../hooks/useToastMessage';
 import { getBuyerReturnById, requireBuyerReturn } from '../../services/returnApi';
-import type { BuyerReturnEvidence, BuyerReturnRequest } from '../../types/return';
+import type { BuyerReturnRequest } from '../../types/return';
 import { getApiErrorMessage } from '../../utils/apiError';
 import { PRODUCT_IMAGE_PLACEHOLDER, resolveProductImageUrl } from '../../utils/catalogImage';
 import { formatMoney } from '../../utils/formatCatalog';
@@ -16,23 +17,6 @@ import {
   returnStatusIcon,
   returnTimelineStages,
 } from '../../utils/returnUi';
-
-const VIDEO_EXT = /\.(mp4|webm|ogg|mov|m4v)(\?|#|$)/i;
-
-function isVideo(url: string) {
-  return VIDEO_EXT.test(url);
-}
-
-function evidenceLabel(evidence: BuyerReturnEvidence) {
-  switch (evidence.evidenceType) {
-    case 'Unboxing':
-      return 'Unboxing';
-    case 'Testing':
-      return 'Testing';
-    default:
-      return evidence.evidenceType || 'Evidence';
-  }
-}
 
 export function BuyerReturnDetailPage() {
   const { returnId } = useParams<{ returnId: string }>();
@@ -194,48 +178,7 @@ export function BuyerReturnDetailPage() {
 
           <section className="return-card">
             <h3 className="return-card__title">Evidence</h3>
-            {item.evidences.length === 0 ? (
-              <p className="return-empty">
-                No photos or videos were attached to this request.
-              </p>
-            ) : (
-              <ul className="return-evidence-grid">
-                {item.evidences.map((evidence) => (
-                  <li key={evidence.evidenceId}>
-                    <a
-                      href={evidence.mediaUrl}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="return-evidence"
-                    >
-                      <span className="return-evidence__media">
-                        {isVideo(evidence.mediaUrl) ? (
-                          <>
-                            {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
-                            <video src={evidence.mediaUrl} preload="metadata" muted />
-                            <span className="return-evidence__play" aria-hidden>
-                              <i className="fa-solid fa-play" />
-                            </span>
-                          </>
-                        ) : (
-                          <img
-                            src={evidence.mediaUrl}
-                            alt={`${evidenceLabel(evidence)} evidence`}
-                            loading="lazy"
-                            onError={(e) => {
-                              e.currentTarget.closest('.return-evidence')?.classList.add(
-                                'return-evidence--broken',
-                              );
-                            }}
-                          />
-                        )}
-                      </span>
-                      <span className="return-evidence__label">{evidenceLabel(evidence)}</span>
-                    </a>
-                  </li>
-                ))}
-              </ul>
-            )}
+            <ReturnEvidenceGallery evidences={item.evidences} />
           </section>
         </div>
 
