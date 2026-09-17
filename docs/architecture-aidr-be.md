@@ -145,7 +145,10 @@ aidr-be/
 | UC-40 | `GET /api/orders/{orderId}` — detail: items, payment, tracking, status history, shipping snapshot | Order |
 | UC-41 | `POST /api/orders/{orderId}/cancel` — only `PendingPayment` (BR-O01); release reserved stock; cancel pending payment | Order |
 | UC-42 | `POST /api/orders/{orderId}/confirm-received` — only `Delivered` → `Completed` (BR-O02); credit seller wallet `OrderCredit` (BR-W01) | Order |
-| UC-43 | `POST /api/orders/{orderId}/returns` — body `{ reason, description?, items?, evidences[] }` (≥1 Unboxing + ≥1 Testing); `GET /api/orders/{orderId}/returns`; ResolutionType=`ReturnRefund` only (BR-R01..R02); order → `ReturnRequested` | Order |
+| UC-43 | `POST /api/orders/{orderId}/returns` — body `{ reason, description?, resolutionType?, items?, evidences[] }` (≥1 Unboxing + ≥1 Testing); `resolutionType` = `ReturnRefund` \| `Exchange`; `GET /api/orders/{orderId}/returns`; order → `ReturnRequested` | Order |
+| UC-93 | `GET /api/seller/returns?status=&page=&pageSize=` — shop return queue | SellerCenter |
+| UC-94 | `POST /api/seller/returns/{id}/confirm` — `Approved`→`SellerConfirmed` (+ optional resolutionType); `POST .../reject` | SellerCenter |
+| UC-95 | `POST /api/seller/returns/{id}/receiving`; `POST .../accept` — `SellerConfirmed`→`Receiving`→`Accepted` (notify Admin) | SellerCenter |
 
 ### 6.5 Admin
 | UC | Endpoint | Module |
@@ -157,8 +160,8 @@ aidr-be/
 | UC-22..25 | Categories: `GET /api/admin/categories?q=&page=&pageSize=` (paged + summary); `GET /api/admin/categories/options` (parent select); CRUD | Admin |
 | UC-48 | `GET /api/admin/return-requests?status=&q=&page=&pageSize=` (default `status=Pending`; `status=all`; paged + status summary) | Admin |
 | UC-49 | `GET /api/admin/return-requests/{id}` — reason, Unboxing/Testing evidences, order lines, status history | Admin |
-| UC-50 | `POST /api/admin/return-requests/{id}/approve`; `POST .../reject` + `adminNote` (required, BR-R03) | Admin |
-| UC-52 | `POST /api/admin/return-requests/{id}/status` — body `{ status, note?, refundToBin?, refundToAccountNumber? }`; transitions `Approved→Receiving→Refunded→Closed`; on `Refunded`: payOS **payout (chi hộ)** refund to buyer bank + mark payment Refunded + `WalletTransactions.RefundDebit` (BR-R04; wallet may go negative). Bank account from webhook counter account or request override. | Admin |
+| UC-50 | `POST /api/admin/return-requests/{id}/approve` (forward to Seller → `Approved` + notify Seller); `POST .../reject` + `adminNote` (required, BR-R03) | Admin |
+| UC-52 | `POST /api/admin/return-requests/{id}/status` — after Seller `Accepted`: `Accepted`→`Refunded`\|`Exchanged`→`Closed`; on `Refunded`: payOS payout + `RefundDebit` (BR-R04); on `Exchanged`: no payout | Admin |
 | UC-71 | `GET /api/admin/insights/customers?from=&to=&granularity=` — KPIs, registration/order series, top products, simple new/returning buyer cohort (default last 30 days, granularity=day) | Admin |
 | UC-72 | `GET /api/admin/accounts?status=&role=&q=&page=&pageSize=` (default status/role=`all`; paged + Active/Locked/role summary); `GET .../{id}` | Admin |
 | UC-73 | `POST /api/admin/accounts/{id}/lock` → Status=Locked (cannot lock self or Admin accounts) | Admin |
@@ -317,7 +320,7 @@ Pipeline: build image → push registry → deploy staging → smoke test `/heal
 
 - Không tích hợp GHN/GHTK tracking API (seller nhập tracking thủ công).
 - Không AI auto-resolve tranh chấp return phức tạp.
-- **Không Exchange / Đổi hàng** — chỉ Return & Refund; evidence Unboxing + Testing bắt buộc (xem `bussiness-system.md` BR-R01..R05).
+- Return / Exchange pipeline Admin→Seller→Admin; evidence Unboxing + Testing bắt buộc (xem `bussiness-system.md` BR-R01..R06).
 - Không tách microservices giai đoạn MVP (giữ modular monolith).
 
 ---

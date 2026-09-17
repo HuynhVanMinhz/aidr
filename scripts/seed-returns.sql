@@ -1,13 +1,13 @@
 /*
-  AIDR — Return & Refund demo seed (buyer request + admin approve/reject/pipeline)
+  AIDR — Return / Refund / Exchange demo seed
   Prerequisites: demo accounts + catalog (Approved product on demo shop).
   Idempotent by fixed OrderCode / ReturnRequestId.
 
   Scenarios:
   - RET-ELIGIBLE  : Delivered order, no return → buyer can open request
   - RET-PENDING   : Pending return → admin queue approve/reject
-  - RET-APPROVED  : Approved → advance Receiving
-  - RET-RECV      : Receiving → advance Refunded
+  - RET-APPROVED  : Approved (forwarded to seller) → seller confirm
+  - RET-RECV      : Receiving (after SellerConfirmed) → seller accept goods
   - RET-REJECTED  : Rejected sample (order back to Delivered)
   - RET-CLOSED    : Refunded then Closed (list filters)
 */
@@ -271,7 +271,7 @@ BEGIN
     INSERT INTO dbo.ReturnStatusHistories (ReturnRequestId, FromStatus, ToStatus, ChangedBy, Note, CreatedAt)
     VALUES
         (@RApproved, NULL, N'Pending', @BuyerId, N'Buyer submitted return', DATEADD(DAY, -3, @Now)),
-        (@RApproved, N'Pending', N'Approved', @AdminId, N'Evidence valid — approve return.', DATEADD(HOUR, -6, @Now));
+        (@RApproved, N'Pending', N'Approved', @AdminId, N'Admin approved and forwarded to seller', DATEADD(HOUR, -6, @Now));
 END;
 
 /* RET-RECV (Receiving) */
@@ -332,8 +332,9 @@ BEGIN
     INSERT INTO dbo.ReturnStatusHistories (ReturnRequestId, FromStatus, ToStatus, ChangedBy, Note, CreatedAt)
     VALUES
         (@RRecv, NULL, N'Pending', @BuyerId, N'Buyer submitted return', DATEADD(DAY, -4, @Now)),
-        (@RRecv, N'Pending', N'Approved', @AdminId, N'Approved — waiting for parcel.', DATEADD(DAY, -2, @Now)),
-        (@RRecv, N'Approved', N'Receiving', @AdminId, N'Parcel in transit to warehouse', DATEADD(HOUR, -2, @Now));
+        (@RRecv, N'Pending', N'Approved', @AdminId, N'Admin approved and forwarded to seller', DATEADD(DAY, -2, @Now)),
+        (@RRecv, N'Approved', N'SellerConfirmed', @SellerId, N'Seller confirmed ReturnRefund', DATEADD(DAY, -1, @Now)),
+        (@RRecv, N'SellerConfirmed', N'Receiving', @SellerId, N'Seller marked returned goods as receiving', DATEADD(HOUR, -2, @Now));
 END;
 
 /* RET-REJECTED */

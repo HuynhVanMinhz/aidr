@@ -58,8 +58,10 @@ function pageTitle(pathname: string, variant: AdminShellVariant) {
   if (pathname.includes('/categories')) return 'Categories List';
   if (pathname.match(/\/seller-registrations\/[^/]+$/)) return 'Seller Registration Review';
   if (pathname.includes('/seller-registrations')) return 'Seller Registrations';
+  if (variant === 'seller' && pathname.match(/\/returns\/[^/]+$/)) return 'Return Details';
+  if (variant === 'seller' && pathname.includes('/returns')) return 'Return List';
   if (pathname.match(/\/return-requests\/[^/]+$/)) return 'Return Request Details';
-  if (pathname.includes('/return-requests')) return 'Return Requests';
+  if (pathname.includes('/return-requests')) return 'Return List';
   if (pathname.match(/\/orders\/[^/]+$/)) return 'Order Details';
   if (pathname.includes('/orders')) return 'Orders List';
   if (pathname.match(/\/products\/[^/]+\/inventory$/)) return 'Product Inventory';
@@ -537,6 +539,17 @@ export function AdminShell({ variant = 'admin', children }: AdminShellProps) {
                     <IconifyIcon icon="solar:bag-check-bold-duotone" />
                   </span>
                   <span className="nav-text">Orders</span>
+                </NavLink>
+              </li>
+              <li className="nav-item">
+                <NavLink
+                  className={({ isActive }) => `nav-link${isActive ? ' active' : ''}`}
+                  to="/seller/returns"
+                >
+                  <span className="nav-icon">
+                    <IconifyIcon icon="solar:restart-bold-duotone" />
+                  </span>
+                  <span className="nav-text">Returns</span>
                 </NavLink>
               </li>
               <li className="nav-item">

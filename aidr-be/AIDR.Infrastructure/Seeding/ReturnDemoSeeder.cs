@@ -3,7 +3,7 @@ using AIDR.Infrastructure.Persistence;
 namespace AIDR.Infrastructure.Seeding;
 
 /// <summary>
-/// Dev-only: seed Delivered orders + return requests across Pending/Approved/Receiving/Rejected/Closed.
+/// Dev-only: seed Delivered orders + return requests across Pending/Approved/Receiving/Rejected/Closed (Seller pipeline).
 /// </summary>
 public static class ReturnDemoSeeder
 {

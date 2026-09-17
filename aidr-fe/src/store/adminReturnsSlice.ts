@@ -15,8 +15,11 @@ export type AdminReturnSummary = {
   pendingCount: number;
   approvedCount: number;
   rejectedCount: number;
+  sellerConfirmedCount: number;
   receivingCount: number;
+  acceptedCount: number;
   refundedCount: number;
+  exchangedCount: number;
   closedCount: number;
 };
 
@@ -41,8 +44,11 @@ const emptySummary: AdminReturnSummary = {
   pendingCount: 0,
   approvedCount: 0,
   rejectedCount: 0,
+  sellerConfirmedCount: 0,
   receivingCount: 0,
+  acceptedCount: 0,
   refundedCount: 0,
+  exchangedCount: 0,
   closedCount: 0,
 };
 
@@ -204,8 +210,11 @@ export const adminReturnsSlice = createSlice({
           pendingCount: action.payload.pendingCount,
           approvedCount: action.payload.approvedCount,
           rejectedCount: action.payload.rejectedCount,
+          sellerConfirmedCount: action.payload.sellerConfirmedCount,
           receivingCount: action.payload.receivingCount,
+          acceptedCount: action.payload.acceptedCount,
           refundedCount: action.payload.refundedCount,
+          exchangedCount: action.payload.exchangedCount,
           closedCount: action.payload.closedCount,
         };
       })

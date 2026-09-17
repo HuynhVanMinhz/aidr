@@ -56,6 +56,7 @@ public static class ModulesServiceCollectionExtensions
         services.AddScoped<ISellerProductExcelService, SellerProductExcelService>();
         services.AddScoped<ISellerInventoryService, SellerInventoryService>();
         services.AddScoped<ISellerOrderService, SellerOrderService>();
+        services.AddScoped<ISellerReturnService, SellerReturnService>();
         services.AddScoped<ISellerShopVoucherService, SellerShopVoucherService>();
         services.AddScoped<ISellerFinanceService, SellerFinanceService>();
         services.AddScoped<ISellerShopService, SellerShopService>();

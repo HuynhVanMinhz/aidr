@@ -9,11 +9,12 @@ import { formatMoney } from '../../utils/formatCatalog';
 import { formatOrderDate } from '../../utils/orderUi';
 import {
   buyerReturnStatusClass,
+  formatResolutionType,
   formatReturnStatus,
   returnHistoryActor,
   returnStatusHint,
   returnStatusIcon,
-  RETURN_TIMELINE_STAGES,
+  returnTimelineStages,
 } from '../../utils/returnUi';
 
 const VIDEO_EXT = /\.(mp4|webm|ogg|mov|m4v)(\?|#|$)/i;
@@ -148,7 +149,7 @@ export function BuyerReturnDetailPage() {
                 </>
               ) : null}
               <dt>Resolution</dt>
-              <dd>{item.resolutionType === 'ReturnRefund' ? 'Return & refund' : item.resolutionType}</dd>
+              <dd>{formatResolutionType(item.resolutionType)}</dd>
             </dl>
             {item.adminNote ? (
               <p className="return-admin-note">
@@ -294,8 +295,9 @@ export function BuyerReturnDetailPage() {
 
               {/* Stages still ahead, so the buyer sees where this is going. */}
               {!isRejected
-                ? RETURN_TIMELINE_STAGES.filter((stage) => !reachedStages.has(stage)).map(
-                    (stage) => (
+                ? returnTimelineStages(item.resolutionType)
+                    .filter((stage) => !reachedStages.has(stage))
+                    .map((stage) => (
                       <li
                         key={stage}
                         className="return-timeline__step return-timeline__step--upcoming"
@@ -308,8 +310,7 @@ export function BuyerReturnDetailPage() {
                           <p className="return-timeline__time">Not yet</p>
                         </div>
                       </li>
-                    ),
-                  )
+                    ))
                 : null}
             </ol>
           </section>

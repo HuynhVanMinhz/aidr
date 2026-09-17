@@ -19,6 +19,7 @@ export const RETURN_ELIGIBLE_ORDER_STATUSES = new Set([
 export type BuyerReturnFormValues = {
   reason: string;
   description: string;
+  resolutionType: 'ReturnRefund' | 'Exchange';
   unboxingUrl: string;
   testingUrl: string;
 };
@@ -39,6 +40,14 @@ export function validateReturnDescription(value: string): string | null {
   return validateMaxLength(trimmed, RETURN_MAX_DESCRIPTION, 'Description');
 }
 
+export function validateResolutionType(value: string): string {
+  const trimmed = validateRequired(value, 'Resolution type');
+  if (trimmed !== 'ReturnRefund' && trimmed !== 'Exchange') {
+    throw new Error('Resolution type must be Return & refund or Exchange.');
+  }
+  return trimmed;
+}
+
 export function validateEvidenceMediaUrl(value: string, fieldLabel: string): string {
   const trimmed = validateRequired(value, fieldLabel);
   validateMaxLength(trimmed, RETURN_MAX_MEDIA_URL, fieldLabel);
@@ -57,6 +66,7 @@ export function validateEvidenceMediaUrl(value: string, fieldLabel: string): str
 export function validateBuyerReturnForm(values: BuyerReturnFormValues): void {
   validateReturnReason(values.reason);
   validateReturnDescription(values.description);
+  validateResolutionType(values.resolutionType);
   validateEvidenceMediaUrl(values.unboxingUrl, 'Unboxing video URL');
   validateEvidenceMediaUrl(values.testingUrl, 'Testing video URL');
 }
@@ -67,10 +77,21 @@ export function canSubmitBuyerReturnForm(
   errors: Partial<Record<keyof BuyerReturnFormValues, string | undefined>>,
 ): boolean {
   if (!dirty) return false;
-  if (errors.reason || errors.description || errors.unboxingUrl || errors.testingUrl) {
+  if (
+    errors.reason ||
+    errors.description ||
+    errors.resolutionType ||
+    errors.unboxingUrl ||
+    errors.testingUrl
+  ) {
     return false;
   }
-  if (!values.reason.trim() || !values.unboxingUrl.trim() || !values.testingUrl.trim()) {
+  if (
+    !values.reason.trim() ||
+    !values.resolutionType ||
+    !values.unboxingUrl.trim() ||
+    !values.testingUrl.trim()
+  ) {
     return false;
   }
   return true;
@@ -104,14 +125,22 @@ export function validateOptionalBankAccount(value: string): string | null {
   return validateMaxLength(trimmed, RETURN_MAX_BANK_ACCOUNT, 'Bank account number');
 }
 
-/** Next pipeline status after approve path. */
-export const RETURN_STATUS_TRANSITIONS: Record<string, string> = {
-  Approved: 'Receiving',
-  Receiving: 'Refunded',
-  Refunded: 'Closed',
-};
-
-export function nextReturnStatus(current: string | null | undefined): string | null {
+/** Next admin pipeline status after seller accepts goods. */
+export function nextReturnStatus(
+  current: string | null | undefined,
+  resolutionType?: string | null,
+): string | null {
   if (!current) return null;
-  return RETURN_STATUS_TRANSITIONS[current] ?? null;
+  if (current === 'Accepted') {
+    return resolutionType === 'Exchange' ? 'Exchanged' : 'Refunded';
+  }
+  if (current === 'Refunded' || current === 'Exchanged') return 'Closed';
+  return null;
 }
+
+/** @deprecated Prefer nextReturnStatus(current, resolutionType). */
+export const RETURN_STATUS_TRANSITIONS: Record<string, string> = {
+  Accepted: 'Refunded',
+  Refunded: 'Closed',
+  Exchanged: 'Closed',
+};

@@ -152,7 +152,7 @@ public sealed class AdminReturnRepository : IAdminReturnRepository
             FromStatus = from,
             ToStatus = ReturnConstants.StatusApproved,
             ChangedBy = adminUserId,
-            Note = "Admin approved return request",
+            Note = "Admin approved and forwarded return request to seller",
             CreatedAt = now
         });
 
@@ -217,11 +217,21 @@ public sealed class AdminReturnRepository : IAdminReturnRepository
             .FirstOrDefaultAsync(r => r.ReturnRequestId == returnRequestId, cancellationToken)
             ?? throw new NotFoundException("Return request not found.");
 
-        if (!ReturnConstants.StatusTransitions.TryGetValue(entity.Status, out var expected)
-            || !string.Equals(expected, toStatus, StringComparison.OrdinalIgnoreCase))
+        if (!ReturnConstants.AdminStatusTransitions.TryGetValue(entity.Status, out var allowed)
+            || !allowed.Contains(toStatus, StringComparer.OrdinalIgnoreCase))
         {
             throw new ConflictException(
                 $"Cannot transition return request from {entity.Status} to {toStatus}.");
+        }
+
+        if (string.Equals(entity.Status, ReturnConstants.StatusAccepted, StringComparison.OrdinalIgnoreCase))
+        {
+            var expectedOutcome = ReturnConstants.ExpectedResolutionOutcome(entity.ResolutionType);
+            if (!string.Equals(toStatus, expectedOutcome, StringComparison.OrdinalIgnoreCase))
+            {
+                throw new ConflictException(
+                    $"Resolution type {entity.ResolutionType} requires status {expectedOutcome}.");
+            }
         }
 
         var now = DateTime.UtcNow;
@@ -250,6 +260,7 @@ public sealed class AdminReturnRepository : IAdminReturnRepository
         });
 
         if (string.Equals(toStatus, ReturnConstants.StatusRefunded, StringComparison.OrdinalIgnoreCase)
+            || string.Equals(toStatus, ReturnConstants.StatusExchanged, StringComparison.OrdinalIgnoreCase)
             || string.Equals(toStatus, ReturnConstants.StatusClosed, StringComparison.OrdinalIgnoreCase))
         {
             await MarkOrderReturnedAsync(entity.Order, adminUserId, now);
@@ -680,8 +691,11 @@ public sealed class AdminReturnRepository : IAdminReturnRepository
             PendingCount = CountOf(ReturnConstants.StatusPending),
             ApprovedCount = CountOf(ReturnConstants.StatusApproved),
             RejectedCount = CountOf(ReturnConstants.StatusRejected),
+            SellerConfirmedCount = CountOf(ReturnConstants.StatusSellerConfirmed),
             ReceivingCount = CountOf(ReturnConstants.StatusReceiving),
+            AcceptedCount = CountOf(ReturnConstants.StatusAccepted),
             RefundedCount = CountOf(ReturnConstants.StatusRefunded),
+            ExchangedCount = CountOf(ReturnConstants.StatusExchanged),
             ClosedCount = CountOf(ReturnConstants.StatusClosed)
         };
     }
@@ -711,6 +725,7 @@ public sealed class AdminReturnRepository : IAdminReturnRepository
             OrderStatus = entity.Order.Status,
             ShopId = entity.Order.ShopId,
             ShopName = entity.Order.Shop.ShopName,
+            ShopOwnerUserId = entity.Order.Shop.OwnerUserId,
             BuyerUserId = entity.BuyerUserId,
             BuyerEmail = entity.Buyer.Email,
             BuyerFullName = entity.Buyer.FullName,
@@ -778,8 +793,8 @@ public sealed class AdminReturnRepository : IAdminReturnRepository
     private static string BuildDefaultStatusNote(string toStatus) =>
         toStatus switch
         {
-            ReturnConstants.StatusReceiving => "Goods receiving confirmed",
             ReturnConstants.StatusRefunded => "Buyer refunded via payOS payout; seller wallet debit recorded",
+            ReturnConstants.StatusExchanged => "Exchange completed — replacement handled by seller",
             ReturnConstants.StatusClosed => "Return request closed",
             _ => $"Status updated to {toStatus}"
         };

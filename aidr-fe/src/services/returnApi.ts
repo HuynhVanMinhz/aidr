@@ -6,8 +6,15 @@ import type {
   AdminReturnListResult,
   BuyerReturnApiResult,
   BuyerReturnRequest,
+  ConfirmSellerReturnPayload,
   CreateReturnPayload,
   RejectReturnPayload,
+  RejectSellerReturnPayload,
+  SellerReturnActionPayload,
+  SellerReturnDetail,
+  SellerReturnDetailApiResult,
+  SellerReturnListApiResult,
+  SellerReturnListResult,
   UpdateReturnStatusPayload,
 } from '../types/return';
 import type { ApiResult } from '../types/auth';
@@ -39,13 +46,15 @@ export async function listBuyerReturns(query?: {
   page?: number;
   pageSize?: number;
 }) {
-  const { data } = await apiClient.get<ApiResult<{
-    items: BuyerReturnRequest[];
-    page: number;
-    pageSize: number;
-    totalCount: number;
-    totalPages: number;
-  }>>('/returns', {
+  const { data } = await apiClient.get<
+    ApiResult<{
+      items: BuyerReturnRequest[];
+      page: number;
+      pageSize: number;
+      totalCount: number;
+      totalPages: number;
+    }>
+  >('/returns', {
     params: {
       status: query?.status || undefined,
       page: query?.page ?? 1,
@@ -102,6 +111,64 @@ export async function updateAdminReturnStatus(id: string, payload: UpdateReturnS
   return data;
 }
 
+export async function listSellerReturns(query?: {
+  status?: string | null;
+  page?: number;
+  pageSize?: number;
+}) {
+  const { data } = await apiClient.get<SellerReturnListApiResult>('/seller/returns', {
+    params: {
+      status: query?.status || undefined,
+      page: query?.page ?? 1,
+      pageSize: query?.pageSize ?? 10,
+    },
+  });
+  return data;
+}
+
+export async function getSellerReturn(id: string) {
+  const { data } = await apiClient.get<SellerReturnDetailApiResult>(`/seller/returns/${id}`);
+  return data;
+}
+
+export async function confirmSellerReturn(id: string, payload: ConfirmSellerReturnPayload = {}) {
+  const { data } = await apiClient.post<SellerReturnDetailApiResult>(
+    `/seller/returns/${id}/confirm`,
+    payload,
+  );
+  return data;
+}
+
+export async function markSellerReturnReceiving(
+  id: string,
+  payload: SellerReturnActionPayload = {},
+) {
+  const { data } = await apiClient.post<SellerReturnDetailApiResult>(
+    `/seller/returns/${id}/receiving`,
+    payload,
+  );
+  return data;
+}
+
+export async function acceptSellerReturnGoods(
+  id: string,
+  payload: SellerReturnActionPayload = {},
+) {
+  const { data } = await apiClient.post<SellerReturnDetailApiResult>(
+    `/seller/returns/${id}/accept`,
+    payload,
+  );
+  return data;
+}
+
+export async function rejectSellerReturn(id: string, payload: RejectSellerReturnPayload) {
+  const { data } = await apiClient.post<SellerReturnDetailApiResult>(
+    `/seller/returns/${id}/reject`,
+    payload,
+  );
+  return data;
+}
+
 export function requireBuyerReturn(result: BuyerReturnApiResult): BuyerReturnRequest {
   if (!result.success || !result.data) {
     throw new Error(result.message || 'Unable to load return request.');
@@ -117,6 +184,20 @@ export function requireAdminReturnList(result: AdminReturnListApiResult): AdminR
 }
 
 export function requireAdminReturnDetail(result: AdminReturnDetailApiResult): AdminReturnDetail {
+  if (!result.success || !result.data) {
+    throw new Error(result.message || 'Unable to load return request.');
+  }
+  return result.data;
+}
+
+export function requireSellerReturnList(result: SellerReturnListApiResult): SellerReturnListResult {
+  if (!result.success || !result.data) {
+    throw new Error(result.message || 'Unable to load return requests.');
+  }
+  return result.data;
+}
+
+export function requireSellerReturnDetail(result: SellerReturnDetailApiResult): SellerReturnDetail {
   if (!result.success || !result.data) {
     throw new Error(result.message || 'Unable to load return request.');
   }

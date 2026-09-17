@@ -75,7 +75,7 @@ export function getNotificationHref(
   }
 
   if (refType === 'returnrequest' || item.type.toLowerCase() === 'return') {
-    return audience === 'seller' ? '/seller/orders' : '/account/orders';
+    return audience === 'seller' ? `/seller/returns/${refId}` : `/account/returns/${refId}`;
   }
 
   if (refType === 'chatthread' || item.type.toLowerCase() === 'chat') {

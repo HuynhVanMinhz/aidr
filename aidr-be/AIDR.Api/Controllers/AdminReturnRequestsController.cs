@@ -47,7 +47,7 @@ public sealed class AdminReturnRequestsController : ControllerBase
         return Ok(ApiResult<AdminReturnRequestDetailDto>.Ok(result));
     }
 
-    /// <summary>Approve a pending return request (starts Receiving → Refunded → Closed pipeline).</summary>
+    /// <summary>Approve a pending return and forward it to the seller.</summary>
     [HttpPost("{id:guid}/approve")]
     public async Task<ActionResult<ApiResult<AdminReturnRequestDetailDto>>> Approve(
         Guid id,
@@ -69,7 +69,7 @@ public sealed class AdminReturnRequestsController : ControllerBase
     }
 
     /// <summary>
-    /// Advance return pipeline status: Approved→Receiving→Refunded→Closed.
+    /// Advance return after seller Accepted: Accepted→Refunded|Exchanged→Closed.
     /// Transition to Refunded refunds the buyer payment and debits the seller wallet.
     /// </summary>
     [HttpPost("{id:guid}/status")]

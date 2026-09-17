@@ -118,7 +118,7 @@ export function AdminReturnRequestDetailPage() {
   );
 
   const isPending = item?.status === 'Pending';
-  const nextStatus = nextReturnStatus(item?.status);
+  const nextStatus = nextReturnStatus(item?.status, item?.resolutionType);
   const needsRefundBank =
     nextStatus === 'Refunded' &&
     (!refundToBin.trim() || !refundToAccountNumber.trim());
@@ -285,6 +285,13 @@ export function AdminReturnRequestDetailPage() {
             </div>
 
             <div className="mb-3">
+              <p className="text-muted mb-1">Resolution</p>
+              <p className="mb-0 fw-medium">
+                {item.resolutionType === 'Exchange' ? 'Exchange' : 'Return & refund'}
+              </p>
+            </div>
+
+            <div className="mb-3">
               <p className="text-muted mb-1">Reason</p>
               <p className="mb-0">{item.reason}</p>
             </div>
@@ -406,7 +413,8 @@ export function AdminReturnRequestDetailPage() {
             </div>
             <div className="card-body">
               <p className="text-muted">
-                Approve to start Receiving → Refunded → Closed. Reject requires an admin note.
+                Approve to forward this request to the seller. After the seller accepts the returned
+                goods, complete Refunded/Exchanged → Closed here. Reject requires an admin note.
               </p>
               <button
                 type="button"
@@ -414,7 +422,7 @@ export function AdminReturnRequestDetailPage() {
                 disabled={mutating}
                 onClick={() => setApproveOpen(true)}
               >
-                Approve return
+                Approve & forward to seller
               </button>
 
               <form onSubmit={handleRejectSubmit}>
@@ -445,6 +453,19 @@ export function AdminReturnRequestDetailPage() {
                   Reject return
                 </button>
               </form>
+            </div>
+          </div>
+        ) : null}
+
+        {item.status === 'Approved' ||
+        item.status === 'SellerConfirmed' ||
+        item.status === 'Receiving' ? (
+          <div className="card">
+            <div className="card-body">
+              <p className="text-muted mb-0">
+                Waiting on the seller pipeline ({formatReturnStatus(item.status)}). You can complete
+                refund or exchange after the seller accepts the returned goods.
+              </p>
             </div>
           </div>
         ) : null}
@@ -556,16 +577,17 @@ export function AdminReturnRequestDetailPage() {
 
       <AdminConfirmModal
         open={approveOpen}
-        title="Approve return request"
-        confirmLabel="Approve"
+        title="Forward return to seller"
+        confirmLabel="Forward"
         confirmVariant="success"
         confirming={mutating}
         onCancel={() => setApproveOpen(false)}
         onConfirm={() => void confirmApprove()}
       >
         <p className="mb-0">
-          Approve return for order <strong>{item.orderCode}</strong>? The buyer can then ship the
-          goods back.
+          Forward return for order <strong>{item.orderCode}</strong> to the seller? The seller must
+          confirm handling, receive the goods, and accept them before you can complete refund or
+          exchange.
         </p>
       </AdminConfirmModal>
 

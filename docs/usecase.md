@@ -57,15 +57,15 @@
 | UC-40 | View Order Details | **Actor:** Buyer. Chi tiết dòng hàng, thanh toán, tracking. **Business:** Minh bạch fulfillment. | Done | P0 |
 | UC-41 | Cancel Order | **Actor:** Buyer. Chỉ khi status cho phép (PendingPayment/Paid sớm); release stock. **Business:** Giảm đơn ảo / đổi ý. | Done | P0 |
 | UC-42 | Confirm Received | **Actor:** Buyer. Delivered → Completed; trigger credit wallet seller (policy). **Business:** Đóng vòng đời đơn & đối soát. | Done | P0 |
-| UC-43 | Request Return / Refund | **Actor:** Buyer. Yêu cầu **Trả hàng + Hoàn tiền** (không Đổi hàng — BR-R01). Lý do + bắt buộc video **Unboxing** (6 mặt kiện + mã vận đơn) và **Testing** (bật máy / chứng minh lỗi). Tạo ReturnRequest Pending + ReturnEvidences. **Business:** Bảo vệ buyer; MVP Admin xử lý thủ công. | Done | P1 |
+| UC-43 | Request Return / Refund / Exchange | **Actor:** Buyer. Yêu cầu **Trả hàng + Hoàn tiền** hoặc **Đổi hàng** (`ResolutionType`). Lý do + bắt buộc video **Unboxing** và **Testing**. Tạo ReturnRequest `Pending` + ReturnEvidences; notify Admin. **Business:** Bảo vệ buyer; pipeline Admin→Seller. | Done | P1 |
 | UC-44 | View Notifications | **Actor:** Buyer/Seller. Inbox thông báo (order, payment, chat, **product moderation**, return, **low-stock**…); SignalR push. **Business:** Giữ user engagement realtime. | Done | P1 |
 | UC-45 | Delete Notification | **Actor:** Buyer/Seller. Xóa / ẩn thông báo. **Business:** Dọn inbox. | Done | P2 |
 | UC-46 | View Order List | **Actor:** Seller. Đơn của shop; lọc status. **Business:** Vận hành fulfillment. | Done | P0 |
 | UC-47 | Update Order Status | **Actor:** System (GHN) + Seller. Paid→Confirmed→Shipping→Delivered chạy tự động: job gọi API GHN tạo vận đơn sau khi Paid, webhook/poll GHN đẩy các bậc sau; seller **vẫn** cập nhật thủ công được bất cứ lúc nào (cùng luật chỉ-tiến). **Business:** Tracking đúng thực tế, không phụ thuộc thao tác tay. Xem `docs/solution-auto-fulfillment-shipping.md`. | Done | P0 |
-| UC-48 | View Return Requests | **Actor:** Admin. Queue return/refund toàn hệ thống. **Business:** Điều phối hoàn hàng (không exchange). | Done | P1 |
-| UC-49 | View Return Request Details | **Actor:** Admin. Chi tiết lý do, **video Unboxing/Testing**, order lines. **Business:** Ra quyết định Approve/Reject dựa bằng chứng. | Done | P1 |
-| UC-50 | Approve / Reject Return Request | **Actor:** Admin. Duyệt hoặc từ chối + note bắt buộc khi reject (BR-R03). Approve → pipeline Receiving→Refund. **Business:** Kiểm soát gian lận / policy. | Done | P1 |
-| UC-52 | Update Return Request Status | **Actor:** Admin. Receiving → Refunded → Closed; hoàn tiền buyer trước rồi `RefundDebit` wallet seller (BR-R04); ghi history. **Business:** Theo dõi pipeline hoàn. | Done | P1 |
+| UC-48 | View Return Requests | **Actor:** Admin. Queue return/refund/exchange toàn hệ thống. **Business:** Điều phối hoàn/đổi hàng. | Done | P1 |
+| UC-49 | View Return Request Details | **Actor:** Admin. Chi tiết lý do, video Unboxing/Testing, order lines, status history. **Business:** Ra quyết định Approve/Reject dựa bằng chứng. | Done | P1 |
+| UC-50 | Approve / Reject Return Request | **Actor:** Admin. Duyệt → forward Seller (`Approved` + notify Seller) hoặc từ chối + note bắt buộc (BR-R03). **Business:** Kiểm soát gian lận / policy. | Done | P1 |
+| UC-52 | Complete Return (Refund / Exchange) | **Actor:** Admin. Sau Seller `Accepted`: `Accepted`→`Refunded`\|`Exchanged`→`Closed`; hoàn tiền (payOS + `RefundDebit`) hoặc đánh dấu đã đổi hàng; ghi history. **Business:** Hoàn tất & giám sát pipeline. | Done | P1 |
 | UC-53 | View Recommended Products | **Actor:** Buyer. SP gợi ý từ hành vi / hybrid strategy. **Business:** Tăng AOV & discovery. | Done | P2 |
 | UC-54 | View Similar Products | **Actor:** Buyer. SP tương tự theo category/specs/content. **Business:** Cross-sell trên trang detail. | Done | P2 |
 | UC-56 | Use AI Shopping Assistant | **Actor:** Buyer. Chatbot Groq tư vấn SP / FAQ mua sắm (intent + slot memory + NL filter retrieve). **Business:** Hỗ trợ 24/7, giảm tải CSKH. | Done | P2 |
@@ -101,6 +101,9 @@
 | UC-90 | AI NL → Filter | **Actor:** Guest/Buyer. Câu tự nhiên → JSON filter hợp lệ → apply search. **Business:** Tìm SP dễ hơn với người không rành filter. | Done | P2 |
 | UC-91 | Import Stock Lot | **Actor:** Seller. Nhập lô: LotCode unique, qty > 0, UnitCost ≥ 0, supplier/invoice/date; tăng tồn; cập nhật Avg/LastCost; **không** sửa UnitCost lô cũ (BR-I01, BR-C02); **phiếu nhập kho in được**. **Business:** Theo dõi giá vốn & lãi gộp đúng khi giá nhập thay đổi. | Done | P0 |
 | UC-92 | Update Selling Price | **Actor:** Seller. Đổi BasePrice/SalePrice; ghi ProductPriceHistories; độc lập giá vốn lô. **Business:** Phản ứng thị trường mà không phá lịch sử cost/đơn. | Done | P0 |
+| UC-93 | View Shop Return Requests | **Actor:** Seller. List/detail return của shop (sau khi Admin forward). **Business:** Seller xử lý đổi/trả. | Done | P1 |
+| UC-94 | Confirm Return Handling / Reject | **Actor:** Seller. `Approved`→`SellerConfirmed` (xác nhận ResolutionType); hoặc Reject + note. Notify Buyer. **Business:** Chốt phương án hoàn tiền / đổi hàng. | Done | P1 |
+| UC-95 | Receive & Accept Returned Goods | **Actor:** Seller. `SellerConfirmed`→`Receiving`→`Accepted`; khi Accepted **notify Admin**. Reject nếu hàng không đạt. **Business:** Kiểm hàng trước khi Admin hoàn tất. | Done | P1 |
 
 ### v2 — Done
 

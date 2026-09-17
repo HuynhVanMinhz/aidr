@@ -108,6 +108,7 @@ public static class InfrastructureServiceCollectionExtensions
         services.AddHttpClient<ISellerImportImageStore, CloudinaryImportImageStore>();
         services.AddScoped<ISellerInventoryRepository, SellerInventoryRepository>();
         services.AddScoped<ISellerOrderRepository, SellerOrderRepository>();
+        services.AddScoped<ISellerReturnRepository, SellerReturnRepository>();
         services.AddScoped<ISellerShopVoucherRepository, SellerShopVoucherRepository>();
         services.AddScoped<ISellerFinanceRepository, SellerFinanceRepository>();
         services.AddScoped<ISettlementRepository, SettlementRepository>();

@@ -5,6 +5,9 @@ public sealed class CreateReturnRequest
     public string Reason { get; set; } = null!;
     public string? Description { get; set; }
 
+    /// <summary>ReturnRefund (default) or Exchange.</summary>
+    public string? ResolutionType { get; set; }
+
     /// <summary>
     /// Optional. When omitted, all order items are returned at full quantity.
     /// </summary>

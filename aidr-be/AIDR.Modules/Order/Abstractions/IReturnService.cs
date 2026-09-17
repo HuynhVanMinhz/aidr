@@ -35,6 +35,7 @@ public interface IReturnRepository
         Guid orderId,
         string reason,
         string? description,
+        string resolutionType,
         IReadOnlyList<(Guid OrderItemId, int Quantity)> items,
         IReadOnlyList<(string EvidenceType, string MediaUrl, string? PublicId)> evidences,
         CancellationToken cancellationToken = default);
