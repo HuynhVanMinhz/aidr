@@ -3,8 +3,8 @@ export type ShopBankAccountStatus = 'Unverified' | 'Verified' | 'Rejected';
 export type ShopBankAccount = {
   shopBankAccountId: string;
   shopId: string;
-  bankBin: string;
-  bankName?: string | null;
+  bankBin?: string | null;
+  bankName: string;
   accountNumberMasked: string;
   accountName: string;
   status: ShopBankAccountStatus;
@@ -14,8 +14,8 @@ export type ShopBankAccount = {
 };
 
 export type UpsertShopBankAccountRequest = {
-  bankBin: string;
-  bankName?: string | null;
+  bankBin?: string | null;
+  bankName: string;
   accountNumber: string;
   accountName: string;
 };

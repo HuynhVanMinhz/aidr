@@ -148,7 +148,7 @@ public sealed class PayoutExecutionContext
     public required Guid PayoutBatchId { get; init; }
     public required string BatchCode { get; init; }
     public required decimal NetAmount { get; init; }
-    public required string ToBin { get; init; }
+    public string? ToBin { get; init; }
     public required string ToAccountNumber { get; init; }
     public required string ShopName { get; init; }
 }

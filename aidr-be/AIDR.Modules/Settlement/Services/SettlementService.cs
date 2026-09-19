@@ -188,7 +188,7 @@ public sealed class SettlementService : ISettlementService
                     ReferenceId = execution.BatchCode,
                     AmountVnd = ToVndInteger(execution.NetAmount),
                     Description = execution.BatchCode,
-                    ToBin = execution.ToBin,
+                    ToBin = execution.ToBin ?? string.Empty,
                     ToAccountNumber = execution.ToAccountNumber,
                     Category = "settlement"
                 },

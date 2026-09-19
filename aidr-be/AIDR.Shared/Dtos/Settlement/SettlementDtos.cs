@@ -8,8 +8,8 @@ public sealed class ShopBankAccountDto
 {
     public Guid ShopBankAccountId { get; init; }
     public Guid ShopId { get; init; }
-    public string BankBin { get; init; } = null!;
-    public string? BankName { get; init; }
+    public string? BankBin { get; init; }
+    public string BankName { get; init; } = null!;
     /// <summary>Masked for display: only the last 4 digits are returned.</summary>
     public string AccountNumberMasked { get; init; } = null!;
     public string AccountName { get; init; } = null!;
@@ -21,8 +21,8 @@ public sealed class ShopBankAccountDto
 
 public sealed class UpsertShopBankAccountRequest
 {
-    public string BankBin { get; set; } = null!;
-    public string? BankName { get; set; }
+    public string? BankBin { get; set; }
+    public string BankName { get; set; } = null!;
     public string AccountNumber { get; set; } = null!;
     public string AccountName { get; set; } = null!;
 }

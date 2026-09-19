@@ -16,6 +16,7 @@ import type {
   SettlementSummary,
   ShopBankAccount,
 } from '../../types/settlement';
+import { BankSelect, type BankOption } from '../../components/seller/BankSelect';
 import { getApiErrorMessage } from '../../utils/apiError';
 import { formatOrderDate } from '../../utils/orderUi';
 import {
@@ -64,7 +65,8 @@ export function SellerSettlementsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const [form, setForm] = useState({ bankBin: '', bankName: '', accountNumber: '', accountName: '' });
+  const [form, setForm] = useState({ accountNumber: '', accountName: '' });
+  const [selectedBank, setSelectedBank] = useState<BankOption | null>(null);
   const [saving, setSaving] = useState(false);
   const [editingBank, setEditingBank] = useState(false);
 
@@ -99,21 +101,26 @@ export function SellerSettlementsPage() {
 
   useEffect(() => {
     if (!bank) return;
-    setForm({
-      bankBin: bank.bankBin,
-      bankName: bank.bankName ?? '',
-      accountNumber: '',
-      accountName: bank.accountName,
-    });
+    setForm({ accountNumber: '', accountName: bank.accountName });
+    if (bank.bankBin && bank.bankName) {
+      setSelectedBank({ bin: bank.bankBin, name: bank.bankName, shortName: bank.bankName, logo: '' });
+    } else if (bank.bankName) {
+      setSelectedBank({ bin: '', name: bank.bankName, shortName: bank.bankName, logo: '' });
+    }
   }, [bank]);
 
   async function handleSaveBank(e: FormEvent) {
     e.preventDefault();
     setSaving(true);
     try {
+      if (!selectedBank) {
+        toast.error('Please select a bank.');
+        setSaving(false);
+        return;
+      }
       const result = await upsertSellerBankAccount({
-        bankBin: form.bankBin.trim(),
-        bankName: form.bankName.trim() || null,
+        bankBin: selectedBank.bin || null,
+        bankName: selectedBank.shortName,
         accountNumber: form.accountNumber.trim(),
         accountName: form.accountName.trim(),
       });
@@ -203,7 +210,7 @@ export function SellerSettlementsPage() {
                 <>
                   <dl className="row mb-3 fs-14">
                     <dt className="col-5 text-muted fw-normal">Bank</dt>
-                    <dd className="col-7 mb-1">{bank.bankName || bank.bankBin}</dd>
+                    <dd className="col-7 mb-1">{bank.bankName}</dd>
                     <dt className="col-5 text-muted fw-normal">Account</dt>
                     <dd className="col-7 mb-1">{bank.accountNumberMasked}</dd>
                     <dt className="col-5 text-muted fw-normal">Holder</dt>
@@ -220,28 +227,14 @@ export function SellerSettlementsPage() {
               ) : (
                 <form onSubmit={(e) => void handleSaveBank(e)}>
                   <div className="mb-2">
-                    <label className="form-label fs-13" htmlFor="bank-bin">
-                      Bank BIN *
+                    <label className="form-label fs-13" htmlFor="bank-select">
+                      Bank *
                     </label>
-                    <input
-                      id="bank-bin"
-                      className="form-control"
-                      value={form.bankBin}
-                      placeholder="970422"
-                      onChange={(e) => setForm((f) => ({ ...f, bankBin: e.target.value }))}
-                      required
-                    />
-                  </div>
-                  <div className="mb-2">
-                    <label className="form-label fs-13" htmlFor="bank-name">
-                      Bank name
-                    </label>
-                    <input
-                      id="bank-name"
-                      className="form-control"
-                      value={form.bankName}
-                      placeholder="MB Bank"
-                      onChange={(e) => setForm((f) => ({ ...f, bankName: e.target.value }))}
+                    <BankSelect
+                      id="bank-select"
+                      value={selectedBank}
+                      onChange={setSelectedBank}
+                      disabled={saving}
                     />
                   </div>
                   <div className="mb-2">

@@ -229,8 +229,8 @@ public class ShopBankAccount
 {
     public Guid ShopBankAccountId { get; set; }
     public Guid ShopId { get; set; }
-    public string BankBin { get; set; } = null!;
-    public string? BankName { get; set; }
+    public string? BankBin { get; set; }
+    public string BankName { get; set; } = null!;
     public string AccountNumber { get; set; } = null!;
     public string AccountName { get; set; } = null!;
     public string Status { get; set; } = "Unverified";
