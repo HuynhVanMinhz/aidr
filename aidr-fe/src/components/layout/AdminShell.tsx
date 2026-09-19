@@ -111,6 +111,21 @@ export function AdminShell({ variant = 'admin', children }: AdminShellProps) {
   // Sidebar Dashboard must stay inside the workspace (not storefront home).
   const dashboardPath = variant === 'seller' ? '/seller' : '/admin';
   const title = pageTitle(pathname, variant);
+  const isDashboard = pathname === dashboardPath;
+  const canGoBack =
+    typeof window !== 'undefined' &&
+    typeof (window.history.state as { idx?: number } | null)?.idx === 'number' &&
+    ((window.history.state as { idx?: number }).idx ?? 0) > 0;
+
+  function handleBack() {
+    if (canGoBack) {
+      navigate(-1);
+      return;
+    }
+    if (!isDashboard) {
+      navigate(dashboardPath);
+    }
+  }
 
   async function handleLogout() {
     await logout();
@@ -128,6 +143,19 @@ export function AdminShell({ variant = 'admin', children }: AdminShellProps) {
                   <IconifyIcon icon="solar:hamburger-menu-broken" className="fs-24 align-middle" />
                 </button>
               </div>
+              {!isDashboard || canGoBack ? (
+                <div className="topbar-item">
+                  <button
+                    type="button"
+                    className="topbar-button me-1"
+                    onClick={handleBack}
+                    aria-label="Go back"
+                    title="Go back"
+                  >
+                    <IconifyIcon icon="solar:arrow-left-bold-duotone" className="fs-24 align-middle" />
+                  </button>
+                </div>
+              ) : null}
               <div className="topbar-item">
                 <h4 className="fw-bold topbar-button pe-none text-uppercase mb-0">{title}</h4>
               </div>

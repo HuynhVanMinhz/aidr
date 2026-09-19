@@ -301,7 +301,8 @@
 .app-main--flush .page-account-details,
 .app-main--flush .page-account-order,
 .app-main--flush .page-account-wishlist,
-.app-main--flush .page-account-following {
+.app-main--flush .page-account-following,
+.app-main--flush .page-account-notifications {
   padding-left: 1.5rem;
   padding-right: 1.5rem;
 }
@@ -4050,15 +4051,25 @@
   --acc-radius: 12px;
 }
 
+html[data-theme='dark'] .account-shell,
+html[data-theme='dark'] .account-page {
+  --acc-border: rgba(232, 234, 237, 0.12);
+  --acc-border-strong: rgba(232, 234, 237, 0.22);
+  --acc-muted: #8b95a8;
+}
+
 @media (min-width: 992px) {
   .account-shell__nav {
     flex: 0 0 232px;
     max-width: 232px;
+    border-right: 1px solid var(--divider-color, var(--acc-border));
+    padding-right: 0.75rem;
   }
 
   .account-shell__main {
     flex: 1 1 auto;
     max-width: calc(100% - 232px);
+    padding-left: 1.25rem;
   }
 }
 
