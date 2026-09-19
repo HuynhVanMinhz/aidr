@@ -53,7 +53,7 @@ export function LoginPage() {
   }
 
   return (
-    <AuthLayout>
+    <AuthLayout showBanner>
       <div className="page-login">
         <div className="container">
           <div className="row">
