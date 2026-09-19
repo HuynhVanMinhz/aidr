@@ -1,8 +1,10 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import {
   isReturnVideoUrl,
+  isYouTubeUrl,
   returnEvidencePosterUrl,
   toPlayableReturnMediaUrl,
+  youTubeVideoId,
 } from '../../utils/returnMedia';
 import '../../styles/returnEvidence.css';
 
@@ -23,7 +25,32 @@ function formatLabel(type: string) {
   return type || 'Evidence';
 }
 
+function YouTubeEmbed({ url, title }: { url: string; title: string }) {
+  const id = youTubeVideoId(url);
+  if (!id) {
+    return (
+      <div className="return-evidence-player__fallback">
+        <a href={url} target="_blank" rel="noreferrer" className="link-primary">
+          Open in new tab
+        </a>
+      </div>
+    );
+  }
+  return (
+    <iframe
+      className="return-evidence-player__video"
+      src={`https://www.youtube.com/embed/${id}`}
+      title={title}
+      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+      allowFullScreen
+      style={{ border: 0 }}
+    />
+  );
+}
+
 function InlineVideo({ url, title }: { url: string; title: string }) {
+  if (isYouTubeUrl(url)) return <YouTubeEmbed url={url} title={title} />;
+
   const playable = toPlayableReturnMediaUrl(url);
   const poster = returnEvidencePosterUrl(url);
   const [failed, setFailed] = useState(false);
@@ -216,7 +243,9 @@ export function ReturnEvidenceGallery({ evidences }: ReturnEvidenceGalleryProps)
               </button>
             </div>
             <div className="return-evidence-lightbox__body">
-              {isReturnVideoUrl(active.mediaUrl) ? (
+              {isYouTubeUrl(active.mediaUrl) ? (
+                <YouTubeEmbed url={active.mediaUrl} title={formatLabel(active.evidenceType)} />
+              ) : isReturnVideoUrl(active.mediaUrl) ? (
                 // eslint-disable-next-line jsx-a11y/media-has-caption
                 <video
                   key={active.evidenceId}

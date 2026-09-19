@@ -7,11 +7,35 @@ const CLOUDINARY_VIDEO = /\/video\/upload\//i;
 const CLOUDINARY_IMAGE = /\/image\/upload\//i;
 const CLOUDINARY_HOST = /res\.cloudinary\.com/i;
 const RETURNS_FOLDER = /\/returns\//i;
+const YOUTUBE_HOST = /(?:youtu\.be|youtube\.com)/i;
+
+/** Extract YouTube video ID from watch/short/embed/youtu.be URLs. */
+export function youTubeVideoId(url: string): string | null {
+  try {
+    const u = new URL(url.trim());
+    if (/youtu\.be/i.test(u.hostname)) return u.pathname.slice(1).split('/')[0] || null;
+    if (/youtube\.com/i.test(u.hostname)) {
+      if (u.pathname.startsWith('/shorts/')) return u.pathname.split('/')[2] || null;
+      if (u.pathname.startsWith('/embed/')) return u.pathname.split('/')[2] || null;
+      return u.searchParams.get('v');
+    }
+  } catch {
+    // not a valid URL
+  }
+  return null;
+}
+
+/** True when the URL points to a YouTube video. */
+export function isYouTubeUrl(url: string | null | undefined): boolean {
+  if (!url?.trim()) return false;
+  return YOUTUBE_HOST.test(url.trim()) && youTubeVideoId(url) !== null;
+}
 
 /** True when the URL is expected to be playable as video. */
 export function isReturnVideoUrl(url: string | null | undefined): boolean {
   if (!url?.trim()) return false;
   const value = url.trim();
+  if (isYouTubeUrl(value)) return true;
   if (CLOUDINARY_VIDEO.test(value)) return true;
   // Unsigned image preset sometimes stores return clips under /image/upload/returns/
   if (CLOUDINARY_HOST.test(value) && CLOUDINARY_IMAGE.test(value) && RETURNS_FOLDER.test(value)) {

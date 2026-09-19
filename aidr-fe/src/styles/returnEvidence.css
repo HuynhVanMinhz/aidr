@@ -8,6 +8,13 @@
   background: #111;
 }
 
+.return-evidence-player__video[src*="youtube.com/embed"],
+iframe.return-evidence-player__video {
+  aspect-ratio: 16 / 9;
+  max-height: none;
+  height: auto;
+}
+
 .return-evidence-player__fallback {
   padding: 1rem;
   border-radius: 0.375rem;
