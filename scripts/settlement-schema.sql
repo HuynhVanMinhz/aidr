@@ -158,6 +158,45 @@ END;
 GO
 
 /* -------------------------------------------------------------------------- */
+/* BankBin optional, BankName required (bank name replaces BIN as primary ID) */
+/* -------------------------------------------------------------------------- */
+
+-- Make BankBin nullable (seller no longer required to enter it)
+IF NOT EXISTS (
+    SELECT 1 FROM sys.columns
+    WHERE object_id = OBJECT_ID('dbo.ShopBankAccounts')
+      AND name = 'BankBin'
+      AND is_nullable = 1)
+BEGIN
+    -- Fill existing NULL-equivalent rows before relaxing the constraint
+    UPDATE dbo.ShopBankAccounts SET BankBin = NULL WHERE BankBin = '';
+    ALTER TABLE dbo.ShopBankAccounts ALTER COLUMN BankBin NVARCHAR(20) NULL;
+    PRINT N'ShopBankAccounts.BankBin is now nullable';
+END;
+GO
+
+-- Make BankName required (now the primary human-readable identifier)
+IF EXISTS (
+    SELECT 1 FROM sys.columns
+    WHERE object_id = OBJECT_ID('dbo.ShopBankAccounts')
+      AND name = 'BankName'
+      AND is_nullable = 1)
+BEGIN
+    -- Back-fill from BankBin for any rows that have no name yet
+    UPDATE dbo.ShopBankAccounts
+    SET BankName = BankBin
+    WHERE BankName IS NULL AND BankBin IS NOT NULL;
+
+    UPDATE dbo.ShopBankAccounts
+    SET BankName = N'Unknown'
+    WHERE BankName IS NULL;
+
+    ALTER TABLE dbo.ShopBankAccounts ALTER COLUMN BankName NVARCHAR(150) NOT NULL;
+    PRINT N'ShopBankAccounts.BankName is now NOT NULL';
+END;
+GO
+
+/* -------------------------------------------------------------------------- */
 /* 5. Platform commission reporting                                           */
 /* -------------------------------------------------------------------------- */
 

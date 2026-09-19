@@ -50,12 +50,13 @@ public sealed class SettlementRepository : ISettlementRepository
         UpsertShopBankAccountRequest request,
         CancellationToken ct = default)
     {
-        var bankBin = (request.BankBin ?? string.Empty).Trim();
+        var bankName = (request.BankName ?? string.Empty).Trim();
         var accountNumber = (request.AccountNumber ?? string.Empty).Trim();
         var accountName = (request.AccountName ?? string.Empty).Trim();
+        var bankBin = string.IsNullOrWhiteSpace(request.BankBin) ? null : request.BankBin.Trim();
 
-        if (string.IsNullOrWhiteSpace(bankBin))
-            throw new AppException("Bank BIN is required.");
+        if (string.IsNullOrWhiteSpace(bankName))
+            throw new AppException("Bank name is required.");
         if (string.IsNullOrWhiteSpace(accountNumber))
             throw new AppException("Account number is required.");
         if (string.IsNullOrWhiteSpace(accountName))
@@ -85,12 +86,12 @@ public sealed class SettlementRepository : ISettlementRepository
         }
 
         var changed =
-            !string.Equals(account.BankBin, bankBin, StringComparison.Ordinal) ||
+            !string.Equals(account.BankName, bankName, StringComparison.OrdinalIgnoreCase) ||
             !string.Equals(account.AccountNumber, accountNumber, StringComparison.Ordinal) ||
             !string.Equals(account.AccountName, accountName, StringComparison.OrdinalIgnoreCase);
 
         account.BankBin = bankBin;
-        account.BankName = string.IsNullOrWhiteSpace(request.BankName) ? null : request.BankName.Trim();
+        account.BankName = bankName;
         account.AccountNumber = accountNumber;
         account.AccountName = accountName;
         account.UpdatedAt = now;
@@ -670,7 +671,7 @@ public sealed class SettlementRepository : ISettlementRepository
             PayoutBatchId = batch.PayoutBatchId,
             BatchCode = batch.BatchCode,
             NetAmount = batch.NetAmount,
-            ToBin = batch.ShopBankAccount.BankBin,
+            ToBin = batch.ShopBankAccount.BankBin,  // may be null; payout will fail if PayOS requires it
             ToAccountNumber = batch.ShopBankAccount.AccountNumber,
             ShopName = batch.Shop.ShopName
         };
@@ -1080,7 +1081,7 @@ public sealed class SettlementRepository : ISettlementRepository
         ShopBankAccountId = a.ShopBankAccountId,
         ShopId = a.ShopId,
         BankBin = a.BankBin,
-        BankName = a.BankName,
+        BankName = a.BankName ?? string.Empty,
         AccountNumberMasked = Mask(a.AccountNumber),
         AccountName = a.AccountName,
         Status = a.Status,

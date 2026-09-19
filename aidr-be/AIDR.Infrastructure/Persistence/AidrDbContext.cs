@@ -245,8 +245,8 @@ public class AidrDbContext : DbContext
         {
             e.ToTable("ShopBankAccounts");
             e.HasKey(x => x.ShopBankAccountId);
-            e.Property(x => x.BankBin).HasMaxLength(20).IsRequired();
-            e.Property(x => x.BankName).HasMaxLength(150);
+            e.Property(x => x.BankBin).HasMaxLength(20).IsRequired(false);
+            e.Property(x => x.BankName).HasMaxLength(150).IsRequired();
             e.Property(x => x.AccountNumber).HasMaxLength(40).IsRequired();
             e.Property(x => x.AccountName).HasMaxLength(150).IsRequired();
             e.Property(x => x.Status).HasMaxLength(20).IsRequired();
