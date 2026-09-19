@@ -4073,6 +4073,22 @@ html[data-theme='dark'] .account-page {
   }
 }
 
+/* Sidebar card: dùng viền đậm hơn để phân biệt với nền trang (light mode) */
+.account-shell__nav .account-card {
+  border-color: var(--acc-border-strong, rgba(22, 24, 29, 0.18));
+}
+
+/* Dark mode: nâng card lên mặt surface để phân biệt với nền trang */
+html[data-theme='dark'] .account-shell .account-card {
+  background: var(--aidr-surface, #151922);
+  border-color: var(--acc-border-strong, rgba(232, 234, 237, 0.22));
+}
+
+/* Dark mode: viền phân cách sidebar/content đậm hơn */
+html[data-theme='dark'] .account-shell__nav {
+  border-right-color: var(--acc-border-strong, rgba(232, 234, 237, 0.22));
+}
+
 .order-timeline__step--done .order-timeline__marker {
   background: #16181d;
 }
