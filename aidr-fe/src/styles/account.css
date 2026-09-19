@@ -3498,10 +3498,15 @@
   padding: 0.6rem 0.75rem;
   border: 1px solid var(--acc-border);
   border-radius: 10px;
-  background: var(--bg-color, #fff);
+  background: var(--input-bg, var(--bg-color, #fff));
   font-family: inherit;
   font-size: 0.875rem;
-  color: var(--primary-color, #16181d);
+  color: var(--input-text, var(--primary-color, #16181d));
+}
+
+.seller-input::placeholder {
+  color: var(--acc-muted);
+  opacity: 1;
 }
 
 .seller-input:focus {
@@ -4056,6 +4061,7 @@ html[data-theme='dark'] .account-page {
   --acc-border: rgba(232, 234, 237, 0.12);
   --acc-border-strong: rgba(232, 234, 237, 0.22);
   --acc-muted: #8b95a8;
+  --acc-surface-muted: #1e2332;
 }
 
 @media (min-width: 992px) {
