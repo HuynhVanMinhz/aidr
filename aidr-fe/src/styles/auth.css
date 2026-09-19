@@ -6,6 +6,35 @@
   transition: background-color 0.25s ease;
 }
 
+.auth-shell__main {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+}
+
+.auth-shell--with-banner {
+  flex-direction: row;
+}
+
+.auth-shell__banner {
+  display: none;
+  position: relative;
+  flex: 1 1 48%;
+  min-height: 100vh;
+  overflow: hidden;
+  background: #16181d;
+}
+
+.auth-shell__banner-img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+}
+
 .auth-shell__header {
   display: flex;
   align-items: center;
@@ -31,6 +60,22 @@
   text-align: center;
   color: var(--text-color);
   font-size: 0.875rem;
+}
+
+@media (min-width: 992px) {
+  .auth-shell--with-banner .auth-shell__banner {
+    display: block;
+  }
+
+  .auth-shell--with-banner .auth-shell__main {
+    flex: 0 0 clamp(420px, 44vw, 560px);
+    width: clamp(420px, 44vw, 560px);
+  }
+
+  .auth-shell--with-banner .page-login {
+    padding-top: 2.5rem;
+    padding-bottom: 2.5rem;
+  }
 }
 
 .auth-alert {
