@@ -2381,6 +2381,29 @@ html[data-theme='dark'] .store-shell .upcoming-offer-item:not(.dark-section) {
   );
 }
 
+/* ── Filter sidebar – dark mode ── */
+html[data-theme='dark'] .store-shell .catalog-filters-panel {
+  background: var(--aidr-surface, #151922);
+  border-color: var(--aidr-border, rgba(232, 234, 237, 0.1));
+}
+
+html[data-theme='dark'] .store-shell .catalog-filter-section {
+  border-bottom-color: var(--aidr-border, rgba(232, 234, 237, 0.1));
+}
+
+html[data-theme='dark'] .store-shell .catalog-filter-section__title {
+  color: var(--aidr-text, #e8eaed);
+}
+
+html[data-theme='dark'] .store-shell .catalog-filter-section__badge {
+  background: var(--aidr-accent, #2dd4bf);
+  color: var(--on-accent, #0c0e14);
+}
+
+html[data-theme='dark'] .store-shell .catalog-filter-section__head i {
+  color: var(--aidr-text-muted, #8b95a8);
+}
+
 /* Shop public page */
 .shop-public-hero {
   padding-top: 40px;
