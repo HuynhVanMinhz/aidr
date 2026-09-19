@@ -7,13 +7,15 @@ import {
   formatNotificationTime,
   getNotificationHref,
   notificationTypeLabel,
+  type NotificationAudience,
 } from '../../utils/notificationUi';
 
 type AdminNotificationDropdownProps = {
   inboxPath: string;
+  audience?: NotificationAudience;
 };
 
-export function AdminNotificationDropdown({ inboxPath }: AdminNotificationDropdownProps) {
+export function AdminNotificationDropdown({ inboxPath, audience = 'seller' }: AdminNotificationDropdownProps) {
   const toast = useToast();
   const [open, setOpen] = useState(false);
   const { unreadCount, previewItems } = useUnreadNotifications({ autoLoad: true });
@@ -88,7 +90,7 @@ export function AdminNotificationDropdown({ inboxPath }: AdminNotificationDropdo
             <p className="text-muted text-center py-4 mb-0">No notifications yet.</p>
           ) : (
             previewItems.map((item) => {
-              const href = getNotificationHref(item, 'seller') ?? inboxPath;
+              const href = getNotificationHref(item, audience) ?? inboxPath;
               return (
                 <Link
                   key={item.notificationId}

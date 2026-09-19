@@ -175,8 +175,10 @@ export function AdminShell({ variant = 'admin', children }: AdminShellProps) {
               </div>
 
               {variant === 'seller' ? (
-                <AdminNotificationDropdown inboxPath="/seller/notifications" />
-              ) : null}
+                <AdminNotificationDropdown inboxPath="/seller/notifications" audience="seller" />
+              ) : (
+                <AdminNotificationDropdown inboxPath="/admin/notifications" audience="admin" />
+              )}
 
               <div className={`dropdown topbar-item ${userOpen ? 'show' : ''}`}>
                 <button
@@ -408,6 +410,17 @@ export function AdminShell({ variant = 'admin', children }: AdminShellProps) {
                     <IconifyIcon icon="solar:bag-check-bold-duotone" />
                   </span>
                   <span className="nav-text">Orders</span>
+                </NavLink>
+              </li>
+              <li className="nav-item">
+                <NavLink
+                  className={({ isActive }) => `nav-link${isActive ? ' active' : ''}`}
+                  to="/admin/notifications"
+                >
+                  <span className="nav-icon">
+                    <IconifyIcon icon="solar:bell-bing-bold-duotone" />
+                  </span>
+                  <span className="nav-text">Notifications</span>
                 </NavLink>
               </li>
               <li className="nav-item">

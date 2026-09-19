@@ -1,7 +1,7 @@
 import type { NotificationItem } from '../types/notification';
 import { parseUtcDate } from './dateUtc';
 
-export type NotificationAudience = 'buyer' | 'seller';
+export type NotificationAudience = 'buyer' | 'seller' | 'admin';
 
 export function formatNotificationTime(iso: string): string {
   const date = parseUtcDate(iso);
@@ -56,15 +56,18 @@ export function getNotificationHref(
   const refId = item.referenceId;
 
   if (!refId) {
+    if (audience === 'admin') return '/admin/notifications';
     if (audience === 'seller') return '/seller/notifications';
     return '/account/notifications';
   }
 
   if (refType === 'order' || item.type.toLowerCase() === 'order' || item.type.toLowerCase() === 'payment') {
+    if (audience === 'admin') return `/admin/orders/${refId}`;
     return audience === 'seller' ? `/seller/orders/${refId}` : `/account/orders/${refId}`;
   }
 
   if (refType === 'product' || item.type.toLowerCase() === 'moderation') {
+    if (audience === 'admin') return `/admin/products/${refId}`;
     if (audience === 'seller') {
       // System low-stock alerts deep-link to inventory; moderation stays on product detail.
       if (item.type.toLowerCase() === 'system') {
@@ -76,10 +79,12 @@ export function getNotificationHref(
   }
 
   if (refType === 'returnrequest' || item.type.toLowerCase() === 'return') {
+    if (audience === 'admin') return `/admin/return-requests/${refId}`;
     return audience === 'seller' ? `/seller/returns/${refId}` : `/account/returns/${refId}`;
   }
 
   if (refType === 'chatthread' || item.type.toLowerCase() === 'chat') {
+    if (audience === 'admin') return '/admin/notifications';
     return audience === 'seller' ? `/seller/chat?threadId=${refId}` : `/chat?threadId=${refId}`;
   }
 

@@ -54,6 +54,7 @@ import { AdminCustomerInsightsPage } from '../views/admin/AdminCustomerInsightsP
 import { AdminOrderListPage } from '../views/admin/AdminOrderListPage';
 import { AdminOrderDetailPage } from '../views/admin/AdminOrderDetailPage';
 import { AdminSettlementsPage } from '../views/admin/AdminSettlementsPage';
+import { AdminNotificationsPage } from '../views/admin/AdminNotificationsPage';
 import { SellerHomePage } from '../views/seller/SellerHomePage';
 import { SellerProductListPage } from '../views/seller/SellerProductListPage';
 import { SellerProductFormPage } from '../views/seller/SellerProductFormPage';
@@ -128,6 +129,7 @@ export function App() {
             <Route path="accounts" element={<AdminAccountListPage />} />
             <Route path="accounts/:id" element={<AdminAccountDetailPage />} />
             <Route path="insights" element={<AdminCustomerInsightsPage />} />
+            <Route path="notifications" element={<AdminNotificationsPage />} />
           </Route>
         </Route>
 
