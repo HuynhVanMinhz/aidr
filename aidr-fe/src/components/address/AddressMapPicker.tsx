@@ -22,6 +22,10 @@ type AddressMapPickerProps = {
 const DEFAULT_ZOOM = 13;
 const PICKED_ZOOM = 16;
 
+/** Hard bounds for the map — prevents panning to disputed waters (e.g. the nine-dash line). */
+const VN_BOUNDS = L.latLngBounds(L.latLng(8.0, 102.0), L.latLng(23.5, 109.5));
+const VN_MIN_ZOOM = 6;
+
 /**
  * A Leaflet marker's default icon is loaded from bundler-relative image paths and
  * silently breaks under Vite. A div icon has no assets to lose.
@@ -58,6 +62,9 @@ export function AddressMapPicker({
       center: [VN_DEFAULT_CENTER.lat, VN_DEFAULT_CENTER.lng],
       zoom: DEFAULT_ZOOM,
       scrollWheelZoom: false,
+      maxBounds: VN_BOUNDS,
+      maxBoundsViscosity: 1.0,
+      minZoom: VN_MIN_ZOOM,
     });
 
     const baseLayer = attachBaseLayer(map);
