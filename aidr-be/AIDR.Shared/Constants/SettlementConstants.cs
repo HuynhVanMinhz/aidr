@@ -32,6 +32,7 @@ public static class SettlementConstants
     public const string TxSettlementRelease = "SettlementRelease";
     public const string TxPayout = "Payout";
     public const string TxSettlementReversal = "SettlementReversal";
+    public const string TxPlatformSubsidy = "PlatformSubsidy";
 
     public const string WalletReferenceTypeOrder = "Order";
     public const string WalletReferenceTypePayoutBatch = "PayoutBatch";

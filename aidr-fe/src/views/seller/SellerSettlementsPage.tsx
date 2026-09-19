@@ -378,7 +378,17 @@ export function SellerSettlementsPage() {
                             ? `−${formatVnd(entry.commissionAmount)}`
                             : 'No fee'}
                         </td>
-                        <td className="text-end fw-semibold">{formatVnd(entry.netAmount)}</td>
+                        <td className="text-end fw-semibold">
+                          {formatVnd(entry.netAmount)}
+                          {entry.subsidyAmount > 0 && (
+                            <p
+                              className="text-success fs-12 mb-0 mt-1"
+                              title="Platform voucher — the platform absorbed this discount"
+                            >
+                              +{formatVnd(entry.subsidyAmount)} subsidy
+                            </p>
+                          )}
+                        </td>
                         <td>
                           <span className={settlementStatusBadgeClass(entry.status)}>
                             {formatSettlementStatus(entry.status)}

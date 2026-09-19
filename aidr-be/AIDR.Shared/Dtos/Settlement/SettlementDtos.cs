@@ -46,6 +46,8 @@ public sealed class SettlementEntryDto
     public Guid ShopId { get; init; }
     public string? ShopName { get; init; }
     public decimal GrossAmount { get; init; }
+    /// <summary>Platform voucher discount absorbed by the platform; 0 for shop vouchers.</summary>
+    public decimal SubsidyAmount { get; init; }
     public decimal CommissionRate { get; init; }
     public decimal CommissionAmount { get; init; }
     public decimal NetAmount { get; init; }
@@ -195,6 +197,9 @@ public sealed class PlatformCommissionPointDto
     public int OrderCount { get; init; }
     public decimal Gmv { get; init; }
     public decimal Commission { get; init; }
+    public decimal PlatformSubsidy { get; init; }
+    /// <summary>Net platform earning = Commission − PlatformSubsidy.</summary>
+    public decimal NetPlatformEarning { get; init; }
     public decimal PaidToSeller { get; init; }
 }
 
@@ -207,6 +212,10 @@ public sealed class PlatformCommissionReportDto
     public int OrderCount { get; init; }
     public decimal Gmv { get; init; }
     public decimal Commission { get; init; }
+    /// <summary>Total platform voucher subsidies paid out to sellers in this period.</summary>
+    public decimal PlatformSubsidy { get; init; }
+    /// <summary>Net platform earning = Commission − PlatformSubsidy.</summary>
+    public decimal NetPlatformEarning { get; init; }
     public decimal PaidToSeller { get; init; }
     /// <summary>Net still held in escrow across every shop.</summary>
     public decimal EscrowHeld { get; init; }

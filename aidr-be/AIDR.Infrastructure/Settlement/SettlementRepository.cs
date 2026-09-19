@@ -166,6 +166,7 @@ public sealed class SettlementRepository : ISettlementRepository
                 e.ShopId,
                 e.Shop.ShopName,
                 e.GrossAmount,
+                e.SubsidyAmount,
                 e.CommissionRate,
                 e.CommissionAmount,
                 e.NetAmount,
@@ -189,6 +190,7 @@ public sealed class SettlementRepository : ISettlementRepository
             ShopId = r.ShopId,
             ShopName = r.ShopName,
             GrossAmount = r.GrossAmount,
+            SubsidyAmount = r.SubsidyAmount,
             CommissionRate = r.CommissionRate,
             CommissionAmount = r.CommissionAmount,
             NetAmount = r.NetAmount,
@@ -843,6 +845,7 @@ public sealed class SettlementRepository : ISettlementRepository
                 e.ShopId,
                 e.Shop.ShopName,
                 e.GrossAmount,
+                e.SubsidyAmount,
                 e.CommissionAmount,
                 e.NetAmount
             })
@@ -857,6 +860,8 @@ public sealed class SettlementRepository : ISettlementRepository
                 OrderCount = g.Count(),
                 Gmv = g.Sum(x => x.GrossAmount),
                 Commission = g.Sum(x => x.CommissionAmount),
+                PlatformSubsidy = g.Sum(x => x.SubsidyAmount),
+                NetPlatformEarning = g.Sum(x => x.CommissionAmount) - g.Sum(x => x.SubsidyAmount),
                 PaidToSeller = g.Sum(x => x.NetAmount)
             })
             .ToList();
@@ -885,6 +890,9 @@ public sealed class SettlementRepository : ISettlementRepository
             .Where(e => e.Status == SettlementConstants.EntryStatusApproved)
             .SumAsync(e => (decimal?)e.NetAmount, ct) ?? 0m;
 
+        var totalCommission = rows.Sum(r => r.CommissionAmount);
+        var totalSubsidy = rows.Sum(r => r.SubsidyAmount);
+
         return new PlatformCommissionReportDto
         {
             FromUtc = fromUtc,
@@ -892,7 +900,9 @@ public sealed class SettlementRepository : ISettlementRepository
             CommissionRate = _options.CommissionRate,
             OrderCount = rows.Count,
             Gmv = rows.Sum(r => r.GrossAmount),
-            Commission = rows.Sum(r => r.CommissionAmount),
+            Commission = totalCommission,
+            PlatformSubsidy = totalSubsidy,
+            NetPlatformEarning = totalCommission - totalSubsidy,
             PaidToSeller = rows.Sum(r => r.NetAmount),
             EscrowHeld = escrowHeld,
             AwaitingPayout = awaitingPayout,
