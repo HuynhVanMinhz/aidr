@@ -6,7 +6,7 @@ public sealed class ProductListQuery
 {
     public string? Q { get; init; }
     public Guid? ShopId { get; init; }
-    /// <summary>Restrict the result to these ids — used by the batch lookup for link previews.</summary>
+    /// <summary>Restrict the result to these ids - used by the batch lookup for link previews.</summary>
     public IReadOnlyList<Guid> ProductIds { get; init; } = Array.Empty<Guid>();
     public int? CategoryId { get; init; }
     public IReadOnlyList<int> CategoryIds { get; init; } = Array.Empty<int>();
@@ -122,7 +122,7 @@ public sealed class ProductDetailRecord
     public string? VariantOptionsJson { get; init; }
     public IReadOnlyList<ProductImageRecord> Images { get; init; } = Array.Empty<ProductImageRecord>();
     public IReadOnlyList<ProductReviewRecord> RecentReviews { get; init; } = Array.Empty<ProductReviewRecord>();
-    /// <summary>Active variants only — the storefront must not offer one that is off sale.</summary>
+    /// <summary>Active variants only - the storefront must not offer one that is off sale.</summary>
     public IReadOnlyList<ProductVariantRecord> Variants { get; init; } = Array.Empty<ProductVariantRecord>();
 }
 

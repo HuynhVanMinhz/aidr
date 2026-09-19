@@ -1,4 +1,4 @@
-# AIDR — Solution: Price Alerts & Public Price History
+# AIDR - Solution: Price Alerts & Public Price History
 
 **Status:** Implemented  
 **Module:** Engagement + Discovery + Notifications  
@@ -20,18 +20,18 @@
 
 - Buyer (đã login) bật alert trên SP đang trong wishlist **hoặc** trực tiếp trên PDP.  
 - Hai loại alert:
-  - **PriceDrop** — giá effective giảm ≥ ngưỡng (mặc định 5% hoặc ≥ 50.000₫, lấy max).  
-  - **BackInStock** — từ `StockQuantity = 0` → `> 0`.  
+  - **PriceDrop** - giá effective giảm ≥ ngưỡng (mặc định 5% hoặc ≥ 50.000₫, lấy max).  
+  - **BackInStock** - từ `StockQuantity = 0` → `> 0`.  
 - Mỗi `(UserId, ProductId, AlertType)` tối đa 1 bản ghi active.  
 - Notify qua `Notifications` + SignalR; dedupe trong 24h cho cùng SP + loại alert.  
 - User tắt alert hoặc alert auto-expire sau 90 ngày nếu không tương tác.
 
 ### 1.3 Nguyên tắc
 
-1. **Snapshot tại thời điểm subscribe** — lưu `BaselinePrice` / `BaselineInStock` khi tạo alert để so sánh job.  
-2. **Không spam** — job chỉ fire khi vượt ngưỡng; dedupe notification.  
-3. **Guest read-only history** — alert cần login.  
-4. **Variant-aware (v2.1)** — v1 aggregate theo product; variant picker chưa có history riêng thì dùng product-level.
+1. **Snapshot tại thời điểm subscribe** - lưu `BaselinePrice` / `BaselineInStock` khi tạo alert để so sánh job.  
+2. **Không spam** - job chỉ fire khi vượt ngưỡng; dedupe notification.  
+3. **Guest read-only history** - alert cần login.  
+4. **Variant-aware (v2.1)** - v1 aggregate theo product; variant picker chưa có history riêng thì dùng product-level.
 
 ---
 
@@ -69,7 +69,7 @@ CREATE TABLE dbo.ProductPriceAlerts (
 );
 ```
 
-**Không** thêm bảng price history — tái sử dụng `ProductPriceHistories`.
+**Không** thêm bảng price history - tái sử dụng `ProductPriceHistories`.
 
 ---
 
@@ -91,7 +91,7 @@ current           = product effective price now
 points            = step function: mỗi ChangedAt → price mới; thêm điểm "now"
 ```
 
-Cache Redis key `product:price-history:{productId}:{days}` TTL 15 phút — invalidate khi UC-92 ghi history mới.
+Cache Redis key `product:price-history:{productId}:{days}` TTL 15 phút - invalidate khi UC-92 ghi history mới.
 
 ---
 
@@ -116,7 +116,7 @@ foreach active alert:
       same notify + dedupe
 ```
 
-**Trigger khi seller đổi giá:** hook nhẹ trong `SellerInventoryRepository` sau insert `ProductPriceHistories` — enqueue productId vào in-memory channel (optional v1.1) để job chạy sớm hơn 15 phút.
+**Trigger khi seller đổi giá:** hook nhẹ trong `SellerInventoryRepository` sau insert `ProductPriceHistories` - enqueue productId vào in-memory channel (optional v1.1) để job chạy sớm hơn 15 phút.
 
 ---
 
@@ -124,14 +124,14 @@ foreach active alert:
 
 | Màn | Thay đổi |
 |-----|----------|
-| `ProductDetailPage` | Tab hoặc section **Price history** — line chart (ApexCharts / lightweight SVG); toggle **Notify me on price drop** / **Notify when back in stock** |
+| `ProductDetailPage` | Tab hoặc section **Price history** - line chart (ApexCharts / lightweight SVG); toggle **Notify me on price drop** / **Notify when back in stock** |
 | `account/WishlistPage` | Icon chuông trên item; bulk enable price alert |
 | `account/PriceAlertsPage` (mới) | List alerts, unlink |
 | Notifications inbox | Deep link → PDP |
 
 UI English: *"Price dropped on …"*, *"Back in stock"*, *"Notify me when the price drops"*.
 
-Theme: storefront `theme-for-aidr-fe` — chart trong card `product-additional-info` style.
+Theme: storefront `theme-for-aidr-fe` - chart trong card `product-additional-info` style.
 
 ---
 
@@ -157,7 +157,7 @@ Dedupe: cùng `(UserId, ProductId, AlertType)` + `CreatedAt` trong 24h → skip.
 
 ## 8. Seed & dev endpoint
 
-- `scripts/seed-price-alerts.sql` — 2 SP có history giả 90 ngày; 1 buyer có alert; 1 SP out-of-stock → in-stock scenario.  
+- `scripts/seed-price-alerts.sql` - 2 SP có history giả 90 ngày; 1 buyer có alert; 1 SP out-of-stock → in-stock scenario.  
 - `POST /api/dev/seed-price-alerts` (Development only).  
 - Prerequisites: demo buyer, approved products, `ProductPriceHistories` rows.
 

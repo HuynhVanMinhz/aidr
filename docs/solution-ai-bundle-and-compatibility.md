@@ -1,4 +1,4 @@
-# AIDR — Solution: Smart Bundle & Compatibility Check
+# AIDR - Solution: Smart Bundle & Compatibility Check
 
 **Status:** Implemented  
 **Module:** 29 AI + Discovery + Cart  
@@ -19,21 +19,21 @@ Khi buyer xem SP chính (phone, laptop, console…):
   1. Rule map category → accessory categories (config JSON).  
   2. Co-purchase từ order history (nếu đủ data).  
   3. LLM rerank + lý do ngắn 1 dòng (optional).  
-- CTA: **Add all to cart** (từng dòng + main product) — reuse cart API.
+- CTA: **Add all to cart** (từng dòng + main product) - reuse cart API.
 
 ### 1.2 Compatibility Check (UC-84)
 
 - Input: `primaryProductId` + `secondaryProductId` **hoặc** `primaryProductId` + free-text device model/spec.  
 - Output: `compatible | incompatible | unknown` + `reasons[]` (English) + `matchedSpecs[]`.  
 - Engine: **rule-first** parse `SpecsJson` (RAM type, socket, wattage, connector…) → LLM chỉ diễn đạt / xử lý edge khi rule `unknown`.  
-- Không trả lời chắc chắn khi thiếu spec — ưu tiên `unknown` + gợi ý hỏi seller qua chat.
+- Không trả lời chắc chắn khi thiếu spec - ưu tiên `unknown` + gợi ý hỏi seller qua chat.
 
 ### 1.3 Nguyên tắc
 
 1. **Chỉ SP Approved, còn tồn.**  
-2. **Grounded specs** — cite key spec pairs trong response.  
-3. **Mock path** — rule-only khi Groq mock.  
-4. **Không thêm agent loop** — 1 request = 1 response.  
+2. **Grounded specs** - cite key spec pairs trong response.  
+3. **Mock path** - rule-only khi Groq mock.  
+4. **Không thêm agent loop** - 1 request = 1 response.  
 5. **English UI/errors.**
 
 ---
@@ -177,7 +177,7 @@ Sau guided consult **presented** stage → append bundle cards trong `MetaJson.a
 
 | Vị trí | UI |
 |--------|-----|
-| `ProductDetailPage` | Section **Complete your setup** — horizontal cards + **Add bundle to cart** |
+| `ProductDetailPage` | Section **Complete your setup** - horizontal cards + **Add bundle to cart** |
 | PDP / compare | Button **Check compatibility** → modal chọn SP #2 hoặc paste model |
 | AI widget | Render compatibility result block |
 
@@ -187,7 +187,7 @@ Theme storefront; bundle cards giống similar products section.
 
 ## 9. Schema
 
-**v1 không bắt buộc migration** — co-purchase cache có thể Redis:
+**v1 không bắt buộc migration** - co-purchase cache có thể Redis:
 
 `bundle:cobuy:{productId}` TTL 24h.
 
@@ -197,8 +197,8 @@ Phase B (optional): `ProductBundleStats (PrimaryProductId, AccessoryProductId, P
 
 ## 10. Seed & dev
 
-- `scripts/seed-accessory-bundle.sql` — phone + 3 case/charger approved cùng shop.  
-- `scripts/seed-compatibility-demo.sql` — laptop DDR4 + RAM DDR5 incompatible pair.  
+- `scripts/seed-accessory-bundle.sql` - phone + 3 case/charger approved cùng shop.  
+- `scripts/seed-compatibility-demo.sql` - laptop DDR4 + RAM DDR5 incompatible pair.  
 - `POST /api/dev/seed-bundle-demo`
 
 ---

@@ -28,7 +28,7 @@ const ACCEPT = '.xlsx';
 
 /**
  * Pick a file, see exactly what it would do, then commit. The file is sent twice
- * on purpose — once to check and once to run — so the server keeps no half-done
+ * on purpose - once to check and once to run - so the server keeps no half-done
  * import between the two steps.
  */
 export function ProductImportModal({ open, onClose, onImported }: ProductImportModalProps) {
@@ -228,7 +228,7 @@ function PickStage({ busy, inputRef, onChoose, onFileChosen, onTemplate }: PickS
       <IconifyIcon icon="solar:file-check-bold-duotone" className="fs-48 text-primary" />
       <p className="mt-2 mb-1 fw-medium">Choose an .xlsx file</p>
       <p className="text-muted fs-13">
-        Nothing is saved yet — you will see what every row does before anything is written.
+        Nothing is saved yet - you will see what every row does before anything is written.
       </p>
 
       <input
@@ -254,7 +254,7 @@ function PickStage({ busy, inputRef, onChoose, onFileChosen, onTemplate }: PickS
       </p>
       <p className="text-muted fs-13 mt-2 mb-0">
         The Variants sheet prices each configuration and gives it its own photo. For any photo
-        you can paste the picture straight onto the row instead of hunting for a link — it is
+        you can paste the picture straight onto the row instead of hunting for a link - it is
         uploaded when you confirm the import, never while you are only previewing it.
       </p>
     </div>
@@ -304,7 +304,7 @@ function PreviewStage({ file, preview }: { file: File | null; preview: SellerPro
           {preview.stockUnitCount.toLocaleString('vi-VN')} unit
           {preview.stockUnitCount === 1 ? '' : 's'} will be received as{' '}
           {preview.stockRowCount} new stock lot{preview.stockRowCount === 1 ? '' : 's'}. This adds
-          to what you already hold — it does not replace it, so importing the same file twice
+          to what you already hold - it does not replace it, so importing the same file twice
           receives the stock twice.
         </div>
       ) : null}
@@ -365,7 +365,7 @@ function PreviewStage({ file, preview }: { file: File | null; preview: SellerPro
 }
 
 function StockRow({ row }: { row: SellerInventoryImportRow }) {
-  const dash = <span className="text-muted">—</span>;
+  const dash = <span className="text-muted">-</span>;
 
   return (
     <tr className={row.action === 'Error' ? 'table-danger' : undefined}>
@@ -432,7 +432,7 @@ function DoneStage({ result }: { result: SellerProductImportResult }) {
 
       {result.failedRows.length > 0 ? (
         <>
-          <p className="fw-medium mb-2">These rows were skipped — fix them and import again:</p>
+          <p className="fw-medium mb-2">These rows were skipped - fix them and import again:</p>
           <div className="table-responsive" style={{ maxHeight: 300 }}>
             <table className="table table-sm align-middle mb-0">
               <thead className="bg-light-subtle position-sticky top-0">
@@ -446,7 +446,7 @@ function DoneStage({ result }: { result: SellerProductImportResult }) {
                 {result.failedRows.map((row) => (
                   <tr key={row.rowNumber}>
                     <td>{row.rowNumber}</td>
-                    <td>{row.name || <span className="text-muted">—</span>}</td>
+                    <td>{row.name || <span className="text-muted">-</span>}</td>
                     <td>
                       <ProblemList errors={row.errors} />
                     </td>
@@ -475,9 +475,9 @@ function DoneStage({ result }: { result: SellerProductImportResult }) {
                 {result.failedStockRows.map((row) => (
                   <tr key={row.rowNumber}>
                     <td>{row.rowNumber}</td>
-                    <td>{row.productName || row.slug || <span className="text-muted">—</span>}</td>
+                    <td>{row.productName || row.slug || <span className="text-muted">-</span>}</td>
                     <td className="text-end">
-                      {row.quantity?.toLocaleString('vi-VN') ?? <span className="text-muted">—</span>}
+                      {row.quantity?.toLocaleString('vi-VN') ?? <span className="text-muted">-</span>}
                     </td>
                     <td>
                       <ProblemList errors={row.errors} />
@@ -508,13 +508,13 @@ function ImportRow({ row }: { row: SellerProductImportRow }) {
         <span className={badge}>{row.action === 'Error' ? 'Skip' : row.action}</span>
       </td>
       <td className="text-truncate" style={{ maxWidth: 220 }}>
-        {row.name || <span className="text-muted">—</span>}
+        {row.name || <span className="text-muted">-</span>}
       </td>
       <td className="text-truncate" style={{ maxWidth: 200 }}>
-        {row.categoryName || <span className="text-muted">—</span>}
+        {row.categoryName || <span className="text-muted">-</span>}
       </td>
       <td className="text-end">
-        {row.basePrice != null ? formatVnd(row.basePrice) : <span className="text-muted">—</span>}
+        {row.basePrice != null ? formatVnd(row.basePrice) : <span className="text-muted">-</span>}
       </td>
       <td>
         <ProblemList errors={row.errors} />
@@ -524,7 +524,7 @@ function ImportRow({ row }: { row: SellerProductImportRow }) {
 }
 
 function ProblemList({ errors }: { errors: string[] }) {
-  if (errors.length === 0) return <span className="text-muted fs-13">—</span>;
+  if (errors.length === 0) return <span className="text-muted fs-13">-</span>;
 
   return (
     <ul className="mb-0 ps-3 fs-13 text-danger">

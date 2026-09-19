@@ -15,7 +15,7 @@ export function nlResultToCatalogFilters(
   return slotsOrNlToCatalogFilters(result);
 }
 
-/** Natural-language search bar — maps AI filter DSL into the catalog filter panel. */
+/** Natural-language search bar - maps AI filter DSL into the catalog filter panel. */
 export function NlSearchBar({ onApplyFilters }: Props) {
   const toast = useToast();
   const { loading, parse } = useNlFilter();

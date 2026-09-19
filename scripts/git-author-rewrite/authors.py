@@ -6,7 +6,7 @@ import re
 from dataclasses import dataclass
 from fnmatch import fnmatch
 
-# AtuDk3 / minhvanhuynh merge commits — never rewrite.
+# AtuDk3 / minhvanhuynh merge commits - never rewrite.
 KEEP_AUTHOR_EMAILS = {
     "127426449+AtuDk3@users.noreply.github.com".lower(),
 }

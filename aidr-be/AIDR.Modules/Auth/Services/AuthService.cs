@@ -164,7 +164,7 @@ public sealed class AuthService : IAuthService
             <p>This link expires in {_options.PasswordResetTokenHours} hour(s) and can be used only once.</p>
             """;
 
-        await _emailSender.SendAsync(user.Email, "AIDR — Reset password", body, cancellationToken);
+        await _emailSender.SendAsync(user.Email, "AIDR - Reset password", body, cancellationToken);
     }
 
     public async Task ResetPasswordAsync(ResetPasswordRequest request, CancellationToken cancellationToken = default)

@@ -1,18 +1,18 @@
-# AIDR — Solution: Kế hoạch deploy Production
+# AIDR - Solution: Kế hoạch deploy Production
 
-**Phạm vi:** hướng dẫn triển khai website AIDR lên production với **VPS + Docker + NGINX + CI/CD (GitHub Actions)** — kiến trúc, cấu hình từng thành phần, runbook từng phase, ước tính chi phí, checklist go-live.  
+**Phạm vi:** hướng dẫn triển khai website AIDR lên production với **VPS + Docker + NGINX + CI/CD (GitHub Actions)** - kiến trúc, cấu hình từng thành phần, runbook từng phase, ước tính chi phí, checklist go-live.  
 **Tham chiếu:** `architecture-aidr-be.md`, `architecture-aidr-fe.md`, `docker-compose.yml`, `docs/handover-run-src.md`, `docs/guide-payos-settlement-testing.md`.
 
 > **Lưu ý:** Giá dịch vụ cloud thay đổi theo thời điểm và khu vực. Các con số dưới đây là **ước tính tham khảo** (Q3–Q4 2025, quy đổi ~25.000 VND/USD). Luôn kiểm tra bảng giá chính thức trước khi mua.
 >
-> **Bắt đầu nhanh (làm theo từng bước):** [`docs/guide-deploy-vps-step-by-step.md`](guide-deploy-vps-step-by-step.md) — VPS all-in-one, **SQL Server trong Docker** (không bắt buộc Azure SQL).  
+> **Bắt đầu nhanh (làm theo từng bước):** [`docs/guide-deploy-vps-step-by-step.md`](guide-deploy-vps-step-by-step.md) - VPS all-in-one, **SQL Server trong Docker** (không bắt buộc Azure SQL).  
 > Tài liệu này (§1–§5) là kiến trúc + chi phí + CI/CD chi tiết.
 
 ---
 
 ## 1. Tổng quan kiến trúc Production
 
-### 1.1 Sơ đồ đề xuất (MVP — VPS + Docker + NGINX)
+### 1.1 Sơ đồ đề xuất (MVP - VPS + Docker + NGINX)
 
 ```
                          ┌─────────────────────────────────────────┐
@@ -21,7 +21,7 @@
                                             │ HTTPS :443
                                             ▼
                          ┌─────────────────────────────────────────┐
-                         │  VPS — Docker Compose                   │
+                         │  VPS - Docker Compose                   │
                          │  NGINX (TLS + reverse proxy + FE dist)  │
                          │  api · redis · keycloak · kc-postgres   │
                          └──────────────────┬──────────────────────┘
@@ -50,10 +50,10 @@ CI/CD: **GitHub Actions** build image API → **GHCR** → SSH VPS `compose pull
 
 | Mô hình | Phù hợp | Ưu | Nhược |
 |---------|---------|-----|-------|
-| **A — VPS + Docker + NGINX + CI/CD (chuẩn vận hành)** | Go-live MVP / staging → prod | Một stack kiểm soát được: reverse proxy, container, pipeline | Single VPS = SPOF; cần tự backup/monitor |
-| **B — Tách lớp CDN** | Traffic lớn, FE global | FE trên Cloudflare Pages, API trên VPS | Nhiều điểm cấu hình hơn |
+| **A - VPS + Docker + NGINX + CI/CD (chuẩn vận hành)** | Go-live MVP / staging → prod | Một stack kiểm soát được: reverse proxy, container, pipeline | Single VPS = SPOF; cần tự backup/monitor |
+| **B - Tách lớp CDN** | Traffic lớn, FE global | FE trên Cloudflare Pages, API trên VPS | Nhiều điểm cấu hình hơn |
 
-**Chuẩn làm việc hiện tại:** all-in-one VPS (`docker-compose.prod.yml`) — FE static + API + **SQL Server container** + Redis + Keycloak + NGINX. Azure SQL là tùy chọn khi cần backup/HA managed. CI/CD: GitHub Actions → GHCR → SSH deploy (làm sau khi deploy tay ổn).
+**Chuẩn làm việc hiện tại:** all-in-one VPS (`docker-compose.prod.yml`) - FE static + API + **SQL Server container** + Redis + Keycloak + NGINX. Azure SQL là tùy chọn khi cần backup/HA managed. CI/CD: GitHub Actions → GHCR → SSH deploy (làm sau khi deploy tay ổn).
 
 ---
 
@@ -61,7 +61,7 @@ CI/CD: **GitHub Actions** build image API → **GHCR** → SSH VPS `compose pull
 
 - [ ] Domain đã mua, DNS trỏ về Cloudflare (hoặc registrar).
 - [ ] Chạy `database.sql` + các migration script trong `scripts/` (settlement, shipping, seller-kyc…) trên DB production.
-- [ ] **Không** dùng secret dev trong `appsettings.json` — inject qua env / secret manager.
+- [ ] **Không** dùng secret dev trong `appsettings.json` - inject qua env / secret manager.
 - [ ] Tắt hoặc chặn mọi endpoint `POST /api/dev/*` (chỉ `IsDevelopment()`).
 - [ ] payOS: đăng ký **Chi hộ (Payouts)** nếu cần escrow settlement (xem `guide-payos-settlement-testing.md`).
 - [ ] Webhook public HTTPS: payOS, GHN (nếu bật auto-fulfillment).
@@ -73,7 +73,7 @@ CI/CD: **GitHub Actions** build image API → **GHCR** → SSH VPS `compose pull
 
 ## 3. Chi tiết từng thành phần
 
-### 3.1 Frontend — `aidr-fe` (React + Vite)
+### 3.1 Frontend - `aidr-fe` (React + Vite)
 
 #### Vai trò
 
@@ -87,7 +87,7 @@ cp .env.example .env.production
 # Điền biến VITE_* (xem bảng dưới)
 npm ci
 npm run build
-# Output: dist/ — deploy lên static host
+# Output: dist/ - deploy lên static host
 ```
 
 #### Biến môi trường (`aidr-fe/.env.production`)
@@ -103,13 +103,13 @@ npm run build
 | `VITE_CLOUDINARY_CLOUD_NAME` | `your_cloud` | Cloudinary cloud name |
 | `VITE_CLOUDINARY_UPLOAD_PRESET` | `aidr_unsigned` | Unsigned upload preset |
 
-> Biến `VITE_*` được **nhúng vào bundle lúc build** — cần build lại khi đổi domain.
+> Biến `VITE_*` được **nhúng vào bundle lúc build** - cần build lại khi đổi domain.
 
 #### Lựa chọn hosting & chi phí
 
 | Nền tảng | Cấu hình gợi ý | Chi phí ước tính/tháng |
 |----------|----------------|------------------------|
-| **Cloudflare Pages** | Connect Git, build `npm run build`, output `dist` | **$0** (Free) — bandwidth rộng |
+| **Cloudflare Pages** | Connect Git, build `npm run build`, output `dist` | **$0** (Free) - bandwidth rộng |
 | **Vercel / Netlify** | Tương tự Pages | **$0–20** |
 | **S3 + CloudFront** | Bucket private + OAI | **$1–10** (traffic thấp) |
 | **Cùng VPS với NGINX** | Serve `dist/` static | $0 thêm (đã tính trong VPS) |
@@ -120,11 +120,11 @@ npm run build
 
 - **SPA fallback:** mọi route không phải file tĩnh → `index.html` (Pages/Vercel tự xử lý).
 - **Security headers:** `X-Frame-Options`, `X-Content-Type-Options`, CSP (tùy mức độ).
-- **Không** expose API key Groq/payOS trên FE — chỉ Cloudinary unsigned preset (public by design).
+- **Không** expose API key Groq/payOS trên FE - chỉ Cloudinary unsigned preset (public by design).
 
 ---
 
-### 3.2 Backend API — `aidr-be` (.NET 9)
+### 3.2 Backend API - `aidr-be` (.NET 9)
 
 #### Vai trò
 
@@ -132,7 +132,7 @@ REST API, SignalR hubs (chat, notification), background jobs (settlement, shippi
 
 #### Docker image
 
-Đã có `aidr-be/AIDR.Api/Dockerfile` — publish port `8080` trong container.
+Đã có `aidr-be/AIDR.Api/Dockerfile` - publish port `8080` trong container.
 
 ```bash
 cd aidr-be
@@ -167,7 +167,7 @@ Keycloak__GoogleIdpAlias=google
 # Auth URLs
 Auth__FrontendResetPasswordUrl=https://www.aidr.example.com/reset-password
 
-# CORS — chỉ origin production
+# CORS - chỉ origin production
 Cors__Origins__0=https://www.aidr.example.com
 Cors__Origins__1=https://aidr.example.com
 
@@ -181,7 +181,7 @@ Smtp__Password=<sendgrid-api-key>
 Smtp__From=noreply@aidr.example.com
 Smtp__FromDisplayName=AIDR
 
-# payOS (production credentials — KHÔNG dùng sandbox)
+# payOS (production credentials - KHÔNG dùng sandbox)
 PayOS__ClientId=...
 PayOS__ApiKey=...
 PayOS__ChecksumKey=...
@@ -230,14 +230,14 @@ FptAi__AllowedImageHosts__0=res.cloudinary.com
 
 | Endpoint | Mục đích |
 |----------|----------|
-| `GET /api/health/live` | Liveness — process sống |
-| `GET /api/health/ready` | Readiness — SQL + Redis |
+| `GET /api/health/live` | Liveness - process sống |
+| `GET /api/health/ready` | Readiness - SQL + Redis |
 
 Cấu hình load balancer / orchestrator probe vào 2 endpoint này.
 
 ---
 
-### 3.3 NGINX — Reverse proxy
+### 3.3 NGINX - Reverse proxy
 
 #### Vai trò
 
@@ -273,11 +273,11 @@ Managed load balancer (AWS ALB, Azure LB): **$15–25/tháng** nếu cần HA mu
 
 ---
 
-### 3.4 SQL Server — Database
+### 3.4 SQL Server - Database
 
 #### Vai trò
 
-Source of truth — toàn bộ schema trong `database.sql` + scripts `scripts/*.sql`.
+Source of truth - toàn bộ schema trong `database.sql` + scripts `scripts/*.sql`.
 
 #### Lựa chọn & chi phí
 
@@ -287,7 +287,7 @@ Source of truth — toàn bộ schema trong `database.sql` + scripts `scripts/*.
 | **Azure SQL** | S1 (20 DTU) | **~$30** | Traffic vừa |
 | **Aiven for SQL Server** | Startup | **~$50–120** | Đúng như architecture doc |
 | **AWS RDS SQL Server** | db.t3.small | **~$50–80** | License SQL Server đắt hơn PostgreSQL |
-| **SQL trên VPS** (compose) | 2 GB RAM dedicated | $0 thêm | **Không khuyến nghị prod** — tự backup, không HA |
+| **SQL trên VPS** (compose) | 2 GB RAM dedicated | $0 thêm | **Không khuyến nghị prod** - tự backup, không HA |
 
 **Khuyến nghị MVP:** Azure SQL Basic/S0 + automated backup 7–35 ngày.
 
@@ -312,7 +312,7 @@ Source of truth — toàn bộ schema trong `database.sql` + scripts `scripts/*.
 
 ---
 
-### 3.5 Redis — Cache & SignalR backplane (tùy chọn)
+### 3.5 Redis - Cache & SignalR backplane (tùy chọn)
 
 #### Vai trò
 
@@ -337,13 +337,13 @@ Caching__UseInMemory=false
 
 ---
 
-### 3.6 Keycloak — Identity (IAM)
+### 3.6 Keycloak - Identity (IAM)
 
 #### Vai trò
 
 OAuth2/OIDC, login email, Google federated IdP, roles BUYER/SELLER/ADMIN.
 
-Realm import: `infra/keycloak/aidr-realm.json` — **phải cập nhật** trước production:
+Realm import: `infra/keycloak/aidr-realm.json` - **phải cập nhật** trước production:
 
 | Mục | Production |
 |-----|------------|
@@ -358,7 +358,7 @@ Realm import: `infra/keycloak/aidr-realm.json` — **phải cập nhật** trư�
 ```yaml
 command: ["start", "--import-realm", "--optimized"]
 environment:
-  KC_DB: postgres  # hoặc mssql — Keycloak 26 khuyến nghị Postgres riêng
+  KC_DB: postgres  # hoặc mssql - Keycloak 26 khuyến nghị Postgres riêng
   KC_HOSTNAME: auth.aidr.example.com
   KC_PROXY: edge          # đứng sau Cloudflare/NGINX
   KC_HTTP_ENABLED: "true"
@@ -385,7 +385,7 @@ environment:
 
 ---
 
-### 3.7 Cloudinary — Media upload
+### 3.7 Cloudinary - Media upload
 
 #### Vai trò
 
@@ -395,7 +395,7 @@ Upload ảnh sản phẩm, avatar, eKYC (FE unsigned upload).
 
 1. Tạo Cloudinary account → lấy `cloud_name`.
 2. Settings → Upload → Add upload preset:
-   - Signing mode: **Unsigned** (hoặc signed nếu muốn bảo mật hơn — cần sửa FE).
+   - Signing mode: **Unsigned** (hoặc signed nếu muốn bảo mật hơn - cần sửa FE).
    - Folder: `aidr/products`, `aidr/avatars`…
    - Allowed formats: `jpg,png,webp`.
    - Max file size: 5–10 MB.
@@ -411,7 +411,7 @@ Upload ảnh sản phẩm, avatar, eKYC (FE unsigned upload).
 
 ---
 
-### 3.8 payOS — Thanh toán & Chi hộ
+### 3.8 payOS - Thanh toán & Chi hộ
 
 #### Vai trò
 
@@ -425,7 +425,7 @@ Chi tiết: `docs/guide-payos-settlement-testing.md`, `docs/solution-escrow-sett
 |------|-----------|
 | 1 | Đăng ký merchant **production** tại [payOS](https://payos.vn) |
 | 2 | Lấy `ClientId`, `ApiKey`, `ChecksumKey` production |
-| 3 | Đăng ký **Chi hộ (Payouts)** riêng — không tự có khi tạo kênh thanh toán |
+| 3 | Đăng ký **Chi hộ (Payouts)** riêng - không tự có khi tạo kênh thanh toán |
 | 4 | Nạp số dư tài khoản chi hộ để payout seller/refund |
 | 5 | Webhook URL: `https://api.aidr.example.com/api/payments/payos/webhook` |
 | 6 | Admin gọi `POST /api/payments/payos/confirm-webhook` sau deploy |
@@ -440,11 +440,11 @@ Chi tiết: `docs/guide-payos-settlement-testing.md`, `docs/solution-escrow-sett
 | Phí chi hộ (payout) | Theo bảng giá payOS (fixed + % tùy gói) |
 | Không có phí cloud cố định | Chỉ trả theo giao dịch |
 
-> Sandbox: **$0** — dùng cho staging.
+> Sandbox: **$0** - dùng cho staging.
 
 ---
 
-### 3.9 GHN — Vận chuyển tự động
+### 3.9 GHN - Vận chuyển tự động
 
 #### Vai trò
 
@@ -468,12 +468,12 @@ Webhook GHN (nếu hỗ trợ): `https://api.aidr.example.com/api/shipping/ghn/w
 | Hạng mục | Ước tính |
 |----------|----------|
 | API access | **$0** (theo hợp đồng shop GHN) |
-| Cước vận chuyển | Trả theo đơn — **không phải chi phí infra** |
+| Cước vận chuyển | Trả theo đơn - **không phải chi phí infra** |
 | COD / bảo hiểm | Tùy gói GHN |
 
 ---
 
-### 3.10 Groq — AI Shopping Assistant
+### 3.10 Groq - AI Shopping Assistant
 
 #### Vai trò
 
@@ -492,7 +492,7 @@ Groq__TimeoutSeconds=60
 
 | Tier | Chi phí |
 |------|---------|
-| Free tier | **$0** — rate limit (RPM/TPM) |
+| Free tier | **$0** - rate limit (RPM/TPM) |
 | Pay-as-you-go | **~$0.05–0.79 / 1M tokens** tùy model |
 | MVP ước tính | **$5–30/tháng** nếu vài nghìn phiên chat |
 
@@ -500,7 +500,7 @@ Groq__TimeoutSeconds=60
 
 ---
 
-### 3.11 FPT.AI — eKYC seller onboarding
+### 3.11 FPT.AI - eKYC seller onboarding
 
 #### Vai trò
 
@@ -522,15 +522,15 @@ FptAi__AllowedImageHosts__0=res.cloudinary.com
 
 | Hạng mục | Ước tính |
 |----------|----------|
-| Gói API FPT.AI | **Theo request** — liên hệ sales hoặc dashboard |
+| Gói API FPT.AI | **Theo request** - liên hệ sales hoặc dashboard |
 | OCR + Face match / lượt KYC | **~2.000–10.000 VND/lượt** (tham khảo, tùy gói) |
 | MVP (50 seller/tháng) | **~100k–500k VND/tháng** |
 
-**Staging:** `FptAi__UseMock=true` — không tốn phí API.
+**Staging:** `FptAi__UseMock=true` - không tốn phí API.
 
 ---
 
-### 3.12 SMTP — Email transactional
+### 3.12 SMTP - Email transactional
 
 #### Vai trò
 
@@ -543,13 +543,13 @@ Reset password, thông báo email (nếu bật).
 | **SendGrid** | 100 email/ngày | **$19.95/tháng** (50k emails) |
 | **Amazon SES** | 62k/tháng (từ EC2) | **$0.10/1k emails** |
 | **Brevo (Sendinblue)** | 300 email/ngày | **~$9/tháng** |
-| **Gmail SMTP** | ~500/ngày | **$0** — không khuyến nghị prod |
+| **Gmail SMTP** | ~500/ngày | **$0** - không khuyến nghị prod |
 
 Cấu hình xem `aidr-be/AIDR.Api/.env.example`.
 
 ---
 
-### 3.13 DNS, SSL, CDN — Cloudflare
+### 3.13 DNS, SSL, CDN - Cloudflare
 
 #### Cấu hình DNS (ví dụ)
 
@@ -569,9 +569,9 @@ Cấu hình xem `aidr-be/AIDR.Api/.env.example`.
 
 | Plan | Chi phí/tháng |
 |------|---------------|
-| Free | **$0** — CDN, DNS, SSL, basic DDoS |
-| Pro | **$20** — WAF rules, image polish |
-| Business | **$200** — SLA cao hơn |
+| Free | **$0** - CDN, DNS, SSL, basic DDoS |
+| Pro | **$20** - WAF rules, image polish |
+| Business | **$200** - SLA cao hơn |
 
 **Khuyến nghị MVP:** Cloudflare Free.
 
@@ -646,11 +646,11 @@ Health endpoints để alert:
 | Groq + FPT.AI usage | $50–200 |
 | **Tổng** | **~$280–540/tháng** (~7–13.5 triệu VND) |
 
-> **Biến phí lớn nhất khi vận hành thật:** phí giao dịch payOS, cước GHN, AI API — tỷ lệ thuận với GMV và lượt dùng, không phải chi phí server.
+> **Biến phí lớn nhất khi vận hành thật:** phí giao dịch payOS, cước GHN, AI API - tỷ lệ thuận với GMV và lượt dùng, không phải chi phí server.
 
 ---
 
-## 5. Plan triển khai chi tiết — VPS + Docker + NGINX + CI/CD
+## 5. Plan triển khai chi tiết - VPS + Docker + NGINX + CI/CD
 
 Đây là **runbook vận hành chuẩn** cho AIDR. Mục tiêu: một VPS production ổn định, deploy tự động từ `main`, HTTPS, WebSocket SignalR hoạt động, không lộ secret.
 
@@ -706,7 +706,7 @@ Cài trên VPS (một lần):
 ```bash
 # Docker Engine + Compose plugin
 sudo apt update && sudo apt install -y ca-certificates curl ufw fail2ban
-# Cài Docker theo docs.docker.com (ubuntu) — không dùng snap nếu có thể
+# Cài Docker theo docs.docker.com (ubuntu) - không dùng snap nếu có thể
 sudo usermod -aG docker $USER
 
 # Xác nhận
@@ -721,7 +721,7 @@ SSH: tắt password login, chỉ key; user deploy không dùng `root` cho pipeli
 ```text
 /opt/aidr/
 ├── docker-compose.prod.yml
-├── .env                    # secrets — chmod 600, không git
+├── .env                    # secrets - chmod 600, không git
 ├── nginx/
 │   ├── nginx.conf
 │   └── conf.d/
@@ -838,11 +838,11 @@ Khác `docker-compose.yml` (dev):
 | FE Vite `:5173` | Static `dist/` qua NGINX |
 | Port API/Keycloak expose | Chỉ 80/443 |
 
-> Image API cần có `curl` trong stage final **hoặc** đổi healthcheck sang `wget`/dotnet — Dockerfile hiện tại không có curl; có thể healthcheck từ NGINX/host: `curl https://api.$DOMAIN/api/health/live`.
+> Image API cần có `curl` trong stage final **hoặc** đổi healthcheck sang `wget`/dotnet - Dockerfile hiện tại không có curl; có thể healthcheck từ NGINX/host: `curl https://api.$DOMAIN/api/health/live`.
 
-### 5.5 NGINX production — cấu hình mẫu
+### 5.5 NGINX production - cấu hình mẫu
 
-`nginx/nginx.conf` — worker + gzip + upstream:
+`nginx/nginx.conf` - worker + gzip + upstream:
 
 ```nginx
 worker_processes auto;
@@ -865,7 +865,7 @@ http {
 }
 ```
 
-`nginx/conf.d/aidr.conf` — 3 server blocks:
+`nginx/conf.d/aidr.conf` - 3 server blocks:
 
 ```nginx
 # --- Frontend (www + apex) ---
@@ -958,7 +958,7 @@ server {
 }
 ```
 
-Tham chiếu logic proxy từ `infra/nginx/nginx.conf` (dev) — production thêm TLS, SPA root, tách `server_name`.
+Tham chiếu logic proxy từ `infra/nginx/nginx.conf` (dev) - production thêm TLS, SPA root, tách `server_name`.
 
 ### 5.6 File `.env` trên VPS (không commit)
 
@@ -993,7 +993,7 @@ Cors__Origins__1=https://aidr.example.com
 
 `chmod 600 /opt/aidr/.env`.
 
-### 5.7 Phase 0 — Bootstrap (ngày 1)
+### 5.7 Phase 0 - Bootstrap (ngày 1)
 
 | # | Việc | Done khi |
 |---|------|----------|
@@ -1005,7 +1005,7 @@ Cors__Origins__1=https://aidr.example.com
 | 0.6 | A/AAAA: `www`, `@`, `api`, `auth` → IP VPS | `dig` trả đúng IP |
 | 0.7 | Tạo Azure SQL (hoặc DB managed) + user `aidr_app` | Firewall chỉ IP VPS |
 
-### 5.8 Phase 1 — Database schema (ngày 1–2)
+### 5.8 Phase 1 - Database schema (ngày 1–2)
 
 1. Mở Azure Data Studio / `sqlcmd` từ máy admin (IP whitelist tạm).
 2. Chạy `database.sql`.
@@ -1015,7 +1015,7 @@ Cors__Origins__1=https://aidr.example.com
 
 Smoke: kết nối từ VPS `docker run --rm mcr.microsoft.com/mssql-tools...` hoặc tạm test từ API sau khi lên.
 
-### 5.9 Phase 2 — Stack container lần đầu (ngày 2–3)
+### 5.9 Phase 2 - Stack container lần đầu (ngày 2–3)
 
 ```bash
 cd /opt/aidr
@@ -1042,9 +1042,9 @@ curl -fsS https://api.<domain>/api/health/live
 curl -fsS https://api.<domain>/api/health/ready
 ```
 
-### 5.10 Phase 3 — SSL (Let's Encrypt hoặc Cloudflare Origin)
+### 5.10 Phase 3 - SSL (Let's Encrypt hoặc Cloudflare Origin)
 
-**Option 1 — Certbot (khuyến nghị nếu origin direct):**
+**Option 1 - Certbot (khuyến nghị nếu origin direct):**
 
 ```bash
 # Lần đầu: dùng nginx tạm chỉ serve ACME, hoặc certbot standalone dừng nginx ngắn
@@ -1058,9 +1058,9 @@ docker run --rm -v /opt/aidr/certbot/conf:/etc/letsencrypt \
 
 Renew: cron / systemd timer gọi `certbot renew` + `docker compose exec nginx nginx -s reload`.
 
-**Option 2 — Cloudflare Full (Strict) + Origin Certificate:** tạo Origin Cert trên CF, mount vào NGINX — không cần mở port 80 cho ACME nếu CF proxy cam.
+**Option 2 - Cloudflare Full (Strict) + Origin Certificate:** tạo Origin Cert trên CF, mount vào NGINX - không cần mở port 80 cho ACME nếu CF proxy cam.
 
-### 5.11 Phase 4 — Frontend build & serve (ngày 3)
+### 5.11 Phase 4 - Frontend build & serve (ngày 3)
 
 Trên CI hoặc local (một lần trước khi bật pipeline):
 
@@ -1075,7 +1075,7 @@ docker compose -f /opt/aidr/docker-compose.prod.yml exec nginx nginx -s reload
 
 SPA: mọi path không phải file → `index.html` (đã có `try_files` ở §5.5).
 
-### 5.12 Phase 5 — Tích hợp bên thứ 3 & go-live (ngày 4–5)
+### 5.12 Phase 5 - Tích hợp bên thứ 3 & go-live (ngày 4–5)
 
 | Thứ tự | Việc |
 |--------|------|
@@ -1087,7 +1087,7 @@ SPA: mọi path không phải file → `index.html` (đã có `try_files` ở §
 | 6 | UptimeRobot: probe `https://api.../api/health/ready` mỗi 5 phút |
 | 7 | Smoke E2E: đăng ký/login → browse → cart → checkout → webhook |
 
-### 5.13 Phase 6 — CI/CD (GitHub Actions)
+### 5.13 Phase 6 - CI/CD (GitHub Actions)
 
 #### Biến & secrets trên GitHub repo
 
@@ -1100,7 +1100,7 @@ SPA: mọi path không phải file → `index.html` (đã có `try_files` ở §
 | `VITE_API_BASE_URL` … | Variables/Secrets | Build FE |
 | `API_IMAGE_NAME` | Variable | `ghcr.io/org/aidr-api` |
 
-#### Workflow đề xuất — `.github/workflows/deploy-production.yml`
+#### Workflow đề xuất - `.github/workflows/deploy-production.yml`
 
 ```yaml
 name: Deploy production
@@ -1221,7 +1221,7 @@ jobs:
 1. Package GHCR của repo cần **public** hoặc VPS login bằng PAT/`GITHUB_TOKEN` (workflow trên đã login).
 2. Image API Dockerfile: nếu healthcheck trong compose dùng `curl`, bổ sung `curl` vào stage final hoặc bỏ healthcheck container, chỉ smoke từ CI.
 3. Nên tách workflow `ci.yml` (PR: build + test) và `deploy-production.yml` (chỉ `main` / manual).
-4. **Chi phí CI:** GitHub Actions free ~2.000 phút/tháng — đủ MVP (**$0**).
+4. **Chi phí CI:** GitHub Actions free ~2.000 phút/tháng - đủ MVP (**$0**).
 
 #### Script `/opt/aidr/scripts/deploy.sh` (deploy tay khi CI down)
 
@@ -1264,7 +1264,7 @@ Quy ước tag: **git SHA 12 ký tự** để rollback chính xác; `latest` ch�
 | API | `API_IMAGE_TAG=<sha-cũ>` → `docker compose pull api && up -d api` |
 | FE | Giữ artifact CI 7 ngày hoặc git checkout SHA cũ → build → rsync lại |
 | NGINX config | Giữ bản `aidr.conf.bak` trước khi sửa; `nginx -t` rồi reload |
-| DB | Azure PITR — chỉ khi migration lỗi; **không** rollback schema tùy tiện |
+| DB | Azure PITR - chỉ khi migration lỗi; **không** rollback schema tùy tiện |
 | Keycloak | Export realm trước mọi đổi IdP/client |
 
 ### 5.16 Lịch triển khai gợi ý (2 tuần)
@@ -1298,7 +1298,7 @@ Tách VPS nhỏ **hoặc** cùng VPS khác project name:
 
 | Mục | Hành động |
 |-----|-----------|
-| Secrets | `.env` trên VPS + GitHub Secrets — không commit |
+| Secrets | `.env` trên VPS + GitHub Secrets - không commit |
 | SSH | Key only, disable password, optionally allowlist IP |
 | `appsettings.json` | Không dùng secret dev; rotate key đã lộ trong repo |
 | DB | User riêng, firewall chỉ IP VPS, TLS |
@@ -1320,13 +1320,13 @@ Tách VPS nhỏ **hoặc** cùng VPS khác project name:
 | payOS | Sandbox | Production + Payouts |
 | GHN | `dev-online-gateway.ghn.vn` | `online-gateway.ghn.vn` |
 | Groq / FPT.AI | Mock hoặc key riêng | Key production, quota monitor |
-| DB | Instance riêng | Instance riêng — **không share** |
+| DB | Instance riêng | Instance riêng - **không share** |
 | Seed data | `seed-all` OK | **Không seed** |
 | CI branch | `develop` | `main` |
 
 ---
 
-## 8. Biến thể — FE trên Cloudflare Pages
+## 8. Biến thể - FE trên Cloudflare Pages
 
 Nếu sau này tách FE khỏi VPS (tiết kiệm băng thông, CDN global):
 
@@ -1372,7 +1372,7 @@ Chi phí FE: **$0** (Pages Free). VPS có thể hạ xuống 4 GB.
 
 ---
 
-## 11. Phụ lục — Template `.env.production` FE
+## 11. Phụ lục - Template `.env.production` FE
 
 ```env
 VITE_API_BASE_URL=https://api.aidr.example.com/api
@@ -1385,7 +1385,7 @@ VITE_CLOUDINARY_CLOUD_NAME=your_cloud_name
 VITE_CLOUDINARY_UPLOAD_PRESET=your_unsigned_preset
 ```
 
-## 12. Phụ lục — Checklist webhook URLs
+## 12. Phụ lục - Checklist webhook URLs
 
 | Dịch vụ | URL production |
 |---------|----------------|
@@ -1394,9 +1394,9 @@ VITE_CLOUDINARY_UPLOAD_PRESET=your_unsigned_preset
 | Google OAuth redirect | `https://auth.<domain>/realms/aidr/broker/google/endpoint` |
 | payOS return | `https://www.<domain>/order-received` |
 
-## 13. Phụ lục — Checklist go-live ngắn
+## 13. Phụ lục - Checklist go-live ngắn
 
-- [ ] `ASPNETCORE_ENVIRONMENT=Production` — không gọi được `/api/dev/*`
+- [ ] `ASPNETCORE_ENVIRONMENT=Production` - không gọi được `/api/dev/*`
 - [ ] HTTPS mọi subdomain; HTTP redirect 301
 - [ ] `/api/health/live` + `/ready` = 200
 - [ ] Login email + Google; SignalR chat/notification OK

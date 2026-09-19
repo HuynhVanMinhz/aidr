@@ -1,17 +1,17 @@
 ---
-description: AIDR — UI copy and API/user-facing errors must be English.
+description: AIDR - UI copy and API/user-facing errors must be English.
 alwaysApply: true
 ---
 
-# AIDR — English UI & Errors
+# AIDR - English UI & Errors
 
 User-facing text in **aidr-fe** and **aidr-be** must be **English**.
 
 ## Must be English
 
-1. **UI copy** — labels, buttons, placeholders, titles, breadcrumbs, empty states, toasts, confirm dialogs, aria-labels, tooltips.
-2. **Validation messages** — FE helpers (`validators`, form validation) and BE `AppException` / `NotFoundException` / `ConflictException` messages returned to the client.
-3. **API error payloads** — ProblemDetails `detail` / `title` / `message` shown to users.
+1. **UI copy** - labels, buttons, placeholders, titles, breadcrumbs, empty states, toasts, confirm dialogs, aria-labels, tooltips.
+2. **Validation messages** - FE helpers (`validators`, form validation) and BE `AppException` / `NotFoundException` / `ConflictException` messages returned to the client.
+3. **API error payloads** - ProblemDetails `detail` / `title` / `message` shown to users.
 4. **Transactional email** sent to users (reset password, etc.).
 
 ## Allowed Vietnamese

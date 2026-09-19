@@ -1,10 +1,10 @@
 /**
- * AIDR — Light / Dark theme tokens
+ * AIDR - Light / Dark theme tokens
  * Light: AIDR theme defaults (warm retail, #16181D)
  * Dark:  Charcoal + electric teal accent (electronics / AI retail)
  */
 
-/* ── Light (default — UI hiện tại) ── */
+/* ── Light (default - UI hiện tại) ── */
 :root,
 html[data-theme='light'] {
   color-scheme: light;
@@ -58,14 +58,14 @@ html[data-theme='light'] {
   --btn-secondary-border: rgba(22, 24, 29, 0.2);
   --btn-secondary-text: #16181d;
 
-  /* Disabled buttons — muted fill + reduced opacity */
+  /* Disabled buttons - muted fill + reduced opacity */
   --btn-disabled-opacity: 0.52;
   --btn-disabled-bg: #ececee;
   --btn-disabled-text: #8a8f98;
   --btn-disabled-border: rgba(22, 24, 29, 0.12);
 
   /*
-   * Text drawn ON a themed fill — the accent, and the error fill behind a
+   * Text drawn ON a themed fill - the accent, and the error fill behind a
    * discount badge, which the dark theme lightens for the same reason.
    *
    * It is a separate token because it must move OPPOSITE to the accent, not with
@@ -76,14 +76,14 @@ html[data-theme='light'] {
   --on-accent: #ffffff;
 
   /*
-   * "This is good news" written as plain text — a discount line, an in-stock
-   * label — rather than inside an alert box. It sits straight on the surface,
+   * "This is good news" written as plain text - a discount line, an in-stock
+   * label - rather than inside an alert box. It sits straight on the surface,
    * so it has to move with the surface: a dark green is invisible on charcoal.
    */
   --positive-text: #1a7f37;
 
   /*
-   * Text on a fill that stays pale in BOTH themes — the inverted button sitting
+   * Text on a fill that stays pale in BOTH themes - the inverted button sitting
    * on a dark hero. --primary-color cannot do it: that one flips to pale in dark
    * and would put pale text on a pale button.
    */
@@ -93,7 +93,7 @@ html[data-theme='light'] {
   --shadow-sm: 0 1px 2px rgba(22, 24, 29, 0.06);
 }
 
-/* ── Dark — designer palette ── */
+/* ── Dark - designer palette ── */
 html[data-theme='dark'] {
   color-scheme: dark;
 
@@ -116,7 +116,7 @@ html[data-theme='dark'] {
   --border: var(--aidr-border);
   --accent: var(--aidr-accent);
 
-  /* AIDR theme — remap for auth pages */
+  /* AIDR theme - remap for auth pages */
   --primary-color: #e8eaed;
   --secondary-color: #1a1f2e;
   --bg-color: #0c0e14;
@@ -190,7 +190,7 @@ html[data-theme='dark'] .theme-toggle:hover {
   font-weight: 500;
 }
 
-/* Dark mode — auth / theme form overrides */
+/* Dark mode - auth / theme form overrides */
 html[data-theme='dark'] .form-control {
   background-color: var(--input-bg);
   border-color: var(--input-border);

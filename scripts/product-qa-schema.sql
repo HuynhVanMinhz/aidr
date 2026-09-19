@@ -1,5 +1,5 @@
 /*
-  product-qa-schema.sql — public product Q&A threads.
+  product-qa-schema.sql - public product Q&A threads.
 
   See docs/solution-v2-engagement-growth.md.
   Safe to re-run.

@@ -205,7 +205,7 @@ public sealed class ShipmentRepository : IShipmentRepository
         order.TrackingCode = shipment.TrackingCode;
         order.UpdatedAt = now;
 
-        // An order the seller already confirmed only gains its tracking code —
+        // An order the seller already confirmed only gains its tracking code -
         // the status does not move, so history records the booking, not a step.
         _db.OrderStatusHistories.Add(new OrderStatusHistory
         {
@@ -264,7 +264,7 @@ public sealed class ShipmentRepository : IShipmentRepository
         }
         else if (!string.Equals(shipment.Status, ShippingConstants.ShipmentPending, StringComparison.OrdinalIgnoreCase))
         {
-            // Already booked by another tick — nothing to record.
+            // Already booked by another tick - nothing to record.
             return;
         }
 
@@ -367,7 +367,7 @@ public sealed class ShipmentRepository : IShipmentRepository
         shipment.ProviderStatus = Truncate(input.ProviderStatus, ShippingConstants.MaxProviderStatusLength);
         shipment.LastSyncedAt = now;
         // An event without its own schedule (a webhook) must not clear the poll
-        // slot — otherwise a carrier that goes quiet is never checked again.
+        // slot - otherwise a carrier that goes quiet is never checked again.
         shipment.NextActionAt = ShippingConstants.IsTerminal(shipment.Status) || isOffHappyPath
             ? null
             : input.NextActionAt ?? shipment.NextActionAt;

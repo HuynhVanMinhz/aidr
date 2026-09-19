@@ -15,7 +15,7 @@ public sealed class CloudinaryOptions
     public string CloudName { get; set; } = string.Empty;
 
     /// <summary>
-    /// An UNSIGNED upload preset — the same mechanism the seller form uses from the
+    /// An UNSIGNED upload preset - the same mechanism the seller form uses from the
     /// browser, so both paths land in one account with one set of rules.
     /// </summary>
     public string UploadPreset { get; set; } = string.Empty;
@@ -163,7 +163,7 @@ public sealed class CloudinaryImportImageStore : ISellerImportImageStore
         }
         catch (JsonException)
         {
-            // Not JSON — fall through to the raw text.
+            // Not JSON - fall through to the raw text.
         }
 
         return body.Length <= 200 ? body : body[..200];

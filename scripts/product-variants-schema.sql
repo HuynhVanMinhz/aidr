@@ -1,5 +1,5 @@
 /*
-  AIDR — Product variants as the sellable unit.
+  AIDR - Product variants as the sellable unit.
 
   A product ("iPhone 17") is the shared shell: description, images, reviews.
   What a buyer actually pays for and what stock is drawn from is a VARIANT
@@ -7,7 +7,7 @@
 
   dbo.ProductVariants already exists in database.sql but was never wired up,
   so this script both creates it when missing and adds the columns the model
-  needs on top of the original definition (idempotent — safe to re-run).
+  needs on top of the original definition (idempotent - safe to re-run).
 
   Each ALTER sits in its own batch: SQL Server cannot reference a column it
   added in the same batch.
@@ -45,7 +45,7 @@ ELSE
     PRINT N'dbo.ProductVariants already present';
 GO
 
-/* SalePrice — a variant discounts on its own, mirroring Products.BasePrice/SalePrice. */
+/* SalePrice - a variant discounts on its own, mirroring Products.BasePrice/SalePrice. */
 IF COL_LENGTH('dbo.ProductVariants', 'SalePrice') IS NULL
 BEGIN
     ALTER TABLE dbo.ProductVariants ADD SalePrice DECIMAL(18,2) NULL;
@@ -53,7 +53,7 @@ BEGIN
 END
 GO
 
-/* ReservedQuantity — mirrors Products.ReservedQuantity so availability is per variant. */
+/* ReservedQuantity - mirrors Products.ReservedQuantity so availability is per variant. */
 IF COL_LENGTH('dbo.ProductVariants', 'ReservedQuantity') IS NULL
 BEGIN
     ALTER TABLE dbo.ProductVariants
@@ -62,7 +62,7 @@ BEGIN
 END
 GO
 
-/* SortOrder — the seller decides which variant the buyer lands on first. */
+/* SortOrder - the seller decides which variant the buyer lands on first. */
 IF COL_LENGTH('dbo.ProductVariants', 'SortOrder') IS NULL
 BEGIN
     ALTER TABLE dbo.ProductVariants
@@ -71,7 +71,7 @@ BEGIN
 END
 GO
 
-/* ImageUrl — picking "Orange" should swap the photo; one URL per variant is enough. */
+/* ImageUrl - picking "Orange" should swap the photo; one URL per variant is enough. */
 IF COL_LENGTH('dbo.ProductVariants', 'ImageUrl') IS NULL
 BEGIN
     ALTER TABLE dbo.ProductVariants ADD ImageUrl NVARCHAR(512) NULL;
@@ -131,7 +131,7 @@ END
 GO
 
 /* ---------------------------------------------------------------------------
-   2. Products — the option axes the variants are built from
+   2. Products - the option axes the variants are built from
 --------------------------------------------------------------------------- */
 
 /*
@@ -246,7 +246,7 @@ GO
   One cart line per (cart, product, variant).
 
   database.sql declares this as a table-level UNIQUE constraint, and a constraint's
-  backing index cannot be dropped with DROP INDEX — so the constraint has to be
+  backing index cannot be dropped with DROP INDEX - so the constraint has to be
   dropped as a constraint, and only a standalone index dropped as an index. Both
   forms exist across deployments, so both are handled, constraint first.
 */
@@ -276,7 +276,7 @@ GO
   Recreated as a plain unique index, which is what EF's HasIndex().IsUnique() expects.
 
   UNIQUE over a nullable column treats every NULL as distinct in most engines, but SQL
-  Server treats them as equal — which is what we want here: a product with no variants
+  Server treats them as equal - which is what we want here: a product with no variants
   must still be limited to one cart line.
 */
 IF NOT EXISTS (

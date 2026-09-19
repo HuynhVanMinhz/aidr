@@ -2,7 +2,7 @@ import { useTheme } from '../hooks/useTheme';
 
 type ThemeToggleProps = {
   className?: string;
-  /** Header icon style — no text label */
+  /** Header icon style - no text label */
   iconOnly?: boolean;
 };
 

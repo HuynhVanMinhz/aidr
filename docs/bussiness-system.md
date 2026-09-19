@@ -1,4 +1,4 @@
-# AIDR — Business System Document
+# AIDR - Business System Document
 
 **Project:** Building an AI-Integrated Digital Retail System (AIDR)  
 **Code:** AIDR | **Group:** SE_11  
@@ -51,9 +51,9 @@ Hệ thống giải quyết các pain point chính:
 ### Giới hạn (từ Report + policy sàn)
 - Return hỗ trợ **Trả hàng + Hoàn tiền** và **Đổi hàng (Exchange)**; pipeline Admin → Seller → Admin (không AI auto-approve).
 - Không auto-moderation tranh chấp return phức tạp (Admin/Seller xử lý thủ công; bắt buộc video bằng chứng)
-- Không tích hợp API vận chuyển realtime (GHN/GHTK) — seller tự cập nhật tracking
+- Không tích hợp API vận chuyển realtime (GHN/GHTK) - seller tự cập nhật tracking
 - Không live streaming
-- Phân loại màu / dung lượng (GB): dùng **ProductVariants** / SpecsJson — không CRUD master Color/GB riêng
+- Phân loại màu / dung lượng (GB): dùng **ProductVariants** / SpecsJson - không CRUD master Color/GB riêng
 
 ---
 
@@ -82,7 +82,7 @@ Hệ thống giải quyết các pain point chính:
 | UC-26 | Search Products | Guest / Buyer |
 | UC-27 | Filter & Sort Products | Guest / Buyer |
 | UC-28 | AI Compare Products | Buyer |
-| UC-90 | AI — convert natural language to filter | Buyer / Guest |
+| UC-90 | AI - convert natural language to filter | Buyer / Guest |
 
 ### 4.3 Seller Product Lifecycle
 
@@ -253,7 +253,7 @@ Hệ thống giải quyết các pain point chính:
 5. **Seller xác nhận phương án (UC-94):** `Approved` → `SellerConfirmed` (xác nhận / chỉnh `ResolutionType`) + notify Buyer gửi hàng về; hoặc Reject (khi `Approved` / `Receiving`) + note.
 6. **Buyer gửi hàng về** → Seller đánh dấu nhận & kiểm (`SellerConfirmed` → `Receiving`) rồi **Accepted** nếu hàng OK (UC-95) → **notify Admin**.
 7. **Admin hoàn tất (UC-52):**
-   - `ReturnRefund`: `Accepted` → `Refunded` (payOS payout buyer + `RefundDebit` wallet seller — BR-R04) → `Closed`.
+   - `ReturnRefund`: `Accepted` → `Refunded` (payOS payout buyer + `RefundDebit` wallet seller - BR-R04) → `Closed`.
    - `Exchange`: `Accepted` → `Exchanged` (Seller đã/đang gửi hàng thay thế; không payout) → `Closed`.
 8. Admin giám sát toàn bộ status history; đóng yêu cầu ở bước cuối.
 
@@ -307,7 +307,7 @@ Hệ thống giải quyết các pain point chính:
 
 ## 6b. Logic giá nhập theo lô vs giá bán (UC-91 / UC-92)
 
-**Bài toán:** Nhập 10 điện thoại @ 10tr/cái, đăng bán 11tr. Sau này giá vốn tăng/giảm — xử lý thế nào?
+**Bài toán:** Nhập 10 điện thoại @ 10tr/cái, đăng bán 11tr. Sau này giá vốn tăng/giảm - xử lý thế nào?
 
 | Khái niệm | Lưu ở đâu | Khi nào đổi |
 |-----------|-----------|-------------|
@@ -318,12 +318,12 @@ Hệ thống giải quyết các pain point chính:
 
 
 **Ví dụ:**
-1. Lô A: 10 sp @ 10.000.000 — bán 11.000.000.
+1. Lô A: 10 sp @ 10.000.000 - bán 11.000.000.
 2. Thị trường tăng → nhập Lô B: 5 sp @ 12.000.000; có thể nâng giá bán lên 12.500.000.
 3. Lô A vẫn UnitCost=10tr; đơn đã bán trước đó không bị sửa.
 4. Bán tiếp 12 máy (FIFO): 10 từ A @10tr + 2 từ B @12tr → COGS TB dòng = 10.333.333; doanh thu theo giá bán hiện tại.
 
-**Kết luận:** Có cần cập nhật DB? **Có** — thêm `InventoryLots`, `ProductPriceHistories`, `OrderItemLotAllocations` (đã có trong `database.sql`). Không chỉ sửa 1 cột “cost” trên Products.
+**Kết luận:** Có cần cập nhật DB? **Có** - thêm `InventoryLots`, `ProductPriceHistories`, `OrderItemLotAllocations` (đã có trong `database.sql`). Không chỉ sửa 1 cột “cost” trên Products.
 
 ## 7. Thực thể nghiệp vụ (Business Entities)
 
@@ -376,14 +376,14 @@ Chi tiết schema: xem `database.sql`.
 
 | Capability | Guest | Buyer | Seller | Admin |
 |------------|:-----:|:-----:|:------:|:-----:|
-| Browse / Search / Filter | ✓ | ✓ | — | — |
-| AI Compare / Chatbot / Recommend | — | ✓ | — | — |
-| Cart / Checkout / Wishlist | — | ✓ | — | — |
-| Product CRUD / Inventory | — | — | ✓ | — |
-| Moderate Product / Category | — | — | — | ✓ |
-| Manage Shop Orders / Wallet | — | — | ✓ | — |
-| System Voucher / Lock User / Seller Approve | — | — | — | ✓ |
-| Chat / Notifications | — | ✓ | ✓ | — |
+| Browse / Search / Filter | ✓ | ✓ | - | - |
+| AI Compare / Chatbot / Recommend | - | ✓ | - | - |
+| Cart / Checkout / Wishlist | - | ✓ | - | - |
+| Product CRUD / Inventory | - | - | ✓ | - |
+| Moderate Product / Category | - | - | - | ✓ |
+| Manage Shop Orders / Wallet | - | - | ✓ | - |
+| System Voucher / Lock User / Seller Approve | - | - | - | ✓ |
+| Chat / Notifications | - | ✓ | ✓ | - |
 
 ---
 

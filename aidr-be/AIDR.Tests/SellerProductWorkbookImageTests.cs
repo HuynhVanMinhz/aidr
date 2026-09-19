@@ -15,7 +15,7 @@ public class SellerProductWorkbookImageTests
 {
     private readonly ClosedXmlSellerProductWorkbook _workbook = new();
 
-    /// <summary>A real 1x1 PNG — ClosedXML reads the file's dimensions when it is added.</summary>
+    /// <summary>A real 1x1 PNG - ClosedXML reads the file's dimensions when it is added.</summary>
     private static readonly byte[] OnePixelPng = Convert.FromBase64String(
         "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==");
 

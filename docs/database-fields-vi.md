@@ -1,11 +1,11 @@
-# AIDR — Giải thích các trường trong Database
+# AIDR - Giải thích các trường trong Database
 
 Tài liệu mô tả **từng bảng** và **ý nghĩa từng cột** trong schema SQL Server của AIDR (`database.sql`).  
 Mỗi bảng có ví dụ minh họa để dễ tra cứu khi dev / test / viết seed.
 
 > **Lưu ý quan trọng về giá:**
-> - **Giá bán** (`BasePrice`, `SalePrice`) — khách thấy trên web, đổi bất cứ lúc nào.
-> - **Giá nhập** (`InventoryLots.UnitCost`) — gắn với **từng lô**, lô cũ không bị ghi đè khi nhập lô mới.
+> - **Giá bán** (`BasePrice`, `SalePrice`) - khách thấy trên web, đổi bất cứ lúc nào.
+> - **Giá nhập** (`InventoryLots.UnitCost`) - gắn với **từng lô**, lô cũ không bị ghi đè khi nhập lô mới.
 
 ---
 
@@ -28,7 +28,7 @@ Mỗi bảng có ví dụ minh họa để dễ tra cứu khi dev / test / viế
 
 ## 1. Identity & Access
 
-### `Roles` — Vai trò hệ thống
+### `Roles` - Vai trò hệ thống
 
 | Trường | Kiểu | Mô tả | Ví dụ |
 |--------|------|--------|-------|
@@ -47,7 +47,7 @@ RoleId=3, RoleCode=ADMIN, RoleName=Admin
 
 ---
 
-### `Users` — Người dùng
+### `Users` - Người dùng
 
 | Trường | Kiểu | Mô tả | Ví dụ |
 |--------|------|--------|-------|
@@ -69,7 +69,7 @@ RoleId=3, RoleCode=ADMIN, RoleName=Admin
 
 ---
 
-### `UserRoles` — Gán vai trò cho user
+### `UserRoles` - Gán vai trò cho user
 
 | Trường | Kiểu | Mô tả | Ví dụ |
 |--------|------|--------|-------|
@@ -81,7 +81,7 @@ RoleId=3, RoleCode=ADMIN, RoleName=Admin
 
 ---
 
-### `Addresses` — Địa chỉ giao hàng
+### `Addresses` - Địa chỉ giao hàng
 
 | Trường | Kiểu | Mô tả | Ví dụ |
 |--------|------|--------|-------|
@@ -100,7 +100,7 @@ RoleId=3, RoleCode=ADMIN, RoleName=Admin
 
 ---
 
-### `PasswordResetTokens` — Token quên mật khẩu
+### `PasswordResetTokens` - Token quên mật khẩu
 
 | Trường | Kiểu | Mô tả | Ví dụ |
 |--------|------|--------|-------|
@@ -115,7 +115,7 @@ RoleId=3, RoleCode=ADMIN, RoleName=Admin
 
 ## 2. Seller / Shop
 
-### `Shops` — Cửa hàng seller
+### `Shops` - Cửa hàng seller
 
 | Trường | Kiểu | Mô tả | Ví dụ |
 |--------|------|--------|-------|
@@ -147,7 +147,7 @@ RoleId=3, RoleCode=ADMIN, RoleName=Admin
 
 ---
 
-### `SellerRegistrationRequests` — Đăng ký làm seller
+### `SellerRegistrationRequests` - Đăng ký làm seller
 
 | Trường | Kiểu | Mô tả | Ví dụ |
 |--------|------|--------|-------|
@@ -164,7 +164,7 @@ RoleId=3, RoleCode=ADMIN, RoleName=Admin
 
 ---
 
-### `SellerFollows` — Buyer follow shop
+### `SellerFollows` - Buyer follow shop
 
 | Trường | Kiểu | Mô tả | Ví dụ |
 |--------|------|--------|-------|
@@ -174,7 +174,7 @@ RoleId=3, RoleCode=ADMIN, RoleName=Admin
 
 ---
 
-### `SellerRatings` — Đánh giá shop (theo đơn)
+### `SellerRatings` - Đánh giá shop (theo đơn)
 
 | Trường | Kiểu | Mô tả | Ví dụ |
 |--------|------|--------|-------|
@@ -190,7 +190,7 @@ RoleId=3, RoleCode=ADMIN, RoleName=Admin
 
 ## 3. Catalog (Danh mục & Sản phẩm)
 
-### `Categories` — Danh mục (cây phân cấp)
+### `Categories` - Danh mục (cây phân cấp)
 
 | Trường | Kiểu | Mô tả | Ví dụ |
 |--------|------|--------|-------|
@@ -206,7 +206,7 @@ RoleId=3, RoleCode=ADMIN, RoleName=Admin
 
 ---
 
-### `Products` — Sản phẩm
+### `Products` - Sản phẩm
 
 | Trường | Kiểu | Mô tả | Ví dụ |
 |--------|------|--------|-------|
@@ -252,7 +252,7 @@ RoleId=3, RoleCode=ADMIN, RoleName=Admin
 
 ---
 
-### `ProductImages` — Ảnh sản phẩm
+### `ProductImages` - Ảnh sản phẩm
 
 | Trường | Kiểu | Mô tả | Ví dụ |
 |--------|------|--------|-------|
@@ -266,7 +266,7 @@ RoleId=3, RoleCode=ADMIN, RoleName=Admin
 
 ---
 
-### `ProductVariants` — Biến thể (màu, dung lượng…)
+### `ProductVariants` - Biến thể (màu, dung lượng…)
 
 | Trường | Kiểu | Mô tả | Ví dụ |
 |--------|------|--------|-------|
@@ -288,7 +288,7 @@ RoleId=3, RoleCode=ADMIN, RoleName=Admin
 
 ## 4. Kho & Giá vốn
 
-### `InventoryLots` — Lô nhập kho
+### `InventoryLots` - Lô nhập kho
 
 | Trường | Kiểu | Mô tả | Ví dụ |
 |--------|------|--------|-------|
@@ -305,7 +305,7 @@ RoleId=3, RoleCode=ADMIN, RoleName=Admin
 | `ReceivedAt` | DATETIME2 | Ngày nhập | `2026-01-10` |
 | `ExpiresAt` | DATETIME2 | Hạn dùng (optional) | `NULL` |
 | `Status` | NVARCHAR(20) | Trạng thái lô | `Open`, `Depleted`, `Void` |
-| `Note` | NVARCHAR(500) | Ghi chú | `Lô nhập đầu — giá vốn 10tr/máy` |
+| `Note` | NVARCHAR(500) | Ghi chú | `Lô nhập đầu - giá vốn 10tr/máy` |
 | `CreatedBy` | UNIQUEIDENTIFIER (FK) | Seller nhập | GUID |
 | `CreatedAt` | DATETIME2 | Audit | UTC |
 
@@ -317,7 +317,7 @@ RoleId=3, RoleCode=ADMIN, RoleName=Admin
 
 ---
 
-### `ProductPriceHistories` — Lịch sử đổi **giá bán**
+### `ProductPriceHistories` - Lịch sử đổi **giá bán**
 
 | Trường | Kiểu | Mô tả | Ví dụ |
 |--------|------|--------|-------|
@@ -332,7 +332,7 @@ RoleId=3, RoleCode=ADMIN, RoleName=Admin
 
 ---
 
-### `InventoryTransactions` — Biến động kho
+### `InventoryTransactions` - Biến động kho
 
 | Trường | Kiểu | Mô tả | Ví dụ |
 |--------|------|--------|-------|
@@ -363,7 +363,7 @@ RoleId=3, RoleCode=ADMIN, RoleName=Admin
 
 ---
 
-### `ProductModerationHistory` — Lịch sử duyệt SP (Admin)
+### `ProductModerationHistory` - Lịch sử duyệt SP (Admin)
 
 | Trường | Kiểu | Mô tả | Ví dụ |
 |--------|------|--------|-------|
@@ -379,7 +379,7 @@ RoleId=3, RoleCode=ADMIN, RoleName=Admin
 
 ## 5. Giỏ hàng & Wishlist
 
-### `Carts` — Giỏ hàng (1 user = 1 cart)
+### `Carts` - Giỏ hàng (1 user = 1 cart)
 
 | Trường | Kiểu | Mô tả | Ví dụ |
 |--------|------|--------|-------|
@@ -389,7 +389,7 @@ RoleId=3, RoleCode=ADMIN, RoleName=Admin
 
 ---
 
-### `CartItems` — Dòng trong giỏ
+### `CartItems` - Dòng trong giỏ
 
 | Trường | Kiểu | Mô tả | Ví dụ |
 |--------|------|--------|-------|
@@ -405,7 +405,7 @@ RoleId=3, RoleCode=ADMIN, RoleName=Admin
 
 ---
 
-### `WishlistItems` — Danh sách yêu thích
+### `WishlistItems` - Danh sách yêu thích
 
 | Trường | Kiểu | Mô tả | Ví dụ |
 |--------|------|--------|-------|
@@ -420,7 +420,7 @@ RoleId=3, RoleCode=ADMIN, RoleName=Admin
 
 ## 6. Voucher
 
-### `Vouchers` — Mã giảm giá
+### `Vouchers` - Mã giảm giá
 
 | Trường | Kiểu | Mô tả | Ví dụ |
 |--------|------|--------|-------|
@@ -442,11 +442,11 @@ RoleId=3, RoleCode=ADMIN, RoleName=Admin
 | `CreatedBy` | UNIQUEIDENTIFIER (FK) | Admin hoặc seller tạo | GUID |
 | `CreatedAt` / `UpdatedAt` | DATETIME2 | Audit | UTC |
 
-**Ví dụ:** Mã `TECHZONE50K` — giảm 50.000 VND, đơn tối thiểu 500.000, shop TechZone.
+**Ví dụ:** Mã `TECHZONE50K` - giảm 50.000 VND, đơn tối thiểu 500.000, shop TechZone.
 
 ---
 
-### `VoucherRedemptions` — Lịch sử dùng voucher
+### `VoucherRedemptions` - Lịch sử dùng voucher
 
 | Trường | Kiểu | Mô tả | Ví dụ |
 |--------|------|--------|-------|
@@ -461,7 +461,7 @@ RoleId=3, RoleCode=ADMIN, RoleName=Admin
 
 ## 7. Đơn hàng & Thanh toán
 
-### `Orders` — Đơn hàng
+### `Orders` - Đơn hàng
 
 > **Quy tắc:** 1 đơn = 1 shop. Giỏ nhiều shop → tách nhiều order.
 
@@ -499,7 +499,7 @@ PendingPayment → Paid → Confirmed → Shipping → Delivered → Completed
 
 ---
 
-### `OrderItems` — Dòng sản phẩm trong đơn
+### `OrderItems` - Dòng sản phẩm trong đơn
 
 | Trường | Kiểu | Mô tả | Ví dụ |
 |--------|------|--------|-------|
@@ -519,7 +519,7 @@ PendingPayment → Paid → Confirmed → Shipping → Delivered → Completed
 
 ---
 
-### `OrderItemLotAllocations` — Phân bổ FIFO theo lô (COGS)
+### `OrderItemLotAllocations` - Phân bổ FIFO theo lô (COGS)
 
 | Trường | Kiểu | Mô tả | Ví dụ |
 |--------|------|--------|-------|
@@ -533,7 +533,7 @@ PendingPayment → Paid → Confirmed → Shipping → Delivered → Completed
 
 ---
 
-### `OrderStatusHistories` — Lịch sử trạng thái đơn
+### `OrderStatusHistories` - Lịch sử trạng thái đơn
 
 | Trường | Kiểu | Mô tả | Ví dụ |
 |--------|------|--------|-------|
@@ -547,7 +547,7 @@ PendingPayment → Paid → Confirmed → Shipping → Delivered → Completed
 
 ---
 
-### `Payments` — Thanh toán (payOS)
+### `Payments` - Thanh toán (payOS)
 
 | Trường | Kiểu | Mô tả | Ví dụ |
 |--------|------|--------|-------|
@@ -567,7 +567,7 @@ PendingPayment → Paid → Confirmed → Shipping → Delivered → Completed
 
 ## 8. Trả hàng (Returns)
 
-### `ReturnRequests` — Yêu cầu trả hàng
+### `ReturnRequests` - Yêu cầu trả hàng
 
 | Trường | Kiểu | Mô tả | Ví dụ |
 |--------|------|--------|-------|
@@ -586,7 +586,7 @@ PendingPayment → Paid → Confirmed → Shipping → Delivered → Completed
 
 ---
 
-### `ReturnRequestItems` — SP trong yêu cầu trả
+### `ReturnRequestItems` - SP trong yêu cầu trả
 
 | Trường | Kiểu | Mô tả | Ví dụ |
 |--------|------|--------|-------|
@@ -597,7 +597,7 @@ PendingPayment → Paid → Confirmed → Shipping → Delivered → Completed
 
 ---
 
-### `ReturnEvidences` — Video/ảnh bằng chứng trả hàng
+### `ReturnEvidences` - Video/ảnh bằng chứng trả hàng
 
 | Trường | Kiểu | Mô tả | Ví dụ |
 |--------|------|--------|-------|
@@ -613,7 +613,7 @@ PendingPayment → Paid → Confirmed → Shipping → Delivered → Completed
 
 ---
 
-### `ReturnStatusHistories` — Lịch sử trạng thái trả hàng
+### `ReturnStatusHistories` - Lịch sử trạng thái trả hàng
 
 Cấu trúc giống `OrderStatusHistories`: `FromStatus`, `ToStatus`, `ChangedBy`, `Note`, `CreatedAt`.
 
@@ -621,7 +621,7 @@ Cấu trúc giống `OrderStatusHistories`: `FromStatus`, `ToStatus`, `ChangedBy
 
 ## 9. Đánh giá sản phẩm
 
-### `ProductReviews` — Review SP
+### `ProductReviews` - Review SP
 
 | Trường | Kiểu | Mô tả | Ví dụ |
 |--------|------|--------|-------|
@@ -641,7 +641,7 @@ Cấu trúc giống `OrderStatusHistories`: `FromStatus`, `ToStatus`, `ChangedBy
 
 ## 10. Thông báo & Chat
 
-### `Notifications` — Thông báo in-app
+### `Notifications` - Thông báo in-app
 
 | Trường | Kiểu | Mô tả | Ví dụ |
 |--------|------|--------|-------|
@@ -659,7 +659,7 @@ Cấu trúc giống `OrderStatusHistories`: `FromStatus`, `ToStatus`, `ChangedBy
 
 ---
 
-### `ChatThreads` — Hội thoại buyer ↔ shop
+### `ChatThreads` - Hội thoại buyer ↔ shop
 
 | Trường | Kiểu | Mô tả | Ví dụ |
 |--------|------|--------|-------|
@@ -674,7 +674,7 @@ Cấu trúc giống `OrderStatusHistories`: `FromStatus`, `ToStatus`, `ChangedBy
 
 ---
 
-### `ChatMessages` — Tin nhắn chat
+### `ChatMessages` - Tin nhắn chat
 
 | Trường | Kiểu | Mô tả | Ví dụ |
 |--------|------|--------|-------|
@@ -692,7 +692,7 @@ Cấu trúc giống `OrderStatusHistories`: `FromStatus`, `ToStatus`, `ChangedBy
 
 ## 11. Ví Seller (Wallet)
 
-### `Wallets` — Số dư shop
+### `Wallets` - Số dư shop
 
 | Trường | Kiểu | Mô tả | Ví dụ |
 |--------|------|--------|-------|
@@ -705,7 +705,7 @@ Cấu trúc giống `OrderStatusHistories`: `FromStatus`, `ToStatus`, `ChangedBy
 
 ---
 
-### `WalletTransactions` — Sổ cái ví
+### `WalletTransactions` - Sổ cái ví
 
 | Trường | Kiểu | Mô tả | Ví dụ |
 |--------|------|--------|-------|
@@ -723,7 +723,7 @@ Cấu trúc giống `OrderStatusHistories`: `FromStatus`, `ToStatus`, `ChangedBy
 
 ## 12. AI & Hành vi người dùng
 
-### `ViewedProductHistories` — Lịch sử xem SP
+### `ViewedProductHistories` - Lịch sử xem SP
 
 | Trường | Kiểu | Mô tả | Ví dụ |
 |--------|------|--------|-------|
@@ -735,7 +735,7 @@ Cấu trúc giống `OrderStatusHistories`: `FromStatus`, `ToStatus`, `ChangedBy
 
 ---
 
-### `ProductRecommendations` — Gợi ý SP (precomputed)
+### `ProductRecommendations` - Gợi ý SP (precomputed)
 
 | Trường | Kiểu | Mô tả | Ví dụ |
 |--------|------|--------|-------|
@@ -748,7 +748,7 @@ Cấu trúc giống `OrderStatusHistories`: `FromStatus`, `ToStatus`, `ChangedBy
 
 ---
 
-### `AiConversations` — Phiên chat AI
+### `AiConversations` - Phiên chat AI
 
 | Trường | Kiểu | Mô tả | Ví dụ |
 |--------|------|--------|-------|
@@ -760,7 +760,7 @@ Cấu trúc giống `OrderStatusHistories`: `FromStatus`, `ToStatus`, `ChangedBy
 
 ---
 
-### `AiMessages` — Tin nhắn trong phiên AI
+### `AiMessages` - Tin nhắn trong phiên AI
 
 | Trường | Kiểu | Mô tả | Ví dụ |
 |--------|------|--------|-------|
@@ -796,8 +796,8 @@ Cấu trúc giống `OrderStatusHistories`: `FromStatus`, `ToStatus`, `ChangedBy
 | Buyer | `buyer@aidr.local` | |
 
 Shop demo: **TechZone Official** (`techzone-official`)  
-SP demo: **Samsung Galaxy S24 256GB** — 2 lô nhập giá vốn 10tr và 12tr.
+SP demo: **Samsung Galaxy S24 256GB** - 2 lô nhập giá vốn 10tr và 12tr.
 
 ---
 
-*Nguồn schema: [`database.sql`](../database.sql) — cập nhật khi schema thay đổi.*
+*Nguồn schema: [`database.sql`](../database.sql) - cập nhật khi schema thay đổi.*

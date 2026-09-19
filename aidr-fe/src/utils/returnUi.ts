@@ -17,7 +17,7 @@ export function formatReturnStatus(status: string | null | undefined): string {
 }
 
 export function formatResolutionType(type: string | null | undefined): string {
-  if (!type) return '—';
+  if (!type) return '-';
   if (type === 'Exchange') return 'Exchange';
   if (type === 'ReturnRefund') return 'Return & refund';
   return type;

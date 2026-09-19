@@ -1,9 +1,9 @@
-# AIDR — Solution: AI Review Digest (PDP)
+# AIDR - Solution: AI Review Digest (PDP)
 
 **Status:** Implemented  
 **Module:** 27–29 AI + Engagement  
-**Use case:** UC-82 (View AI Review Digest) — enhance UC-59  
-**Liên quan:** UC-59 (reviews), UC-56 (assistant — optional cross-link)  
+**Use case:** UC-82 (View AI Review Digest) - enhance UC-59  
+**Liên quan:** UC-59 (reviews), UC-56 (assistant - optional cross-link)  
 **Phạm vi:** Trên PDP, hiển thị khối tóm tắt review do AI sinh: pros/cons, sentiment breakdown, grounded trên review thật.
 
 ---
@@ -14,11 +14,11 @@
 
 ### 1.1 Nguyên tắc
 
-1. **Grounded only** — LLM chỉ được paraphrase từ review text đã load; không bịa spec / warranty.  
-2. **Đủ review mới hiện** — tối thiểu **5 review visible**; dưới ngưỡng ẩn block hoặc hiện *"Not enough reviews yet"*.  
-3. **Cache mạnh** — digest đổi khi có review mới / ẩn review; không gọi LLM mỗi page view.  
-4. **Mock path** — `Groq:UseMock=true` → digest từ rule: top keywords + aggregate `SentimentLabel` nếu có.  
-5. **English output** — UI + digest text English.
+1. **Grounded only** - LLM chỉ được paraphrase từ review text đã load; không bịa spec / warranty.  
+2. **Đủ review mới hiện** - tối thiểu **5 review visible**; dưới ngưỡng ẩn block hoặc hiện *"Not enough reviews yet"*.  
+3. **Cache mạnh** - digest đổi khi có review mới / ẩn review; không gọi LLM mỗi page view.  
+4. **Mock path** - `Groq:UseMock=true` → digest từ rule: top keywords + aggregate `SentimentLabel` nếu có.  
+5. **English output** - UI + digest text English.
 
 ### 1.2 Không làm (v1)
 
@@ -46,7 +46,7 @@
 GET /api/products/{id}/review-digest
   → ReviewDigestService
       1. Check cache (Redis + DB snapshot)
-      2. If stale: load top N reviews (by helpful/recency — v1: newest 50 visible)
+      2. If stale: load top N reviews (by helpful/recency - v1: newest 50 visible)
       3. Optional: batch sentiment nếu SentimentLabel null (Phase B)
       4. Build prompt / rule pack
       5. LLM JSON { pros[], cons[], summaryLine, sentimentPct }
@@ -96,7 +96,7 @@ CREATE TABLE dbo.ProductReviewDigestSnapshots (
 );
 ```
 
-**Phase B (optional):** populate `SentimentLabel` on review create via lightweight LLM/heuristic — không bắt buộc cho digest v1 (LLM đọc raw text).
+**Phase B (optional):** populate `SentimentLabel` on review create via lightweight LLM/heuristic - không bắt buộc cho digest v1 (LLM đọc raw text).
 
 Invalidate snapshot when:
 
@@ -143,7 +143,7 @@ System prompt (English): summarize only from provided reviews; output strict JSO
 }
 ```
 
-Input cap: 50 reviews × max 500 chars content ≈ 25k chars — truncate oldest if needed.
+Input cap: 50 reviews × max 500 chars content ≈ 25k chars - truncate oldest if needed.
 
 **Heuristic fallback (`UseMock`):**
 
@@ -160,7 +160,7 @@ Input cap: 50 reviews × max 500 chars content ≈ 25k chars — truncate oldest
 - Loading skeleton; empty state khi `available=false`.  
 - Không hiển thị UC code.
 
-CSS: `.review-digest` trong `catalog.css` — pros green-tint, cons amber-tint (brand `#16181D` accents).
+CSS: `.review-digest` trong `catalog.css` - pros green-tint, cons amber-tint (brand `#16181D` accents).
 
 ---
 
@@ -177,13 +177,13 @@ CSS: `.review-digest` trong `catalog.css` — pros green-tint, cons amber-tint (
 }
 ```
 
-Rate limit: max 10 digest regenerations / product / hour (Redis counter) — tránh abuse.
+Rate limit: max 10 digest regenerations / product / hour (Redis counter) - tránh abuse.
 
 ---
 
 ## 9. Seed & test
 
-- `scripts/seed-review-digest.sql` — 1 SP với 15 review seed đa sentiment.  
+- `scripts/seed-review-digest.sql` - 1 SP với 15 review seed đa sentiment.  
 - `POST /api/dev/seed-review-digest`  
 - Manual: mở PDP → tab Reviews → thấy digest; thêm review → refresh → digest đổi sau invalidate.
 

@@ -47,7 +47,7 @@ public static class SellerFinanceConstants
     /// Paid shop orders that count as sales / product revenue.
     /// Keeps open return disputes (<see cref="OrderConstants.StatusReturnRequested"/>);
     /// drops only after refund/exchange completes (<see cref="OrderConstants.StatusReturned"/>)
-    /// or cancel — not when the buyer first requests a return.
+    /// or cancel - not when the buyer first requests a return.
     /// </summary>
     public static readonly HashSet<string> SalesOrderStatuses = new(StringComparer.OrdinalIgnoreCase)
     {

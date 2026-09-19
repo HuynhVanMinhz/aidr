@@ -62,7 +62,7 @@ scripts/seller-kyc-schema.sql   # bảng KycVerifications + mở rộng SellerRe
 ```
 
 Chi tiết: `docs/solution-seller-onboarding-ekyc.md`. Cấu hình ở section `FptAi`
-trong `appsettings.json`. Để `UseMock: true` khi chưa có API key FPT.AI — luồng
+trong `appsettings.json`. Để `UseMock: true` khi chưa có API key FPT.AI - luồng
 UI chạy đủ với dữ liệu giả lập.
 
 ### 2e. Tự động hoá vòng đời đơn hàng (GHN)
@@ -72,18 +72,18 @@ scripts/shipping-schema.sql   # bảng Shipments / ShipmentEvents
 scripts/seed-shipping.sql     # 2 đơn Paid chờ job đặt vận đơn GHN
 ```
 
-Hoặc gọi `POST /api/dev/seed-shipping` (dev) — endpoint chạy cả hai script.
+Hoặc gọi `POST /api/dev/seed-shipping` (dev) - endpoint chạy cả hai script.
 
 Sau khi thanh toán thành công, job nền gọi **API GHN thật** để tạo vận đơn rồi đẩy đơn qua
 Confirmed → Shipping → Delivered theo webhook/poll của GHN. Seller vẫn cập nhật trạng thái
 thủ công được bất cứ lúc nào. Chi tiết: `docs/solution-auto-fulfillment-shipping.md`.
 
-Cấu hình ở section `Shipping` trong `appsettings.json` — **bắt buộc** điền
+Cấu hình ở section `Shipping` trong `appsettings.json` - **bắt buộc** điền
 `Ghn:Token` + `Ghn:ShopId` (lấy ở dashboard GHN, mục Cấu hình → API); nên đặt qua
 `dotnet user-secrets` hoặc biến môi trường `Shipping__Ghn__Token` thay vì commit.
-Thiếu credential thì job log cảnh báo và không chạy — không có mock thay thế.
+Thiếu credential thì job log cảnh báo và không chạy - không có mock thay thế.
 
-### 2f. Tính năng v2 (Planned — xem solution trước khi implement)
+### 2f. Tính năng v2 (Planned - xem solution trước khi implement)
 
 Lộ trình và index: `docs/solution-v2-roadmap.md`.
 
@@ -94,7 +94,7 @@ Lộ trình và index: `docs/solution-v2-roadmap.md`.
 | `solution-ai-review-digest.md` | UC-82 | Tóm tắt review AI trên PDP |
 | `solution-ai-bundle-and-compatibility.md` | UC-83, UC-84 | Bundle phụ kiện + check tương thích |
 | `solution-v2-engagement-growth.md` | UC-68, … | Reorder, follow feed, Q&A (outline) |
-| `solution-v2-seller-trust.md` | — | Badge, restock, flash sale (outline) |
+| `solution-v2-seller-trust.md` | - | Badge, restock, flash sale (outline) |
 
 Schema/script sẽ có trong từng doc khi bắt đầu phase tương ứng (`scripts/price-alert-schema.sql`, …).
 
@@ -150,7 +150,7 @@ npm run dev
 
 ## Ghi chú Foundation
 
-- Chưa có UI nghiệp vụ (Auth/Catalog…) — chỉ shell FE + health page.
+- Chưa có UI nghiệp vụ (Auth/Catalog…) - chỉ shell FE + health page.
 - JWT Keycloak đã wire; Auth module (UC-01..) làm ở plan item 02.
 - EF Core map subset entity cốt lõi; entity còn lại bổ sung theo module.
 - UI màn hình sau này: convert từ `theme-for-aidr-fe` (xem rule `aidr-ui-theme`).

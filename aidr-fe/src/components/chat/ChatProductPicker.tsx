@@ -9,7 +9,7 @@ const RESULT_LIMIT = 8;
 const SEARCH_DEBOUNCE_MS = 300;
 
 type ChatProductPickerProps = {
-  /** The thread's shop — a buyer↔shop conversation is only ever about this shop's catalogue. */
+  /** The thread's shop - a buyer↔shop conversation is only ever about this shop's catalogue. */
   shopId: string;
   shopName: string;
   onPick: (product: ProductListItem) => void;

@@ -1,6 +1,6 @@
 namespace AIDR.Modules.Kyc.Abstractions;
 
-/// <summary>Shared eKYC settings — provider-agnostic thresholds and safety limits.</summary>
+/// <summary>Shared eKYC settings - provider-agnostic thresholds and safety limits.</summary>
 public sealed class EkycOptions
 {
     public const string SectionName = "Ekyc";
@@ -9,7 +9,7 @@ public sealed class EkycOptions
     public string Provider { get; set; } = "Gemini";
 
     /// <summary>
-    /// Skip the live API and return a canned pass. Development only — startup
+    /// Skip the live API and return a canned pass. Development only - startup
     /// refuses to boot with this on outside Development.
     /// </summary>
     public bool UseMock { get; set; }

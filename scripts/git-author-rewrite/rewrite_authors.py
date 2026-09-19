@@ -112,7 +112,7 @@ def dry_run(mapping: dict[str, dict[str, str]]) -> None:
 def write_callback(mapping: dict[str, dict[str, str]]) -> None:
     map_json = json.dumps(mapping)
     CALLBACK_FILE.write_text(
-        f'''# Auto-generated — do not edit
+        f'''# Auto-generated - do not edit
 import json
 
 _MAP = json.loads({map_json!r})

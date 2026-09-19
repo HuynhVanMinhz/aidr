@@ -1,5 +1,5 @@
 /*
-  review-digest-schema.sql — cached AI review digest snapshots per product.
+  review-digest-schema.sql - cached AI review digest snapshots per product.
 
   See docs/solution-ai-review-digest.md.
   Safe to re-run.

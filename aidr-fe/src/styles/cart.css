@@ -1,4 +1,4 @@
-/* Cart page — layout aligned with catalog filter design system */
+/* Cart page - layout aligned with catalog filter design system */
 
 .cart-loading {
   padding: 2rem 0;
@@ -141,7 +141,7 @@
   cursor: not-allowed;
 }
 
-/* Unticked lines are not part of the total — mute their subtotal to say so. */
+/* Unticked lines are not part of the total - mute their subtotal to say so. */
 .cart-line:not(.cart-line--selected) .cart-line__line-total {
   color: var(--text-color, #707070);
   font-weight: 500;
@@ -976,7 +976,7 @@
   }
 }
 
-/* Legacy theme overrides — hide old cart button pseudo-icons */
+/* Legacy theme overrides - hide old cart button pseudo-icons */
 .cart-item-buttons .btn-default.btn-update::before,
 .cart-item-buttons .btn-default.btn-clear::before {
   content: none !important;
@@ -1452,7 +1452,7 @@ html[data-theme='dark'] .nav-menu-wrapper .nav-link--cta {
   cursor: pointer;
 }
 
-/* Product detail wishlist / compare — match theme bordered squares (anchors → buttons). */
+/* Product detail wishlist / compare - match theme bordered squares (anchors → buttons). */
 .product-single-action ul li .product-card-cart-btn {
   display: inline-flex;
   align-items: center;
@@ -1502,7 +1502,7 @@ html[data-theme='dark'] .nav-menu-wrapper .nav-link--cta {
   }
 }
 
-/* Product card hover actions — match theme circular white buttons (anchors → buttons). */
+/* Product card hover actions - match theme circular white buttons (anchors → buttons). */
 .product-item-action ul li .product-card-cart-btn {
   height: 50px;
   width: 50px;
@@ -1571,7 +1571,7 @@ html[data-theme='dark'] .nav-menu-wrapper .nav-link--cta {
   color: var(--positive-text, #1a7f37);
 }
 
-/* Dark mode — cart controls need explicit contrast (hardcoded light rgba / #fff). */
+/* Dark mode - cart controls need explicit contrast (hardcoded light rgba / #fff). */
 html[data-theme='dark'] .cart-page-layout {
   --cart-border: rgba(232, 234, 237, 0.14);
 }

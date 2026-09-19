@@ -6,7 +6,7 @@ import { StoreHeader } from '../components/layout/StoreHeader';
 import { useNotificationHub } from '../hooks/useNotificationHub';
 import { Outlet, useLocation } from 'react-router-dom';
 
-/** Catalog shell — theme topbar + header + footer (AIDR). */
+/** Catalog shell - theme topbar + header + footer (AIDR). */
 export function AppShell() {
   useNotificationHub();
   const location = useLocation();

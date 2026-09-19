@@ -1,9 +1,9 @@
 /*
-  seed-electronics-catalog-expansion.sql — round the active catalog out to
+  seed-electronics-catalog-expansion.sql - round the active catalog out to
   25 categories (smart devices & consumer electronics only) and populate the
   6 new categories with realistic Approved products.
 
-  Adds (all English, all electronics, purely additive — no existing rows are
+  Adds (all English, all electronics, purely additive - no existing rows are
   deleted, renamed, or reparented):
     Root:  Cameras & Drones (cameras), Networking (networking)
     Child: Speakers (audio-speakers, under Audio)
@@ -28,7 +28,7 @@ DECLARE @MockBase NVARCHAR(128) = N'/theme/images/category-item-image-';
 
 IF NOT EXISTS (SELECT 1 FROM dbo.Categories WHERE Slug = N'am-thanh')
 BEGIN
-    PRINT N'seed-electronics-catalog-expansion: base categories missing — run seed-categories / seed-electronics-refresh first.';
+    PRINT N'seed-electronics-catalog-expansion: base categories missing - run seed-categories / seed-electronics-refresh first.';
     RETURN;
 END;
 
@@ -80,13 +80,13 @@ DECLARE
 
 IF @ShopId IS NULL
 BEGIN
-    PRINT N'seed-electronics-catalog-expansion: skipped — no Active shop.';
+    PRINT N'seed-electronics-catalog-expansion: skipped - no Active shop.';
     RETURN;
 END;
 
 IF NOT EXISTS (SELECT 1 FROM dbo.Categories WHERE Slug = N'cameras')
 BEGIN
-    PRINT N'seed-electronics-catalog-expansion: new categories missing — run the category batch above first.';
+    PRINT N'seed-electronics-catalog-expansion: new categories missing - run the category batch above first.';
     RETURN;
 END;
 

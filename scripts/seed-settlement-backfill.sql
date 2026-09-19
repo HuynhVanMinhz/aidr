@@ -1,11 +1,11 @@
 /*
-  seed-settlement-backfill.sql — bring existing data into the escrow model.
+  seed-settlement-backfill.sql - bring existing data into the escrow model.
 
   Run AFTER scripts/settlement-schema.sql.
 
   Before escrow, `OrderRepository.CreditSellerWalletAsync` credited the seller's
   AvailableBalance with the FULL order total the moment the buyer confirmed
-  receipt — no platform fee, no hold. Those orders are grandfathered at 0%: they
+  receipt - no platform fee, no hold. Those orders are grandfathered at 0%: they
   get a settlement entry marked Paid so the ledger is complete, but no fee is
   clawed back. Charging 3% retroactively would push seller balances negative and
   corrupt the demo data.
@@ -51,7 +51,7 @@ DECLARE @Completed INT = @@ROWCOUNT;
 
 /*
   2. Orders that are Paid..Delivered were never credited under the old code and
-     have no entry yet. Leave them alone — they will flow through the normal
+     have no entry yet. Leave them alone - they will flow through the normal
      Completed -> hold path once the buyer confirms or the sweep auto-completes
      them, and will be charged the current commission rate. Nothing to do here.
 */
@@ -76,7 +76,7 @@ COMMIT;
 PRINT N'Backfilled ' + CAST(@Completed AS NVARCHAR(10))
     + N' settlement entries; re-synced ' + CAST(@Wallets AS NVARCHAR(10)) + N' wallet pending balances.';
 
-/* 4. Verification — every completed order must be accounted for. */
+/* 4. Verification - every completed order must be accounted for. */
 SELECT
     OrdersCompleted = (SELECT COUNT(*) FROM dbo.Orders WHERE Status = N'Completed'),
     EntriesTotal    = (SELECT COUNT(*) FROM dbo.SettlementEntries),

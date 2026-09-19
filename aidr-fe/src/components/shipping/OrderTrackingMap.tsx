@@ -155,7 +155,7 @@ export function OrderTrackingMap({
         .addTo(layers);
     }
 
-    // Only worth its own pin while it is genuinely between the two ends —
+    // Only worth its own pin while it is genuinely between the two ends -
     // at either extreme it would just sit on top of another marker.
     if (pickup && destination && progress > 0 && progress < 1) {
       const midLat = (pickup.lat + destination.lat) / 2;

@@ -9,7 +9,7 @@ namespace AIDR.Tests;
 /// What a spreadsheet can say about configurations and photos.
 ///
 /// The two go together on purpose: the reason to describe a variant in a sheet at
-/// all is usually the picture — a shop with six colours wants six photos in, not
+/// all is usually the picture - a shop with six colours wants six photos in, not
 /// six visits to the product form.
 /// </summary>
 public class SellerProductImportVariantTests

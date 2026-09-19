@@ -138,7 +138,7 @@ export function AdminCategoryFormPage() {
     try {
       validateCategoryImageFile(file);
       if (!isCloudinaryConfigured()) {
-        throw new Error('Cloudinary is not configured — unable to upload image.');
+        throw new Error('Cloudinary is not configured - unable to upload image.');
       }
 
       if (prevPreview?.startsWith('blob:')) URL.revokeObjectURL(prevPreview);
@@ -398,7 +398,7 @@ export function AdminCategoryFormPage() {
                     <div className="col-lg-6">
                       <FormField label="Slug" htmlFor="category-slug-readonly">
                         <div id="category-slug-readonly" className="pt-1">
-                          <span className="badge bg-info-subtle text-info fs-13">{form.slug || '—'}</span>
+                          <span className="badge bg-info-subtle text-info fs-13">{form.slug || '-'}</span>
                         </div>
                       </FormField>
                     </div>
@@ -411,7 +411,7 @@ export function AdminCategoryFormPage() {
                         value={form.parentId}
                         placeholder="Select Parent (Optional)"
                         options={[
-                          { value: '', label: 'None — root category' },
+                          { value: '', label: 'None - root category' },
                           ...parentOptions.map((c) => ({
                             value: String(c.categoryId),
                             label: c.name,

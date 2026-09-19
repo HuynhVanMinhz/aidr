@@ -12,7 +12,7 @@ public sealed class AiChatRequest
     public AiChatContextDto? Context { get; set; }
 
     /// <summary>
-    /// Set when the buyer tapped a quick-reply chip — bypasses NLU and fills the slot directly.
+    /// Set when the buyer tapped a quick-reply chip - bypasses NLU and fills the slot directly.
     /// Format: <c>key=value</c> (e.g. <c>usecase=gaming</c>, <c>budget=:15000000</c>, <c>skip=budget</c>).
     /// </summary>
     public string? QuickReplyValue { get; set; }
@@ -112,7 +112,7 @@ public sealed class AiSuggestedProductDto
     /// <summary>Short grounded reason for this suggestion.</summary>
     public string? Reason { get; init; }
 
-    /// <summary>Best match | Cheaper option | Step up — set on guided-consultation results.</summary>
+    /// <summary>Best match | Cheaper option | Step up - set on guided-consultation results.</summary>
     public string? Badge { get; init; }
 }
 

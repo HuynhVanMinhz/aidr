@@ -1,5 +1,5 @@
 /*
-  seed-data-validate.sql — full-database integrity checks (read-only).
+  seed-data-validate.sql - full-database integrity checks (read-only).
   Each SELECT returns rows only when a rule is violated.
   Issue column groups results by rule id.
 */

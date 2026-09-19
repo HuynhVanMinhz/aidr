@@ -1,5 +1,5 @@
 /*
-  seed-data-table-counts.sql — row count snapshot for every user table in AIDR.
+  seed-data-table-counts.sql - row count snapshot for every user table in AIDR.
   Includes optional tables (Settlement, Shipping, KYC) when they exist.
 */
 SET NOCOUNT ON;

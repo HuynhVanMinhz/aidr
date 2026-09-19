@@ -1,5 +1,5 @@
 /*
-  seed-review-digest.sql — 15+ diverse reviews on a demo phone for AI review digest testing.
+  seed-review-digest.sql - 15+ diverse reviews on a demo phone for AI review digest testing.
 
   Prerequisites:
   - POST /api/dev/seed-demo-accounts
@@ -18,7 +18,7 @@ DECLARE @Now DATETIME2(3) = SYSUTCDATETIME();
 
 IF @ProductId IS NULL
 BEGIN
-    PRINT N'seed-review-digest: skipped — no approved Samsung Galaxy S24 product.';
+    PRINT N'seed-review-digest: skipped - no approved Samsung Galaxy S24 product.';
     RETURN;
 END;
 

@@ -1,5 +1,5 @@
 /*
-  AIDR — NL Filter & Compare demo seed (UC-90 / UC-28)
+  AIDR - NL Filter & Compare demo seed (UC-90 / UC-28)
   Prerequisites:
     - POST /api/dev/seed-catalog (Approved products with fixed GUIDs)
 

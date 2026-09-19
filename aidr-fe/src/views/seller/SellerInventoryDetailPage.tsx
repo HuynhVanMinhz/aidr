@@ -644,7 +644,7 @@ function AdjustStockCard({
               </div>
               {lotPreview.shortfall > 0 ? (
                 <p className="text-danger mb-0 mt-2 fs-13">
-                  Short by {lotPreview.shortfall} unit{lotPreview.shortfall === 1 ? '' : 's'} — open
+                  Short by {lotPreview.shortfall} unit{lotPreview.shortfall === 1 ? '' : 's'} - open
                   lots only cover {lotPreview.allocatedQty} of {lotPreview.requestedQty}. The server
                   will reject this adjustment.
                 </p>
@@ -926,7 +926,7 @@ function VariantStockTable({ variants }: { variants: SellerInventoryVariant[] })
                 </td>
                 <td className={variant.estimatedMarginPerUnit == null ? 'text-muted' : undefined}>
                   {variant.estimatedMarginPerUnit == null
-                    ? '—'
+                    ? '-'
                     : formatVnd(variant.estimatedMarginPerUnit)}
                 </td>
                 <td>
@@ -959,7 +959,7 @@ function LotsTable({ lots, productName }: { lots: SellerInventoryLot[]; productN
         },
         {
           label: 'Supplier invoice',
-          value: voucherLot.invoiceNumber?.trim() || '—',
+          value: voucherLot.invoiceNumber?.trim() || '-',
         },
         { label: 'Status', value: voucherLot.status },
       ]
@@ -1084,13 +1084,13 @@ function TransactionsTable({
               ? `+${voucherTx.changeQty}`
               : String(voucherTx.changeQty),
         },
-        { label: 'Lot', value: voucherTx.lotCode?.trim() || '—' },
+        { label: 'Lot', value: voucherTx.lotCode?.trim() || '-' },
         { label: 'Unit cost', value: moneyOrDash(voucherTx.unitCost) },
         {
           label: 'Reference',
           value: voucherTx.referenceType
             ? `${voucherTx.referenceType}${voucherTx.referenceId ? ` · ${voucherTx.referenceId}` : ''}`
-            : '—',
+            : '-',
         },
       ]
     : [];

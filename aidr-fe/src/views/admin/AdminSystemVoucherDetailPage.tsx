@@ -18,7 +18,7 @@ function formatDiscount(item: AdminSystemVoucher) {
 }
 
 function formatDate(value?: string | null) {
-  if (!value) return '—';
+  if (!value) return '-';
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return value;
   return date.toLocaleString();
@@ -138,7 +138,7 @@ export function AdminSystemVoucherDetailPage() {
               <div className="col-md-6">
                 <p className="text-muted mb-1">Valid period</p>
                 <p className="mb-0 fw-medium">
-                  {formatDate(item.startsAt)} — {formatDate(item.endsAt)}
+                  {formatDate(item.startsAt)} - {formatDate(item.endsAt)}
                 </p>
               </div>
               {item.description ? (

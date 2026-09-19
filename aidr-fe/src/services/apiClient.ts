@@ -7,7 +7,7 @@ type StoreLike = {
   dispatch: (action: any) => unknown;
 };
 
-/** Attached from main.tsx after store creation — avoids circular import with slices. */
+/** Attached from main.tsx after store creation - avoids circular import with slices. */
 let appStore: StoreLike | null = null;
 
 export function attachStore(store: StoreLike) {

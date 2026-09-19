@@ -68,7 +68,7 @@ export function OpeningHoursField({
       <RawJsonEscapeHatch
         id={id}
         value={raw}
-        hint="These opening hours do not fit the weekly grid — an unknown day key, or hours that are not a start–end range. Edit them as JSON, or clear them to use the grid."
+        hint="These opening hours do not fit the weekly grid - an unknown day key, or hours that are not a start–end range. Edit them as JSON, or clear them to use the grid."
         onChange={(next) => {
           setRaw(next);
           emitted.current = next;

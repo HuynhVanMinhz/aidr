@@ -14,12 +14,12 @@ type Props = {
 
 const SLOT_META: Record<Slot, { title: string; hint: string; required: boolean }> = {
   front: {
-    title: 'ID card — front',
+    title: 'ID card - front',
     hint: 'All four corners in frame, no glare.',
     required: true,
   },
   back: {
-    title: 'ID card — back',
+    title: 'ID card - back',
     hint: 'Optional, but speeds up review.',
     required: false,
   },
@@ -44,7 +44,7 @@ export function KycStep({ kyc, onVerified }: Props) {
   const cloudinaryReady = isCloudinaryConfigured();
   const passed = kyc?.status === 'Passed';
   const manualReview = kyc?.status === 'ManualReview';
-  // The automated check never ran, so there are no OCR fields to show — only the
+  // The automated check never ran, so there are no OCR fields to show - only the
   // photos the applicant uploaded, which a person will read.
   const awaitingHuman = kyc?.provider === 'MANUAL';
   const canVerify = Boolean(urls.front && urls.selfie) && !verifying;
@@ -177,7 +177,7 @@ export function KycStep({ kyc, onVerified }: Props) {
 
       <p className="kyc-step__lead">
         We verify your identity before you can sell. Photos are used only for this
-        check — we store the document number masked.
+        check - we store the document number masked.
       </p>
 
       <div className="kyc-slot-grid">

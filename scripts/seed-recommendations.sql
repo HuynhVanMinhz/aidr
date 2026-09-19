@@ -1,5 +1,5 @@
 /*
-  AIDR — Recommendation & Similar demo seed (UC-53 / UC-54)
+  AIDR - Recommendation & Similar demo seed (UC-53 / UC-54)
   Prerequisites:
     - POST /api/dev/seed-demo-accounts (demo buyer CCCC...)
     - POST /api/dev/seed-catalog (Approved products 1111...01..10 + S24)
@@ -52,7 +52,7 @@ IF EXISTS (
       AND SessionId = N'REC-SEED'
 )
 BEGIN
-    PRINT N'Recommendation demo seed already present — skipped.';
+    PRINT N'Recommendation demo seed already present - skipped.';
     RETURN;
 END;
 
@@ -80,7 +80,7 @@ DECLARE
         (SELECT TOP 1 ProductId FROM dbo.Products WHERE ProductId = '11111111-1111-1111-1111-111111111110' AND Status = N'Approved'),
         (SELECT TOP 1 ProductId FROM dbo.Products WHERE Status = N'Approved' ORDER BY AvgRating DESC));
 
-/* Buyer view history — phone / Samsung affinity */
+/* Buyer view history - phone / Samsung affinity */
 INSERT INTO dbo.ViewedProductHistories (UserId, SessionId, ProductId, ViewedAt)
 SELECT @BuyerId, N'REC-SEED', v.ProductId, v.ViewedAt
 FROM (VALUES

@@ -301,7 +301,7 @@ public sealed class SellerProductExcelService : ISellerProductExcelService
             {
                 failed.Add(ToDto(row) with
                 {
-                    Errors = [$"No product with slug \"{row.Slug}\" — the row that would have created it did not run."],
+                    Errors = [$"No product with slug \"{row.Slug}\" - the row that would have created it did not run."],
                 });
                 continue;
             }
@@ -315,7 +315,7 @@ public sealed class SellerProductExcelService : ISellerProductExcelService
                 {
                     failed.Add(ToDto(row) with
                     {
-                        Errors = [$"No configuration with SKU \"{row.VariantSku}\" — the Variants row that would have created it did not run."],
+                        Errors = [$"No configuration with SKU \"{row.VariantSku}\" - the Variants row that would have created it did not run."],
                     });
                     continue;
                 }
@@ -360,7 +360,7 @@ public sealed class SellerProductExcelService : ISellerProductExcelService
     /// Variants are declared against a product's slug rather than in the product's
     /// own row, because a configuration is a row in its own right: it has its own
     /// price, its own SKU and its own photo. A sheet that mentions no variants for
-    /// a product leaves that product's configurations exactly as they are — the
+    /// a product leaves that product's configurations exactly as they are - the
     /// alternative would let an untouched export wipe them.
     /// </summary>
     private async Task PlanVariantsAsync(
@@ -400,7 +400,7 @@ public sealed class SellerProductExcelService : ISellerProductExcelService
             {
                 warnings.Add(
                     $"{where}: {Quoted(group.Key)} is not on the Products sheet, so its variants were skipped. " +
-                    "Add the product's own row to the Products sheet as well — an export contains both.");
+                    "Add the product's own row to the Products sheet as well - an export contains both.");
                 continue;
             }
 
@@ -633,7 +633,7 @@ public sealed class SellerProductExcelService : ISellerProductExcelService
     /// Gives each row the id of the configuration it is really editing.
     ///
     /// Without this, re-importing an export would read as "delete every variant and
-    /// add these" — which the repository refuses for anything holding stock or
+    /// add these" - which the repository refuses for anything holding stock or
     /// sitting on an order, and which would strand inventory lots for the rest. A
     /// row is matched by SKU first, because that is the handle the seller controls,
     /// and by its combination of option values otherwise.
@@ -743,7 +743,7 @@ public sealed class SellerProductExcelService : ISellerProductExcelService
         return attributes;
     }
 
-    /// <summary>Sellers write Yes, No, TRUE, 0 — all of them mean the obvious thing.</summary>
+    /// <summary>Sellers write Yes, No, TRUE, 0 - all of them mean the obvious thing.</summary>
     private static bool TryParseFlag(string raw, out bool value)
     {
         switch (raw.Trim().ToLowerInvariant())
@@ -832,8 +832,8 @@ public sealed class SellerProductExcelService : ISellerProductExcelService
     }
 
     /// <summary>
-    /// Two rows for the same configuration are legal — a shop really can take two
-    /// deliveries — but they are also what a duplicated paste looks like, and the
+    /// Two rows for the same configuration are legal - a shop really can take two
+    /// deliveries - but they are also what a duplicated paste looks like, and the
     /// difference is only visible to the seller. So it is said out loud.
     /// </summary>
     private static void WarnOnRepeatedStockRows(List<PlannedStockRow> stock, List<string> warnings)
@@ -972,8 +972,8 @@ public sealed class SellerProductExcelService : ISellerProductExcelService
                     {
                         row.ProductName = creating.Name;
 
-                        // A product this file creates may still be sold in variants —
-                        // the Variants sheet says so — and its ids only exist once it
+                        // A product this file creates may still be sold in variants -
+                        // the Variants sheet says so - and its ids only exist once it
                         // has been written, so the SKU is checked against the plan.
                         if (creating.Variants is { Count: > 0 } plannedVariants)
                         {
@@ -1066,7 +1066,7 @@ public sealed class SellerProductExcelService : ISellerProductExcelService
         else
             row.Name = name;
 
-        /* slug — blank means "derive one", which is what most sellers expect */
+        /* slug - blank means "derive one", which is what most sellers expect */
         var slug = sheet.Slug?.Trim().ToLowerInvariant();
         if (string.IsNullOrWhiteSpace(slug) && row.Name is not null)
             slug = Slugify(row.Name);
@@ -1089,7 +1089,7 @@ public sealed class SellerProductExcelService : ISellerProductExcelService
             row.Slug = slug;
         }
 
-        /* category — the id wins, the name is the fallback */
+        /* category - the id wins, the name is the fallback */
         row.CategoryId = ResolveCategory(sheet, categories, errors, out var categoryName);
         row.CategoryName = categoryName;
 
@@ -1205,7 +1205,7 @@ public sealed class SellerProductExcelService : ISellerProductExcelService
 
         if (string.IsNullOrWhiteSpace(sheet.Category))
         {
-            errors.Add("CategoryId is required — copy one from the Categories sheet.");
+            errors.Add("CategoryId is required - copy one from the Categories sheet.");
             return null;
         }
 
@@ -1297,7 +1297,7 @@ public sealed class SellerProductExcelService : ISellerProductExcelService
             {
                 VariantId = variant.VariantId,
                 Sku = variant.Sku,
-                // Left blank so the API derives "Pink / 256GB" — one place decides the format.
+                // Left blank so the API derives "Pink / 256GB" - one place decides the format.
                 VariantName = null,
                 Attributes = variant.Attributes,
                 Price = variant.Price,
@@ -1718,7 +1718,7 @@ public sealed class SellerProductExcelService : ISellerProductExcelService
     }
 
     /// <summary>
-    /// "Điện thoại Galaxy S24" has to become "dien-thoai-galaxy-s24" — a slug the
+    /// "Điện thoại Galaxy S24" has to become "dien-thoai-galaxy-s24" - a slug the
     /// service will accept and a URL a buyer can read.
     /// </summary>
     private static string Slugify(string name)

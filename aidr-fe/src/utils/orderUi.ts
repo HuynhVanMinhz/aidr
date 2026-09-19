@@ -28,7 +28,7 @@ export function formatOrderStatus(status: string | null | undefined): string {
 }
 
 export function formatOrderDate(iso: string | null | undefined): string {
-  if (!iso) return '—';
+  if (!iso) return '-';
   try {
     return new Intl.DateTimeFormat('en-GB', {
       day: 'numeric',

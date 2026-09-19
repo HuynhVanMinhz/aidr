@@ -1,5 +1,5 @@
 /*
-  AIDR — Admin Governance / Customer Insights demo seed
+  AIDR - Admin Governance / Customer Insights demo seed
   Prerequisites: schema + demo accounts + catalog (Approved products + Active shop).
   Idempotent: skips when insight-buyer-01@aidr.local already exists.
 
@@ -13,7 +13,7 @@ SET NOCOUNT ON;
 
 IF EXISTS (SELECT 1 FROM dbo.Users WHERE Email = N'insight-buyer-01@aidr.local')
 BEGIN
-    PRINT N'Governance insights seed already applied — skipped.';
+    PRINT N'Governance insights seed already applied - skipped.';
     RETURN;
 END;
 

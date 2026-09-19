@@ -160,7 +160,7 @@ public sealed class PaymentService : IPaymentService
             cancellationToken)
             ?? throw new NotFoundException("Payment for this order was not found.");
 
-        // Already settled — the webhook won the race, nothing to ask payOS about.
+        // Already settled - the webhook won the race, nothing to ask payOS about.
         if (string.Equals(payment.PaymentStatus, PaymentConstants.StatusSucceeded, StringComparison.OrdinalIgnoreCase))
         {
             return new SyncPayOsPaymentResponse
@@ -210,7 +210,7 @@ public sealed class PaymentService : IPaymentService
         if (!string.Equals(link.Status, PaymentConstants.PayOsLinkStatusPaid, StringComparison.OrdinalIgnoreCase))
         {
             _logger.LogInformation(
-                "payOS reports {Status} for order {OrderId} (code {OrderCode}) — leaving it pending",
+                "payOS reports {Status} for order {OrderId} (code {OrderCode}) - leaving it pending",
                 link.Status,
                 payment.OrderId,
                 payOsOrderCode);
@@ -235,7 +235,7 @@ public sealed class PaymentService : IPaymentService
             link.RawJson,
             cancellationToken);
 
-        // Same notification the webhook path fires, and the same replay guard —
+        // Same notification the webhook path fires, and the same replay guard -
         // whichever of the two gets here first is the only one that notifies.
         if (result.Processed && !result.IdempotentReplay)
         {

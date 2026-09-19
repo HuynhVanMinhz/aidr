@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore;
 namespace AIDR.Infrastructure.Seeding;
 
 /// <summary>
-/// Turns a handful of demo products into variant products — the "iPhone 17 orange 128GB
+/// Turns a handful of demo products into variant products - the "iPhone 17 orange 128GB
 /// costs more than white 256GB" case.
 ///
 /// Converting is more than inserting rows. A variant product has no sellable stock of its
@@ -63,7 +63,7 @@ public static class ProductVariantsDemoSeeder
             DiscountedCombination: "Black / 256GB",
             DiscountAmount: 1_500_000m),
 
-        // Two axes that are not colour — the price driver is the spec itself.
+        // Two axes that are not colour - the price driver is the spec itself.
         new(
             MatchName: "MacBook Air M3 13 inch",
             RenameTo: null,
@@ -151,12 +151,12 @@ public static class ProductVariantsDemoSeeder
 
             if (product is null)
             {
-                log.Add($"skip  {plan.MatchName} — not in this database");
+                log.Add($"skip  {plan.MatchName} - not in this database");
                 continue;
             }
 
             var created = await ApplyPlanAsync(db, product, plan, now, ct);
-            log.Add($"ok    {product.Name} — {created} variant(s), stock {product.StockQuantity}, from {product.BasePrice:N0}");
+            log.Add($"ok    {product.Name} - {created} variant(s), stock {product.StockQuantity}, from {product.BasePrice:N0}");
         }
 
         await db.SaveChangesAsync(ct);
@@ -269,7 +269,7 @@ public static class ProductVariantsDemoSeeder
 
     /// <summary>
     /// Gives every variant its own stock. The product's existing lot is handed to the first
-    /// variant rather than left behind — an unassigned lot is stock the checkout can never
+    /// variant rather than left behind - an unassigned lot is stock the checkout can never
     /// allocate, which would read as "in stock" everywhere and fail at the last step.
     /// </summary>
     private static async Task AssignLotsAsync(

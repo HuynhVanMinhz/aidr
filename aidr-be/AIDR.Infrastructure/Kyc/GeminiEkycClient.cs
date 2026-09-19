@@ -209,7 +209,7 @@ public sealed class GeminiEkycClient : IEkycClient
               "faceReason": "one short English sentence"
             }
             Compare the portrait on the ID front with the selfie. Be conservative on similarity.
-            Do not guess OCR fields — use empty string when unreadable.
+            Do not guess OCR fields - use empty string when unreadable.
             """;
 
         const string promptNoBack = """
@@ -232,7 +232,7 @@ public sealed class GeminiEkycClient : IEkycClient
               "faceReason": "one short English sentence"
             }
             Compare the portrait on the ID front with the selfie. Be conservative on similarity.
-            Do not guess OCR fields — use empty string when unreadable.
+            Do not guess OCR fields - use empty string when unreadable.
             """;
 
         var raw = await GenerateJsonAsync(
@@ -480,7 +480,7 @@ public sealed class GeminiEkycClient : IEkycClient
         if (ours is null) return;
 
         throw new ProviderUnavailableException(
-            $"Gemini is unusable — {ours} (HTTP {(int)status}): {Trim(raw)}");
+            $"Gemini is unusable - {ours} (HTTP {(int)status}): {Trim(raw)}");
     }
 
     private void RequireConfigured()

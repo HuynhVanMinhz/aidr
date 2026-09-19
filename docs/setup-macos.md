@@ -14,7 +14,7 @@ Hướng dẫn chạy **Backend + Frontend** trên Mac khi **không cài SQL Ser
 | [Docker Desktop](https://www.docker.com/products/docker-desktop/) | Mới nhất | Bật **≥ 4 GB RAM** cho container SQL |
 | [.NET SDK](https://dotnet.microsoft.com/download) | **9** | Backend |
 | [Node.js](https://nodejs.org/) | **18+** | Frontend |
-| Git | — | Clone repo |
+| Git | - | Clone repo |
 
 Tuỳ chọn:
 
@@ -65,7 +65,7 @@ Thông tin đăng nhập mặc định (khớp `docker-compose.yml`):
 
 ### 2.2 Tạo database trống
 
-File `data-aidr.sql` được export từ SSMS trên Windows — phần đầu có `CREATE DATABASE` với đường dẫn ổ `D:\...` **không chạy được trên Docker/Mac**. Tạo DB thủ công trước:
+File `data-aidr.sql` được export từ SSMS trên Windows - phần đầu có `CREATE DATABASE` với đường dẫn ổ `D:\...` **không chạy được trên Docker/Mac**. Tạo DB thủ công trước:
 
 ```bash
 docker exec aidr-sqlserver /opt/mssql-tools18/bin/sqlcmd \
@@ -95,7 +95,7 @@ tail -n +83 data-aidr.sql | docker exec -i aidr-sqlserver \
   -S localhost -U sa -P "Your_strong_Password123" -C -d AIDR -b
 ```
 
-- `-b` — dừng ngay khi gặp lỗi SQL.
+- `-b` - dừng ngay khi gặp lỗi SQL.
 - Import mất vài phút tùy máy.
 
 ### 3.2 Import bằng Azure Data Studio
@@ -169,7 +169,7 @@ dotnet run --project AIDR.Api
 | Health (live) | http://localhost:5080/api/health/live |
 | Health (ready) | http://localhost:5080/api/health/ready |
 
-Health **ready** kiểm tra SQL — nếu fail, xem lại bước import và connection string.
+Health **ready** kiểm tra SQL - nếu fail, xem lại bước import và connection string.
 
 ---
 
@@ -240,7 +240,7 @@ curl -X POST http://localhost:5080/api/dev/seed-all
 
 ### PayOS / GHN / Groq / SMTP / Cloudinary
 
-Cấu hình trong `appsettings.Development.json` hoặc `dotnet user-secrets` — **không bắt buộc** để xem UI và duyệt catalog cơ bản.
+Cấu hình trong `appsettings.Development.json` hoặc `dotnet user-secrets` - **không bắt buộc** để xem UI và duyệt catalog cơ bản.
 
 ---
 
@@ -252,9 +252,9 @@ Cấu hình trong `appsettings.Development.json` hoặc `dotnet user-secrets` �
 | `Login failed for user 'sa'` | Kiểm tra password khớp `docker-compose.yml` |
 | Port `1433` đã dùng | Tắt SQL local khác hoặc đổi port mapping trong `docker-compose.yml` |
 | SQL container restart liên tục | Tăng RAM Docker Desktop (Settings → Resources → ≥ 4 GB) |
-| Apple Silicon chậm lần đầu | Bình thường — image SQL Server chạy qua emulation |
+| Apple Silicon chậm lần đầu | Bình thường - image SQL Server chạy qua emulation |
 | BE `/api/health/ready` fail | Connection string sai; DB chưa import; container SQL chưa healthy |
-| Checkout báo thiếu stock | `data-aidr.sql` đã có `InventoryLots` — nếu import lỗi giữa chừng, reset DB (mục 3.3) và import lại |
+| Checkout báo thiếu stock | `data-aidr.sql` đã có `InventoryLots` - nếu import lỗi giữa chừng, reset DB (mục 3.3) và import lại |
 | `tail: command not found` | Dùng Azure Data Studio (mục 3.2) hoặc `sed -n '83,$p' data-aidr.sql \| …` |
 
 ---

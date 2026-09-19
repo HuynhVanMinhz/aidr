@@ -57,7 +57,7 @@ public static class SettlementConstants
         EntryStatusEligible
     };
 
-    /// <summary>Entries locked into a batch — no longer freely reversible.</summary>
+    /// <summary>Entries locked into a batch - no longer freely reversible.</summary>
     public static readonly HashSet<string> ReleasedStatuses = new(StringComparer.OrdinalIgnoreCase)
     {
         EntryStatusApproved,
@@ -91,7 +91,7 @@ public static class SettlementConstants
     }
 
     /// <summary>
-    /// Commission base excludes shipping — charging the platform fee on the
+    /// Commission base excludes shipping - charging the platform fee on the
     /// courier fee would be wrong once shipping is no longer free.
     /// </summary>
     public static decimal CommissionableAmount(decimal subtotal, decimal discount) =>

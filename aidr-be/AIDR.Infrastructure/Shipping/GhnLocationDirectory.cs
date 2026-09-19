@@ -14,7 +14,7 @@ namespace AIDR.Infrastructure.Shipping;
 ///
 /// GHN's own list is the only source that guarantees a booking will not die on
 /// FROM/TO_ADDRESS_CONVERT_FAIL, so the buyer picks from it rather than typing.
-/// The list changes a few times a year — cached for a day, and a carrier outage
+/// The list changes a few times a year - cached for a day, and a carrier outage
 /// falls back to an empty list rather than breaking the address form.
 /// </summary>
 public sealed class GhnLocationDirectory : IShippingLocationDirectory

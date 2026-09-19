@@ -16,7 +16,7 @@ type ImageDropzoneProps = {
   disabled?: boolean;
   /** Heading in the empty state, e.g. "Drop your logo here". */
   emptyLabel: string;
-  /** Small print under the heading — size and format limits. */
+  /** Small print under the heading - size and format limits. */
   hint?: string;
   previewAlt: string;
   /** Upload failures, so the page can show them where its other errors go. */

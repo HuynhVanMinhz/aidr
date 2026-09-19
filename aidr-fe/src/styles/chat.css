@@ -1,5 +1,5 @@
 /* ==========================================================================
-   Chat workspace — shared by the storefront (/chat) and the seller console.
+   Chat workspace - shared by the storefront (/chat) and the seller console.
    Self-contained: the two shells load different icon fonts and CSS resets, so
    nothing here relies on Bootstrap or Larkon component classes.
 
@@ -973,7 +973,7 @@ html[data-theme='dark'] .chat-avatar {
   color: var(--chat-muted);
 }
 
-/* Bootstrap ships `kbd { color: var(--bs-body-bg) }` (white on white here) — override both. */
+/* Bootstrap ships `kbd { color: var(--bs-body-bg) }` (white on white here) - override both. */
 .chat-composer__hint kbd {
   padding: 0.1rem 0.3rem;
   border: 1px solid var(--chat-border);

@@ -7,7 +7,7 @@ import type {
 import { apiClient } from './apiClient';
 
 /**
- * Downloads come back as blobs, which means an error body is a blob too — the
+ * Downloads come back as blobs, which means an error body is a blob too - the
  * usual error reader would show "[object Blob]". Unwrap it back into the JSON
  * the API actually sent before anything else looks at it.
  */
@@ -53,7 +53,7 @@ function toParams(query: SellerProductQuery): Record<string, string | number> {
   return params;
 }
 
-/** Downloads the shop's catalogue under the list's current filters — every page of it. */
+/** Downloads the shop's catalogue under the list's current filters - every page of it. */
 export async function exportSellerProducts(query: SellerProductQuery = {}) {
   try {
     const response = await apiClient.get('/seller/products/export', {

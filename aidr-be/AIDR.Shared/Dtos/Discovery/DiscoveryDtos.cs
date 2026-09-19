@@ -43,7 +43,7 @@ public sealed class ProductListItemDto
     public string? Brand { get; init; }
     public decimal BasePrice { get; init; }
     public decimal? SalePrice { get; init; }
-    /// <summary>The cheapest way to buy this product — with variants, the cheapest variant.</summary>
+    /// <summary>The cheapest way to buy this product - with variants, the cheapest variant.</summary>
     public decimal EffectivePrice { get; init; }
     /// <summary>The dearest variant; equal to <see cref="EffectivePrice"/> when there are none.</summary>
     public decimal MaxEffectivePrice { get; init; }
@@ -160,7 +160,7 @@ public sealed class ProductDetailDto
     public IReadOnlyList<ProductVariantOptionDto> VariantOptions { get; init; } =
         Array.Empty<ProductVariantOptionDto>();
     /// <summary>
-    /// Only the active variants — a deactivated one must not be selectable. BasePrice and
+    /// Only the active variants - a deactivated one must not be selectable. BasePrice and
     /// EffectivePrice above describe the cheapest of these, for the "from X" label.
     /// </summary>
     public IReadOnlyList<ProductVariantDto> Variants { get; init; } = Array.Empty<ProductVariantDto>();

@@ -16,7 +16,7 @@ const VARIANT_IMAGE_URL_REGEX = /^https?:\/\/.+\..+/i;
  *
  * The seller declares the axes ("Color" -> Orange, White; "Storage" -> 128GB, 256GB) and
  * the editor generates the grid of combinations to price. Regenerating must not throw away
- * work: a combination that already has a price — or worse, an id and stock behind it — has
+ * work: a combination that already has a price - or worse, an id and stock behind it - has
  * to survive, and only genuinely new or genuinely removed combinations should change.
  */
 
@@ -74,7 +74,7 @@ function cartesian(options: VariantOptionDraft[]): Record<string, string>[] {
 /**
  * Rebuilds the grid for the current axes, carrying over everything the seller already
  * entered for combinations that still exist. Rows whose combination no longer exists are
- * dropped — the API refuses to delete one that holds stock or sits on an order, so a
+ * dropped - the API refuses to delete one that holds stock or sits on an order, so a
  * mistake here surfaces as an error rather than as silent data loss.
  */
 export function regenerateVariantGrid(
@@ -244,7 +244,7 @@ export function validateVariantDrafts(
 
 /**
  * Everything about the variant editor that a save would persist, in a form two states can
- * be compared by. Editing only a variant — its photo, say — leaves every product field
+ * be compared by. Editing only a variant - its photo, say - leaves every product field
  * untouched, so without this the form would look unchanged and Save would stay disabled.
  */
 export function variantDraftsSignature(
@@ -274,7 +274,7 @@ export function draftsToPayload(
     variants: rows.map((row, index) => ({
       variantId: row.variantId ?? null,
       sku: row.sku.trim() || null,
-      // Left blank so the API derives "Orange / 128GB" — one place decides the format.
+      // Left blank so the API derives "Orange / 128GB" - one place decides the format.
       variantName: null,
       attributes: row.attributes,
       price: Number(row.price),

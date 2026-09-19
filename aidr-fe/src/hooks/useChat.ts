@@ -102,7 +102,7 @@ export function useChat(options?: { autoLoadThreads?: boolean }) {
     hasOlderMessages,
   ]);
 
-  /** Pull the newest page and merge it in — used by the focus / polling fallbacks. */
+  /** Pull the newest page and merge it in - used by the focus / polling fallbacks. */
   const syncActiveThread = useCallback(async () => {
     if (!chat.activeThreadId) return;
     await dispatch(

@@ -359,7 +359,7 @@ export function ChatWorkspace({ variant = 'admin' }: ChatWorkspaceProps) {
             </span>
             <h3>Select a conversation</h3>
             <p>
-              Pick someone from the list to read the history and reply. New messages arrive live —
+              Pick someone from the list to read the history and reply. New messages arrive live -
               no refresh needed.
             </p>
           </div>

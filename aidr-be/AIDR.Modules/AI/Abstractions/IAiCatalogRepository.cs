@@ -38,7 +38,7 @@ public sealed class AiCompareProductRecord
     public string ShopName { get; init; } = null!;
 }
 
-/// <summary>Price distribution of Approved products in a filter scope — drives budget chips.</summary>
+/// <summary>Price distribution of Approved products in a filter scope - drives budget chips.</summary>
 public sealed class AiPriceBands
 {
     /// <summary>Matching products, capped at <see cref="AIDR.Shared.Constants.AiConstants.PriceBandSampleSize"/>.</summary>
@@ -73,7 +73,7 @@ public interface IAiCatalogRepository
         int take,
         CancellationToken cancellationToken = default);
 
-    /// <summary>How many Approved products match — used to decide whether another question helps.</summary>
+    /// <summary>How many Approved products match - used to decide whether another question helps.</summary>
     Task<int> CountApprovedProductsAsync(
         ProductQueryRequest query,
         CancellationToken cancellationToken = default);

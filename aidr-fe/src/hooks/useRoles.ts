@@ -22,7 +22,7 @@ const ROLE_LABELS: Record<AppRole, string> = {
 
 /**
  * One reading of the session's roles for the whole storefront chrome. Before
- * this, each component did its own `roles.some(...)` and they drifted — the nav
+ * this, each component did its own `roles.some(...)` and they drifted - the nav
  * offered admins a "Become a seller" pitch the admin panel exists to moderate.
  */
 export function useRoles() {
@@ -50,7 +50,7 @@ export function useRoles() {
       isAuthenticated,
       isAdmin,
       isSeller,
-      /** Signed in with no elevated role — the default storefront experience. */
+      /** Signed in with no elevated role - the default storefront experience. */
       isBuyerOnly: isAuthenticated && !isSeller && !isAdmin,
       canBecomeSeller,
       workspaces,

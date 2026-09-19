@@ -503,7 +503,7 @@ public sealed class AdminReturnRepository : IAdminReturnRepository
         var entry = await _db.SettlementEntries
             .FirstOrDefaultAsync(e => e.OrderId == order.OrderId, cancellationToken);
 
-        // No entry yet (order never reached Completed) — nothing was ever owed.
+        // No entry yet (order never reached Completed) - nothing was ever owed.
         if (entry is null)
             return;
 
@@ -528,7 +528,7 @@ public sealed class AdminReturnRepository : IAdminReturnRepository
                 PendingAfter = wallet.PendingBalance,
                 ReferenceType = ReturnConstants.WalletReferenceTypeReturnRequest,
                 ReferenceId = returnRequestId,
-                Note = $"Settlement reversed — order {order.OrderCode} refunded before release",
+                Note = $"Settlement reversed - order {order.OrderCode} refunded before release",
                 CreatedAt = now
             });
 
@@ -540,7 +540,7 @@ public sealed class AdminReturnRepository : IAdminReturnRepository
         }
 
         // Already released or paid out: claw the net back from the available
-        // balance and hand back the commission — the platform does not keep a fee
+        // balance and hand back the commission - the platform does not keep a fee
         // on an order that was returned.
         wallet.AvailableBalance = decimal.Round(
             wallet.AvailableBalance - refundAmount,
@@ -578,7 +578,7 @@ public sealed class AdminReturnRepository : IAdminReturnRepository
                 PendingAfter = wallet.PendingBalance,
                 ReferenceType = ReturnConstants.WalletReferenceTypeReturnRequest,
                 ReferenceId = returnRequestId,
-                Note = $"Platform fee refunded — order {order.OrderCode} returned",
+                Note = $"Platform fee refunded - order {order.OrderCode} returned",
                 CreatedAt = now
             });
         }
@@ -621,7 +621,7 @@ public sealed class AdminReturnRepository : IAdminReturnRepository
             CreatedAt = now
         });
 
-        // Dispute over — let the settlement continue where it left off.
+        // Dispute over - let the settlement continue where it left off.
         var entry = await _db.SettlementEntries
             .FirstOrDefaultAsync(e => e.OrderId == order.OrderId, cancellationToken);
 
@@ -794,7 +794,7 @@ public sealed class AdminReturnRepository : IAdminReturnRepository
         toStatus switch
         {
             ReturnConstants.StatusRefunded => "Buyer refunded via payOS payout; seller wallet debit recorded",
-            ReturnConstants.StatusExchanged => "Exchange completed — replacement handled by seller",
+            ReturnConstants.StatusExchanged => "Exchange completed - replacement handled by seller",
             ReturnConstants.StatusClosed => "Return request closed",
             _ => $"Status updated to {toStatus}"
         };

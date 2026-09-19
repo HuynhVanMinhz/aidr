@@ -71,7 +71,7 @@ export function returnEvidencePosterUrl(url: string): string | undefined {
     return undefined;
   }
 
-  // First frame as JPG poster — helps UI while metadata loads
+  // First frame as JPG poster - helps UI while metadata loads
   if (/\/video\/upload\/(?:[^/]+,)*so_/i.test(base)) {
     return undefined;
   }

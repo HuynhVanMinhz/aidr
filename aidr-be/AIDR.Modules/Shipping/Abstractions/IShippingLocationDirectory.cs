@@ -3,7 +3,7 @@ namespace AIDR.Modules.Shipping.Abstractions;
 /// <summary>
 /// One administrative unit as the carrier knows it. <see cref="Id"/> is the
 /// carrier's own key (province/district id, ward code) and <see cref="Name"/> is
-/// the spelling the carrier accepts back — storing that exact name is what keeps
+/// the spelling the carrier accepts back - storing that exact name is what keeps
 /// a booking from failing on address conversion later.
 /// </summary>
 public sealed class ShippingLocationDto

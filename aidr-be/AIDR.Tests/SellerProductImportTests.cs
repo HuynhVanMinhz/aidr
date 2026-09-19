@@ -7,7 +7,7 @@ namespace AIDR.Tests;
 
 /// <summary>
 /// The rules the import applies to a sheet, tested through the service with the
-/// spreadsheet itself stubbed out — these are decisions about stock and products,
+/// spreadsheet itself stubbed out - these are decisions about stock and products,
 /// not about Excel.
 /// </summary>
 public class SellerProductImportTests

@@ -1,5 +1,5 @@
 /*
-  seed-catalog-rich.sql — diverse Approved products across leaf + root categories.
+  seed-catalog-rich.sql - diverse Approved products across leaf + root categories.
 
   Prerequisites:
     - Demo shop TechZone (POST /api/dev/seed-demo-accounts)
@@ -25,13 +25,13 @@ DECLARE
 
 IF @ShopId IS NULL
 BEGIN
-    PRINT N'seed-catalog-rich: skipped — no Active shop. Run seed-demo-accounts first.';
+    PRINT N'seed-catalog-rich: skipped - no Active shop. Run seed-demo-accounts first.';
     RETURN;
 END;
 
 IF NOT EXISTS (SELECT 1 FROM dbo.Categories WHERE Slug = N'dien-thoai-apple')
 BEGIN
-    PRINT N'seed-catalog-rich: leaf categories missing — run seed-categories / seed-electronics-refresh first.';
+    PRINT N'seed-catalog-rich: leaf categories missing - run seed-categories / seed-electronics-refresh first.';
     RETURN;
 END;
 
@@ -91,7 +91,7 @@ DECLARE
 
 IF @ShopId IS NULL
 BEGIN
-    PRINT N'seed-catalog-rich: skipped — no Active shop.';
+    PRINT N'seed-catalog-rich: skipped - no Active shop.';
     RETURN;
 END;
 

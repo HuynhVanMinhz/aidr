@@ -425,7 +425,7 @@ public sealed class SellerInventoryRepository : ISellerInventoryRepository
 
     /// <summary>
     /// Ties a stock movement to one configuration. A product with variants has no stock of
-    /// its own — every unit belongs to a variant — so leaving it unset there would create a
+    /// its own - every unit belongs to a variant - so leaving it unset there would create a
     /// lot nothing can ever be sold from.
     /// </summary>
     private async Task<ProductVariant?> ResolveVariantAsync(
@@ -705,7 +705,7 @@ public sealed class SellerInventoryRepository : ISellerInventoryRepository
             return $"Low stock ({available} left, threshold {threshold}). Order about {suggestedQty} units.";
 
         if (avgDailySales > 0 && daysUntilStockout is <= 7)
-            return $"Selling ~{avgDailySales:0.##}/day — stock may run out in ~{daysUntilStockout:0.#} days. Suggest ordering {suggestedQty} units.";
+            return $"Selling ~{avgDailySales:0.##}/day - stock may run out in ~{daysUntilStockout:0.#} days. Suggest ordering {suggestedQty} units.";
 
         return $"Steady sales (~{avgDailySales:0.##}/day). Consider restocking {suggestedQty} units to stay ahead.";
     }

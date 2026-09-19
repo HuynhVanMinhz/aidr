@@ -1,5 +1,5 @@
 /*
-  AIDR — Seller registration demo seed (UC-75 / UC-76)
+  AIDR - Seller registration demo seed (UC-75 / UC-76)
   Idempotent: skips rows that already exist by RequestId / Email.
   Creates enough Pending rows to exercise list pagination.
 */
@@ -182,7 +182,7 @@ BEGIN
     )
     VALUES (
         @ApprovedReqId, @ApprovedUserId, N'Crafted Circuit House',
-        N'Handmade crafts — approved for filter testing.',
+        N'Handmade crafts - approved for filter testing.',
         N'["https://res.cloudinary.com/demo/image/upload/sample.jpg"]',
         N'Approved',
         N'Documents verified.',

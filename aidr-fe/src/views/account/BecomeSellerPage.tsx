@@ -267,7 +267,7 @@ export function BecomeSellerPage() {
 
           {registration.canEdit ? (
             <p className="seller-status__hint">
-              Update the form below and submit again — you do not need to redo the identity check.
+              Update the form below and submit again - you do not need to redo the identity check.
             </p>
           ) : registration.status === 'Pending' ? (
             <p className="seller-status__hint">
@@ -279,7 +279,7 @@ export function BecomeSellerPage() {
 
       <section className="account-card">
         <h3 className="order-card__title">
-          Step 1 — Identity
+          Step 1 - Identity
           {kycDone ? <span className="order-card__count">Done</span> : null}
         </h3>
         <KycStep kyc={kyc} onVerified={setKyc} />
@@ -287,7 +287,7 @@ export function BecomeSellerPage() {
 
       <section className={`account-card${kycDone ? '' : ' seller-locked'}`}>
         <h3 className="order-card__title">
-          Step 2 — Business profile
+          Step 2 - Business profile
           {kycDone && !editing ? (
             <span className="order-card__count order-card__count--muted">Locked</span>
           ) : null}

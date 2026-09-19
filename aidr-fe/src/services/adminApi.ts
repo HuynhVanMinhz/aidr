@@ -64,7 +64,7 @@ export async function rejectSellerRegistration(id: string, payload: RejectSeller
 }
 
 /**
- * Send an application back for changes instead of rejecting it — the applicant
+ * Send an application back for changes instead of rejecting it - the applicant
  * keeps their identity check and can edit and resubmit.
  */
 export async function requestMoreInfoOnSellerRegistration(

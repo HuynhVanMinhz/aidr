@@ -92,7 +92,7 @@ public sealed class SellerProductImportResultDto
     public IReadOnlyList<SellerInventoryImportRowDto> FailedStockRows { get; init; } =
         Array.Empty<SellerInventoryImportRowDto>();
 
-    /// <summary>Only the rows that failed — the successes need no explanation.</summary>
+    /// <summary>Only the rows that failed - the successes need no explanation.</summary>
     public IReadOnlyList<SellerProductImportRowDto> FailedRows { get; init; } =
         Array.Empty<SellerProductImportRowDto>();
 }

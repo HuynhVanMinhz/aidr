@@ -2,7 +2,7 @@ import type { ApiResult } from './auth';
 
 /**
  * One administrative unit as the carrier knows it. `name` is the spelling the
- * carrier accepts back, which is exactly what gets stored on the address — a
+ * carrier accepts back, which is exactly what gets stored on the address - a
  * hand-typed ward is what makes a booking fail at dispatch time.
  */
 export type ShippingLocation = {

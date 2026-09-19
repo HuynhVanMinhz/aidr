@@ -35,7 +35,7 @@ export function AddressesPage() {
 
   const locations = useShippingLocations();
   // Until the buyer touches a dropdown, a saved address keeps the names it was
-  // stored with — the carrier lists may not resolve them, and losing them silently
+  // stored with - the carrier lists may not resolve them, and losing them silently
   // would be worse than showing a blank select next to the value.
   const [locationsTouched, setLocationsTouched] = useState(false);
 
@@ -111,7 +111,7 @@ export function AddressesPage() {
     }));
   }, [provinceId, districtId, wardId, provinceName, districtName, wardName, locationsTouched]);
 
-  // Re-pin whenever the written address changes — unless the buyer moved the pin.
+  // Re-pin whenever the written address changes - unless the buyer moved the pin.
   // Province + district are required so "Lý Thánh Tông" resolves in the chosen
   // district, not a namesake street in another one (e.g. Sơn Trà vs Ngũ Hành Sơn).
   const addressQuery = [form.streetAddress, form.ward, form.district, form.province]
@@ -122,7 +122,7 @@ export function AddressesPage() {
   useEffect(() => {
     if (!showForm || pinSourceRef.current === 'manual') return;
     if (!form.province.trim() || !form.district.trim()) return;
-    // Street-less lookups only centre on the district — wait until there is
+    // Street-less lookups only centre on the district - wait until there is
     // something more specific, or the buyer clicks the map themselves.
     if (!form.streetAddress.trim() && !form.ward.trim()) return;
 
@@ -164,7 +164,7 @@ export function AddressesPage() {
         if (!result) return;
         setMapCaption(result.displayName || null);
         // The pin is the buyer's own answer to "where", so the written address
-        // follows it rather than the other way round — a pin and a street that
+        // follows it rather than the other way round - a pin and a street that
         // disagree is how a parcel ends up on the wrong doorstep.
         setForm((f) => ({
           ...f,
@@ -346,7 +346,7 @@ export function AddressesPage() {
       <div className="account-toolbar">
         <p className="account-toolbar__lead">
           These addresses will be used by default at checkout. Maximum of {MAX_ADDRESSES}{' '}
-          addresses — {sortedAddresses.length} saved.
+          addresses - {sortedAddresses.length} saved.
         </p>
         {canAddMore && (
           <button
@@ -496,7 +496,7 @@ export function AddressesPage() {
                       disabled={locations.loadingProvinces}
                       onChange={(e) => {
                         setLocationsTouched(true);
-                        // Admin change invalidates the old pin — a street name
+                        // Admin change invalidates the old pin - a street name
                         // can exist in more than one district.
                         pinSourceRef.current = 'auto';
                         setPoint(null);
@@ -626,7 +626,7 @@ export function AddressesPage() {
                   onPick={handlePickOnMap}
                   caption={mapCaption}
                   busy={mapBusy}
-                  hint="Click or drag the pin to set the delivery point — fields follow it. Change district and the pin moves to that street inside the new district; a namesake street in another district is ignored."
+                  hint="Click or drag the pin to set the delivery point - fields follow it. Change district and the pin moves to that street inside the new district; a namesake street in another district is ignored."
                 />
               </aside>
             </div>

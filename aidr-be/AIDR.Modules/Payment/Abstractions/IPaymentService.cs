@@ -11,7 +11,7 @@ public interface IPaymentService
 
     /// <summary>
     /// Reconcile one order against payOS. Used when the buyer comes back from the
-    /// checkout page — the webhook may not have arrived (or cannot reach this API
+    /// checkout page - the webhook may not have arrived (or cannot reach this API
     /// at all in local dev), so the API asks payOS directly.
     /// </summary>
     Task<SyncPayOsPaymentResponse> SyncPayOsPaymentAsync(

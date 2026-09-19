@@ -51,7 +51,7 @@ export function ProfilePage() {
     try {
       validateAvatarFile(file);
       if (!isCloudinaryConfigured()) {
-        setFormError('Cloudinary is not configured — unable to upload avatar.');
+        setFormError('Cloudinary is not configured - unable to upload avatar.');
         return;
       }
 

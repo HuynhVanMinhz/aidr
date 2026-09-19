@@ -1,5 +1,5 @@
 ---
-description: AIDR Admin/Seller — UI đầy đủ từ theme-for-aidr-admin-fe; màu brand storefront.
+description: AIDR Admin/Seller - UI đầy đủ từ theme-for-aidr-admin-fe; màu brand storefront.
 alwaysApply: true
 ---
 
@@ -19,7 +19,7 @@ Khi implement màn hình **Admin** (`/admin/*`) hoặc **Seller** (`/seller/*`):
 2. Class admin theme: `wrapper`, `main-nav`, `page-content`, `card`, `btn btn-primary`, `table`, `form-control`.
 3. Load CSS admin (`vendor.min.css`, `icons.min.css`, `app.min.css`, `aidr-brand.css`) **chỉ trên route `/admin` và `/seller`**. Không trộn Header/Footer storefront.
 4. Icon sidebar/topbar: `iconify-icon` (Solar) như theme, không thay bằng UI tự vẽ.
-5. Logic: React + Redux + API — không phụ thuộc jQuery của theme.
+5. Logic: React + Redux + API - không phụ thuộc jQuery của theme.
 
 ## Mapping màn
 

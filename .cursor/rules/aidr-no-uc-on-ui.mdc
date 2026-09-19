@@ -3,7 +3,7 @@ description: Không comment / không hiển thị mã UC (UC-xx) trên UI hoặc
 alwaysApply: true
 ---
 
-# AIDR — Không lộ mã Use Case
+# AIDR - Không lộ mã Use Case
 
 ## Quy tắc
 
@@ -14,16 +14,16 @@ alwaysApply: true
 ## Được phép
 
 - Tài liệu nghiệp vụ trong `docs/` (`usecase.md`, `plan-implement-module.md`, architecture…) **được** dùng mã UC để theo dõi implement.
-- Commit message / PR mô tả nội bộ có thể nhắc UC nếu cần — nhưng **không** đưa vào UI.
+- Commit message / PR mô tả nội bộ có thể nhắc UC nếu cần - nhưng **không** đưa vào UI.
 
 ## Ví dụ
 
 ```tsx
 // ❌ Sai
-<footer>AIDR — Auth (UC-01..05)</footer>
-/** UC-03 — Google callback */
+<footer>AIDR - Auth (UC-01..05)</footer>
+/** UC-03 - Google callback */
 
 // ✅ Đúng
-<footer>AIDR — AI-Integrated Digital Retail</footer>
+<footer>AIDR - AI-Integrated Digital Retail</footer>
 /** Exchange OAuth code from Google callback. */
 ```

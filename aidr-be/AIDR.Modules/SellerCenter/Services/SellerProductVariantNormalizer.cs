@@ -12,7 +12,7 @@ namespace AIDR.Modules.SellerCenter.Services;
 /// back out again.
 ///
 /// The seller declares the axes ("Color" -> Orange, White) and one row per combination.
-/// Those two halves have to agree — a row for a colour that is not on the axis, or two
+/// Those two halves have to agree - a row for a colour that is not on the axis, or two
 /// rows for the same combination, would leave the storefront unable to resolve a
 /// selection to a price. Everything here exists to reject that before it is stored.
 /// </summary>

@@ -1,8 +1,8 @@
-# AIDR — Solution: Seller Trust & Pro Tools (v2)
+# AIDR - Solution: Seller Trust & Pro Tools (v2)
 
 **Status:** Implemented (Phase 4 scope)  
 **Module:** SellerCenter, Admin, Engagement, AI  
-**Phạm vi:** Badge uy tín seller, gợi ý nhập hàng, flash sale, AI hỗ trợ admin duyệt return — không thay BR core.
+**Phạm vi:** Badge uy tín seller, gợi ý nhập hàng, flash sale, AI hỗ trợ admin duyệt return - không thay BR core.
 
 ---
 
@@ -59,7 +59,7 @@ Seller dashboard widget **Restock suggestions**:
 
 `GET /api/seller/inventory/restock-advice?days=14`
 
-Reuse `SellerInventoryRepository` + order line aggregates — không ML v1.
+Reuse `SellerInventoryRepository` + order line aggregates - không ML v1.
 
 ---
 
@@ -83,7 +83,7 @@ Conflict với UC-92: khi promotion active, effective price = promotion; khi end
 
 ### Effort
 
-L — cần job + seller form + discovery filter *On sale*.
+L - cần job + seller form + discovery filter *On sale*.
 
 ---
 
@@ -93,10 +93,10 @@ L — cần job + seller form + discovery filter *On sale*.
 
 Trên admin return detail (UC-49): panel **AI checklist** (advisory only):
 
-- Video metadata / thumbnail frames (nếu có) — Phase B vision.  
+- Video metadata / thumbnail frames (nếu có) - Phase B vision.  
 - v1: parse buyer note + compare order line SKU vs reason text → flags: *"Mentioned wrong item"*, *"Missing unboxing keyword"*.
 
-**Admin luôn quyết định** — không auto approve/reject (BR-R03).
+**Admin luôn quyết định** - không auto approve/reject (BR-R03).
 
 ### API
 
@@ -114,10 +114,10 @@ Khi admin duyệt seller registration: cảnh báo nếu `KycVerifications.IdDoc
 
 ### Schema
 
-- Hash CCCD số (SHA-256 + salt server) — **không** lưu plaintext số CCCD mới nếu chưa có.  
+- Hash CCCD số (SHA-256 + salt server) - **không** lưu plaintext số CCCD mới nếu chưa có.  
 - Index `UX_Kyc_IdHash` where not null.
 
-Admin UI: banner *"This identity is linked to another account"* — không block auto, admin quyết.
+Admin UI: banner *"This identity is linked to another account"* - không block auto, admin quyết.
 
 Liên quan `solution-seller-onboarding-ekyc.md`.
 
@@ -130,7 +130,7 @@ Liên quan `solution-seller-onboarding-ekyc.md`.
 Seller product edit: sidebar **Pricing insight**:
 
 - So sánh `SalePrice` với median category (anonymous aggregate).  
-- Margin vs `AvgCostPrice`: *"Margin 12% — below your shop average 18%"*.
+- Margin vs `AvgCostPrice`: *"Margin 12% - below your shop average 18%"*.
 
 Rule-only v1; không auto đổi giá.
 

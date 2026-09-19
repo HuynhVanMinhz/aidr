@@ -167,7 +167,7 @@ export const notificationSlice = createSlice({
 
       upsertPreview(state, incoming);
 
-      // Only bump the badge for brand-new unread rows — coalesced chat updates reuse the same id.
+      // Only bump the badge for brand-new unread rows - coalesced chat updates reuse the same id.
       if (!incoming.isRead && existingIndex < 0) {
         state.unreadCount += 1;
       } else if (!incoming.isRead && existingIndex >= 0 && !wasUnread) {

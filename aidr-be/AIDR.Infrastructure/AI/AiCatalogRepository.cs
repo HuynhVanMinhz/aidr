@@ -181,7 +181,7 @@ public sealed class AiCatalogRepository : IAiCatalogRepository
         if (!string.IsNullOrWhiteSpace(query.Brand))
         {
             var brand = query.Brand.Trim();
-            // Case-insensitive / partial match — seed brands are Title Case but LLM may vary.
+            // Case-insensitive / partial match - seed brands are Title Case but LLM may vary.
             q = q.Where(p => p.Brand != null && p.Brand.Contains(brand));
         }
 

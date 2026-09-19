@@ -14,7 +14,7 @@ import type { CategoryTreeNode } from '../../types/catalog';
 import { formatMoney } from '../../utils/formatCatalog';
 
 const DEFAULT_TOPBAR =
-  'Shop genuine electronics — secure checkout and fast delivery';
+  'Shop genuine electronics - secure checkout and fast delivery';
 
 function flattenCategories(nodes: CategoryTreeNode[]): CategoryTreeNode[] {
   const result: CategoryTreeNode[] = [];
@@ -263,7 +263,7 @@ export function StoreHeader() {
                     )}
                     {/* On desktop the workspaces live in the switcher beside the
                         account menu. That whole action row is hidden below lg,
-                        so they come back into the nav there — otherwise a seller
+                        so they come back into the nav there - otherwise a seller
                         on a phone has no way out of the storefront. */}
                     {workspaces.map((workspace) => (
                       <li className="nav-item nav-item--workspace" key={workspace.to}>

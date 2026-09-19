@@ -1,5 +1,5 @@
 /*
-  AIDR — Refresh catalog for an electronics storefront.
+  AIDR - Refresh catalog for an electronics storefront.
   Deactivates non-electronics/junk categories, normalizes shops,
   upserts electronics products, sets mock image URLs
   (https://cdn.aidr.local/mock/...) for later replacement.
@@ -87,7 +87,7 @@ WHERE Slug IN (
 
 UPDATE dbo.Categories SET
     Name = CASE WHEN Name LIKE N'[[]Inactive]%' THEN Name ELSE N'[Inactive] ' + Name END,
-    Description = N'Deactivated — not used in electronics catalog.',
+    Description = N'Deactivated - not used in electronics catalog.',
     UpdatedAt = @Now
 WHERE IsActive = 0 AND (
     Slug IN (
@@ -251,7 +251,7 @@ WHERE Slug = N'xiaomi-14-256gb';
 
 UPDATE dbo.Products SET
     ShortDescription = N'Apple M3, 16GB RAM, 512GB SSD',
-    Description = N'MacBook Air 13-inch — thin, silent, and all-day battery for work and study.',
+    Description = N'MacBook Air 13-inch - thin, silent, and all-day battery for work and study.',
     UpdatedAt = @Now
 WHERE Slug = N'macbook-air-m3-13';
 
@@ -293,7 +293,7 @@ WHERE Slug = N'samsung-galaxy-watch-6';
 
 UPDATE dbo.Products SET
     ShortDescription = N'Apple M2, Liquid Retina, Apple Pencil support',
-    Description = N'iPad Air 11-inch with M2 — ideal for notes, drawing, and streaming.',
+    Description = N'iPad Air 11-inch with M2 - ideal for notes, drawing, and streaming.',
     UpdatedAt = @Now
 WHERE Slug = N'ipad-air-m2-128gb';
 

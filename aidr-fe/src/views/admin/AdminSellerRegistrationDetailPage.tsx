@@ -282,7 +282,7 @@ export function AdminSellerRegistrationDetailPage() {
                 </div>
 
                 {/*
-                  The check is the applicant's, not this submission's — say so, or
+                  The check is the applicant's, not this submission's - say so, or
                   the reviewer reads it as evidence that was filed with the form.
                 */}
                 {!item.kycLinkedToApplication ? (
@@ -304,7 +304,7 @@ export function AdminSellerRegistrationDetailPage() {
                 ) : item.kyc.status === 'ManualReview' ? (
                   <p className="text-warning fs-13 mb-2">
                     {item.kyc.failureReason ||
-                      'The face comparison was inconclusive — check the photos yourself before approving.'}
+                      'The face comparison was inconclusive - check the photos yourself before approving.'}
                   </p>
                 ) : null}
 
@@ -318,25 +318,25 @@ export function AdminSellerRegistrationDetailPage() {
                 <div className="row g-3 mb-2">
                   <div className="col-sm-6">
                     <p className="text-muted mb-1 fs-13">Name on document</p>
-                    <p className="mb-0">{item.kyc.fullName || 'Not read — verify from the photos'}</p>
+                    <p className="mb-0">{item.kyc.fullName || 'Not read - verify from the photos'}</p>
                   </div>
                   <div className="col-sm-6">
                     <p className="text-muted mb-1 fs-13">Document</p>
                     <p className="mb-0">
                       {item.kyc.documentType || 'ID'} ·{' '}
-                      {item.kyc.documentNumberMask || 'Not read — verify from the photos'}
+                      {item.kyc.documentNumberMask || 'Not read - verify from the photos'}
                     </p>
                   </div>
                   <div className="col-sm-6">
                     <p className="text-muted mb-1 fs-13">Date of birth</p>
-                    <p className="mb-0">{item.kyc.dateOfBirth || 'Not read — verify from the photos'}</p>
+                    <p className="mb-0">{item.kyc.dateOfBirth || 'Not read - verify from the photos'}</p>
                   </div>
                   <div className="col-sm-6">
                     <p className="text-muted mb-1 fs-13">Face match</p>
                     <p className="mb-0">
                       {item.kyc.faceMatchSimilarity != null
                         ? `${(item.kyc.faceMatchSimilarity * 100).toFixed(1)}%`
-                        : 'Not compared — check by eye'}
+                        : 'Not compared - check by eye'}
                     </p>
                   </div>
                 </div>
@@ -374,7 +374,7 @@ export function AdminSellerRegistrationDetailPage() {
             ) : (
               <div className="alert alert-warning" role="alert">
                 <strong>No identity check on file for this applicant.</strong> This application
-                predates eKYC and the applicant has never verified — read the documents yourself
+                predates eKYC and the applicant has never verified - read the documents yourself
                 and treat it with extra care.
               </div>
             )}
@@ -450,7 +450,7 @@ export function AdminSellerRegistrationDetailPage() {
           <div className="card-body">
             {!isPending ? (
               <p className="text-muted mb-0">
-                This request is <strong>{statusLabel(item.status)}</strong> — no further action is
+                This request is <strong>{statusLabel(item.status)}</strong> - no further action is
                 available.
               </p>
             ) : (
@@ -469,7 +469,7 @@ export function AdminSellerRegistrationDetailPage() {
                 </p>
 
                 {/*
-                  The note belongs to the two actions below, not to Approve — the
+                  The note belongs to the two actions below, not to Approve - the
                   divider and the caption say so, because a lone textarea under a
                   green button reads as if it applied to the approval.
                 */}

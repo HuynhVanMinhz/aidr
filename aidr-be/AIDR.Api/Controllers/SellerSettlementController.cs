@@ -26,7 +26,7 @@ public sealed class SellerSettlementController : ControllerBase
     }
 
     /// <summary>
-    /// Register or change the payout bank account. Any change resets verification —
+    /// Register or change the payout bank account. Any change resets verification -
     /// payouts only run against an account an admin has approved.
     /// </summary>
     [HttpPut("bank-account")]

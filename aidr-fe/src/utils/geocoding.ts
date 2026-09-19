@@ -4,7 +4,7 @@ import type { LatLng } from '../types/shippingLocation';
  * Photon geocoding (OSM data, run by Komoot).
  *
  * Free and key-less like Nominatim, but on a host that Vietnamese networks
- * actually resolve — `nominatim.openstreetmap.org` times out on many of them,
+ * actually resolve - `nominatim.openstreetmap.org` times out on many of them,
  * which made every lookup fail silently and left the pin wherever it was.
  * Calls still go through a single queue so we stay a polite client.
  *
@@ -74,7 +74,7 @@ async function throttled<T>(run: () => Promise<T>): Promise<T> {
 
 /**
  * Strip the administrative prefix and diacritics so "Phường Dịch Vọng" and
- * "Dich Vong" compare equal — the carrier and OSM rarely agree on either.
+ * "Dich Vong" compare equal - the carrier and OSM rarely agree on either.
  */
 export function normalizeAdminName(value: string | null | undefined): string {
   if (!value) return '';
@@ -139,7 +139,7 @@ function pointOf(feature: PhotonFeature | undefined): LatLng | null {
   return Number.isFinite(lat) && Number.isFinite(lng) ? { lat, lng } : null;
 }
 
-/** OSM/Photon scatter VN admin labels across several keys — check them all. */
+/** OSM/Photon scatter VN admin labels across several keys - check them all. */
 function featureAdminBag(props: PhotonProperties | undefined): string {
   if (!props) return '';
   return [

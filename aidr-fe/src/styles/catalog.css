@@ -1,8 +1,8 @@
 /**
- * Catalog layout helpers — visuals from theme custom.css.
+ * Catalog layout helpers - visuals from theme custom.css.
  */
 
-/* Theme custom.css dùng path tương đối — đảm bảo icon mũi tên luôn resolve đúng */
+/* Theme custom.css dùng path tương đối - đảm bảo icon mũi tên luôn resolve đúng */
 .btn-default::before {
   background-image: url('/theme/images/arrow-white.svg');
 }
@@ -233,7 +233,7 @@ header.main-header .main-menu .navbar-collapse {
  * Product photography is never cropped.
  *
  * theme/css/custom.css fits every catalogue image with `object-fit: cover`, which fills the
- * square tile by cutting the subject off — a phone loses its top and bottom, a mouse its
+ * square tile by cutting the subject off - a phone loses its top and bottom, a mouse its
  * ends. Seller photos arrive in whatever ratio the seller had, so they are fitted with
  * `contain`: the whole product shows, centred, and the tile's own surface fills the rest.
  * Overridden here rather than edited in the vendor file, and the app's stylesheet loads
@@ -310,7 +310,7 @@ header.main-header .main-menu .navbar-collapse {
   border-bottom: none;
 }
 
-/* Product reviews — balanced 2-column layout (summary | list) */
+/* Product reviews - balanced 2-column layout (summary | list) */
 .catalog-review-layout.product-review-form-content {
   display: grid;
   grid-template-columns: minmax(240px, 320px) minmax(0, 1fr);
@@ -1047,7 +1047,7 @@ header.main-header .main-menu .navbar-collapse {
   padding: 10px 14px;
 }
 
-/* —— Catalog filters (unified panel) —— */
+/* -- Catalog filters (unified panel) -- */
 .catalog-filters-sidebar-col {
   display: block;
 }
@@ -1295,7 +1295,7 @@ header.main-header .main-menu .navbar-collapse {
   border-color: var(--primary-color);
 }
 
-/* Category tree — fix theme ul li flex breaking layout */
+/* Category tree - fix theme ul li flex breaking layout */
 .catalog-category-tree ul,
 .catalog-category-tree ul li,
 .catalog-category-tree__parent,
@@ -1880,14 +1880,14 @@ header.main-header .main-menu .navbar-collapse {
 }
 
 /*
- * Storefront dark mode — theme custom.css uses --primary-color as a *dark brand surface*
+ * Storefront dark mode - theme custom.css uses --primary-color as a *dark brand surface*
  * (main-menu, .dark-section footer). Global dark tokens remap --primary-color to light
  * text for auth. Scope all chrome fixes under .store-shell and restore surfaces.
  */
 html[data-theme='dark'] .store-shell {
   background: var(--aidr-bg, #0c0e14);
   color: var(--aidr-text, #e8eaed);
-  /* Text on dark brand surfaces (footer, nav) — theme expects --white-color here. */
+  /* Text on dark brand surfaces (footer, nav) - theme expects --white-color here. */
   --white-color: #e8eaed;
 }
 
@@ -2022,7 +2022,7 @@ html[data-theme='dark'] .store-shell .popular-categories-list li:hover a {
   padding-left: 23px;
 }
 
-/* Theme buttons — keep accent fill readable (avoid teal-on-teal hover). */
+/* Theme buttons - keep accent fill readable (avoid teal-on-teal hover). */
 html[data-theme='dark'] .store-shell .btn-default {
   color: var(--on-accent);
   background: var(--accent-color);
@@ -2515,7 +2515,7 @@ html[data-theme='dark'] .store-shell .upcoming-offer-item:not(.dark-section) {
   }
 }
 
-/* —— NL search (UC-90) —— */
+/* -- NL search (UC-90) -- */
 .catalog-nl-search__form {
   display: flex;
   gap: 0.75rem;
@@ -2544,7 +2544,7 @@ html[data-theme='dark'] .store-shell .upcoming-offer-item:not(.dark-section) {
   border: 0;
 }
 
-/* —— Compare tray / page (UC-28) —— */
+/* -- Compare tray / page (UC-28) -- */
 .compare-tray {
   position: sticky;
   bottom: 0;
@@ -2865,7 +2865,7 @@ html[data-theme='dark'] .store-shell .upcoming-offer-item:not(.dark-section) {
   line-height: 1.2;
 }
 
-/* Theme arrow overlaps compact labels — hide on compare CTAs */
+/* Theme arrow overlaps compact labels - hide on compare CTAs */
 .compare-table__view-btn.btn-default::before,
 .compare-table__view-btn.btn-default::after,
 .compare-table__product-actions .btn-default::before,
@@ -3268,7 +3268,7 @@ html[data-theme='dark'] .store-shell .compare-card.is-recommended {
   border-color: var(--aidr-accent, #2dd4bf);
 }
 
-/* —— Intro video (home): local asset + poster fallback + lightbox —— */
+/* -- Intro video (home): local asset + poster fallback + lightbox -- */
 .intro-bg-video {
   background-color: #12141a;
   background-position: center;
@@ -3321,7 +3321,7 @@ html[data-theme='dark'] .store-shell .compare-card.is-recommended {
   border: 0;
 }
 
-/* Popular shops grid — keep theme brand-list layout, add shop name */
+/* Popular shops grid - keep theme brand-list layout, add shop name */
 .our-brand-list ul li a.our-shop-card {
   display: flex;
   flex-direction: column;
@@ -3523,8 +3523,8 @@ html[data-theme='dark'] .store-shell .compare-card.is-recommended {
 /* ---------------------------------------------------------------------------
    Variant picker (product detail)
 
-   The picker reuses the theme's own product-single blocks — .product-single-item-color
-   swatches and .product-single-item-size pills — so nothing here restyles them. What
+   The picker reuses the theme's own product-single blocks - .product-single-item-color
+   swatches and .product-single-item-size pills - so nothing here restyles them. What
    follows only covers what the theme has no markup for: an arbitrary swatch colour, a
    value no variant offers alongside the current selection, and one that is sold out.
 --------------------------------------------------------------------------- */
@@ -3588,7 +3588,7 @@ html[data-theme='dark'] .store-shell .compare-card.is-recommended {
     color: var(--bg-color);
 }
 
-/* Sold out stays clickable — the shopper should still be able to see its price. */
+/* Sold out stays clickable - the shopper should still be able to see its price. */
 .product-single-item-size ul li label.is-out-of-stock {
     color: var(--text-color);
     text-decoration: line-through;
@@ -3696,7 +3696,7 @@ html[data-theme='dark'] .store-shell .compare-card.is-recommended {
     cursor: not-allowed;
 }
 
-/* Product breadcrumb arrows — crisp, theme-colored (avoid dark SVG fill on dark bg). */
+/* Product breadcrumb arrows - crisp, theme-colored (avoid dark SVG fill on dark bg). */
 .store-shell .product-single-breadcrumb-list .breadcrumb {
   --bs-breadcrumb-divider: '';
 }
@@ -3812,7 +3812,7 @@ html[data-theme='dark'] .store-shell .compare-card.is-recommended {
     color: #b45309;
 }
 
-/* Product bundle — keep theme related-product card widths on wrappers */
+/* Product bundle - keep theme related-product card widths on wrappers */
 .catalog-bundle-section__source {
     margin: 8px 0 0;
     font-size: 14px;

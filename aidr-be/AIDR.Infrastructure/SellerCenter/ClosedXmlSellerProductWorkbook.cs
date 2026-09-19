@@ -24,7 +24,7 @@ public sealed class ClosedXmlSellerProductWorkbook : ISellerProductWorkbook
     private const int MaxCellLength = 32000;
 
     /// <summary>
-    /// The first three are written by us and ignored on the way back in — they are
+    /// The first three are written by us and ignored on the way back in - they are
     /// there so the seller can see what a row currently is, not to be edited.
     /// </summary>
     private static readonly string[] Headers =
@@ -54,7 +54,7 @@ public sealed class ClosedXmlSellerProductWorkbook : ISellerProductWorkbook
     ];
 
     /// <summary>
-    /// The Variants sheet — one row per sellable configuration of a product on the
+    /// The Variants sheet - one row per sellable configuration of a product on the
     /// Products sheet. This is where a colour gets its own price and its own photo.
     /// </summary>
     private static readonly string[] VariantHeaders =
@@ -72,7 +72,7 @@ public sealed class ClosedXmlSellerProductWorkbook : ISellerProductWorkbook
 
     private static readonly (string Column, string Rule)[] VariantGuide =
     [
-        ("Slug", "Required. The product this configuration belongs to — the same slug as on the Products sheet, including a product this file is creating."),
+        ("Slug", "Required. The product this configuration belongs to - the same slug as on the Products sheet, including a product this file is creating."),
         ("Product", "Written by the export so you can see what the row is. The import ignores it."),
         ("Attributes", "Required. The axes and their values, e.g. \"Color=Pink; Storage=256GB\". Every row of one product must use the same axis names; their order here is the order shoppers see."),
         ("Sku", "Optional, but it is what the Inventory sheet addresses a configuration by, so a variant you want to stock needs one."),
@@ -105,10 +105,10 @@ public sealed class ClosedXmlSellerProductWorkbook : ISellerProductWorkbook
 
     private static readonly (string Column, string Rule)[] InventoryGuide =
     [
-        ("Slug", "Required. The product to receive stock for — the same slug as on the Products sheet, including a product this file is creating."),
+        ("Slug", "Required. The product to receive stock for - the same slug as on the Products sheet, including a product this file is creating."),
         ("Product / OnHand", "Written by the export so you can see what you have. The import ignores them."),
         ("VariantSku", "Required only when the product is sold in variants; it says which configuration the stock is for. Leave blank for a single-configuration product."),
-        ("Quantity", "How many units to receive as a NEW lot. Blank means this row does nothing — that is why an untouched export cannot double your stock."),
+        ("Quantity", "How many units to receive as a NEW lot. Blank means this row does nothing - that is why an untouched export cannot double your stock."),
         ("UnitCost", "Required with Quantity: what you paid per unit for this lot. Digits only. Existing lots are never changed."),
         ("LotCode", "Optional. Letters, numbers, hyphen and underscore only."),
         ("ReceivedAt", "Optional date, e.g. 2026-09-04. Blank means today."),
@@ -116,13 +116,13 @@ public sealed class ClosedXmlSellerProductWorkbook : ISellerProductWorkbook
 
     private static readonly (string Column, string Rule)[] Guide =
     [
-        ("ProductId / Status / Stock", "Written by the export. Leave them alone — the import ignores them."),
+        ("ProductId / Status / Stock", "Written by the export. Leave them alone - the import ignores them."),
         ("CategoryId", "Required. Copy it from the Categories sheet. If you leave it blank, Category is used instead."),
         ("Category", "Optional shortcut: the category name, or its full path like \"Phones > Samsung Galaxy\"."),
         ("Name", "Required."),
         ("Slug", "Optional. This is what decides create vs update: a slug already in your shop updates that product. Blank means one is generated from the name."),
         ("Condition", "One of New, LikeNew, Refurbished, Used. Blank means New."),
-        ("BasePrice", "Required. Digits only — 5990000, not 5.990.000 d."),
+        ("BasePrice", "Required. Digits only - 5990000, not 5.990.000 d."),
         ("SalePrice", "Optional, and must be at or below BasePrice."),
         ("WarrantyMonths", "Optional whole number of months."),
         ("Tags", "Comma separated, e.g. flagship, 5g."),
@@ -259,7 +259,7 @@ public sealed class ClosedXmlSellerProductWorkbook : ISellerProductWorkbook
     /// <summary>
     /// The pictures on a sheet, grouped by the row each one sits on.
     ///
-    /// A picture is not in a cell — it floats above the grid — so the row is taken
+    /// A picture is not in a cell - it floats above the grid - so the row is taken
     /// from where its top-left corner lands. Excel anchors a pasted image to a cell,
     /// which gives the answer directly; an image that was dragged loose is placed by
     /// walking the row heights until its offset is passed.
@@ -463,7 +463,7 @@ public sealed class ClosedXmlSellerProductWorkbook : ISellerProductWorkbook
         FinishProductsSheet(sheet, 2);
 
         // Two configurations of the product above, so the sheet shows what an axis
-        // looks like — and that the same axis names have to repeat on every row.
+        // looks like - and that the same axis names have to repeat on every row.
         AddVariantsSheet(workbook, [], examples:
         [
             new SellerProductVariantSheetExport
@@ -558,7 +558,7 @@ public sealed class ClosedXmlSellerProductWorkbook : ISellerProductWorkbook
         row.Cell(1).SetValue(Clamp(variant.Slug));
         row.Cell(2).SetValue(Clamp(variant.VariantName.Length == 0
             ? variant.ProductName
-            : $"{variant.ProductName} — {variant.VariantName}"));
+            : $"{variant.ProductName} - {variant.VariantName}"));
         row.Cell(3).SetValue(Clamp(variant.Sku));
         row.Cell(4).SetValue(Clamp(variant.Attributes));
         row.Cell(5).SetValue(variant.Price);
@@ -592,7 +592,7 @@ public sealed class ClosedXmlSellerProductWorkbook : ISellerProductWorkbook
             row.Cell(1).SetValue(Clamp(line.Slug));
             row.Cell(2).SetValue(Clamp(line.VariantName is null
                 ? line.ProductName
-                : $"{line.ProductName} — {line.VariantName}"));
+                : $"{line.ProductName} - {line.VariantName}"));
             row.Cell(3).SetValue(Clamp(line.VariantSku));
             row.Cell(4).SetValue(line.OnHand);
             // Quantity and UnitCost stay empty on purpose: importing an untouched

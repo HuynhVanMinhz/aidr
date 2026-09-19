@@ -1,5 +1,5 @@
 /**
- * Inline SVG icons — the storefront ships Font Awesome while the admin shell ships Boxicons,
+ * Inline SVG icons - the storefront ships Font Awesome while the admin shell ships Boxicons,
  * so the shared chat workspace carries its own icons instead of guessing which font is loaded.
  */
 type IconProps = { className?: string };

@@ -4,7 +4,7 @@ export function normalizePhone(phone: string): string {
   return phone.trim().replace(/[\s.\-()]/g, '');
 }
 
-/** Vietnamese mobile — required + format. Returns normalized 0xxxxxxxxx. */
+/** Vietnamese mobile - required + format. Returns normalized 0xxxxxxxxx. */
 export function validateVnPhone(phone: string | null | undefined, fieldLabel = 'Phone number'): string {
   if (!phone || !phone.trim()) {
     throw new Error(`${fieldLabel} is required.`);
@@ -57,7 +57,7 @@ export function validateOptionalImageUrl(value: string | null | undefined, maxLe
   return trimmed;
 }
 
-/** Required image URL — http/https or a relative path. */
+/** Required image URL - http/https or a relative path. */
 export function validateImageUrl(value: string | null | undefined, maxLength: number): string {
   const trimmed = validateRequired(value, 'Image URL');
   validateMaxLength(trimmed, maxLength, 'Image URL');

@@ -12,7 +12,7 @@ public sealed class SheetImage
 {
     public required byte[] Content { get; init; }
 
-    /// <summary>Lower-case, no dot — "png", "jpg", "webp". Decides the upload's file name.</summary>
+    /// <summary>Lower-case, no dot - "png", "jpg", "webp". Decides the upload's file name.</summary>
     public required string Extension { get; init; }
 
     /// <summary>Which sheet row the picture sits on, so an error can name it.</summary>
@@ -139,7 +139,7 @@ public sealed class SellerProductVariantSheetExport
 ///
 /// Stock is never a number the sheet simply sets: it is a lot with a cost, the
 /// same as receiving stock by hand. That is what keeps FIFO costing honest, and
-/// it is why the export leaves Quantity blank — re-importing an untouched export
+/// it is why the export leaves Quantity blank - re-importing an untouched export
 /// must not silently double a shop's stock.
 /// </summary>
 public sealed class SellerInventorySheetRow
@@ -207,7 +207,7 @@ public sealed class SellerCategoryChoice
 public interface ISellerProductWorkbook
 {
     /// <summary>
-    /// Reads every sheet in one pass — an uploaded stream is not always seekable,
+    /// Reads every sheet in one pass - an uploaded stream is not always seekable,
     /// so it cannot be handed back for a second read.
     /// </summary>
     SellerImportSheets Read(Stream stream);

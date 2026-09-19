@@ -30,7 +30,7 @@ const EMPTY = {
 } as const;
 
 const EMPTY_MARKERS = new Set([
-  '—',
+  '-',
   '-',
   '–',
   'n/a',

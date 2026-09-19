@@ -1,5 +1,5 @@
 /*
-  AIDR — Align ReturnRequests with database.sql / Return & Refund module.
+  AIDR - Align ReturnRequests with database.sql / Return & Refund module.
   Adds ResolutionType + ReturnEvidences if missing (idempotent).
   Each ALTER in its own batch (SQL Server cannot use a new column in the same batch).
 */

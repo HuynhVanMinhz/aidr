@@ -131,7 +131,7 @@ public sealed class AiShoppingAssistantService : IAiShoppingAssistantService
         if (intent == AiConstants.IntentClarify && HasUsefulSlots(slots))
             intent = AiConstants.IntentRecommend;
 
-        // A support question is not a product keyword — keep it out of the remembered filters.
+        // A support question is not a product keyword - keep it out of the remembered filters.
         if (intent is AiConstants.IntentFaq or AiConstants.IntentSmalltalk)
             slots.Q = previousSlots?.Q;
 
@@ -245,7 +245,7 @@ public sealed class AiShoppingAssistantService : IAiShoppingAssistantService
         Dictionary<string, string> reasons;
         IReadOnlyList<AiChatActionDto> actions;
 
-        // With nothing to cite, a shopping turn must say the catalog is empty — left to the
+        // With nothing to cite, a shopping turn must say the catalog is empty - left to the
         // model it answers with generic buying advice that reads like a recommendation.
         var nothingToRecommend = pack.Products.Count == 0
             && intent is AiConstants.IntentRecommend
@@ -296,7 +296,7 @@ public sealed class AiShoppingAssistantService : IAiShoppingAssistantService
         }
 
         // On a consultation turn the ranker already chose the structured set (best / cheaper /
-        // step up) and every pick is grounded. The model writes the prose, not the shortlist —
+        // step up) and every pick is grounded. The model writes the prose, not the shortlist -
         // otherwise two questions can end in a single card.
         if (ranked.Count > 0 && suggested.Count < ranked.Count && intent != AiConstants.IntentBrowse)
             suggested = ranked.Select(r => r.Product).ToList();
@@ -1128,7 +1128,7 @@ public sealed class AiShoppingAssistantService : IAiShoppingAssistantService
             Help buyers with product advice and shopping FAQs (shipping, payment, returns, vouchers, warranty).
             Reply in clear English. Be concise (2-5 short paragraphs or bullets). Ask at most one clarifying question.
             Use ONLY grounded context below. Never invent product ids, prices, stock, or policies.
-            When FAQ text is provided, paraphrase it — do not add new policy rules.
+            When FAQ text is provided, paraphrase it - do not add new policy rules.
             Return ONLY JSON:
             {
               "reply": string,
@@ -1279,7 +1279,7 @@ public sealed class AiShoppingAssistantService : IAiShoppingAssistantService
             var available = Math.Max(0, p.StockQuantity - p.ReservedQuantity);
             var sb = new StringBuilder();
             sb.Append(CultureInfo.InvariantCulture,
-                $"{p.Name} ({p.Brand ?? "—"}) is listed at {price:0} {p.Currency}");
+                $"{p.Name} ({p.Brand ?? "-"}) is listed at {price:0} {p.Currency}");
             if (p.WarrantyMonths is int w)
                 sb.Append(CultureInfo.InvariantCulture, $", with {w} months warranty");
             sb.Append(CultureInfo.InvariantCulture, $". Rating {p.AvgRating:0.0} from {p.ReviewCount} reviews. ");
@@ -1334,7 +1334,7 @@ public sealed class AiShoppingAssistantService : IAiShoppingAssistantService
                 var reason = BuildHeuristicReason(p, slots);
                 reasons[p.ProductId.ToString("D")] = reason;
                 sb.AppendLine(CultureInfo.InvariantCulture,
-                    $"- {p.Name} ({p.Brand ?? "—"}) — {price:0} {p.Currency}, rating {p.AvgRating:0.0}");
+                    $"- {p.Name} ({p.Brand ?? "-"}) - {price:0} {p.Currency}, rating {p.AvgRating:0.0}");
             }
 
             sb.Append("Open a product for specs and reviews, or ask me to refine by brand, budget, or rating.");
@@ -1472,7 +1472,7 @@ public sealed class AiShoppingAssistantService : IAiShoppingAssistantService
                 next.MaxPrice = Math.Round(max * 0.85m, 0, MidpointRounding.AwayFromZero);
             else if (previousProductIds.Count > 0)
             {
-                // Soft hint only — exact prices come from catalog search sort.
+                // Soft hint only - exact prices come from catalog search sort.
             }
         }
 
@@ -1899,7 +1899,7 @@ public sealed class AiShoppingAssistantService : IAiShoppingAssistantService
                 "your order becomes Paid when the webhook confirms success. Unpaid orders can be cancelled from My Orders.",
             AiConstants.FaqTopicVoucher =>
                 "Apply available system or shop vouchers on the cart/checkout screen before creating the order. " +
-                "Each voucher has min-order, expiry, and usage limits — invalid codes are rejected automatically.",
+                "Each voucher has min-order, expiry, and usage limits - invalid codes are rejected automatically.",
             AiConstants.FaqTopicWarranty =>
                 "Warranty months are shown on each product page. For seller-specific warranty claims, " +
                 "contact the shop via Chat from the product or order detail.",

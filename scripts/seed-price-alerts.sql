@@ -1,5 +1,5 @@
 /*
-  seed-price-alerts.sql — demo price history rows + buyer alerts.
+  seed-price-alerts.sql - demo price history rows + buyer alerts.
   Prerequisites: demo buyer, approved products (seed-demo-accounts, catalog seeds).
 */
 SET NOCOUNT ON;
@@ -14,7 +14,7 @@ DECLARE @Now DATETIME2(3) = SYSUTCDATETIME();
 
 IF @BuyerId IS NULL OR @ProductId IS NULL
 BEGIN
-    PRINT N'seed-price-alerts: skipped — missing demo buyer or approved product.';
+    PRINT N'seed-price-alerts: skipped - missing demo buyer or approved product.';
     RETURN;
 END;
 

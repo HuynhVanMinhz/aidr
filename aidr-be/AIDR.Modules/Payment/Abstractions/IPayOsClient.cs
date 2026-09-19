@@ -106,7 +106,7 @@ public interface IPayOsClient
     /// <summary>
     /// Ask payOS what actually happened to a payment link. The webhook is the
     /// primary path, but it cannot reach a machine that is not publicly
-    /// addressable — this is how a buyer returning from the checkout page still
+    /// addressable - this is how a buyer returning from the checkout page still
     /// gets their order confirmed.
     /// </summary>
     Task<PayOsPaymentLinkInfo> GetPaymentLinkAsync(
@@ -134,14 +134,14 @@ public interface IPayOsClient
 
     /// <summary>
     /// Available balance of the merchant payout (chi hộ) account. Checked before a
-    /// settlement batch runs — an underfunded payout account is the most common
+    /// settlement batch runs - an underfunded payout account is the most common
     /// operational failure and deserves a clear message, not a raw payOS error.
     /// </summary>
     Task<PayOsPayoutBalance> GetPayoutBalanceAsync(CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Transfer a settled amount to a seller bank account. Safe to retry with the
-    /// same <see cref="PayOsPayoutCommand.ReferenceId"/> — payOS returns the
+    /// same <see cref="PayOsPayoutCommand.ReferenceId"/> - payOS returns the
     /// existing payout instead of creating a second one.
     /// </summary>
     Task<PayOsPayoutResult> CreatePayoutAsync(

@@ -77,7 +77,7 @@ Invoke-RestMethod -Method Post "$Base/dev/seed-catalog-rich"   # ~78 SKU + remap
 Invoke-RestMethod -Method Post "$Base/dev/seed-inventory-lots"
 ```
 
-Reload `/products` — leaf như Apple iPhone, Gaming Laptops, Chargers & Cables… sẽ có count > 0.
+Reload `/products` - leaf như Apple iPhone, Gaming Laptops, Chargers & Cables… sẽ có count > 0.
 
 ---
 
@@ -164,7 +164,7 @@ GET /api/products/eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee/review-digest
 | Bước | Làm gì | Kỳ vọng |
 |------|--------|---------|
 | 1 | Mở PDP điện tử (phone / laptop sau `seed-bundle-demo`) | Section “Frequently bought together” / bundle items |
-| 2 | Kiểm tra API | `items` ≥ 1, `source: "Rule"` — **không** phụ thuộc Groq |
+| 2 | Kiểm tra API | `items` ≥ 1, `source: "Rule"` - **không** phụ thuộc Groq |
 
 ```http
 GET /api/products/{productId}/bundle

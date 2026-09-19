@@ -9,7 +9,7 @@ public static class KycConstants
     public const string ProviderMock = "MOCK";
 
     /// <summary>
-    /// The automated check never ran (provider down or unauthorised) — a human
+    /// The automated check never ran (provider down or unauthorised) - a human
     /// has to read the documents. Never an automatic pass.
     /// </summary>
     public const string ProviderManual = "MANUAL";

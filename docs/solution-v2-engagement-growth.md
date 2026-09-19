@@ -1,4 +1,4 @@
-# AIDR — Solution: Engagement & Growth Extensions (v2)
+# AIDR - Solution: Engagement & Growth Extensions (v2)
 
 **Status:** Implemented (Phase 3 scope)  
 **Module:** Order, Engagement, Notifications, Profile  
@@ -20,7 +20,7 @@
 
 ---
 
-## 2. UC-68 — One-Click Reorder
+## 2. UC-68 - One-Click Reorder
 
 ### Yêu cầu
 
@@ -42,9 +42,9 @@
 
 ### Yêu cầu
 
-- Trang `/account/following/feed` — timeline SP mới + voucher shop từ shops đã follow (UC-65..67).  
+- Trang `/account/following/feed` - timeline SP mới + voucher shop từ shops đã follow (UC-65..67).  
 - Sort: `CreatedAt DESC`; paginate.  
-- Notify (optional): digest weekly *"3 new products from shops you follow"* — Type `Promo`.
+- Notify (optional): digest weekly *"3 new products from shops you follow"* - Type `Promo`.
 
 ### API
 
@@ -54,7 +54,7 @@ Query: products `Approved` where `ShopId IN followed`, union shop vouchers activ
 
 ### Schema
 
-Không bắt buộc — query join `Follows`, `Products`, `Vouchers`.
+Không bắt buộc - query join `Follows`, `Products`, `Vouchers`.
 
 ---
 
@@ -62,7 +62,7 @@ Không bắt buộc — query join `Follows`, `Products`, `Vouchers`.
 
 ### Yêu cầu
 
-- Tab **Q&A** trên PDP — buyer hỏi, seller (owner shop) hoặc buyer đã mua trả lời.  
+- Tab **Q&A** trên PDP - buyer hỏi, seller (owner shop) hoặc buyer đã mua trả lời.  
 - Moderation: seller ẩn câu hỏi spam; admin queue (Phase B).  
 - Khác chat 1-1 (UC-57): công khai, threaded per product.
 
@@ -90,7 +90,7 @@ ProductAnswers   (AnswerId, QuestionId, UserId, Content, IsOfficial, CreatedAt)
 - Block trên home (buyer login): **Continue browsing** (`ViewedProductHistories`), **Recommended for you** (UC-53), **From shops you follow**.  
 - Guest: chỉ bestseller / category tiles (hiện có).
 
-Reuse APIs — FE composition only Phase 1; BE aggregate endpoint `GET /api/me/home-feed` Phase 2.
+Reuse APIs - FE composition only Phase 1; BE aggregate endpoint `GET /api/me/home-feed` Phase 2.
 
 ---
 
@@ -116,7 +116,7 @@ Config: `Engagement:AbandonedCartHours=24`.
 
 ### Schema sketch
 
-`ReferralCodes`, `ReferralRedemptions` — chi tiết khi Phase 3 chốt BR voucher.
+`ReferralCodes`, `ReferralRedemptions` - chi tiết khi Phase 3 chốt BR voucher.
 
 ---
 

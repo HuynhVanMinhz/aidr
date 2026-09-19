@@ -1,16 +1,16 @@
 ---
-description: AIDR — Null/blank fields must show contextual English empty text, not bare "—".
+description: AIDR - Null/blank fields must show contextual English empty text, not bare "-".
 globs: aidr-fe/src/**/*.{tsx,ts}
 alwaysApply: false
 ---
 
-# AIDR — Null / empty display text
+# AIDR - Null / empty display text
 
 When rendering optional or nullable data on **FE UI** (detail cards, tables, summaries):
 
 ## Rule
 
-1. **Do not** leave the UI blank, or only show a bare dash `—` / `N/A` with no meaning.
+1. **Do not** leave the UI blank, or only show a bare dash `-` / `N/A` with no meaning.
 2. Show a **short English phrase** that explains the missing value for that field.
 3. Prefer muted styling (`text-muted`) for empty-state copy so it does not look like real data.
 4. Reuse helpers in `utils/displayValue.ts` (`displayText`, `displayOptionalNumber`, `isBlank`) and `formatDateTime(value, emptyLabel)`.
@@ -19,8 +19,8 @@ When rendering optional or nullable data on **FE UI** (detail cards, tables, sum
 
 ```tsx
 // ❌
-<p>{product.brand || '—'}</p>
-<p>{formatDateTime(product.publishedAt)}</p> // defaults to "—"
+<p>{product.brand || '-'}</p>
+<p>{formatDateTime(product.publishedAt)}</p> // defaults to "-"
 
 // ✅
 <p className={isBlank(product.brand) ? 'text-muted' : undefined}>
@@ -43,4 +43,4 @@ When rendering optional or nullable data on **FE UI** (detail cards, tables, sum
 
 - Invent fake data (fake dates, “0 months”) when the value is truly unknown.
 - Mix Vietnamese empty labels on English UI screens.
-- Use only `—` on Admin/Seller detail pages where context matters (moderation, returns, inventory).
+- Use only `-` on Admin/Seller detail pages where context matters (moderation, returns, inventory).

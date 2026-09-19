@@ -9,7 +9,7 @@ public sealed class GroqOptions
     /// <summary>Groq OpenAI-compatible base URL.</summary>
     public string BaseUrl { get; set; } = "https://api.groq.com/openai/v1";
 
-    /// <summary>Groq API key (Bearer). Prefer user-secrets / env — do not commit real keys.</summary>
+    /// <summary>Groq API key (Bearer). Prefer user-secrets / env - do not commit real keys.</summary>
     public string ApiKey { get; set; } = string.Empty;
 
     /// <summary>Chat model id (e.g. llama-3.3-70b-versatile, llama-3.1-8b-instant).</summary>

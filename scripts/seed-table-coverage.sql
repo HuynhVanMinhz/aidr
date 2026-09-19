@@ -1,5 +1,5 @@
 /*
-  seed-table-coverage.sql — fill tables that other demo seeds leave empty.
+  seed-table-coverage.sql - fill tables that other demo seeds leave empty.
 
   Prerequisites: POST /api/dev/seed-demo-accounts + seed-catalog (+ seed-all recommended).
   Also applies settlement-schema when ShopBankAccounts is missing.
@@ -90,7 +90,7 @@ BEGIN
         o.BuyerUserId,
         o.OrderId,
         CAST((ABS(CHECKSUM(o.OrderId)) % 5) + 1 AS TINYINT),
-        N'COV-SEED: Great shop — fast shipping and genuine products.',
+        N'COV-SEED: Great shop - fast shipping and genuine products.',
         DATEADD(DAY, -3, @Now),
         DATEADD(DAY, -3, @Now)
     FROM dbo.Orders o

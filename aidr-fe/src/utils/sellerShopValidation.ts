@@ -63,8 +63,8 @@ export function emptySellerShopForm(overrides?: Partial<SellerShopFormValues>): 
 }
 
 /**
- * Logos and banners are as often a path into this app's own asset tree — the
- * uploader and the seeded theme images both write one — as they are a link out
+ * Logos and banners are as often a path into this app's own asset tree - the
+ * uploader and the seeded theme images both write one - as they are a link out
  * to a CDN. Rejecting the relative form left every seeded shop unable to save.
  */
 function optionalAssetUrl(value: string, label: string): string | undefined {

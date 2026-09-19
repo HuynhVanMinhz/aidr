@@ -80,7 +80,7 @@ export const FAQ_ITEMS: FaqItem[] = [
   },
   {
     id: 'payment-failed',
-    question: 'My payment failed — what should I do?',
+    question: 'My payment failed - what should I do?',
     answer:
       'Verify your card or wallet details, ensure sufficient funds, and try again. If the issue persists, contact support with your order reference.',
     category: 'payment',

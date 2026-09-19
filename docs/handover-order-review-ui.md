@@ -1,4 +1,4 @@
-# Handover — Order review UI (My Orders)
+# Handover - Order review UI (My Orders)
 
 ## Phạm vi
 
@@ -7,10 +7,10 @@ Form **đánh giá seller + review sản phẩm** trên trang chi tiết đơn (
 ## Chạy nhanh
 
 ```bash
-# Terminal 1 — BE (Development)
+# Terminal 1 - BE (Development)
 cd aidr-be/AIDR.Api && dotnet run
 
-# Terminal 2 — FE
+# Terminal 2 - FE
 cd aidr-fe && npm run dev
 ```
 
@@ -34,7 +34,7 @@ POST http://localhost:5xxx/api/dev/seed-returns
 
 1. Đăng nhập buyer → **Account → My orders**.
 2. Mở đơn có trạng thái **Completed** (nếu chỉ có **Delivered**: bấm **Confirm received** trước).
-3. Cuộn cột trái (cùng khu Items / Shipping) — card **Reviews & ratings**:
+3. Cuộn cột trái (cùng khu Items / Shipping) - card **Reviews & ratings**:
    - **Bước 1:** rating seller (1–5 sao, comment tùy chọn).
    - **Bước 2:** review từng dòng sản phẩm (rating bắt buộc + nội dung review).
 4. Sau submit: banner xanh + progress `x/y items` trên tiêu đề card.

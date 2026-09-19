@@ -13,7 +13,7 @@ public sealed class KycVerificationDto
     public string Provider { get; init; } = null!;
     public string Status { get; init; } = null!;
     public string? DocumentType { get; init; }
-    /// <summary>Masked — the full number never leaves the server.</summary>
+    /// <summary>Masked - the full number never leaves the server.</summary>
     public string? DocumentNumberMask { get; init; }
     public string? FullName { get; init; }
     public string? DateOfBirth { get; init; }
@@ -32,7 +32,7 @@ public sealed class KycVerificationDto
     public DateTime CreatedAt { get; init; }
     public DateTime? VerifiedAt { get; init; }
 
-    /// <summary>Passed or ManualReview — enough to submit a seller application.</summary>
+    /// <summary>Passed or ManualReview - enough to submit a seller application.</summary>
     public bool CanStartSellerApplication =>
         Status is "Passed" or "ManualReview";
 }

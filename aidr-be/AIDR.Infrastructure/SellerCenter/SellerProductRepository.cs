@@ -486,7 +486,7 @@ public sealed class SellerProductRepository : ISellerProductRepository
     /// <summary>
     /// Applies the submitted variant set to <paramref name="product"/>: updates the rows the
     /// seller kept, inserts the new ones, deletes the rest. A dropped variant that still holds
-    /// stock or appears on an order is refused rather than deleted — removing it would strand
+    /// stock or appears on an order is refused rather than deleted - removing it would strand
     /// its inventory lots and orphan the order history.
     /// </summary>
     private async Task ApplyVariantsAsync(

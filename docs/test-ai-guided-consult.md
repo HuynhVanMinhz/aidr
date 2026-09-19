@@ -1,9 +1,9 @@
-# AIDR — Test case UI: Guided Consultation (UC-56)
+# AIDR - Test case UI: Guided Consultation (UC-56)
 
 **Đối tượng:** widget chatbot ở storefront (`ShoppingAssistantWidget`), luồng AI hỏi tối đa 3 câu trước khi tư vấn.
 **Solution:** `docs/solution-ai-guided-consult.md`
 **Loại test:** manual UI + kiểm chứng response ở DevTools.
-**Đã chạy thật:** 2026-08-27 qua `POST /api/ai/chat` (Groq bật) — xem §J.
+**Đã chạy thật:** 2026-08-27 qua `POST /api/ai/chat` (Groq bật) - xem §J.
 
 ---
 
@@ -15,7 +15,7 @@
 cd aidr-be && dotnet run --project AIDR.Api
 ```
 
-> API phải được **restart** sau khi build — build sẽ fail nếu API cũ đang chạy và khoá file DLL.
+> API phải được **restart** sau khi build - build sẽ fail nếu API cũ đang chạy và khoá file DLL.
 
 > **Kiểm tra Groq trước khi test.** Nếu log API có `The model ... does not exist`, toàn bộ chatbot đang
 > âm thầm chạy heuristic và mọi test LLM đều vô nghĩa. Xem `Groq:Model` trong `appsettings.Development.json`.
@@ -33,9 +33,9 @@ cd aidr-fe && npm run dev
 | 3 | `POST /api/dev/seed-catalog` | sản phẩm Approved |
 | 4 | `POST /api/dev/seed-ai-assistant` | 2 hội thoại demo, gồm 1 vòng tư vấn **đang dở** |
 
-> **Quan trọng — catalog demo quá mỏng để chạm được luồng hỏi.** Sau khi seed đủ 4 bước, catalog chỉ có
+> **Quan trọng - catalog demo quá mỏng để chạm được luồng hỏi.** Sau khi seed đủ 4 bước, catalog chỉ có
 > **17 sản phẩm Approved** (3 laptop, 3 điện thoại). Planner dừng hỏi khi còn ≤ 3 ứng viên, nên với dữ liệu
-> này AI sẽ **gợi ý ngay, không hỏi câu nào** — đúng thiết kế, nhưng không test được gì.
+> này AI sẽ **gợi ý ngay, không hỏi câu nào** - đúng thiết kế, nhưng không test được gì.
 >
 > Môi trường dev hiện tại đã được nạp thêm **19 sản phẩm test** tên bắt đầu bằng `ZZTEST`. Xoá khi không cần:
 >
@@ -43,7 +43,7 @@ cd aidr-fe && npm run dev
 > DELETE FROM dbo.Products WHERE Name LIKE 'ZZTEST%';
 > ```
 
-Đăng nhập: `buyer@aidr.local` / `Aidr@123` (role Buyer — widget chỉ mở cho Buyer).
+Đăng nhập: `buyer@aidr.local` / `Aidr@123` (role Buyer - widget chỉ mở cho Buyer).
 
 ### 0.3 Cách quan sát
 
@@ -67,8 +67,8 @@ Request khi bấm chip phải có `quickReplyValue` đúng bằng `value` của 
 
 ### 0.4 Ký hiệu trong tài liệu
 
-- **[HARD]** — assertion bắt buộc đúng với mọi catalog. Sai = bug.
-- **[CAT]** — phụ thuộc dữ liệu catalog. Nếu lệch, kiểm tra số lượng sản phẩm trước khi kết luận là bug.
+- **[HARD]** - assertion bắt buộc đúng với mọi catalog. Sai = bug.
+- **[CAT]** - phụ thuộc dữ liệu catalog. Nếu lệch, kiểm tra số lượng sản phẩm trước khi kết luận là bug.
 
 Ngưỡng đang cấu hình (`AiConstants`): tối đa **3** câu hỏi · dừng hỏi sớm khi còn **≤ 12** ứng viên · bỏ câu ngân sách nếu kệ hàng có **< 8** sản phẩm · trình bày **3** sản phẩm (riêng `browse` giữ 5).
 
@@ -76,15 +76,15 @@ Ngưỡng đang cấu hình (`AiConstants`): tối đa **3** câu hỏi · dừn
 
 ## A. Luồng tư vấn chính
 
-### TC-01 — Tư vấn đầy đủ 3 câu
+### TC-01 - Tư vấn đầy đủ 3 câu
 
 **Tiền đề:** chat mới (bấm New chat). Danh mục Laptops có > 12 sản phẩm Approved.
 
 | Bước | Thao tác | Kết quả mong đợi |
 |---|---|---|
 | 1 | Gõ `I want to buy a laptop` | **[HARD]** Trả lời là **1 câu hỏi** về mục đích dùng ("What will you mostly use the laptop for?")<br>**[HARD]** Hiện chip: Work & study · Gaming · Design & video · Thin & portable · Not sure<br>**[HARD]** Hiện `Question 1/3`<br>**[HARD]** **0 product card**, **0 nút action**<br>**[HARD]** `intent = "clarify"`, `consult.askedCount = 1` |
-| 2 | Bấm chip `Gaming` | **[HARD]** Tin nhắn user hiển thị `Gaming`<br>**[HARD]** Hiện `Question 2/3`<br>**[CAT]** Câu hỏi tiếp theo là **ngân sách** với chip dạng `Under xxM ₫` / `xxM ₫ – yyM ₫` / `Over yyM ₫` / `No fixed budget` — chỉ khi kệ laptop gaming có ≥ 8 sản phẩm; ít hơn thì bỏ qua ngân sách và hỏi thẳng **ưu tiên** |
-| 3 | Bấm chip khoảng giữa | **[CAT]** Câu hỏi **ưu tiên** ("Within that range, what matters most?"), `Question 3/3` — chỉ khi sau khi lọc giá vẫn còn > 12 ứng viên. Với catalog demo thường còn ≤ 12 nên AI **gợi ý luôn ở bước này**, đó là early-exit đúng thiết kế |
+| 2 | Bấm chip `Gaming` | **[HARD]** Tin nhắn user hiển thị `Gaming`<br>**[HARD]** Hiện `Question 2/3`<br>**[CAT]** Câu hỏi tiếp theo là **ngân sách** với chip dạng `Under xxM ₫` / `xxM ₫ – yyM ₫` / `Over yyM ₫` / `No fixed budget` - chỉ khi kệ laptop gaming có ≥ 8 sản phẩm; ít hơn thì bỏ qua ngân sách và hỏi thẳng **ưu tiên** |
+| 3 | Bấm chip khoảng giữa | **[CAT]** Câu hỏi **ưu tiên** ("Within that range, what matters most?"), `Question 3/3` - chỉ khi sau khi lọc giá vẫn còn > 12 ứng viên. Với catalog demo thường còn ≤ 12 nên AI **gợi ý luôn ở bước này**, đó là early-exit đúng thiết kế |
 | 4 | Bấm chip `Performance` (nếu có) | **[HARD]** Trả về **tối đa 3** sản phẩm, chip biến mất, `consult.stage = "presented"`<br>**[HARD]** Mỗi card có 1 dòng `reason`<br>**[HARD]** Card đầu có badge `Best match`<br>**[HARD]** Có nút `See all matching products` |
 
 **Fail nếu:** hỏi 2 câu trong 1 lượt · lượt hỏi có kèm product card · hỏi sang câu thứ 4 · bấm chip mà `askedCount` tụt về 0.
@@ -94,7 +94,7 @@ Ngưỡng đang cấu hình (`AiConstants`): tối đa **3** câu hỏi · dừn
 
 ---
 
-### TC-02 — Chip là nguồn sự thật, không qua NLU
+### TC-02 - Chip là nguồn sự thật, không qua NLU
 
 | Bước | Thao tác | Kết quả mong đợi |
 |---|---|---|
@@ -108,7 +108,7 @@ Ngưỡng đang cấu hình (`AiConstants`): tối đa **3** câu hỏi · dừn
 
 ## B. Rút gọn câu hỏi
 
-### TC-03 — Câu hỏi đã đủ thông tin thì không hỏi lại
+### TC-03 - Câu hỏi đã đủ thông tin thì không hỏi lại
 
 **Tiền đề:** New chat.
 
@@ -120,7 +120,7 @@ Ngưỡng đang cấu hình (`AiConstants`): tối đa **3** câu hỏi · dừn
 
 ---
 
-### TC-04 — Trả lời gộp nhiều slot trong 1 lượt
+### TC-04 - Trả lời gộp nhiều slot trong 1 lượt
 
 | Bước | Thao tác | Kết quả mong đợi |
 |---|---|---|
@@ -129,11 +129,11 @@ Ngưỡng đang cấu hình (`AiConstants`): tối đa **3** câu hỏi · dừn
 
 **Ý nghĩa:** 1 lượt lấp nhiều slot ⇒ tiết kiệm câu hỏi. `askedCount` chỉ đếm **câu đã hỏi**, không phải slot đã đầy.
 
-> Dùng `under 3 million` chứ không phải `around 3 million`: parser giá chỉ nhận `dưới / under / <= / max`. `around` không phải cú pháp được hỗ trợ — nếu muốn test riêng khả năng hiểu `around`, đó là test của UC-90 (NL filter), không phải của luồng tư vấn.
+> Dùng `under 3 million` chứ không phải `around 3 million`: parser giá chỉ nhận `dưới / under / <= / max`. `around` không phải cú pháp được hỗ trợ - nếu muốn test riêng khả năng hiểu `around`, đó là test của UC-90 (NL filter), không phải của luồng tư vấn.
 
 ---
 
-### TC-05 — Không bao giờ vượt 3 câu
+### TC-05 - Không bao giờ vượt 3 câu
 
 | Bước | Thao tác | Kết quả mong đợi |
 |---|---|---|
@@ -145,7 +145,7 @@ Ngưỡng đang cấu hình (`AiConstants`): tối đa **3** câu hỏi · dừn
 
 ## C. Đường thoát
 
-### TC-06 — Chip "Not sure" chỉ bỏ 1 slot
+### TC-06 - Chip "Not sure" chỉ bỏ 1 slot
 
 | Bước | Thao tác | Kết quả mong đợi |
 |---|---|---|
@@ -156,7 +156,7 @@ Ngưỡng đang cấu hình (`AiConstants`): tối đa **3** câu hỏi · dừn
 
 ---
 
-### TC-07 — Nút "Skip questions" bỏ cả vòng
+### TC-07 - Nút "Skip questions" bỏ cả vòng
 
 | Bước | Thao tác | Kết quả mong đợi |
 |---|---|---|
@@ -165,7 +165,7 @@ Ngưỡng đang cấu hình (`AiConstants`): tối đa **3** câu hỏi · dừn
 
 ---
 
-### TC-08 — Thoát bằng chữ tự do
+### TC-08 - Thoát bằng chữ tự do
 
 | Bước | Thao tác | Kết quả mong đợi |
 |---|---|---|
@@ -178,20 +178,20 @@ Các cụm khác cũng phải thoát được: `whatever`, `no preference`, `sao
 
 ## D. Ngắt mạch & khôi phục
 
-### TC-09 — Hỏi chuyện khác giữa chừng rồi quay lại
+### TC-09 - Hỏi chuyện khác giữa chừng rồi quay lại
 
 | Bước | Thao tác | Kết quả mong đợi |
 |---|---|---|
 | 1 | New chat → `I want to buy a laptop` → bấm `Gaming` | Đang ở `Question 2/3` (ngân sách) |
 | 2 | Ghi nhớ `consult.askedCount` hiện tại | = 2 |
-| 3 | Gõ `How do returns and refunds work?` | **[HARD]** Trả lời đúng chính sách đổi trả<br>**[HARD]** **Cuối cùng bài trả lời** có dòng `Back to your search — Roughly what budget are you working with?`<br>**[HARD]** Chip ngân sách **vẫn hiện**<br>**[HARD]** `askedCount` **vẫn = 2** (không tăng)<br>**[HARD]** Vẫn hiển thị `Question 2/3` |
+| 3 | Gõ `How do returns and refunds work?` | **[HARD]** Trả lời đúng chính sách đổi trả<br>**[HARD]** **Cuối cùng bài trả lời** có dòng `Back to your search - Roughly what budget are you working with?`<br>**[HARD]** Chip ngân sách **vẫn hiện**<br>**[HARD]** `askedCount` **vẫn = 2** (không tăng)<br>**[HARD]** Vẫn hiển thị `Question 2/3` |
 | 4 | Bấm 1 chip ngân sách | **[HARD]** Mạch tư vấn tiếp tục bình thường sang câu ưu tiên |
 
 **Fail nếu:** trả lời FAQ xong thì quên mất câu đang hỏi · hoặc `askedCount` tăng lên 3.
 
 ---
 
-### TC-10 — Mở lại hội thoại đang dở
+### TC-10 - Mở lại hội thoại đang dở
 
 | Bước | Thao tác | Kết quả mong đợi |
 |---|---|---|
@@ -200,7 +200,7 @@ Các cụm khác cũng phải thoát được: `whatever`, `no preference`, `sao
 
 ---
 
-### TC-11 — New chat xoá sạch trạng thái
+### TC-11 - New chat xoá sạch trạng thái
 
 | Bước | Thao tác | Kết quả mong đợi |
 |---|---|---|
@@ -212,7 +212,7 @@ Các cụm khác cũng phải thoát được: `whatever`, `no preference`, `sao
 
 ## E. Chất lượng kết quả
 
-### TC-12 — Chip ngân sách khớp giá thật
+### TC-12 - Chip ngân sách khớp giá thật
 
 | Bước | Thao tác | Kết quả mong đợi |
 |---|---|---|
@@ -224,7 +224,7 @@ Các cụm khác cũng phải thoát được: `whatever`, `no preference`, `sao
 
 ---
 
-### TC-13 — Bộ 3 kết quả có cấu trúc
+### TC-13 - Bộ 3 kết quả có cấu trúc
 
 **Tiền đề:** kệ hàng có ≥ 5 sản phẩm trong tầm giá đã chọn.
 
@@ -238,7 +238,7 @@ Các cụm khác cũng phải thoát được: `whatever`, `no preference`, `sao
 
 ---
 
-### TC-14 — Không dồn 1 thương hiệu
+### TC-14 - Không dồn 1 thương hiệu
 
 **Tiền đề:** trong tầm giá có ≥ 3 sản phẩm cùng một brand và ít nhất 1 brand khác.
 
@@ -248,7 +248,7 @@ Các cụm khác cũng phải thoát được: `whatever`, `no preference`, `sao
 
 ---
 
-### TC-15 — Hàng hết không lọt top 3
+### TC-15 - Hàng hết không lọt top 3
 
 | Bước | Thao tác | Kết quả mong đợi |
 |---|---|---|
@@ -258,7 +258,7 @@ Các cụm khác cũng phải thoát được: `whatever`, `no preference`, `sao
 
 ---
 
-### TC-16 — "Best price" phải ưu tiên giá rẻ
+### TC-16 - "Best price" phải ưu tiên giá rẻ
 
 | Bước | Thao tác | Kết quả mong đợi |
 |---|---|---|
@@ -269,7 +269,7 @@ Các cụm khác cũng phải thoát được: `whatever`, `no preference`, `sao
 
 ## F. Follow-up sau khi đã gợi ý
 
-### TC-17 — Refine không được hỏi lại từ đầu
+### TC-17 - Refine không được hỏi lại từ đầu
 
 | Bước | Thao tác | Kết quả mong đợi |
 |---|---|---|
@@ -281,7 +281,7 @@ Các cụm khác cũng phải thoát được: `whatever`, `no preference`, `sao
 
 ---
 
-### TC-18 — Đổi chủ đề: vòng mới, giữ ngân sách
+### TC-18 - Đổi chủ đề: vòng mới, giữ ngân sách
 
 | Bước | Thao tác | Kết quả mong đợi |
 |---|---|---|
@@ -294,19 +294,19 @@ Các cụm khác cũng phải thoát được: `whatever`, `no preference`, `sao
 
 ## G. Biên & xử lý lỗi
 
-### TC-19 — Không có hàng: phải nói rõ đã nới gì
+### TC-19 - Không có hàng: phải nói rõ đã nới gì
 
 | Bước | Thao tác | Kết quả mong đợi |
 |---|---|---|
-| 1 | New chat → gõ `Recommend a Samsung phone under 15 million` | **[HARD]** Nếu phải nới, trả lời **mở đầu** bằng `Nothing matched every requirement, so I relaxed …` và liệt kê **đúng** thứ đã nới<br>**[HARD]** Kết quả vẫn phải **giữ brand và ngân sách người dùng gõ** — thang nới bỏ ràng buộc do máy tự suy (keyword, category con) trước ràng buộc người dùng nêu |
-| 2 | Gõ `gaming laptop under 5 million` (không có hàng) | **[HARD]** Trả lời dạng `I understood … but no Approved products matched right now` + gợi ý nới<br>**[HARD]** **0 sản phẩm**, `source = heuristic`<br>**[HARD]** **Không** đưa lời khuyên cấu hình chung chung kiểu "nên chọn RTX 3060, 144Hz" — đó là bịa nội dung không có trong catalog |
+| 1 | New chat → gõ `Recommend a Samsung phone under 15 million` | **[HARD]** Nếu phải nới, trả lời **mở đầu** bằng `Nothing matched every requirement, so I relaxed …` và liệt kê **đúng** thứ đã nới<br>**[HARD]** Kết quả vẫn phải **giữ brand và ngân sách người dùng gõ** - thang nới bỏ ràng buộc do máy tự suy (keyword, category con) trước ràng buộc người dùng nêu |
+| 2 | Gõ `gaming laptop under 5 million` (không có hàng) | **[HARD]** Trả lời dạng `I understood … but no Approved products matched right now` + gợi ý nới<br>**[HARD]** **0 sản phẩm**, `source = heuristic`<br>**[HARD]** **Không** đưa lời khuyên cấu hình chung chung kiểu "nên chọn RTX 3060, 144Hz" - đó là bịa nội dung không có trong catalog |
 | 3 | Gõ `iPhone under 500000` | **[HARD]** Nói thẳng là không có, **không bịa ra sản phẩm nào** |
 
 **Fail nếu:** im lặng trả về hàng vượt ngân sách · bỏ brand người dùng gõ trong khi vẫn giữ category do máy suy · trả lời tư vấn chung chung khi catalog rỗng.
 
 ---
 
-### TC-20 — Đang ở trang sản phẩm thì không tư vấn
+### TC-20 - Đang ở trang sản phẩm thì không tư vấn
 
 | Bước | Thao tác | Kết quả mong đợi |
 |---|---|---|
@@ -316,7 +316,7 @@ Các cụm khác cũng phải thoát được: `whatever`, `no preference`, `sao
 
 ---
 
-### TC-21 — Groq tắt vẫn tư vấn được
+### TC-21 - Groq tắt vẫn tư vấn được
 
 | Bước | Thao tác | Kết quả mong đợi |
 |---|---|---|
@@ -329,7 +329,7 @@ Các cụm khác cũng phải thoát được: `whatever`, `no preference`, `sao
 
 ---
 
-### TC-22 — Không bịa dữ liệu
+### TC-22 - Không bịa dữ liệu
 
 | Bước | Thao tác | Kết quả mong đợi |
 |---|---|---|
@@ -338,7 +338,7 @@ Các cụm khác cũng phải thoát được: `whatever`, `no preference`, `sao
 
 ---
 
-### TC-23 — Chưa đăng nhập
+### TC-23 - Chưa đăng nhập
 
 | Bước | Thao tác | Kết quả mong đợi |
 |---|---|---|
@@ -371,9 +371,9 @@ Các cụm khác cũng phải thoát được: `whatever`, `no preference`, `sao
 
 Kèm theo:
 1. Toàn bộ hội thoại (screenshot widget).
-2. Response JSON của `POST /api/ai/chat` ở lượt lỗi — đặc biệt `intent`, `consult`, `slots`, `quickReplies`.
+2. Response JSON của `POST /api/ai/chat` ở lượt lỗi - đặc biệt `intent`, `consult`, `slots`, `quickReplies`.
 3. Giá trị `quickReplyValue` trong request nếu lỗi xảy ra sau khi bấm chip.
-4. `source` (`groq` hay `heuristic`) — để tách lỗi LLM khỏi lỗi luồng.
+4. `source` (`groq` hay `heuristic`) - để tách lỗi LLM khỏi lỗi luồng.
 
 ---
 
@@ -410,4 +410,4 @@ TC-01…TC-22 chạy qua `POST /api/ai/chat`; TC-01, TC-10, TC-11, TC-23 và to�
 | TC-22 | PASS | Không bịa sản phẩm; số liệu khớp DB 100% |
 | TC-23 | PASS (UI) | Chưa đăng nhập bấm FAB → `/login?returnUrl=%2F` |
 
-Kèm 41 unit check của `AiConsultPlanner` / `AiConsultQuestionBank` / `AiProductRanker` — pass toàn bộ.
+Kèm 41 unit check của `AiConsultPlanner` / `AiConsultQuestionBank` / `AiProductRanker` - pass toàn bộ.

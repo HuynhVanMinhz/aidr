@@ -16,7 +16,7 @@ type ChatLiveSyncOptions = {
 
 /**
  * Safety net around the SignalR hub. The chat UI must never sit on stale content just because a
- * push was missed — a dropped connection, a proxy timeout, or a backend/frontend version skew.
+ * push was missed - a dropped connection, a proxy timeout, or a backend/frontend version skew.
  * Re-syncs when the tab regains focus, when a chat notification lands, and on a slow poll while
  * the hub is down. All of these merge into the store, so scroll position and loaded history stay.
  */

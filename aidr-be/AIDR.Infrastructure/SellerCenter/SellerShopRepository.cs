@@ -69,7 +69,7 @@ public sealed class SellerShopRepository : ISellerShopRepository
         shop.WebsiteUrl = websiteUrl;
         shop.FacebookUrl = facebookUrl;
         shop.OpeningHoursJson = openingHoursJson;
-        // Keep Slug stable — do not regenerate from ShopName.
+        // Keep Slug stable - do not regenerate from ShopName.
         shop.UpdatedAt = DateTime.UtcNow;
 
         await _db.SaveChangesAsync(cancellationToken);

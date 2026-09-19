@@ -1,11 +1,11 @@
 /*
-  AIDR — Automatic fulfillment demo seed (GHN-driven order pipeline).
+  AIDR - Automatic fulfillment demo seed (GHN-driven order pipeline).
 
   Prerequisites: demo accounts + catalog (Approved product on the demo shop),
   and scripts/shipping-schema.sql applied (the dev endpoint runs it first).
   Idempotent by fixed OrderCode / OrderId.
 
-  No fake shipments are inserted — every Shipments row in this system comes from
+  No fake shipments are inserted - every Shipments row in this system comes from
   a real GHN booking. What this seeds is the *input* to that booking:
 
   - SHIP-GHN-OK   : Paid, GHN-canonical address    -> sweep books it, order goes Confirmed
@@ -91,7 +91,7 @@ BEGIN
 END;
 
 /* -------------------------------------------------------------------------- */
-/* SHIP-GHN-OK — paid an hour ago, waiting for the sweep to book it with GHN   */
+/* SHIP-GHN-OK - paid an hour ago, waiting for the sweep to book it with GHN   */
 /* -------------------------------------------------------------------------- */
 
 IF NOT EXISTS (SELECT 1 FROM dbo.Orders WHERE OrderId = @OOk)
@@ -129,7 +129,7 @@ BEGIN
 END;
 
 /* -------------------------------------------------------------------------- */
-/* SHIP-GHN-FAIL — same order, address GHN will reject                         */
+/* SHIP-GHN-FAIL - same order, address GHN will reject                         */
 /* -------------------------------------------------------------------------- */
 
 IF NOT EXISTS (SELECT 1 FROM dbo.Orders WHERE OrderId = @OFail)

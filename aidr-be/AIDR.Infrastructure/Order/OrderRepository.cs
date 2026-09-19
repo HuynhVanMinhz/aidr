@@ -236,7 +236,7 @@ public sealed class OrderRepository : IOrderRepository
     ///
     /// The carrier reports a status, never a courier position, so this carries
     /// the two ends of the route and lets the map place the parcel between them.
-    /// Retry counts and raw carrier errors are deliberately left out — those are
+    /// Retry counts and raw carrier errors are deliberately left out - those are
     /// the seller's to act on.
     /// </summary>
     private async Task<BuyerOrderTrackingDto> BuildTrackingAsync(
@@ -322,7 +322,7 @@ public sealed class OrderRepository : IOrderRepository
         string.Join(", ", parts.Where(p => !string.IsNullOrWhiteSpace(p)).Select(p => p!.Trim()));
 
     /// <summary>
-    /// Where to draw the delivery pin. The snapshot wins whenever it has one —
+    /// Where to draw the delivery pin. The snapshot wins whenever it has one -
     /// a past order must not move because the buyer edited their address book.
     /// Orders snapshotted before the buyer pinned that address carry no point at
     /// all, though, so fall back to the address book rather than draw no route;
@@ -585,7 +585,7 @@ public sealed class OrderRepository : IOrderRepository
         var rate = _settlementOptions.CommissionRate;
         var gross = decimal.Round(order.TotalAmount, 2, MidpointRounding.AwayFromZero);
 
-        // Shipping is excluded from the fee base — charging commission on the
+        // Shipping is excluded from the fee base - charging commission on the
         // courier fee would be wrong once shipping is no longer free.
         var commissionable = SettlementConstants.CommissionableAmount(
             order.SubtotalAmount,
@@ -843,7 +843,7 @@ public sealed class OrderRepository : IOrderRepository
             EnsureProductPurchasable(product, cartItem.Product.Category.IsActive, shop);
 
             // The cart holds a VariantId, not the variant row from this unit of work, so the
-            // tracked entity is fetched here — it is the one the allocation will decrement.
+            // tracked entity is fetched here - it is the one the allocation will decrement.
             var variant = await ResolveOrderVariantAsync(product, cartItem.VariantId, cancellationToken);
 
             var available = variant is null

@@ -86,7 +86,7 @@ export function valueStatesForOption(
 
 /**
  * Picking a value can strand the other axes on a combination that does not exist, so any
- * axis left invalid is re-pointed at a value that does — the same way a size picker snaps
+ * axis left invalid is re-pointed at a value that does - the same way a size picker snaps
  * when you switch colour.
  */
 export function applyValue(

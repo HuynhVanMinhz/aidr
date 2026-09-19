@@ -190,7 +190,7 @@ function ActionButtons({
   );
 }
 
-/** Floating shopping-assistant chatbot — available on all storefront pages. */
+/** Floating shopping-assistant chatbot - available on all storefront pages. */
 export function ShoppingAssistantWidget() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -666,7 +666,7 @@ export function ShoppingAssistantWidget() {
         className={`aidr-assistant-widget__fab${open ? ' is-open' : ''}${quietFab && !open ? ' is-quiet' : ''}`}
         onClick={handleToggle}
         aria-expanded={open}
-        aria-label={open ? 'Close shopping assistant' : 'Ask AI — shopping assistant'}
+        aria-label={open ? 'Close shopping assistant' : 'Ask AI - shopping assistant'}
       >
         {open ? '×' : quietFab ? '✨' : '✨'}
       </button>

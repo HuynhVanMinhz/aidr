@@ -1,6 +1,6 @@
 const MAX_AVATAR_BYTES = 2 * 1024 * 1024;
 
-/** Cloudinary folder layout — keep media types separated. */
+/** Cloudinary folder layout - keep media types separated. */
 export const CloudinaryFolders = {
   profile: 'profile',
   product: 'product',
@@ -81,7 +81,7 @@ export async function uploadAvatarToCloudinary(file: File): Promise<CloudinaryUp
   return uploadImageToCloudinary(file, CloudinaryFolders.profile);
 }
 
-/** Reserved for product images — folder `product`. */
+/** Reserved for product images - folder `product`. */
 export function validateProductImageFile(file: File): void {
   if (!file.type.startsWith('image/')) {
     throw new Error('Please choose a valid image file.');
@@ -164,7 +164,7 @@ const RETURN_VIDEO_TYPES = new Set([
   'video/x-matroska',
 ]);
 
-/** Return evidence videos — Unboxing / Testing. */
+/** Return evidence videos - Unboxing / Testing. */
 export function validateReturnVideoFile(file: File): void {
   const typeOk =
     file.type.startsWith('video/') || RETURN_VIDEO_TYPES.has(file.type) || /\.(mp4|webm|mov|m4v|avi|mkv)$/i.test(file.name);

@@ -71,7 +71,7 @@ export async function stopChatHub() {
   }
 }
 
-/** Best-effort typing signal — never throws, the composer must not care if it fails. */
+/** Best-effort typing signal - never throws, the composer must not care if it fails. */
 export async function sendTypingSignal(threadId: string, isTyping: boolean) {
   if (!connection || connection.state !== signalR.HubConnectionState.Connected) return;
 

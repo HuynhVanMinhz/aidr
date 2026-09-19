@@ -55,7 +55,7 @@ var products = await db.Products.AsNoTracking()
 foreach (var p in products)
 {
     Console.WriteLine();
-    Console.WriteLine($"{p.Name}  —  from {p.BasePrice:N0}, stock {p.StockQuantity}");
+    Console.WriteLine($"{p.Name}  -  from {p.BasePrice:N0}, stock {p.StockQuantity}");
     foreach (var v in p.Variants)
     {
         var sale = v.SalePrice is { } s ? $" sale {s,12:N0}" : new string(' ', 18);

@@ -6,7 +6,7 @@ import type { ProductVariantOption } from '../types/catalog';
  * The theme ships four hard-coded swatch classes (black / red / gray / light), but a seller
  * types whatever colour name they like, in English or Vietnamese. So the class is replaced
  * with a looked-up background, and anything not in the table falls back to the labelled pill
- * style — a blank circle the shopper cannot name is worse than plain text.
+ * style - a blank circle the shopper cannot name is worse than plain text.
  */
 
 /** Lower-cases and strips Vietnamese diacritics so "Đen", "den" and "ĐEN" all match. */
@@ -79,7 +79,7 @@ export function swatchColor(value: string): string | null {
 /*
  * There is deliberately no "is this colour pale?" helper here. A swatch disappears whenever
  * it approaches the page behind it, and that page is white in light mode and near-black in
- * dark mode — so White vanishes in one and Black in the other. A luma test only ever catches
+ * dark mode - so White vanishes in one and Black in the other. A luma test only ever catches
  * one of the two. The swatch outline is drawn in CSS from --divider-color instead, which
  * already flips with the theme.
  */

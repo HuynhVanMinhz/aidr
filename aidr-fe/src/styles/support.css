@@ -1,5 +1,5 @@
 /**
- * Help Center, FAQ, and About — compact layout overrides.
+ * Help Center, FAQ, and About - compact layout overrides.
  */
 
 .support-page {
@@ -390,7 +390,7 @@ html[data-theme='dark'] .support-filter__chip.is-active {
   border-radius: 12px;
 }
 
-/* About page — reuse theme section with tighter top spacing */
+/* About page - reuse theme section with tighter top spacing */
 .about-page .about-us {
   padding: 2.5rem 0 3rem;
 }

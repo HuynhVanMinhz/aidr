@@ -11,7 +11,7 @@ using Microsoft.Extensions.Options;
 namespace AIDR.Infrastructure.Shipping;
 
 /// <summary>
-/// Giao Hàng Nhanh (GHN) adapter — https://api.ghn.vn/home/docs/detail
+/// Giao Hàng Nhanh (GHN) adapter - https://api.ghn.vn/home/docs/detail
 ///
 /// Sandbox and production differ only by <c>Shipping:Ghn:BaseUrl</c>. The order
 /// code we send as <c>client_order_code</c> comes back on every webhook, which is
@@ -194,7 +194,7 @@ public sealed class GhnShippingProvider : IShippingProvider
 
     public bool IsWebhookAuthentic(string? token)
     {
-        // No secret configured means the endpoint is open — fine while testing in
+        // No secret configured means the endpoint is open - fine while testing in
         // a sandbox, deliberately explicit so it is easy to spot before go-live.
         if (string.IsNullOrWhiteSpace(_options.WebhookToken))
             return true;

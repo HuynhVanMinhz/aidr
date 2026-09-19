@@ -71,7 +71,7 @@ export function KeyValueField({
       <RawJsonEscapeHatch
         id={id}
         value={raw}
-        hint="This field holds a value the table editor cannot show — nested objects or a non-object value. Edit it as JSON, or clear it to start over."
+        hint="This field holds a value the table editor cannot show - nested objects or a non-object value. Edit it as JSON, or clear it to start over."
         onChange={(next) => {
           setRaw(next);
           emitted.current = next;
@@ -146,7 +146,7 @@ export function KeyValueField({
 
       {duplicateKeys.size > 0 ? (
         <p className="form-field-error d-block mb-0 mt-1">
-          Duplicate names are highlighted — only the last one would be saved.
+          Duplicate names are highlighted - only the last one would be saved.
         </p>
       ) : null}
 

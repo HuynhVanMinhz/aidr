@@ -24,7 +24,7 @@ BEGIN
     RETURN;
 END;
 
-/* Extra demo reviewers (idempotent) — avoids UNIQUE (Buyer, Product, Order) collisions when OrderId is NULL */
+/* Extra demo reviewers (idempotent) - avoids UNIQUE (Buyer, Product, Order) collisions when OrderId is NULL */
 DECLARE @Reviewers TABLE (UserId UNIQUEIDENTIFIER NOT NULL, FullName NVARCHAR(100) NOT NULL, Idx INT NOT NULL);
 INSERT INTO @Reviewers (UserId, FullName, Idx) VALUES
 (N'A1111111-1111-1111-1111-111111111101', N'Alex Nguyen', 1),
@@ -104,11 +104,11 @@ BEGIN
             (8,  5, N'REV-SEED: MagSafe friendly', N'Love dropping the case on a charger without cables.'),
             (9,  5, N'REV-SEED: Great for gym', N'Stay secure during runs; sweat resistant enough for me.'),
             (10, 5, N'REV-SEED: Premium sound', N'Balanced mids and clean highs for podcasts and music.'),
-            (11, 5, N'REV-SEED: Fast shipping', N'Arrived sealed and genuine — packaging looked official.'),
+            (11, 5, N'REV-SEED: Fast shipping', N'Arrived sealed and genuine - packaging looked official.'),
             (12, 5, N'REV-SEED: Transparency mode', N'Hear traffic clearly while still enjoying music.'),
             (13, 4, N'REV-SEED: Almost perfect', N'Sound is excellent; wish tips included one more size.'),
             (14, 4, N'REV-SEED: Solid daily driver', N'Use them every commute. ANC is strong in the metro.'),
-            (15, 4, N'REV-SEED: Good value on sale', N'Bought during promo — quality matches the price drop.'),
+            (15, 4, N'REV-SEED: Good value on sale', N'Bought during promo - quality matches the price drop.'),
             (16, 4, N'REV-SEED: Reliable pairing', N'Switches between devices smoothly most of the time.'),
             (17, 4, N'REV-SEED: Comfortable tips', N'Silicon tips seal well after trying the medium size.'),
             (18, 3, N'REV-SEED: Fine but pricey', N'Performance is good, though still expensive for TWS.'),

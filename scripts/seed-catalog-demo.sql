@@ -1,5 +1,5 @@
 /*
-  AIDR — Extended catalog demo seed
+  AIDR - Extended catalog demo seed
   Chạy trên DB đã có schema + seed cơ bản từ database.sql.
   Idempotent: bỏ qua nếu slug sản phẩm đã tồn tại.
 */
@@ -173,7 +173,7 @@ BEGIN
         @P3, @ShopId, @CatLaptop,
         N'MacBook Air M3 13 inch', N'macbook-air-m3-13',
         N'Apple M3, 16GB RAM, 512GB SSD',
-        N'MacBook Air 13-inch — thin, silent, and all-day battery for work and study.',
+        N'MacBook Air 13-inch - thin, silent, and all-day battery for work and study.',
         N'Apple', N'MRXN3', N'TZ-MBA-M3', N'New',
         28990000, 27990000, 10, 12, N'USA',
         N'{"ram":"16GB","storage":"512GB","screen":"13.6"}', N'["apple","laptop","m3"]',
@@ -327,7 +327,7 @@ BEGIN
         @P10, @ShopId, @CatLaptop,
         N'iPad Air M2 11 inch 128GB', N'ipad-air-m2-128gb',
         N'Apple M2, Liquid Retina, Apple Pencil support',
-        N'iPad Air 11-inch with M2 — ideal for notes, drawing, and streaming.',
+        N'iPad Air 11-inch with M2 - ideal for notes, drawing, and streaming.',
         N'Apple', N'MUWD3', N'TZ-IPAD-AIR', N'New',
         16990000, NULL, 12, 12, N'USA',
         N'{"chip":"M2","storage":"128GB","screen":"11"}', N'["apple","tablet","m2"]',
@@ -337,7 +337,7 @@ BEGIN
     (@P10, N'/theme/images/product-image-1.png', 0, 1);
 END;
 
-/* Cập nhật S24 seed gốc — thêm ảnh theme + metrics */
+/* Cập nhật S24 seed gốc - thêm ảnh theme + metrics */
 DECLARE @S24 UNIQUEIDENTIFIER = (SELECT TOP (1) ProductId FROM dbo.Products WHERE Slug = N'samsung-galaxy-s24-256gb' ORDER BY CreatedAt);
 IF @S24 IS NOT NULL
 BEGIN

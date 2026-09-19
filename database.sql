@@ -1,6 +1,6 @@
 /*
 ================================================================================
-  AIDR — Database Schema (Microsoft SQL Server)
+  AIDR - Database Schema (Microsoft SQL Server)
   Rebuilt from Report7 entities + Use Cases (UC-01..UC-90)
   + UC-91 Import Stock Lot (giá nhập theo lô)
   + UC-92 Update Selling Price (giá bán catalog)
@@ -277,11 +277,11 @@ CREATE TABLE dbo.Products (
     Barcode         NVARCHAR(64)     NULL,
     ConditionType   NVARCHAR(20)     NOT NULL CONSTRAINT DF_Products_Condition DEFAULT (N'New'),
         -- New | LikeNew | Refurbished | Used
-    -- Giá BÁN (catalog) — độc lập với giá nhập theo lô
+    -- Giá BÁN (catalog) - độc lập với giá nhập theo lô
     BasePrice       DECIMAL(18,2)    NOT NULL,         -- giá niêm yết
     SalePrice       DECIMAL(18,2)    NULL,             -- giá khuyến mãi (nullable)
     Currency        CHAR(3)          NOT NULL CONSTRAINT DF_Products_Currency DEFAULT ('VND'),
-    -- Giá NHẬP tổng hợp (denormalized từ InventoryLots — chỉ để báo cáo)
+    -- Giá NHẬP tổng hợp (denormalized từ InventoryLots - chỉ để báo cáo)
     LastCostPrice   DECIMAL(18,2)    NULL,             -- UnitCost của lô nhập gần nhất
     AvgCostPrice    DECIMAL(18,2)    NULL,             -- TB gia quyền tồn hiện tại
     -- Tồn kho tổng ( = SUM InventoryLots.QuantityRemaining )
@@ -372,7 +372,7 @@ CREATE UNIQUE INDEX UQ_ProductVariants_Product_Sku
 GO
 
 /*
-  InventoryLots — mỗi lần nhập kho = 1 lô với UnitCost riêng (UC-91).
+  InventoryLots - mỗi lần nhập kho = 1 lô với UnitCost riêng (UC-91).
   Không UPDATE UnitCost của lô đã tạo; lô mới = INSERT mới.
 */
 CREATE TABLE dbo.InventoryLots (
@@ -408,7 +408,7 @@ CREATE INDEX IX_Lots_Product_Status_ReceivedAt
     ON dbo.InventoryLots (ProductId, Status, ReceivedAt);  -- FIFO: ORDER BY ReceivedAt ASC
 GO
 
-/* Lịch sử đổi giá BÁN trên web (UC-92) — không liên quan UnitCost lô */
+/* Lịch sử đổi giá BÁN trên web (UC-92) - không liên quan UnitCost lô */
 CREATE TABLE dbo.ProductPriceHistories (
     PriceHistoryId  BIGINT           NOT NULL IDENTITY(1,1) CONSTRAINT PK_ProductPriceHistories PRIMARY KEY,
     ProductId       UNIQUEIDENTIFIER NOT NULL,
@@ -624,7 +624,7 @@ CREATE TABLE dbo.OrderItems (
 );
 GO
 
-/* Phân bổ số lượng bán theo từng lô (FIFO) — phục vụ lãi gộp chính xác */
+/* Phân bổ số lượng bán theo từng lô (FIFO) - phục vụ lãi gộp chính xác */
 CREATE TABLE dbo.OrderItemLotAllocations (
     AllocationId    UNIQUEIDENTIFIER NOT NULL CONSTRAINT PK_OrderItemLotAllocations PRIMARY KEY
                     CONSTRAINT DF_OrderItemLotAlloc_Id DEFAULT (NEWSEQUENTIALID()),
@@ -732,7 +732,7 @@ CREATE TABLE dbo.ReturnRequestItems (
 GO
 
 /*
-  ReturnEvidences — video/ảnh bằng chứng bắt buộc theo policy kiểu Shopee:
+  ReturnEvidences - video/ảnh bằng chứng bắt buộc theo policy kiểu Shopee:
   - Unboxing: quay 6 mặt kiện + mã vận đơn còn nguyên trước khi khui + quá trình mở hộp
   - Testing: cận cảnh thiết bị, cắm sạc/bật nguồn, chứng minh lỗi kỹ thuật / hư hỏng vận chuyển
   UC-43 yêu cầu tối thiểu 1 Unboxing + 1 Testing khi tạo request.
@@ -950,7 +950,7 @@ CREATE INDEX IX_AiMessages_Conversation_CreatedAt ON dbo.AiMessages (Conversatio
 GO
 
 /* -------------------------------------------------------------------------- */
-/* 12. Seed — roles + sample data (dev)                                       */
+/* 12. Seed - roles + sample data (dev)                                       */
 /* -------------------------------------------------------------------------- */
 
 INSERT INTO dbo.Roles (RoleCode, RoleName, Description) VALUES
@@ -1080,7 +1080,7 @@ DECLARE @CatPhone INT = (SELECT CategoryId FROM dbo.Categories WHERE Slug = N'di
   Ví dụ nghiệp vụ giá nhập / giá bán:
   - Lô A: nhập 10 máy @ 10.000.000 (tháng 1)
   - Đăng bán BasePrice = 11.000.000
-  - Lô B: nhập thêm 5 máy @ 12.000.000 (tháng 3) — KHÔNG sửa UnitCost lô A
+  - Lô B: nhập thêm 5 máy @ 12.000.000 (tháng 3) - KHÔNG sửa UnitCost lô A
   - Có thể tăng BasePrice lên 12.500.000 → ghi ProductPriceHistories
   - Tồn = 10 + 5 = 15; AvgCost = (10*10tr + 5*12tr)/15 = 10.666.667
 */
@@ -1114,10 +1114,10 @@ INSERT INTO dbo.InventoryLots (
 VALUES
 (@LotA, @ProductId, N'LOT-20260110-001', 10, 10, 10000000,
  N'NCC Samsung VN', N'INV-A-001', '2026-01-10', N'Open', @SellerId,
- N'Lô nhập đầu — giá vốn 10tr/máy'),
+ N'Lô nhập đầu - giá vốn 10tr/máy'),
 (@LotB, @ProductId, N'LOT-20260301-002', 5, 5, 12000000,
  N'NCC Samsung VN', N'INV-B-002', '2026-03-01', N'Open', @SellerId,
- N'Lô sau — giá vốn tăng lên 12tr/máy');
+ N'Lô sau - giá vốn tăng lên 12tr/máy');
 
 INSERT INTO dbo.InventoryTransactions (ProductId, LotId, ChangeQty, UnitCost, Reason, ReferenceType, ReferenceId, CreatedBy, Note)
 VALUES
@@ -1179,7 +1179,7 @@ GO
 
 /*
 ================================================================================
-  ERD (Mermaid) — copy vào docs / Notion / GitHub preview
+  ERD (Mermaid) - copy vào docs / Notion / GitHub preview
 ================================================================================
 
 ```mermaid

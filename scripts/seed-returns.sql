@@ -1,5 +1,5 @@
 /*
-  AIDR — Return / Refund / Exchange demo seed
+  AIDR - Return / Refund / Exchange demo seed
   Prerequisites: demo accounts + catalog (Approved product on demo shop).
   Idempotent by fixed OrderCode / ReturnRequestId.
 
@@ -117,7 +117,7 @@ BEGIN
 END;
 
 /* ---------- helper: upsert order + item + payment ---------- */
-/* RET-ELIGIBLE — Delivered, no return (buyer UC-43) */
+/* RET-ELIGIBLE - Delivered, no return (buyer UC-43) */
 IF NOT EXISTS (SELECT 1 FROM dbo.Orders WHERE OrderId = @OEligible)
 BEGIN
     INSERT INTO dbo.Orders (
@@ -256,7 +256,7 @@ BEGIN
         N'Scratched screen under factory seal',
         N'Unboxing shows scratch before buyer use.',
         N'ReturnRefund', N'Approved', @Total,
-        N'Evidence valid — approve return.',
+        N'Evidence valid - approve return.',
         @AdminId, DATEADD(HOUR, -6, @Now), DATEADD(DAY, -3, @Now), DATEADD(HOUR, -6, @Now)
     );
 
@@ -317,7 +317,7 @@ BEGIN
         N'Wrong model shipped',
         N'Ordered 256GB, received 128GB.',
         N'ReturnRefund', N'Receiving', @Total,
-        N'Approved — waiting for parcel.',
+        N'Approved - waiting for parcel.',
         @AdminId, DATEADD(DAY, -2, @Now), DATEADD(DAY, -4, @Now), DATEADD(HOUR, -2, @Now)
     );
 

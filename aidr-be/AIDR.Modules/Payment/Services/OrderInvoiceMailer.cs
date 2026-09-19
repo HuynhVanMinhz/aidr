@@ -60,7 +60,7 @@ public sealed class OrderInvoiceMailer
                 return;
             }
 
-            var subject = $"AIDR invoice — {order.OrderCode}";
+            var subject = $"AIDR invoice - {order.OrderCode}";
             var html = BuildHtml(order, buyer.FullName);
             await _email.SendAsync(buyer.Email, subject, html, cancellationToken);
         }

@@ -7,8 +7,8 @@ namespace AIDR.Infrastructure.Persistence;
 /// cheapest way to buy the product once it is sold in variants, so the catalogue's price
 /// sort, price filter and "from X" label keep working off the columns they already read.
 ///
-/// Anything that writes variants has to apply the same rule — the seller form, an import,
-/// a seeder — or the catalogue starts advertising a price no variant actually sells at.
+/// Anything that writes variants has to apply the same rule - the seller form, an import,
+/// a seeder - or the catalogue starts advertising a price no variant actually sells at.
 /// </summary>
 public static class ProductVariantPricing
 {

@@ -67,7 +67,7 @@ body {
   color: var(--text-color, #707070);
 }
 
-/* Theme page sections often use `padding: 100px 0` — tighten after compact header. */
+/* Theme page sections often use `padding: 100px 0` - tighten after compact header. */
 .store-shell .page-cart,
 .store-shell .page-checkout,
 .store-shell .page-order-receive,
@@ -351,7 +351,7 @@ a:hover {
   text-decoration: none;
 }
 
-/* Shared dropdown — same look as the shop page sort control, reused by every
+/* Shared dropdown - same look as the shop page sort control, reused by every
    filter so native selects never leak a different style into a page. */
 .aidr-select-field {
   min-width: 0;

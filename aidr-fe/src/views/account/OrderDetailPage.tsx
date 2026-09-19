@@ -413,14 +413,14 @@ export function OrderDetailPage() {
                 route={tracking.route}
                 progress={trackingProgress}
                 parcelLabel={trackingLabel}
-                emptyHint="No map yet — this order has no pinned pickup or delivery point. Pin the delivery point on the address in Shipping addresses and it will show here on your next order."
+                emptyHint="No map yet - this order has no pinned pickup or delivery point. Pin the delivery point on the address in Shipping addresses and it will show here on your next order."
               />
 
               <p className="order-tracking__disclaimer">
                 <i className="fa-regular fa-circle-question" aria-hidden />
                 <span>
                   {tracking.carrier} reports delivery milestones, not the driver's live
-                  position — the parcel is drawn along the route at the point its latest
+                  position - the parcel is drawn along the route at the point its latest
                   status implies.
                 </span>
               </p>
@@ -725,7 +725,7 @@ export function OrderDetailPage() {
             <p className="order-return-form__eyebrow">Return &amp; refund</p>
             <h3 className="order-card__title">Request return / refund</h3>
             <p className="account-muted order-return-form__lead">
-              Return and refund only — exchanges are not available. Upload Unboxing and Testing
+              Return and refund only - exchanges are not available. Upload Unboxing and Testing
               evidence videos (or paste Cloudinary URLs).
             </p>
           </header>
@@ -855,7 +855,7 @@ export function OrderDetailPage() {
                 <h4 className="order-review__step-title">Evidence videos</h4>
                 <p className="account-muted">
                   {uploadsEnabled
-                    ? 'Drop or browse a video for each slot — or paste a Cloudinary URL below.'
+                    ? 'Drop or browse a video for each slot - or paste a Cloudinary URL below.'
                     : 'Paste Cloudinary video URLs for both required clips.'}
                 </p>
               </div>
@@ -879,7 +879,7 @@ export function OrderDetailPage() {
                     hint={
                       uploadsEnabled
                         ? 'MP4, WebM or MOV · up to 50MB'
-                        : 'Video hosting is not configured — paste a URL below instead.'
+                        : 'Video hosting is not configured - paste a URL below instead.'
                     }
                     onError={(message) =>
                       setVideoUploadError((prev) => ({ ...prev, unboxingUrl: message }))
@@ -921,7 +921,7 @@ export function OrderDetailPage() {
                     hint={
                       uploadsEnabled
                         ? 'MP4, WebM or MOV · up to 50MB'
-                        : 'Video hosting is not configured — paste a URL below instead.'
+                        : 'Video hosting is not configured - paste a URL below instead.'
                     }
                     onError={(message) =>
                       setVideoUploadError((prev) => ({ ...prev, testingUrl: message }))

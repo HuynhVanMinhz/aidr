@@ -1,4 +1,4 @@
-# AIDR production stack — all-in-one VPS
+# AIDR production stack - all-in-one VPS
 # 4 GB RAM: bắt buộc swap 4 GB + memory limit dưới đây (xem guide-deploy-vps-step-by-step.md)
 # Usage on VPS:
 #   cp infra/env/prod.env.example /opt/aidr/.env
@@ -12,7 +12,7 @@ services:
     environment:
       ACCEPT_EULA: "Y"
       MSSQL_SA_PASSWORD: ${MSSQL_SA_PASSWORD}
-      # Giới hạn RAM SQL — quan trọng trên VPS 4 GB
+      # Giới hạn RAM SQL - quan trọng trên VPS 4 GB
       MSSQL_MEMORY_LIMIT_MB: ${MSSQL_MEMORY_LIMIT_MB:-1536}
     volumes:
       - aidr_mssql_data:/var/opt/mssql

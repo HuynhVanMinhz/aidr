@@ -3,7 +3,7 @@
 set -euo pipefail
 
 mkdir -p /opt/aidr/fe-dist /opt/aidr/certbot/www /opt/aidr/certbot/conf
-echo '<!doctype html><title>AIDR</title><h1>AIDR — FE chua deploy</h1>' > /opt/aidr/fe-dist/index.html
+echo '<!doctype html><title>AIDR</title><h1>AIDR - FE chua deploy</h1>' > /opt/aidr/fe-dist/index.html
 chmod 755 /opt/aidr
-echo "OK — thu muc:"
+echo "OK - thu muc:"
 ls -la /opt/aidr

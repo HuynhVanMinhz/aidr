@@ -25,7 +25,7 @@ public sealed class ConsultState
     /// <summary>collecting | ready | presented</summary>
     public string Stage { get; set; } = AiConstants.ConsultStageCollecting;
 
-    /// <summary>Questions asked this round — never exceeds <see cref="AiConstants.MaxConsultQuestions"/>.</summary>
+    /// <summary>Questions asked this round - never exceeds <see cref="AiConstants.MaxConsultQuestions"/>.</summary>
     public int AskedCount { get; set; }
 
     public List<string> Asked { get; set; } = [];
@@ -67,7 +67,7 @@ public sealed class ConsultDecision
 
     public ConsultState State { get; init; } = new();
 
-    /// <summary>Set when a topic switch started a fresh round — caller clears category-bound slots.</summary>
+    /// <summary>Set when a topic switch started a fresh round - caller clears category-bound slots.</summary>
     public bool RoundReset { get; init; }
 }
 
@@ -89,7 +89,7 @@ public sealed class ConsultPlanInput
 
 /// <summary>
 /// Decides whether the assistant should ask one more consultation question or recommend now.
-/// Pure and deterministic — the caller supplies catalog counts and price bands.
+/// Pure and deterministic - the caller supplies catalog counts and price bands.
 /// </summary>
 public static class AiConsultPlanner
 {
@@ -121,7 +121,7 @@ public static class AiConsultPlanner
         var reset = false;
         var state = input.Previous;
 
-        // R2 — topic switch starts a fresh round but keeps the buyer's budget.
+        // R2 - topic switch starts a fresh round but keeps the buyer's budget.
         if (state is not null && input.CategoryChanged)
         {
             state = state.CloneForNewRound(keepBudget: true);
@@ -130,37 +130,37 @@ public static class AiConsultPlanner
 
         state ??= new ConsultState();
 
-        // R0 — the buyer is looking at one product; do not interrogate them.
+        // R0 - the buyer is looking at one product; do not interrogate them.
         if (input.FocusedOnProduct)
             return Present(state);
 
-        // R0b — this round already produced recommendations. Follow-ups refine them;
+        // R0b - this round already produced recommendations. Follow-ups refine them;
         // only a topic switch (handled above) may start asking again.
         if (string.Equals(state.Stage, AiConstants.ConsultStagePresented, StringComparison.Ordinal))
             return Present(state, reset);
 
-        // R1 — explicit escape hatch.
+        // R1 - explicit escape hatch.
         if (input.SkipRequested)
         {
             state.Skipped = true;
             return Present(state, reset);
         }
 
-        // R3 — question budget spent.
+        // R3 - question budget spent.
         if (state.AskedCount >= AiConstants.MaxConsultQuestions)
             return Present(state, reset);
 
-        // R4 — hard filters already narrow enough that another question cannot pay for itself.
+        // R4 - hard filters already narrow enough that another question cannot pay for itself.
         if (input.Slots.CategoryId is not null
             && IsFilled(AiConstants.ConsultQuestionBudget, input.Slots, state, input.Group)
             && input.CandidateCount <= AiConstants.EarlyPresentThreshold)
             return Present(state, reset);
 
-        // R5 — nothing left to narrow.
+        // R5 - nothing left to narrow.
         if (input.CandidateCount <= AiConstants.MinCandidatesToStopAsking)
             return Present(state, reset);
 
-        // R6 — ask the highest-value question still missing.
+        // R6 - ask the highest-value question still missing.
         foreach (var key in AskOrder)
         {
             if (IsFilled(key, input.Slots, state, input.Group))

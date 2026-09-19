@@ -1,4 +1,4 @@
-# Handover — Chạy src local
+# Handover - Chạy src local
 
 ## Yêu cầu
 
@@ -69,7 +69,7 @@ GET  http://localhost:5080/api/dev/validate-data
 
 `validate-data` kiểm tra **48 bảng** (row count) + **74 rule** (orphan FK, counter drift, business rule). Response gồm `tableCounts`, `issuesByType`, `issues`.
 
-> **Bắt buộc** `seed-inventory-lots` (hoặc `seed-all`) — thiếu lô tồn kho thì checkout fail dù `StockQuantity` > 0.
+> **Bắt buộc** `seed-inventory-lots` (hoặc `seed-all`) - thiếu lô tồn kho thì checkout fail dù `StockQuantity` > 0.
 
 ## 5. Đăng nhập demo
 
@@ -89,5 +89,5 @@ GET  http://localhost:5080/api/dev/validate-data
 
 ## Ghi chú
 
-- PayOS / GHN / Groq / SMTP: cấu hình trong `appsettings.Development.json` hoặc `dotnet user-secrets` — không bắt buộc để xem UI cơ bản.
+- PayOS / GHN / Groq / SMTP: cấu hình trong `appsettings.Development.json` hoặc `dotnet user-secrets` - không bắt buộc để xem UI cơ bản.
 - Chi tiết infra Docker full stack: `docs/README.md`.

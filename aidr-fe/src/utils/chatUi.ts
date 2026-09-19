@@ -180,7 +180,7 @@ export function extractProductIds(content: string | null | undefined): string[] 
   return ids;
 }
 
-/** The message text with product URLs removed — the card already shows them. */
+/** The message text with product URLs removed - the card already shows them. */
 export function stripProductLinks(content: string | null | undefined): string {
   if (!content) return '';
   return content.replace(PRODUCT_LINK, '').replace(/[ \t]{2,}/g, ' ').trim();

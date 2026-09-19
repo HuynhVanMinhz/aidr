@@ -18,7 +18,7 @@ public sealed class CreateSellerRegistrationRequest
     public string? ContactPhone { get; set; }
     public string? ContactEmail { get; set; }
 
-    /// <summary>Business licence scan — required for Household and Company.</summary>
+    /// <summary>Business licence scan - required for Household and Company.</summary>
     public string? LicenseImageUrl { get; set; }
 
     /// <summary>
