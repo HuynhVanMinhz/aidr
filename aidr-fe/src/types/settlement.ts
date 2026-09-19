@@ -35,6 +35,7 @@ export type SettlementEntry = {
   shopId: string;
   shopName?: string | null;
   grossAmount: number;
+  subsidyAmount: number;
   commissionRate: number;
   commissionAmount: number;
   netAmount: number;
@@ -136,6 +137,8 @@ export type PlatformCommissionPoint = {
   orderCount: number;
   gmv: number;
   commission: number;
+  platformSubsidy: number;
+  netPlatformEarning: number;
   paidToSeller: number;
 };
 
@@ -155,6 +158,8 @@ export type PlatformCommissionReport = {
   orderCount: number;
   gmv: number;
   commission: number;
+  platformSubsidy: number;
+  netPlatformEarning: number;
   paidToSeller: number;
   escrowHeld: number;
   awaitingPayout: number;

@@ -582,18 +582,39 @@ public sealed class OrderRepository : IOrderRepository
             .FirstOrDefaultAsync(w => w.ShopId == order.ShopId, cancellationToken)
             ?? throw new AppException("Seller wallet was not found for this shop.");
 
+        // Detect whether the applied voucher is a platform (System) voucher.
+        // Platform vouchers are absorbed by the platform - the seller is made whole.
+        // Shop vouchers are the seller's own cost and reduce their commissionable base.
+        var isPlatformVoucher = false;
+        if (order.VoucherId.HasValue && order.DiscountAmount > 0)
+        {
+            var voucherScope = await _db.Vouchers
+                .AsNoTracking()
+                .Where(v => v.VoucherId == order.VoucherId.Value)
+                .Select(v => (string?)v.Scope)
+                .FirstOrDefaultAsync(cancellationToken);
+            isPlatformVoucher = string.Equals(
+                voucherScope,
+                VoucherConstants.ScopeSystem,
+                StringComparison.OrdinalIgnoreCase);
+        }
+
         var rate = _settlementOptions.CommissionRate;
         var gross = decimal.Round(order.TotalAmount, 2, MidpointRounding.AwayFromZero);
 
-        // Shipping is excluded from the fee base - charging commission on the
-        // courier fee would be wrong once shipping is no longer free.
+        // Platform voucher discount is a platform cost, not the seller's.
+        // Seller commission is therefore based on the full subtotal.
+        var subsidyAmount = isPlatformVoucher ? order.DiscountAmount : 0m;
+        var sellerDiscount = isPlatformVoucher ? 0m : order.DiscountAmount;
+
+        // Shipping is excluded from the fee base.
         var commissionable = SettlementConstants.CommissionableAmount(
             order.SubtotalAmount,
-            order.DiscountAmount);
+            sellerDiscount);
         var commission = SettlementConstants.RoundVnd(commissionable * rate);
         if (commission > gross)
             commission = gross;
-        var net = gross - commission;
+        var net = gross - commission + subsidyAmount;
 
         _db.SettlementEntries.Add(new SettlementEntry
         {
@@ -601,7 +622,7 @@ public sealed class OrderRepository : IOrderRepository
             OrderId = order.OrderId,
             ShopId = order.ShopId,
             GrossAmount = gross,
-            SubsidyAmount = 0m,
+            SubsidyAmount = subsidyAmount,
             CommissionRate = rate,
             CommissionAmount = commission,
             NetAmount = net,
@@ -644,6 +665,23 @@ public sealed class OrderRepository : IOrderRepository
             Note = $"Platform fee {rate:P2} on {order.OrderCode}",
             CreatedAt = now
         });
+
+        // Informational row for the platform subsidy so the ledger shows why net > gross - commission.
+        if (subsidyAmount > 0)
+        {
+            _db.WalletTransactions.Add(new WalletTransaction
+            {
+                WalletId = wallet.WalletId,
+                TxType = SettlementConstants.TxPlatformSubsidy,
+                Amount = subsidyAmount,
+                BalanceAfter = wallet.AvailableBalance,
+                PendingAfter = wallet.PendingBalance,
+                ReferenceType = OrderConstants.WalletReferenceTypeOrder,
+                ReferenceId = order.OrderId,
+                Note = $"Platform voucher subsidy on {order.OrderCode}",
+                CreatedAt = now
+            });
+        }
     }
 
     private static BuyerOrderDetailDto MapDetail(Order order, BuyerOrderTrackingDto? tracking = null)
