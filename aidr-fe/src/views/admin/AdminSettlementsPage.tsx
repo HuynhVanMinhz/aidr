@@ -7,6 +7,7 @@ import {
   cancelPayoutBatch,
   createPayoutBatch,
   executePayoutBatch,
+  getAdminBankAccounts,
   getAdminPayoutBatches,
   getEligibleShops,
   getPlatformCommissionReport,
@@ -15,6 +16,7 @@ import {
   verifyShopBankAccount,
 } from '../../services/settlementApi';
 import type {
+  AdminShopBankAccount,
   PayoutBatch,
   PlatformCommissionReport,
   SettlementEligibleShop,
@@ -28,6 +30,7 @@ export function AdminSettlementsPage() {
   const toast = useToast();
   const [eligible, setEligible] = useState<SettlementEligibleShop[]>([]);
   const [batches, setBatches] = useState<PayoutBatch[]>([]);
+  const [bankAccounts, setBankAccounts] = useState<AdminShopBankAccount[]>([]);
   const [report, setReport] = useState<PlatformCommissionReport | null>(null);
   const [loading, setLoading] = useState(true);
   const [busyId, setBusyId] = useState<string | null>(null);
@@ -38,14 +41,16 @@ export function AdminSettlementsPage() {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const [eligibleRes, batchRes, reportRes] = await Promise.all([
+      const [eligibleRes, batchRes, reportRes, bankRes] = await Promise.all([
         getEligibleShops(),
         getAdminPayoutBatches({ page: 1, pageSize: 20 }),
         getPlatformCommissionReport(),
+        getAdminBankAccounts(),
       ]);
       setEligible(eligibleRes.data ?? []);
       setBatches(batchRes.data?.items ?? []);
       setReport(reportRes.data ?? null);
+      setBankAccounts(bankRes.data ?? []);
       setError(null);
     } catch (err) {
       setError(getApiErrorMessage(err, 'Unable to load settlements.'));
@@ -348,6 +353,93 @@ export function AdminSettlementsPage() {
                           </button>
                         ) : null}
                       </div>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div className="card">
+        <div className="card-body border-bottom">
+          <h4 className="card-title mb-1">Seller bank accounts</h4>
+          <p className="text-muted fs-13 mb-0">
+            Verify before the shop's money is due so payouts can run automatically.
+          </p>
+        </div>
+        <div className="table-responsive">
+          <table className="table table-hover mb-0">
+            <thead className="bg-light-subtle">
+              <tr>
+                <th>Shop</th>
+                <th>Bank</th>
+                <th>Account</th>
+                <th>Holder</th>
+                <th>Status</th>
+                <th className="text-end">Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {loading && bankAccounts.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="text-muted">Loading…</td>
+                </tr>
+              ) : bankAccounts.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="text-muted">No bank accounts registered yet.</td>
+                </tr>
+              ) : (
+                bankAccounts.map((ba) => (
+                  <tr key={ba.shopBankAccountId}>
+                    <td className="fw-medium">{ba.shopName}</td>
+                    <td>{ba.bankName}</td>
+                    <td className="font-monospace fs-13">{ba.accountNumberMasked}</td>
+                    <td>{ba.accountName}</td>
+                    <td>
+                      <span className={bankStatusBadgeClass(ba.status)}>{ba.status}</span>
+                      {ba.rejectReason ? (
+                        <p className="text-danger fs-12 mb-0 mt-1">{ba.rejectReason}</p>
+                      ) : null}
+                    </td>
+                    <td className="text-end">
+                      {ba.status !== 'Verified' ? (
+                        <div className="d-inline-flex gap-1">
+                          <button
+                            type="button"
+                            className="btn btn-sm btn-success"
+                            disabled={busyId === ba.shopId}
+                            onClick={() =>
+                              void run(
+                                ba.shopId,
+                                () => verifyShopBankAccount(ba.shopId, true),
+                                'Bank account verified.',
+                              )
+                            }
+                          >
+                            Verify
+                          </button>
+                          <button
+                            type="button"
+                            className="btn btn-sm btn-soft-danger"
+                            disabled={busyId === ba.shopId}
+                            onClick={() => {
+                              const reason = window.prompt('Rejection reason:');
+                              if (!reason) return;
+                              void run(
+                                ba.shopId,
+                                () => verifyShopBankAccount(ba.shopId, false, reason),
+                                'Bank account rejected.',
+                              );
+                            }}
+                          >
+                            Reject
+                          </button>
+                        </div>
+                      ) : (
+                        <span className="text-muted fs-13">—</span>
+                      )}
                     </td>
                   </tr>
                 ))

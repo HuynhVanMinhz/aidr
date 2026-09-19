@@ -13,6 +13,19 @@ export type ShopBankAccount = {
   updatedAt: string;
 };
 
+export type AdminShopBankAccount = {
+  shopId: string;
+  shopName: string;
+  shopBankAccountId: string;
+  bankBin?: string | null;
+  bankName: string;
+  accountNumberMasked: string;
+  accountName: string;
+  status: ShopBankAccountStatus;
+  rejectReason?: string | null;
+  updatedAt: string;
+};
+
 export type UpsertShopBankAccountRequest = {
   bankBin?: string | null;
   bankName: string;

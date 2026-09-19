@@ -123,6 +123,11 @@ public sealed class SettlementService : ISettlementService
         CancellationToken ct = default) =>
         _settlements.GetEligibleShopsAsync(DateTime.UtcNow, ct);
 
+    public Task<IReadOnlyList<AdminShopBankAccountDto>> ListAllBankAccountsAsync(
+        string? status,
+        CancellationToken ct = default) =>
+        _settlements.ListAllBankAccountsAsync(status, ct);
+
     public Task<PayoutBatchDto> CreateBatchAsync(
         CreatePayoutBatchRequest request,
         CancellationToken ct = default)
@@ -330,6 +335,20 @@ public sealed class SettlementService : ISettlementService
             errors.Add($"eligibility: {ex.Message}");
         }
 
+        var dispatched = 0;
+        if (!_options.IsManualPayout)
+        {
+            try
+            {
+                dispatched = await AutoDispatchEligibleShopsAsync(now, ct);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Settlement sweep: auto-dispatch step failed");
+                errors.Add($"auto-dispatch: {ex.Message}");
+            }
+        }
+
         var polled = 0;
         try
         {
@@ -345,9 +364,39 @@ public sealed class SettlementService : ISettlementService
         {
             AutoCompletedOrders = autoCompleted,
             EntriesMadeEligible = promoted,
+            BatchesDispatched = dispatched,
             BatchesPolled = polled,
             Errors = errors
         };
+    }
+
+    /// <summary>
+    /// For each eligible shop that passes all blocker checks, create and approve a payout
+    /// batch in one sweep pass — no admin button press required.
+    /// </summary>
+    private async Task<int> AutoDispatchEligibleShopsAsync(DateTime now, CancellationToken ct)
+    {
+        var eligible = await _settlements.GetEligibleShopsAsync(now, ct);
+        var dispatched = 0;
+
+        foreach (var shop in eligible.Where(s => s.CanPayout))
+        {
+            try
+            {
+                var batch = await _settlements.CreateBatchAsync(shop.ShopId, now, ct);
+                await ApproveBatchAsync(batch.PayoutBatchId, Guid.Empty, ct);
+                dispatched++;
+                _logger.LogInformation(
+                    "Auto-dispatched payout batch {BatchCode} for shop {ShopId} ({NetAmount:0} VND)",
+                    batch.BatchCode, shop.ShopId, shop.NetAmount);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Auto-dispatch failed for shop {ShopId}", shop.ShopId);
+            }
+        }
+
+        return dispatched;
     }
 
     /// <summary>

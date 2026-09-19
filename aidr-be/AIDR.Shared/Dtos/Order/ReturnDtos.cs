@@ -9,12 +9,25 @@ public sealed class CreateReturnRequest
     public string? ResolutionType { get; set; }
 
     /// <summary>
+    /// Required when ResolutionType is ReturnRefund. Buyer's bank account to receive the payout.
+    /// </summary>
+    public RefundBankInfoRequest? RefundBankInfo { get; set; }
+
+    /// <summary>
     /// Optional. When omitted, all order items are returned at full quantity.
     /// </summary>
     public IReadOnlyList<CreateReturnItemRequest>? Items { get; set; }
 
     public IReadOnlyList<CreateReturnEvidenceRequest> Evidences { get; set; } =
         Array.Empty<CreateReturnEvidenceRequest>();
+}
+
+public sealed class RefundBankInfoRequest
+{
+    public string? BankBin { get; set; }
+    public string? BankName { get; set; }
+    public string AccountNumber { get; set; } = null!;
+    public string AccountName { get; set; } = null!;
 }
 
 public sealed class CreateReturnItemRequest

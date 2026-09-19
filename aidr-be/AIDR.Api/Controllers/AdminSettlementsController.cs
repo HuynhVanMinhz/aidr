@@ -126,6 +126,16 @@ public sealed class AdminSettlementsController : ControllerBase
         return Ok(ApiResult<PayoutBatchDto>.Ok(result, "Payout batch cancelled."));
     }
 
+    /// <summary>All seller bank accounts, optionally filtered by status (Unverified/Verified/Rejected).</summary>
+    [HttpGet("bank-accounts")]
+    public async Task<ActionResult<ApiResult<IReadOnlyList<AdminShopBankAccountDto>>>> GetBankAccounts(
+        [FromQuery] string? status,
+        CancellationToken cancellationToken)
+    {
+        var result = await _settlements.ListAllBankAccountsAsync(status, cancellationToken);
+        return Ok(ApiResult<IReadOnlyList<AdminShopBankAccountDto>>.Ok(result));
+    }
+
     /// <summary>Approve or reject a shop's payout bank account.</summary>
     [HttpPost("shops/{shopId:guid}/bank-account/verify")]
     public async Task<ActionResult<ApiResult<ShopBankAccountDto>>> VerifyBankAccount(

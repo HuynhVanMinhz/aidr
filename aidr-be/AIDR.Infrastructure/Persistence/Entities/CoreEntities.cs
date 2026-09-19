@@ -800,6 +800,11 @@ public class ReturnRequest
     public string? AdminNote { get; set; }
     public Guid? ReviewedBy { get; set; }
     public DateTime? ReviewedAt { get; set; }
+    /// <summary>Buyer-provided bank for PayOS payout refund (Napas BIN).</summary>
+    public string? RefundBankBin { get; set; }
+    public string? RefundBankName { get; set; }
+    public string? RefundAccountNumber { get; set; }
+    public string? RefundAccountName { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
 

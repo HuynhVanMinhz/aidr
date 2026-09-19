@@ -325,7 +325,9 @@ public sealed class AdminReturnRepository : IAdminReturnRepository
         var (toBin, toAccountNumber) = ResolveRefundDestination(
             payment.RawResponseJson,
             refundToBin,
-            refundToAccountNumber);
+            refundToAccountNumber,
+            entity.RefundBankBin,
+            entity.RefundAccountNumber);
 
         if (string.IsNullOrWhiteSpace(toBin) || string.IsNullOrWhiteSpace(toAccountNumber))
         {
@@ -365,11 +367,19 @@ public sealed class AdminReturnRepository : IAdminReturnRepository
     private static (string? ToBin, string? ToAccountNumber) ResolveRefundDestination(
         string? paymentRawJson,
         string? overrideBin,
-        string? overrideAccountNumber)
+        string? overrideAccountNumber,
+        string? buyerBankBin = null,
+        string? buyerAccountNumber = null)
     {
+        // Priority 1: admin override
         if (!string.IsNullOrWhiteSpace(overrideBin) && !string.IsNullOrWhiteSpace(overrideAccountNumber))
             return (overrideBin.Trim(), overrideAccountNumber.Trim());
 
+        // Priority 2: buyer-provided bank (stored on ReturnRequest)
+        if (!string.IsNullOrWhiteSpace(buyerAccountNumber))
+            return (buyerBankBin?.Trim(), buyerAccountNumber.Trim());
+
+        // Priority 3: webhook counter account
         var fromWebhook = TryReadCounterAccount(paymentRawJson);
         var toBin = !string.IsNullOrWhiteSpace(overrideBin) ? overrideBin.Trim() : fromWebhook.ToBin;
         var toAccount = !string.IsNullOrWhiteSpace(overrideAccountNumber)
@@ -739,6 +749,13 @@ public sealed class AdminReturnRepository : IAdminReturnRepository
             ReviewedBy = entity.ReviewedBy,
             ReviewerFullName = entity.Reviewer?.FullName,
             ReviewedAt = entity.ReviewedAt,
+            RefundBankBin = entity.RefundBankBin,
+            RefundBankName = entity.RefundBankName,
+            RefundAccountNumberMasked = entity.RefundAccountNumber is { Length: > 0 } acct
+                ? acct.Length <= 4 ? new string('*', acct.Length)
+                : $"{new string('*', acct.Length - 4)}{acct[^4..]}"
+                : null,
+            RefundAccountName = entity.RefundAccountName,
             CreatedAt = entity.CreatedAt,
             UpdatedAt = entity.UpdatedAt,
             Items = entity.Items

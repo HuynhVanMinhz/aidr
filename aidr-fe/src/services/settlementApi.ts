@@ -1,5 +1,6 @@
 import type { ApiResult } from '../types/auth';
 import type {
+  AdminShopBankAccount,
   PayoutBatch,
   PayoutBatchList,
   PlatformCommissionReport,
@@ -56,6 +57,14 @@ export async function getSellerPayouts(query: SettlementQuery = {}) {
 export async function getEligibleShops() {
   const { data } = await apiClient.get<ApiResult<SettlementEligibleShop[]>>(
     '/admin/settlements/eligible',
+  );
+  return data;
+}
+
+export async function getAdminBankAccounts(status?: string) {
+  const { data } = await apiClient.get<ApiResult<AdminShopBankAccount[]>>(
+    '/admin/settlements/bank-accounts',
+    { params: status ? { status } : undefined },
   );
   return data;
 }

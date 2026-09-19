@@ -47,12 +47,36 @@ public sealed class ReturnService : IReturnService
         EnsureRequiredEvidence(evidences, ReturnConstants.EvidenceTypeUnboxing);
         EnsureRequiredEvidence(evidences, ReturnConstants.EvidenceTypeTesting);
 
+        string? refundBankBin = null;
+        string? refundBankName = null;
+        string? refundAccountNumber = null;
+        string? refundAccountName = null;
+
+        if (string.Equals(resolutionType, ReturnConstants.ResolutionReturnRefund, StringComparison.OrdinalIgnoreCase)
+            && request.RefundBankInfo is not null)
+        {
+            var bank = request.RefundBankInfo;
+            refundAccountNumber = bank.AccountNumber?.Trim();
+            refundAccountName = bank.AccountName?.Trim();
+            refundBankBin = bank.BankBin?.Trim();
+            refundBankName = bank.BankName?.Trim();
+
+            if (string.IsNullOrWhiteSpace(refundAccountNumber))
+                throw new AppException("Refund bank account number is required when requesting a refund.");
+            if (string.IsNullOrWhiteSpace(refundAccountName))
+                throw new AppException("Refund bank account name is required when requesting a refund.");
+        }
+
         return await _returns.CreateAsync(
             buyerUserId,
             orderId,
             reason,
             description,
             resolutionType,
+            refundBankBin,
+            refundBankName,
+            refundAccountNumber,
+            refundAccountName,
             items,
             evidences,
             cancellationToken);

@@ -244,6 +244,7 @@ export function SellerSettlementsPage() {
                     <input
                       id="bank-account"
                       className="form-control"
+                      placeholder={bank?.accountNumberMasked ?? ''}
                       value={form.accountNumber}
                       inputMode="numeric"
                       onChange={(e) => setForm((f) => ({ ...f, accountNumber: e.target.value }))}

@@ -36,6 +36,10 @@ public interface IReturnRepository
         string reason,
         string? description,
         string resolutionType,
+        string? refundBankBin,
+        string? refundBankName,
+        string? refundAccountNumber,
+        string? refundAccountName,
         IReadOnlyList<(Guid OrderItemId, int Quantity)> items,
         IReadOnlyList<(string EvidenceType, string MediaUrl, string? PublicId)> evidences,
         CancellationToken cancellationToken = default);
