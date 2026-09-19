@@ -14,6 +14,7 @@ import {
   SELLER_REGISTRATION_MAX_ADMIN_NOTE,
   validateSellerRejectNote,
 } from '../../utils/sellerRegistrationValidation';
+import { parseUtcDate } from '../../utils/dateUtc';
 
 function statusLabel(status: string) {
   return status === 'NeedsMoreInfo' ? 'waiting on the applicant' : status.toLowerCase();
@@ -21,8 +22,8 @@ function statusLabel(status: string) {
 
 function formatDate(value?: string | null) {
   if (!value) return 'Unknown';
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return value;
+  const date = parseUtcDate(value);
+  if (!date) return value;
   return date.toLocaleString();
 }
 

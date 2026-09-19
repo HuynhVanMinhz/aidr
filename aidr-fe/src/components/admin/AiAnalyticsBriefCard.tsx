@@ -9,6 +9,7 @@ import type {
   AiAnalyticsBrief,
   AiAnalyticsRecommendation,
 } from '../../types/aiAnalytics';
+import { parseUtcDate } from '../../utils/dateUtc';
 
 type AiAnalyticsBriefCardProps = {
   audience: AiAnalyticsAudience;
@@ -44,8 +45,8 @@ const ASK_PLACEHOLDER: Record<AiAnalyticsAudience, string> = {
 };
 
 function formatBriefDate(iso: string): string {
-  const date = new Date(iso);
-  if (Number.isNaN(date.getTime())) return iso.slice(0, 10);
+  const date = parseUtcDate(iso);
+  if (!date) return iso.slice(0, 10);
   return date.toLocaleDateString('en-GB', {
     year: 'numeric',
     month: 'short',

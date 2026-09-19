@@ -6,6 +6,7 @@ import { IconifyIcon } from '../../components/admin/IconifyIcon';
 import { useAdminSellerRegistrations } from '../../hooks/useAdminSellerRegistrations';
 import type { SellerRegistrationStatusFilter } from '../../types/admin';
 import { sellerRegistrationBadgeClass } from '../../utils/adminBadge';
+import { parseUtcDate } from '../../utils/dateUtc';
 
 const PAGE_SIZE = 10;
 
@@ -71,8 +72,8 @@ function statusLabel(status: string) {
 }
 
 function formatDate(value: string) {
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return value;
+  const date = parseUtcDate(value);
+  if (!date) return value;
   return date.toLocaleString();
 }
 

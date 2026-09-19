@@ -9,6 +9,7 @@ import {
 } from '../../hooks/useAdminReturnRequests';
 import { useToast } from '../../hooks/useToast';
 import { formatMoney } from '../../utils/formatCatalog';
+import { parseUtcDate } from '../../utils/dateUtc';
 import { tryValidateField, visibleFieldErrors } from '../../utils/formValidation';
 import { formatReturnStatus, returnStatusBadgeClass } from '../../utils/returnUi';
 import {
@@ -25,8 +26,8 @@ import {
 
 function formatDate(value?: string | null) {
   if (!value) return '-';
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return value;
+  const date = parseUtcDate(value);
+  if (!date) return value;
   return date.toLocaleString();
 }
 

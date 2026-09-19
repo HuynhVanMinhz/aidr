@@ -4,6 +4,7 @@ import { listVouchers } from '../../services/voucherApi';
 import type { VoucherListItem } from '../../types/voucher';
 import { getApiErrorMessage } from '../../utils/apiError';
 import { formatMoney } from '../../utils/formatCatalog';
+import { parseUtcDate } from '../../utils/dateUtc';
 
 const PAGE_SIZE = 20;
 
@@ -23,8 +24,8 @@ function discountCap(item: VoucherListItem) {
 
 /** Same shape as everywhere else in the account area: 25 Feb 2027. */
 function formatValidUntil(value: string) {
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return value;
+  const date = parseUtcDate(value);
+  if (!date) return value;
   return new Intl.DateTimeFormat('en-GB', {
     day: 'numeric',
     month: 'short',
@@ -33,8 +34,8 @@ function formatValidUntil(value: string) {
 }
 
 function daysLeft(value: string) {
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return null;
+  const date = parseUtcDate(value);
+  if (!date) return null;
   const diff = Math.ceil((date.getTime() - Date.now()) / 86_400_000);
   return diff > 0 ? diff : 0;
 }

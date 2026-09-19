@@ -2,6 +2,7 @@ using AIDR.Modules.SellerCenter.Abstractions;
 using AIDR.Shared.Constants;
 using AIDR.Shared.Dtos.Seller;
 using AIDR.Shared.Exceptions;
+using AIDR.Shared.Serialization;
 
 namespace AIDR.Modules.SellerCenter.Services;
 
@@ -100,8 +101,8 @@ public sealed class SellerShopVoucherService : ISellerShopVoucherService
             decimal.Round(request.MinOrderAmount, 2, MidpointRounding.AwayFromZero),
             request.UsageLimit,
             request.PerUserLimit,
-            request.StartsAt.ToUniversalTime(),
-            request.EndsAt.ToUniversalTime(),
+            UtcDateTime.Normalize(request.StartsAt),
+            UtcDateTime.Normalize(request.EndsAt),
             request.IsActive,
             ownerUserId,
             cancellationToken);
@@ -150,8 +151,8 @@ public sealed class SellerShopVoucherService : ISellerShopVoucherService
             decimal.Round(request.MinOrderAmount, 2, MidpointRounding.AwayFromZero),
             request.UsageLimit,
             request.PerUserLimit,
-            request.StartsAt.ToUniversalTime(),
-            request.EndsAt.ToUniversalTime(),
+            UtcDateTime.Normalize(request.StartsAt),
+            UtcDateTime.Normalize(request.EndsAt),
             cancellationToken);
 
         return Map(record);

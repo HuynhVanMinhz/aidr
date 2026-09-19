@@ -6,6 +6,7 @@ import { IconifyIcon } from '../../components/admin/IconifyIcon';
 import { useAdminReturnRequests } from '../../hooks/useAdminReturnRequests';
 import type { AdminReturnStatusFilter } from '../../types/return';
 import { formatMoney } from '../../utils/formatCatalog';
+import { parseUtcDate } from '../../utils/dateUtc';
 import { formatReturnStatus, returnStatusBadgeClass } from '../../utils/returnUi';
 
 const PAGE_SIZE = 10;
@@ -24,8 +25,8 @@ const STATUS_FILTERS: { value: AdminReturnStatusFilter; label: string }[] = [
 ];
 
 function formatDate(value: string) {
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return value;
+  const date = parseUtcDate(value);
+  if (!date) return value;
   return date.toLocaleString();
 }
 

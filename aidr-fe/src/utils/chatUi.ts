@@ -1,21 +1,15 @@
+import { parseUtcDate } from './dateUtc';
+
 const MINUTE = 60_000;
 const HOUR = 60 * MINUTE;
 
-const HAS_TIMEZONE = /(?:[zZ]|[+-]\d{2}:?\d{2})$/;
-
-/**
- * The API stores every timestamp in UTC, but values materialised from SQL come back with
- * DateTimeKind.Unspecified and therefore without a timezone suffix. `new Date(...)` would read
- * those as local time and shift the whole conversation by the UTC offset, so pin them to UTC.
- */
+/** Re-export for chat call sites. */
 export function parseChatDate(iso: string | null | undefined): Date | null {
-  if (!iso) return null;
-  const date = new Date(HAS_TIMEZONE.test(iso) ? iso : `${iso}Z`);
-  return Number.isNaN(date.getTime()) ? null : date;
+  return parseUtcDate(iso);
 }
 
 function toDate(iso: string | null | undefined): Date | null {
-  return parseChatDate(iso);
+  return parseUtcDate(iso);
 }
 
 export function isSameDay(a: Date, b: Date): boolean {

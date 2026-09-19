@@ -8,6 +8,7 @@ import { useToast } from '../../hooks/useToast';
 import type { AdminSystemVoucher } from '../../types/admin';
 import { adminBadgeClass, categoryVisibilityBadgeClass } from '../../utils/adminBadge';
 import { formatMoney } from '../../utils/formatCatalog';
+import { parseUtcDate } from '../../utils/dateUtc';
 
 const PAGE_SIZE = 10;
 
@@ -23,13 +24,14 @@ function formatDiscount(item: AdminSystemVoucher) {
 }
 
 function formatDate(iso: string) {
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return '-';
+  const d = parseUtcDate(iso);
+  if (!d) return '-';
   return d.toLocaleString();
 }
 
 function isExpired(item: AdminSystemVoucher) {
-  return new Date(item.endsAt).getTime() < Date.now();
+  const ends = parseUtcDate(item.endsAt);
+  return ends != null && ends.getTime() < Date.now();
 }
 
 export function AdminSystemVoucherListPage() {

@@ -4,6 +4,7 @@ using AIDR.Shared.Caching;
 using AIDR.Shared.Constants;
 using AIDR.Shared.Dtos.Seller;
 using AIDR.Shared.Exceptions;
+using AIDR.Shared.Serialization;
 
 namespace AIDR.Modules.SellerCenter.Services;
 
@@ -162,8 +163,8 @@ public sealed class SellerInventoryService : ISellerInventoryService
         var invoice = OptionalBounded(request.InvoiceNumber, "Invoice number", SellerInventoryConstants.MaxInvoiceNumberLength);
         var note = OptionalBounded(request.Note, "Note", SellerInventoryConstants.MaxLotNoteLength);
 
-        var receivedAt = NormalizeUtc(request.ReceivedAt) ?? DateTime.UtcNow;
-        var expiresAt = NormalizeUtc(request.ExpiresAt);
+        var receivedAt = UtcDateTime.Normalize(request.ReceivedAt) ?? DateTime.UtcNow;
+        var expiresAt = UtcDateTime.Normalize(request.ExpiresAt);
         if (expiresAt is { } exp && exp <= receivedAt)
             throw new AppException("Expiry date must be after the received date.");
 
@@ -259,20 +260,6 @@ public sealed class SellerInventoryService : ISellerInventoryService
             throw new AppException($"{fieldName} must be greater than or equal to 0.");
         if (value > SellerInventoryConstants.MaxMoney)
             throw new AppException($"{fieldName} is too large.");
-    }
-
-    private static DateTime? NormalizeUtc(DateTime? value)
-    {
-        if (value is null)
-            return null;
-
-        var dt = value.Value;
-        return dt.Kind switch
-        {
-            DateTimeKind.Utc => dt,
-            DateTimeKind.Local => dt.ToUniversalTime(),
-            _ => DateTime.SpecifyKind(dt, DateTimeKind.Utc)
-        };
     }
 
     private static string? OptionalBounded(string? value, string fieldName, int maxLength)
