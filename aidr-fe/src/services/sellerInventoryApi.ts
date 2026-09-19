@@ -6,6 +6,8 @@ import type {
   SellerInventoryListResult,
   SellerInventoryQuery,
   SellerPriceUpdate,
+  SellerStockImportListResult,
+  SellerStockImportQuery,
   UpdateSellerInventoryPayload,
   UpdateSellingPricePayload,
 } from '../types/sellerInventory';
@@ -20,10 +22,29 @@ function toParams(query: SellerInventoryQuery): Record<string, string | number |
   return params;
 }
 
+function toImportParams(query: SellerStockImportQuery): Record<string, string | number> {
+  const params: Record<string, string | number> = {};
+  if (query.q?.trim()) params.q = query.q.trim();
+  if (query.status?.trim()) params.status = query.status.trim();
+  if (query.from?.trim()) params.from = `${query.from.trim()}T00:00:00.000Z`;
+  if (query.to?.trim()) params.to = `${query.to.trim()}T00:00:00.000Z`;
+  if (query.page != null) params.page = query.page;
+  if (query.pageSize != null) params.pageSize = query.pageSize;
+  return params;
+}
+
 export async function listSellerInventory(query: SellerInventoryQuery = {}) {
   const { data } = await apiClient.get<ApiResult<SellerInventoryListResult>>('/seller/inventory', {
     params: toParams(query),
   });
+  return data;
+}
+
+export async function listSellerStockImports(query: SellerStockImportQuery = {}) {
+  const { data } = await apiClient.get<ApiResult<SellerStockImportListResult>>(
+    '/seller/inventory/imports',
+    { params: toImportParams(query) },
+  );
   return data;
 }
 

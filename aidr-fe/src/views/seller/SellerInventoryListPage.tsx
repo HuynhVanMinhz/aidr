@@ -88,10 +88,14 @@ export function SellerInventoryListPage() {
           <div className="card">
             <div className="card-header d-flex flex-wrap justify-content-between align-items-center gap-2">
               <h4 className="card-title mb-0">Inventory</h4>
-              <form
-                className="d-flex flex-nowrap align-items-center gap-2"
-                onSubmit={handleSearchSubmit}
-              >
+              <div className="d-flex flex-nowrap align-items-center gap-2">
+                <Link to="/seller/inventory/imports" className="btn btn-sm btn-outline-light text-nowrap">
+                  Import history
+                </Link>
+                <form
+                  className="d-flex flex-nowrap align-items-center gap-2"
+                  onSubmit={handleSearchSubmit}
+                >
                 <AdminSelect
                   id="seller-inventory-stock-filter"
                   size="sm"
@@ -115,6 +119,7 @@ export function SellerInventoryListPage() {
                   Search
                 </button>
               </form>
+              </div>
             </div>
 
             {listError ? (

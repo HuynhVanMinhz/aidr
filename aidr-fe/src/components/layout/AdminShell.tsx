@@ -65,6 +65,7 @@ function pageTitle(pathname: string, variant: AdminShellVariant) {
   if (pathname.match(/\/orders\/[^/]+$/)) return 'Order Details';
   if (pathname.includes('/orders')) return 'Orders List';
   if (pathname.match(/\/products\/[^/]+\/inventory$/)) return 'Product Inventory';
+  if (pathname.includes('/inventory/imports')) return 'Import History';
   if (pathname.includes('/inventory')) return 'Inventory';
   if (pathname.includes('/products/new')) return 'Create Product';
   if (pathname.match(/\/products\/[^/]+\/edit$/)) return 'Edit Product';
@@ -86,6 +87,7 @@ export function AdminShell({ variant = 'admin', children }: AdminShellProps) {
   const [sellerRegOpen, setSellerRegOpen] = useState(pathname.includes('/seller-registrations'));
   const [returnOpen, setReturnOpen] = useState(pathname.includes('/return-requests'));
   const [productOpen, setProductOpen] = useState(pathname.includes('/products'));
+  const [inventoryOpen, setInventoryOpen] = useState(pathname.includes('/inventory'));
   const [moderationOpen, setModerationOpen] = useState(
     variant === 'admin' && pathname.includes('/products'),
   );
@@ -104,6 +106,7 @@ export function AdminShell({ variant = 'admin', children }: AdminShellProps) {
       setProductOpen(true);
       if (variant === 'admin') setModerationOpen(true);
     }
+    if (pathname.includes('/inventory')) setInventoryOpen(true);
   }, [pathname, variant]);
 
   // Logo: seller can jump to storefront; admin stays in admin area.
@@ -527,16 +530,40 @@ export function AdminShell({ variant = 'admin', children }: AdminShellProps) {
                 </div>
               </li>
               <li className="nav-item">
-                <NavLink
-                  className={({ isActive }) => `nav-link${isActive ? ' active' : ''}`}
-                  to="/seller/inventory"
-                  end
+                <a
+                  className={`nav-link menu-arrow ${inventoryOpen ? '' : 'collapsed'}`}
+                  href="#sidebarSellerInventory"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setInventoryOpen((v) => !v);
+                  }}
                 >
                   <span className="nav-icon">
                     <IconifyIcon icon="solar:box-minimalistic-bold-duotone" />
                   </span>
                   <span className="nav-text">Inventory</span>
-                </NavLink>
+                </a>
+                <div className={`collapse ${inventoryOpen ? 'show' : ''}`} id="sidebarSellerInventory">
+                  <ul className="nav sub-navbar-nav">
+                    <li className="sub-nav-item">
+                      <NavLink
+                        className={({ isActive }) => `sub-nav-link${isActive ? ' active' : ''}`}
+                        to="/seller/inventory"
+                        end
+                      >
+                        Stock overview
+                      </NavLink>
+                    </li>
+                    <li className="sub-nav-item">
+                      <NavLink
+                        className={({ isActive }) => `sub-nav-link${isActive ? ' active' : ''}`}
+                        to="/seller/inventory/imports"
+                      >
+                        Import history
+                      </NavLink>
+                    </li>
+                  </ul>
+                </div>
               </li>
               <li className="nav-item">
                 <NavLink

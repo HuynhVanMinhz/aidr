@@ -46,6 +46,17 @@ public interface ISellerInventoryRepository
             int pageSize,
             CancellationToken cancellationToken = default);
 
+    Task<(IReadOnlyList<SellerStockImportListItemDto> Items, int TotalCount, SellerStockImportSummaryDto Summary)>
+        ListImportsByShopAsync(
+            Guid shopId,
+            string? keyword,
+            string? status,
+            DateTime? fromUtc,
+            DateTime? toUtcExclusive,
+            int page,
+            int pageSize,
+            CancellationToken cancellationToken = default);
+
     Task<SellerInventoryDetailDto?> GetDetailAsync(
         Guid shopId,
         Guid productId,

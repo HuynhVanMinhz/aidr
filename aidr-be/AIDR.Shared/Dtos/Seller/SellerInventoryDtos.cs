@@ -171,3 +171,54 @@ public sealed class SellerPriceUpdateDto
     public long PriceHistoryId { get; init; }
     public string Currency { get; init; } = "VND";
 }
+
+public sealed class SellerStockImportQueryRequest
+{
+    public string? Q { get; set; }
+    /// <summary>Open, Depleted, Void — null means all.</summary>
+    public string? Status { get; set; }
+    public DateTime? From { get; set; }
+    public DateTime? To { get; set; }
+    public int Page { get; set; } = 1;
+    public int PageSize { get; set; } = 20;
+}
+
+public sealed class SellerStockImportSummaryDto
+{
+    public int LotCount { get; init; }
+    public int OpenLotCount { get; init; }
+    public int UnitsReceived { get; init; }
+    public int UnitsRemaining { get; init; }
+}
+
+public sealed class SellerStockImportListItemDto
+{
+    public Guid LotId { get; init; }
+    public Guid ProductId { get; init; }
+    public string ProductName { get; init; } = null!;
+    public string? PrimaryImageUrl { get; init; }
+    public Guid? VariantId { get; init; }
+    public string? VariantName { get; init; }
+    public string LotCode { get; init; } = null!;
+    public int QuantityReceived { get; init; }
+    public int QuantityRemaining { get; init; }
+    public decimal UnitCost { get; init; }
+    public string Currency { get; init; } = "VND";
+    public string? SupplierName { get; init; }
+    public string? InvoiceNumber { get; init; }
+    public DateTime ReceivedAt { get; init; }
+    public DateTime? ExpiresAt { get; init; }
+    public string Status { get; init; } = null!;
+    public string? Note { get; init; }
+}
+
+public sealed class SellerStockImportListResult
+{
+    public IReadOnlyList<SellerStockImportListItemDto> Items { get; init; } =
+        Array.Empty<SellerStockImportListItemDto>();
+    public int Page { get; init; }
+    public int PageSize { get; init; }
+    public int TotalCount { get; init; }
+    public int TotalPages => PageSize <= 0 ? 0 : (int)Math.Ceiling(TotalCount / (double)PageSize);
+    public SellerStockImportSummaryDto Summary { get; init; } = new();
+}
