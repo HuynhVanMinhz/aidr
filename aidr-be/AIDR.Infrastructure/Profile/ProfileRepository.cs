@@ -89,7 +89,24 @@ public sealed class ProfileRepository : IProfileRepository
 
         var toRemove = user.Addresses.Where(a => !keepIds.Contains(a.AddressId)).ToList();
         if (toRemove.Count > 0)
+        {
+            var removeIds = toRemove.Select(a => a.AddressId).ToList();
+
+            // An address referenced by an active order cannot be deleted — the FK
+            // would throw a constraint violation which surfaces as a 500.
+            var blockedIds = await _db.Orders
+                .Where(o => o.ShippingAddressId != null && removeIds.Contains(o.ShippingAddressId.Value))
+                .Select(o => o.ShippingAddressId!.Value)
+                .Distinct()
+                .ToListAsync(cancellationToken);
+
+            if (blockedIds.Count > 0)
+                throw new AppException(
+                    "One or more addresses cannot be deleted because they are linked to existing orders. " +
+                    "You can edit the address details but cannot remove it.");
+
             _db.Addresses.RemoveRange(toRemove);
+        }
 
         await EnsureSingleDefaultAsync(user.UserId, cancellationToken);
     }

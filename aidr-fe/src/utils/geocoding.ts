@@ -17,8 +17,15 @@ const MIN_GAP_MS = 400;
 /** Roughly the centre of Vietnam's two biggest cities, used before anything is picked. */
 export const VN_DEFAULT_CENTER: LatLng = { lat: 21.0278, lng: 105.8342 };
 
-/** Keeps a search for "Ward 5" from landing in another country. */
-const VN_BBOX = '102.1,8.2,109.6,23.5';
+/** Vietnam's bounding box (minLon, minLat, maxLon, maxLat). */
+const VN_MIN_LON = 102.1;
+const VN_MAX_LON = 109.6;
+const VN_MIN_LAT = 8.2;
+const VN_MAX_LAT = 23.5;
+
+function isWithinVietnam(lat: number, lng: number): boolean {
+  return lat >= VN_MIN_LAT && lat <= VN_MAX_LAT && lng >= VN_MIN_LON && lng <= VN_MAX_LON;
+}
 
 /**
  * Approximate centres for major Vietnamese provinces/cities.
@@ -323,8 +330,9 @@ export async function geocodeAddress(
     url.searchParams.set('q', q);
     url.searchParams.set('limit', '10');
     url.searchParams.set('lang', 'vi');
-    url.searchParams.set('bbox', VN_BBOX);
     // Bias toward the selected province so a street shared across cities resolves locally.
+    // Note: bbox is not supported by the komoot public instance; lat/lon bias + countrycode
+    // filtering in pickBestFeature already keeps results within Vietnam.
     url.searchParams.set('lat', String(center.lat));
     url.searchParams.set('lon', String(center.lng));
 
@@ -341,7 +349,6 @@ export async function geocodeAddress(
       fallback.searchParams.set('q', areaQuery);
       fallback.searchParams.set('limit', '5');
       fallback.searchParams.set('lang', 'vi');
-      fallback.searchParams.set('bbox', VN_BBOX);
       fallback.searchParams.set('lat', String(center.lat));
       fallback.searchParams.set('lon', String(center.lng));
 
@@ -362,6 +369,10 @@ export async function reverseGeocode(
   point: LatLng,
   signal?: AbortSignal,
 ): Promise<ReverseGeocodeResult | null> {
+  // Photon returns 400 for coordinates outside its indexed area; guard here
+  // so out-of-bounds map drags never produce red console errors.
+  if (!isWithinVietnam(point.lat, point.lng)) return null;
+
   return throttled(async () => {
     const url = new URL(`${PHOTON}/reverse`);
     url.searchParams.set('lat', String(point.lat));
