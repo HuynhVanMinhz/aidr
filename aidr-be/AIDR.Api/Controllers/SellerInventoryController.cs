@@ -38,4 +38,14 @@ public sealed class SellerInventoryController : ControllerBase
             cancellationToken);
         return Ok(ApiResult<RestockAdviceResultDto>.Ok(result));
     }
+
+    /// <summary>Shop-wide stock import (lot) history with filters and pagination.</summary>
+    [HttpGet("inventory/imports")]
+    public async Task<ActionResult<ApiResult<SellerStockImportListResult>>> ListImports(
+        [FromQuery] SellerStockImportQueryRequest request,
+        CancellationToken cancellationToken)
+    {
+        var result = await _inventory.ListImportsAsync(User.GetUserId(), request, cancellationToken);
+        return Ok(ApiResult<SellerStockImportListResult>.Ok(result));
+    }
 }

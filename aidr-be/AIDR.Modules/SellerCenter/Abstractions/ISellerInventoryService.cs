@@ -9,6 +9,11 @@ public interface ISellerInventoryService
         SellerInventoryQueryRequest request,
         CancellationToken cancellationToken = default);
 
+    Task<SellerStockImportListResult> ListImportsAsync(
+        Guid ownerUserId,
+        SellerStockImportQueryRequest request,
+        CancellationToken cancellationToken = default);
+
     Task<SellerInventoryDetailDto> GetByProductIdAsync(
         Guid ownerUserId,
         Guid productId,

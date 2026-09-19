@@ -60,6 +60,49 @@ public sealed class SellerInventoryService : ISellerInventoryService
         };
     }
 
+    public async Task<SellerStockImportListResult> ListImportsAsync(
+        Guid ownerUserId,
+        SellerStockImportQueryRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        var shop = await RequireActiveShopAsync(ownerUserId, cancellationToken);
+        var page = request.Page <= 0 ? SellerInventoryConstants.DefaultPage : request.Page;
+        var pageSize = request.PageSize <= 0
+            ? SellerInventoryConstants.DefaultPageSize
+            : Math.Min(request.PageSize, SellerInventoryConstants.MaxPageSize);
+
+        var keyword = string.IsNullOrWhiteSpace(request.Q) ? null : request.Q.Trim();
+        if (keyword is not null && keyword.Length > DiscoveryConstants.MaxSearchQueryLength)
+            throw new AppException($"Search query must not exceed {DiscoveryConstants.MaxSearchQueryLength} characters.");
+
+        var status = NormalizeLotStatusFilter(request.Status);
+        var fromUtc = UtcDateTime.Normalize(request.From);
+        var toInclusive = UtcDateTime.Normalize(request.To);
+        DateTime? toExclusive = toInclusive is null ? null : toInclusive.Value.Date.AddDays(1);
+
+        if (fromUtc is not null && toInclusive is not null && fromUtc > toInclusive)
+            throw new AppException("From date must be on or before To date.");
+
+        var (items, total, summary) = await _inventory.ListImportsByShopAsync(
+            shop.ShopId,
+            keyword,
+            status,
+            fromUtc?.Date,
+            toExclusive,
+            page,
+            pageSize,
+            cancellationToken);
+
+        return new SellerStockImportListResult
+        {
+            Items = items,
+            Page = page,
+            PageSize = pageSize,
+            TotalCount = total,
+            Summary = summary
+        };
+    }
+
     public async Task<SellerInventoryDetailDto> GetByProductIdAsync(
         Guid ownerUserId,
         Guid productId,
@@ -272,6 +315,22 @@ public sealed class SellerInventoryService : ISellerInventoryService
             throw new AppException($"{fieldName} must not exceed {maxLength} characters.");
 
         return trimmed;
+    }
+
+    private static string? NormalizeLotStatusFilter(string? status)
+    {
+        if (string.IsNullOrWhiteSpace(status))
+            return null;
+
+        var trimmed = status.Trim();
+        if (trimmed.Equals(SellerInventoryConstants.LotStatusOpen, StringComparison.OrdinalIgnoreCase))
+            return SellerInventoryConstants.LotStatusOpen;
+        if (trimmed.Equals(SellerInventoryConstants.LotStatusDepleted, StringComparison.OrdinalIgnoreCase))
+            return SellerInventoryConstants.LotStatusDepleted;
+        if (trimmed.Equals(SellerInventoryConstants.LotStatusVoid, StringComparison.OrdinalIgnoreCase))
+            return SellerInventoryConstants.LotStatusVoid;
+
+        throw new AppException("Lot status filter must be Open, Depleted, or Void.");
     }
 
     public async Task<RestockAdviceResultDto> GetRestockAdviceAsync(

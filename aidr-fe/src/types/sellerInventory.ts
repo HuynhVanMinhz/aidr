@@ -121,6 +121,51 @@ export type SellerInventoryQuery = {
   pageSize?: number;
 };
 
+export type SellerStockImportQuery = {
+  q?: string;
+  status?: string;
+  from?: string;
+  to?: string;
+  page?: number;
+  pageSize?: number;
+};
+
+export type SellerStockImportSummary = {
+  lotCount: number;
+  openLotCount: number;
+  unitsReceived: number;
+  unitsRemaining: number;
+};
+
+export type SellerStockImportListItem = {
+  lotId: string;
+  productId: string;
+  productName: string;
+  primaryImageUrl?: string | null;
+  variantId?: string | null;
+  variantName?: string | null;
+  lotCode: string;
+  quantityReceived: number;
+  quantityRemaining: number;
+  unitCost: number;
+  currency: string;
+  supplierName?: string | null;
+  invoiceNumber?: string | null;
+  receivedAt: string;
+  expiresAt?: string | null;
+  status: string;
+  note?: string | null;
+};
+
+export type SellerStockImportListResult = {
+  items: SellerStockImportListItem[];
+  page: number;
+  pageSize: number;
+  totalCount: number;
+  totalPages: number;
+  summary: SellerStockImportSummary;
+};
+
 export type UpdateSellerInventoryPayload = {
   lowStockThreshold: number;
 };

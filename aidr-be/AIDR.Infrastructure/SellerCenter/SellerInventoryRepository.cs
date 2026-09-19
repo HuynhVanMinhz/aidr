@@ -107,6 +107,109 @@ public sealed class SellerInventoryRepository : ISellerInventoryRepository
         return (items, total, summary);
     }
 
+    public async Task<(IReadOnlyList<SellerStockImportListItemDto> Items, int TotalCount, SellerStockImportSummaryDto Summary)>
+        ListImportsByShopAsync(
+            Guid shopId,
+            string? keyword,
+            string? status,
+            DateTime? fromUtc,
+            DateTime? toUtcExclusive,
+            int page,
+            int pageSize,
+            CancellationToken cancellationToken = default)
+    {
+        var query =
+            from lot in _db.InventoryLots.AsNoTracking()
+            join product in _db.Products.AsNoTracking() on lot.ProductId equals product.ProductId
+            where product.ShopId == shopId
+                  && product.Status != SellerProductConstants.StatusDeleted
+            select new { lot, product };
+
+        if (!string.IsNullOrWhiteSpace(keyword))
+        {
+            var q = keyword.Trim();
+            query = query.Where(x =>
+                x.product.Name.Contains(q) ||
+                x.lot.LotCode.Contains(q) ||
+                (x.lot.SupplierName != null && x.lot.SupplierName.Contains(q)) ||
+                (x.lot.InvoiceNumber != null && x.lot.InvoiceNumber.Contains(q)));
+        }
+
+        if (!string.IsNullOrWhiteSpace(status))
+            query = query.Where(x => x.lot.Status == status);
+
+        if (fromUtc is not null)
+            query = query.Where(x => x.lot.ReceivedAt >= fromUtc.Value);
+
+        if (toUtcExclusive is not null)
+            query = query.Where(x => x.lot.ReceivedAt < toUtcExclusive.Value);
+
+        var summary = new SellerStockImportSummaryDto
+        {
+            LotCount = await query.CountAsync(cancellationToken),
+            OpenLotCount = await query.CountAsync(
+                x => x.lot.Status == SellerInventoryConstants.LotStatusOpen,
+                cancellationToken),
+            UnitsReceived = await query.SumAsync(x => (int?)x.lot.QuantityReceived, cancellationToken) ?? 0,
+            UnitsRemaining = await query.SumAsync(x => (int?)x.lot.QuantityRemaining, cancellationToken) ?? 0
+        };
+
+        var total = summary.LotCount;
+        var rows = await query
+            .OrderByDescending(x => x.lot.ReceivedAt)
+            .ThenByDescending(x => x.lot.CreatedAt)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .Select(x => new
+            {
+                x.lot.LotId,
+                x.lot.ProductId,
+                ProductName = x.product.Name,
+                PrimaryImageUrl = x.product.Images
+                    .OrderByDescending(i => i.IsPrimary)
+                    .ThenBy(i => i.SortOrder)
+                    .Select(i => i.ImageUrl)
+                    .FirstOrDefault(),
+                x.lot.VariantId,
+                VariantName = x.lot.Variant != null ? x.lot.Variant.VariantName : null,
+                x.lot.LotCode,
+                x.lot.QuantityReceived,
+                x.lot.QuantityRemaining,
+                x.lot.UnitCost,
+                x.lot.Currency,
+                x.lot.SupplierName,
+                x.lot.InvoiceNumber,
+                x.lot.ReceivedAt,
+                x.lot.ExpiresAt,
+                x.lot.Status,
+                x.lot.Note
+            })
+            .ToListAsync(cancellationToken);
+
+        var items = rows.Select(r => new SellerStockImportListItemDto
+        {
+            LotId = r.LotId,
+            ProductId = r.ProductId,
+            ProductName = r.ProductName,
+            PrimaryImageUrl = r.PrimaryImageUrl,
+            VariantId = r.VariantId,
+            VariantName = r.VariantName,
+            LotCode = r.LotCode,
+            QuantityReceived = r.QuantityReceived,
+            QuantityRemaining = r.QuantityRemaining,
+            UnitCost = r.UnitCost,
+            Currency = r.Currency,
+            SupplierName = r.SupplierName,
+            InvoiceNumber = r.InvoiceNumber,
+            ReceivedAt = r.ReceivedAt,
+            ExpiresAt = r.ExpiresAt,
+            Status = r.Status,
+            Note = r.Note
+        }).ToList();
+
+        return (items, total, summary);
+    }
+
     public async Task<SellerInventoryDetailDto?> GetDetailAsync(
         Guid shopId,
         Guid productId,
