@@ -312,7 +312,7 @@ public sealed class AiAnalyticsService : IAiAnalyticsService
         {
             actions.Add(new AiAnalyticsRecommendationDto
             {
-                Text = "GMV declined versus the prior period — review traffic and conversion.",
+                Text = "GMV declined versus the prior period - review traffic and conversion.",
                 ActionLabel = "View insights",
                 ActionHref = "/admin/insights"
             });
@@ -477,7 +477,7 @@ public sealed class AiAnalyticsService : IAiAnalyticsService
         {
             actions.Add(new AiAnalyticsRecommendationDto
             {
-                Text = "Revenue dipped — consider a shop voucher or bundle.",
+                Text = "Revenue dipped - consider a shop voucher or bundle.",
                 ActionLabel = "Manage vouchers",
                 ActionHref = "/seller/vouchers"
             });

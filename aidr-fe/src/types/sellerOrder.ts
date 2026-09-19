@@ -51,7 +51,7 @@ export type Shipment = {
   events: ShipmentEvent[];
 };
 
-/** Who is moving this order forward — the carrier, or the seller. */
+/** Who is moving this order forward - the carrier, or the seller. */
 export type OrderFulfillment = {
   autoEnabled: boolean;
   provider: string;

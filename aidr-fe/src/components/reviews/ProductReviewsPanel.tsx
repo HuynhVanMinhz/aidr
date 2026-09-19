@@ -331,7 +331,7 @@ export function ProductReviewsPanel({ productId, active = true }: Props) {
 
       <aside className="catalog-review-sidebar">
         <div className="catalog-detail-review-summary">
-          <p className="catalog-review-summary__score">{avgRating > 0 ? avgRating.toFixed(1) : '—'}</p>
+          <p className="catalog-review-summary__score">{avgRating > 0 ? avgRating.toFixed(1) : '-'}</p>
           <StarRatingDisplay rating={avgRating} />
           <p className="catalog-review-summary__count">
             Based on {reviewCount} review{reviewCount === 1 ? '' : 's'}

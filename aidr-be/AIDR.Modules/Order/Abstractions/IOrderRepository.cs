@@ -37,7 +37,7 @@ public interface IOrderRepository
 
     /// <summary>
     /// Complete a delivered order the buyer never confirmed. Without this the
-    /// order — and its money — would sit in Delivered forever.
+    /// order - and its money - would sit in Delivered forever.
     /// </summary>
     Task<bool> AutoCompleteDeliveredOrderAsync(
         Guid orderId,

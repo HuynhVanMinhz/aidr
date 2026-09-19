@@ -1,5 +1,5 @@
 /*
-  seller-kyc-schema.sql — eKYC identity verification for seller onboarding.
+  seller-kyc-schema.sql - eKYC identity verification for seller onboarding.
 
   See docs/solution-seller-onboarding-ekyc.md.
 
@@ -10,7 +10,7 @@ SET NOCOUNT ON;
 SET XACT_ABORT ON;
 
 /* -------------------------------------------------------------------------- */
-/* 1. KycVerifications — one row per identity check attempt                   */
+/* 1. KycVerifications - one row per identity check attempt                   */
 /* -------------------------------------------------------------------------- */
 
 IF OBJECT_ID('dbo.KycVerifications', 'U') IS NULL
@@ -57,7 +57,7 @@ END;
 GO
 
 /* -------------------------------------------------------------------------- */
-/* 2. SellerRegistrationRequests — business profile + KYC link                */
+/* 2. SellerRegistrationRequests - business profile + KYC link                */
 /* -------------------------------------------------------------------------- */
 
 IF COL_LENGTH('dbo.SellerRegistrationRequests', 'KycVerificationId') IS NULL

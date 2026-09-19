@@ -1,5 +1,5 @@
 /*
-  AIDR — Map category/product images to local theme assets under /theme/images.
+  AIDR - Map category/product images to local theme assets under /theme/images.
   Safe to re-run. Use when mock CDN URLs (cdn.aidr.local) break the storefront.
 
   Dev: POST /api/dev/seed-catalog-images

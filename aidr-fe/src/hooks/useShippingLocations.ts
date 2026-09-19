@@ -14,7 +14,7 @@ export type LocationNames = {
  * always spelled the way the carrier will accept at booking time.
  *
  * `seed` takes the plain names off an existing address and walks them back to
- * selections as each list arrives — an address saved before this form existed
+ * selections as each list arrives - an address saved before this form existed
  * still opens with its dropdowns filled in.
  */
 export function useShippingLocations() {

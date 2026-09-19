@@ -119,7 +119,7 @@ export function StockVoucherModal({
 }
 
 export function moneyOrDash(value: number | null | undefined) {
-  return value == null ? '—' : formatVnd(value);
+  return value == null ? '-' : formatVnd(value);
 }
 
 export function StockVoucherTrigger({

@@ -76,7 +76,7 @@ export function SellerProductListPage() {
     setActionError(null);
     setExporting(true);
     try {
-      // The filters go along, the paging does not — the file is the whole result.
+      // The filters go along, the paging does not - the file is the whole result.
       await exportSellerProducts({
         status: status || undefined,
         q: q.trim() || undefined,
@@ -337,7 +337,7 @@ export function SellerProductListPage() {
             reloadCurrentPage();
           }
           if (result.failed > 0) {
-            toast.error(`${result.failed} row(s) were skipped — see the list in the dialog.`);
+            toast.error(`${result.failed} row(s) were skipped - see the list in the dialog.`);
           }
         }}
       />

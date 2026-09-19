@@ -40,7 +40,7 @@ public sealed class CartProductSnapshot
     public bool HasVariants => Variants.Count > 0;
 
     // With variants these two describe the cheapest one, which is right for a listing but
-    // never for a cart line — that always goes through the resolved CartVariantSnapshot.
+    // never for a cart line - that always goes through the resolved CartVariantSnapshot.
     public decimal EffectivePrice => SalePrice ?? BasePrice;
     public int AvailableQuantity => Math.Max(0, StockQuantity - ReservedQuantity);
 }

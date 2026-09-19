@@ -1,5 +1,5 @@
 /*
-  seed-data-reconcile.sql — sync denormalized counters and fix common seed drift.
+  seed-data-reconcile.sql - sync denormalized counters and fix common seed drift.
 
   Run AFTER feature seed scripts (especially seed-inventory-lots.sql).
   Idempotent; safe to re-run.
@@ -114,7 +114,7 @@ WHERE p.StockQuantity <> ISNULL(l.Remaining, 0)
    OR (p.AvgCostPrice IS NULL AND ISNULL(l.Remaining, 0) > 0)
    OR (p.AvgCostPrice IS NOT NULL AND ISNULL(l.Remaining, 0) = 0);
 
-/* Cap reserved qty — cannot exceed on-hand stock */
+/* Cap reserved qty - cannot exceed on-hand stock */
 UPDATE dbo.Products
 SET ReservedQuantity = StockQuantity, UpdatedAt = @Now
 WHERE ReservedQuantity > StockQuantity;

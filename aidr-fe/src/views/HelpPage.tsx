@@ -21,7 +21,7 @@ export function HelpPage() {
         <SupportSearch
           id="help-search"
           label="Search Help Center"
-          placeholder="Search Help Center — orders, returns, payments…"
+          placeholder="Search Help Center - orders, returns, payments…"
           value={query}
           onChange={setQuery}
         />

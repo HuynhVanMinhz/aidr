@@ -16,7 +16,7 @@ type VideoDropzoneProps = {
 };
 
 /**
- * Click-or-drop video upload with an inline preview — same interaction as shop
+ * Click-or-drop video upload with an inline preview - same interaction as shop
  * image dropzones, but for return evidence clips.
  */
 export function VideoDropzone({

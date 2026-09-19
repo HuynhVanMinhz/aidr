@@ -1,5 +1,5 @@
 /*
-  AIDR — Electronics category hierarchy (storefront-aligned).
+  AIDR - Electronics category hierarchy (storefront-aligned).
   Idempotent by Slug. Prefer seed-electronics-refresh.sql to normalize an existing DB.
 */
 

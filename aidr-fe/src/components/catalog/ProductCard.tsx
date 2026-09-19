@@ -37,7 +37,7 @@ export function ProductCard({ product, variant = 'list' }: Props) {
   const detailTo = `/products/${product.productId}`;
   const outOfStock = product.availableQuantity < 1;
   // A card cannot say which colour or capacity the shopper wants, and the cart refuses a
-  // variant product without one — so these buttons open the picker instead of buying.
+  // variant product without one - so these buttons open the picker instead of buying.
   const needsConfiguring = product.variantCount > 0;
   const priceRange =
     product.maxEffectivePrice > product.effectivePrice ? product.maxEffectivePrice : null;

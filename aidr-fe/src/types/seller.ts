@@ -32,7 +32,7 @@ export type SellerProductVariant = {
   price: number;
   salePrice?: number | null;
   effectivePrice: number;
-  /** Summed from this variant's inventory lots — not editable on the product form. */
+  /** Summed from this variant's inventory lots - not editable on the product form. */
   stockQuantity: number;
   reservedQuantity: number;
   availableQuantity: number;

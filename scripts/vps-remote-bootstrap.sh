@@ -7,7 +7,7 @@ cd /opt/aidr
 
 mkdir -p fe-dist certbot/www certbot/conf
 if [ ! -f fe-dist/index.html ]; then
-  echo '<!doctype html><title>AIDR</title><h1>AIDR — deploying...</h1>' > fe-dist/index.html
+  echo '<!doctype html><title>AIDR</title><h1>AIDR - deploying...</h1>' > fe-dist/index.html
 fi
 
 if [ ! -f .env ]; then
@@ -15,7 +15,7 @@ if [ ! -f .env ]; then
     cp infra/env/prod.local.env .env
   else
     cp infra/env/prod.env.example .env
-    echo "WARN: using example .env — edit passwords before compose up"
+    echo "WARN: using example .env - edit passwords before compose up"
   fi
 fi
 chmod 600 .env

@@ -1,4 +1,4 @@
-/* Checkout + order received — AIDR layout on top of the theme shell. */
+/* Checkout + order received - AIDR layout on top of the theme shell. */
 
 .page-checkout {
   --checkout-border: rgba(22, 24, 29, 0.1);
@@ -741,7 +741,7 @@
   overflow-wrap: anywhere;
 }
 
-/* Payment summary — Total is the loudest thing on the card */
+/* Payment summary - Total is the loudest thing on the card */
 
 .receipt-totals {
   display: flex;
@@ -826,7 +826,7 @@
   margin-top: 14px;
 }
 
-/* Secondary to Pay now — for the buyer who already paid and came back. */
+/* Secondary to Pay now - for the buyer who already paid and came back. */
 .receipt-check-btn {
   display: block;
   width: 100%;

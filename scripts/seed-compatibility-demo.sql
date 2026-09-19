@@ -1,5 +1,5 @@
 /*
-  seed-compatibility-demo.sql — DDR4 laptop + DDR5 RAM incompatible pair for compatibility testing.
+  seed-compatibility-demo.sql - DDR4 laptop + DDR5 RAM incompatible pair for compatibility testing.
 
   Prerequisites: active shop + laptop category.
   Idempotent by fixed product GUIDs.
@@ -17,7 +17,7 @@ DECLARE
 
 IF @ShopId IS NULL OR @CatLaptop IS NULL
 BEGIN
-    PRINT N'seed-compatibility-demo: skipped — missing shop or laptop category.';
+    PRINT N'seed-compatibility-demo: skipped - missing shop or laptop category.';
     RETURN;
 END;
 

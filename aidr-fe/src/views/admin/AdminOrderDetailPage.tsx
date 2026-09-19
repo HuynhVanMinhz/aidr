@@ -9,7 +9,7 @@ import { formatVnd } from '../../utils/sellerProductUi';
 import { sellerOrderStatusBadgeClass } from '../../utils/sellerOrderUi';
 
 function formatDate(value?: string | null) {
-  if (!value) return '—';
+  if (!value) return '-';
   return formatOrderDate(value);
 }
 
@@ -118,7 +118,7 @@ export function AdminOrderDetailPage() {
                         <span className="d-block text-muted fs-13">{item.variantName}</span>
                       )}
                     </td>
-                    <td>{item.sku || '—'}</td>
+                    <td>{item.sku || '-'}</td>
                     <td>{item.quantity}</td>
                     <td>{formatVnd(item.unitPrice)}</td>
                     <td>{formatVnd(item.lineTotal)}</td>

@@ -14,7 +14,7 @@ export const SELLER_PRODUCT_CONDITIONS = ['New', 'LikeNew', 'Refurbished', 'Used
 
 /**
  * Starting points for the tag and spec editors. They are hints, not a closed
- * list — anything typed is accepted, these just save the common cases.
+ * list - anything typed is accepted, these just save the common cases.
  */
 export const PRODUCT_TAG_SUGGESTIONS = [
   'flagship',

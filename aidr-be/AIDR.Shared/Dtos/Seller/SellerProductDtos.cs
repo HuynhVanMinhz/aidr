@@ -40,7 +40,7 @@ public sealed class SellerProductVariantDto
     public decimal Price { get; init; }
     public decimal? SalePrice { get; init; }
     public decimal EffectivePrice { get; init; }
-    /// <summary>Summed from this variant's inventory lots — not settable on the product form.</summary>
+    /// <summary>Summed from this variant's inventory lots - not settable on the product form.</summary>
     public int StockQuantity { get; init; }
     public int ReservedQuantity { get; init; }
     public int AvailableQuantity { get; init; }
@@ -164,7 +164,7 @@ public sealed class CreateSellerProductRequest
     public IReadOnlyList<SellerProductImageInput>? Images { get; set; }
     /// <summary>
     /// Supply together with <see cref="Variants"/> to sell this product in several
-    /// configurations. Leave both empty for a single-price product — BasePrice then
+    /// configurations. Leave both empty for a single-price product - BasePrice then
     /// stands on its own; otherwise it is recomputed as the cheapest variant.
     /// </summary>
     public IReadOnlyList<SellerProductVariantOptionInput>? VariantOptions { get; set; }

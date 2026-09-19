@@ -93,7 +93,7 @@ export type AdminSellerRegistration = {
   contactPhone?: string | null;
   contactEmail?: string | null;
   licenseImageUrl?: string | null;
-  /** Whether any identity check exists for this applicant — available on the list too. */
+  /** Whether any identity check exists for this applicant - available on the list too. */
   hasIdentityCheck: boolean;
   /** False when the check was completed after this application was submitted. */
   kycLinkedToApplication: boolean;

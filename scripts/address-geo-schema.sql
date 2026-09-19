@@ -1,5 +1,5 @@
 /*
-  address-geo-schema.sql — map coordinates for the two ends of a delivery.
+  address-geo-schema.sql - map coordinates for the two ends of a delivery.
 
   See docs/solution-auto-fulfillment-shipping.md §13.
 
@@ -18,7 +18,7 @@ SET NOCOUNT ON;
 SET XACT_ABORT ON;
 
 /* -------------------------------------------------------------------------- */
-/* 1. Addresses — the delivery point the buyer pinned                          */
+/* 1. Addresses - the delivery point the buyer pinned                          */
 /* -------------------------------------------------------------------------- */
 
 IF COL_LENGTH('dbo.Addresses', 'Latitude') IS NULL
@@ -28,7 +28,7 @@ IF COL_LENGTH('dbo.Addresses', 'Longitude') IS NULL
     ALTER TABLE dbo.Addresses ADD Longitude FLOAT NULL;
 
 /* -------------------------------------------------------------------------- */
-/* 2. Shops — the pickup point the carrier collects from                       */
+/* 2. Shops - the pickup point the carrier collects from                       */
 /* -------------------------------------------------------------------------- */
 
 IF COL_LENGTH('dbo.Shops', 'Latitude') IS NULL

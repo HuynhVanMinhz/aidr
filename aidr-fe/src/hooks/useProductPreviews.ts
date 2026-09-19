@@ -17,10 +17,10 @@ export type ChatProductSummary = {
 
 /**
  * Products resolved for link previews are immutable enough to keep for the session, and the same
- * product is usually referenced by several messages — so cache across component instances.
+ * product is usually referenced by several messages - so cache across component instances.
  */
 const cache = new Map<string, ChatProductSummary>();
-/** Ids the API confirmed are not in the catalogue any more — never ask again. */
+/** Ids the API confirmed are not in the catalogue any more - never ask again. */
 const missing = new Set<string>();
 /** Ids both endpoints failed on. Retried a bounded number of times. */
 const failures = new Map<string, number>();
@@ -33,7 +33,7 @@ export type ProductPreview =
   | { status: 'found'; product: ChatProductSummary }
   /** The server answered, and this product is not in the catalogue any more. */
   | { status: 'missing' }
-  /** Both lookups failed — the card degrades to a plain link instead of a dead spinner. */
+  /** Both lookups failed - the card degrades to a plain link instead of a dead spinner. */
   | { status: 'unavailable' }
   | { status: 'loading' };
 
@@ -72,7 +72,7 @@ function needsLookup(id: string): boolean {
 }
 
 /**
- * Per-id fallback used when the batch endpoint is unreachable — it exists in every API build.
+ * Per-id fallback used when the batch endpoint is unreachable - it exists in every API build.
  * It does record a product view, which is why it is never the first choice, but a shared product
  * showing its real name and price matters more than a perfectly clean view counter.
  */
@@ -105,7 +105,7 @@ async function resolveBatch(batch: string[]): Promise<void> {
       else missing.add(id);
     }
   } catch {
-    // Endpoint missing (older API) or erroring — fall back to the per-product detail route.
+    // Endpoint missing (older API) or erroring - fall back to the per-product detail route.
     await Promise.all(batch.filter((id) => !cache.has(id)).map(resolveOneByDetail));
   }
 }

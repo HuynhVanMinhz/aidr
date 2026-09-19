@@ -12,7 +12,7 @@ public sealed class ConsultChoice
     /// <summary>Stable internal value stored in <see cref="ConsultState.Answers"/>.</summary>
     public string Value { get; init; } = null!;
 
-    /// <summary>Catalog keywords this answer implies — used for search Q and ranking.</summary>
+    /// <summary>Catalog keywords this answer implies - used for search Q and ranking.</summary>
     public IReadOnlyList<string> Keywords { get; init; } = Array.Empty<string>();
 
     /// <summary>Child category slug to narrow into when the catalog has one.</summary>
@@ -44,7 +44,7 @@ public sealed class ConsultQuestion
 }
 
 /// <summary>
-/// Deterministic question bank for guided consultation. Questions are rules, not prompts —
+/// Deterministic question bank for guided consultation. Questions are rules, not prompts -
 /// the assistant keeps consulting when Groq is mocked or unavailable.
 /// </summary>
 public static class AiConsultQuestionBank
@@ -221,7 +221,7 @@ public static class AiConsultQuestionBank
 
     /// <summary>
     /// Does this free text actually describe a use case for the group? The NL filter leaves
-    /// low-signal leftovers in <c>q</c> ("buy", "want"), which must NOT count as an answer —
+    /// low-signal leftovers in <c>q</c> ("buy", "want"), which must NOT count as an answer -
     /// otherwise the assistant silently skips the question it most needs to ask.
     /// </summary>
     public static bool MentionsUseCase(string? text, string? group)
@@ -327,7 +327,7 @@ public static class AiConsultQuestionBank
     private static ConsultChoice SkipChoice(string questionKey, string label)
         => new() { Label = label, Value = $"{SkipValue}:{questionKey}" };
 
-    /// <summary>Wire value for the widget's "skip questions" button — ends the round immediately.</summary>
+    /// <summary>Wire value for the widget's "skip questions" button - ends the round immediately.</summary>
     public const string SkipAllValue = SkipValue + "=all";
 
     /// <summary>Marker stored in <see cref="ConsultState.Answers"/> for a skipped slot.</summary>

@@ -14,7 +14,7 @@ export function AboutPage() {
       >
         <p className="support-page__intro">
           AIDR is an AI-integrated digital retail platform connecting buyers with trusted sellers
-          of genuine electronics — transparent pricing, secure checkout, and smart shopping tools.
+          of genuine electronics - transparent pricing, secure checkout, and smart shopping tools.
         </p>
       </SupportPageLayout>
 
@@ -36,7 +36,7 @@ export function AboutPage() {
                   <h2>Your trusted destination for smart electronics</h2>
                   <p>
                     We are dedicated to providing premium electronics, innovative gadgets, and smart
-                    technology solutions designed to enhance modern lifestyles — backed by verified
+                    technology solutions designed to enhance modern lifestyles - backed by verified
                     sellers and a seamless buying experience.
                   </p>
                 </div>
@@ -54,7 +54,7 @@ export function AboutPage() {
                     <div className="about-us-item-content">
                       <p>
                         Make modern technology accessible, reliable, and affordable by offering
-                        genuine electronics and smart devices that enhance everyday life — with
+                        genuine electronics and smart devices that enhance everyday life - with
                         clear policies and responsive support.
                       </p>
                     </div>
@@ -73,7 +73,7 @@ export function AboutPage() {
                       <p>
                         Become a leading destination for innovative electronics by building a trusted
                         marketplace where customers discover the latest advancements in digital
-                        living — powered by AI-assisted shopping.
+                        living - powered by AI-assisted shopping.
                       </p>
                     </div>
                   </div>

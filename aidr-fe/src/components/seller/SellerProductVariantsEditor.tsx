@@ -37,8 +37,8 @@ type Props = {
  * that no longer exist. "Generate" is an explicit action, and the pending-changes hint says
  * when it is worth pressing.
  *
- * Styling follows the seller area's own conventions — Bootstrap buttons and utilities, the
- * same as KeyValueField and the inventory tables — rather than the storefront theme.
+ * Styling follows the seller area's own conventions - Bootstrap buttons and utilities, the
+ * same as KeyValueField and the inventory tables - rather than the storefront theme.
  */
 export function SellerProductVariantsEditor({
   options,
@@ -90,7 +90,7 @@ export function SellerProductVariantsEditor({
       setGenerateHint('Add option names and values first, then generate again.');
     } else if (added === 0 && removed === 0) {
       setGenerateHint(
-        `List already has ${next.length} variant${next.length === 1 ? '' : 's'} — nothing new to add.`,
+        `List already has ${next.length} variant${next.length === 1 ? '' : 's'} - nothing new to add.`,
       );
     } else {
       const parts: string[] = [`Showing ${next.length} variant${next.length === 1 ? '' : 's'}`];
@@ -140,7 +140,7 @@ export function SellerProductVariantsEditor({
       <>
         <p className="text-muted fs-13 mb-2">
           This product is sold at a single price. Add options if the price differs by
-          configuration — for example an iPhone that costs more in 256GB than in 128GB.
+          configuration - for example an iPhone that costs more in 256GB than in 128GB.
         </p>
         <button
           type="button"
@@ -226,7 +226,7 @@ export function SellerProductVariantsEditor({
       )}
       {stale && expected <= MAX_VARIANTS && (
         <p className="text-warning fs-13 mt-2 mb-0">
-          The options changed. Press Generate to rebuild the list — combinations that no longer
+          The options changed. Press Generate to rebuild the list - combinations that no longer
           exist will be removed.
         </p>
       )}
@@ -327,7 +327,7 @@ export function SellerProductVariantsEditor({
                                   })
                                 }
                               >
-                                <option value="">None — falls back to the product photo</option>
+                                <option value="">None - falls back to the product photo</option>
                                 {galleryImages.map((url, i) => (
                                   <option key={url} value={String(i)}>
                                     Photo {i + 1}
@@ -438,7 +438,7 @@ export function SellerProductVariantsEditor({
           {uploadError && <p className="text-danger fs-13 mt-2 mb-0">{uploadError}</p>}
 
           <p className="text-muted fs-13 mt-2 mb-0">
-            A variant with its own photo swaps the storefront gallery when a shopper picks it —
+            A variant with its own photo swaps the storefront gallery when a shopper picks it -
             give each colour its picture. Variants left without one keep the product&apos;s
             default photo.
           </p>

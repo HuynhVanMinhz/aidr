@@ -1,4 +1,4 @@
-# AIDR — Solution: Buyer Protection Timeline
+# AIDR - Solution: Buyer Protection Timeline
 
 **Status:** Implemented  
 **Module:** Order + Settlement + Return (read-only buyer UI)  
@@ -10,7 +10,7 @@
 
 ## 1. Yêu cầu
 
-> Sau khi mua, buyer hiểu **đang ở bước nào**, **được bảo vệ đến khi nào**, **khi nào có thể return** — không cần đọc policy chung.
+> Sau khi mua, buyer hiểu **đang ở bước nào**, **được bảo vệ đến khi nào**, **khi nào có thể return** - không cần đọc policy chung.
 
 ### 1.1 Các mốc hiển thị (buyer-facing)
 
@@ -24,15 +24,15 @@
 | 6 | Return window | `CompletedAt + ReturnWindowDays` (BR return) |
 | 7 | *(optional)* Escrow note | Buyer-friendly: *"Your payment is protected until you confirm receipt or the return window ends"* |
 
-**Không hiển thị:** commission 3%, `SettlementEntries` status seller, payout batch — thuộc seller/admin.
+**Không hiển thị:** commission 3%, `SettlementEntries` status seller, payout batch - thuộc seller/admin.
 
 ### 1.2 Nguyên tắc
 
-1. **Read-only aggregation** — không đổi logic settlement/return.  
-2. **Status-driven** — mốc tương lai hiện estimated date từ config.  
-3. **Return conflict** — nếu có `ReturnRequest` open → step riêng *Return in progress*.  
-4. **English labels** — giải thích ngắn, không thuật ngữ kế toán.  
-5. **Guest không xem** — chỉ buyer owner order.
+1. **Read-only aggregation** - không đổi logic settlement/return.  
+2. **Status-driven** - mốc tương lai hiện estimated date từ config.  
+3. **Return conflict** - nếu có `ReturnRequest` open → step riêng *Return in progress*.  
+4. **English labels** - giải thích ngắn, không thuật ngữ kế toán.  
+5. **Guest không xem** - chỉ buyer owner order.
 
 ---
 
@@ -40,7 +40,7 @@
 
 | Đang có | Thiếu |
 |---------|-------|
-| `OrderDetailPage` buyer — status badge, tracking | Không timeline visual |
+| `OrderDetailPage` buyer - status badge, tracking | Không timeline visual |
 | Settlement backend + seller/admin pages | Buyer không thấy protection narrative |
 | `Settlement:AutoCompleteDays`, `HoldDays` config | Không surface ra buyer |
 | Return request flow UC-43 | Không gắn deadline return window trên timeline |
@@ -114,7 +114,7 @@ Auth: Buyer owner.
 
 `state`: `done` | `current` | `upcoming` | `info` | `warning` | `cancelled`.
 
-Service: `BuyerProtectionTimelineService` trong module Order — inject order repo, shipment repo, return repo, `IOptions<SettlementOptions>`.
+Service: `BuyerProtectionTimelineService` trong module Order - inject order repo, shipment repo, return repo, `IOptions<SettlementOptions>`.
 
 ---
 
@@ -134,7 +134,7 @@ if Status == Completed:
   canOpenReturn = now <= returnWindowEnd && no blocking return
 ```
 
-Map GHN events (optional Phase B): sub-steps under Shipped (*Picked up*, *In transit*) — max 3 để không rối.
+Map GHN events (optional Phase B): sub-steps under Shipped (*Picked up*, *In transit*) - max 3 để không rối.
 
 ---
 
@@ -142,7 +142,7 @@ Map GHN events (optional Phase B): sub-steps under Shipped (*Picked up*, *In tra
 
 `OrderDetailPage.tsx`:
 
-- Card **Buyer protection** phía trên order lines — vertical stepper (storefront theme).  
+- Card **Buyer protection** phía trên order lines - vertical stepper (storefront theme).  
 - Icon trạng thái: done ✓, current pulse, upcoming gray.  
 - Link *Track shipment* khi có tracking.  
 - Nút **Request return** disable + tooltip khi ngoài window (reuse existing return hook).  
@@ -154,9 +154,9 @@ Không dùng admin theme trên account buyer.
 
 ## 6. Schema
 
-**Không migration v1** — compute từ `Orders`, `Shipments`, `ReturnRequests`, config.
+**Không migration v1** - compute từ `Orders`, `Shipments`, `ReturnRequests`, config.
 
-Optional cache Redis `order:protection:{orderId}` TTL 5 phút — invalidate on status webhook.
+Optional cache Redis `order:protection:{orderId}` TTL 5 phút - invalidate on status webhook.
 
 ---
 
@@ -182,7 +182,7 @@ Thêm section `BuyerProtection` nếu cần toggle hiển thị escrow note:
 ## 8. Seed & test
 
 - Dùng seed order có sẵn ở các status: Paid, Shipping, Delivered, Completed, Completed+Return open.  
-- `POST /api/dev/seed-protection-timeline-demo` — tạo 1 order Delivered sắp auto-complete.  
+- `POST /api/dev/seed-protection-timeline-demo` - tạo 1 order Delivered sắp auto-complete.  
 - Không cần SQL riêng nếu seed orders đủ trạng thái.
 
 ---

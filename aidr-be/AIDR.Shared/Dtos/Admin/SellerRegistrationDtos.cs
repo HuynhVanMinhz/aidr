@@ -26,7 +26,7 @@ public sealed class AdminSellerRegistrationDto
     public string? ContactEmail { get; init; }
     public string? LicenseImageUrl { get; init; }
 
-    /// <summary>Identity check backing this application — reviewed side by side.</summary>
+    /// <summary>Identity check backing this application - reviewed side by side.</summary>
     /// <summary>
     /// Whether an identity check is attached at all. Present on the list too, so
     /// the queue can flag applications that predate eKYC without loading each one.
@@ -35,7 +35,7 @@ public sealed class AdminSellerRegistrationDto
 
     /// <summary>
     /// False when the check belongs to the applicant but was completed after this
-    /// application was submitted — the reviewer must be told the difference.
+    /// application was submitted - the reviewer must be told the difference.
     /// </summary>
     public bool KycLinkedToApplication { get; init; }
 

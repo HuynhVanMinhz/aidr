@@ -65,7 +65,7 @@ export function RestockAdviceCard({ days = 14 }: Props) {
         <div className="card-body d-flex align-items-center gap-2">
           <IconifyIcon icon="solar:box-minimalistic-bold-duotone" className="fs-24 text-success" />
           <p className="mb-0 text-muted">
-            No restock suggestions right now — stock levels look healthy for the last {windowDays} days.
+            No restock suggestions right now - stock levels look healthy for the last {windowDays} days.
           </p>
         </div>
       </div>
@@ -112,7 +112,7 @@ export function RestockAdviceCard({ days = 14 }: Props) {
                   </td>
                   <td>{item.avgDailySales.toFixed(2)}</td>
                   <td>
-                    {item.daysUntilStockout != null ? item.daysUntilStockout.toFixed(1) : '—'}
+                    {item.daysUntilStockout != null ? item.daysUntilStockout.toFixed(1) : '-'}
                   </td>
                   <td>
                     <span className="badge bg-warning-subtle text-warning fw-medium">

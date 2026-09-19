@@ -16,7 +16,7 @@ const nextRowId = () => `row-${(rowSeq += 1)}`;
 /* ------------------------------------------------------------------ tags */
 
 /**
- * Accepts `["a","b"]`, and also a bare `a, b` — sellers who typed the old field
+ * Accepts `["a","b"]`, and also a bare `a, b` - sellers who typed the old field
  * without brackets had their tags dropped on save, and the comma form is what
  * they reach for anyway.
  */
@@ -186,7 +186,7 @@ export function serializeOpeningHours(week: OpeningHoursWeek): string {
 
 /** "9:00-18:00", "09:00 - 18:00" and "9h-18h" all mean the same thing. */
 function parseTimeRange(raw: string): { open: string; close: string } | null {
-  const parts = raw.split(/[-–—]/);
+  const parts = raw.split(/[-–-]/);
   if (parts.length !== 2) return null;
 
   const open = normalizeTime(parts[0]);

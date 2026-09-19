@@ -122,7 +122,7 @@ export function SellerShopSettingsPage() {
   }, [seed]);
 
   // Carrier spelling wins once a unit resolves. This mirrors names into the form
-  // without touching `dirty` — resolving what was already saved is not an edit.
+  // without touching `dirty` - resolving what was already saved is not an edit.
   useEffect(() => {
     setForm((prev) => ({
       ...prev,
@@ -137,7 +137,7 @@ export function SellerShopSettingsPage() {
   const canSubmit = canSubmitSellerShopForm(dirty, fieldErrors, form.shopName);
 
   // Save is disabled while anything is invalid, and an untouched field's error
-  // is otherwise invisible — a shop seeded with an odd URL looked simply broken.
+  // is otherwise invisible - a shop seeded with an odd URL looked simply broken.
   const blockingErrors = useMemo(() => Object.values(fieldErrors), [fieldErrors]);
 
   function updateField<K extends SellerShopFormField>(key: K, value: string) {
@@ -367,7 +367,7 @@ export function SellerShopSettingsPage() {
                       hint={
                         uploadsEnabled
                           ? 'Square works best · PNG or JPG · up to 4MB'
-                          : 'Image hosting is not configured — paste a URL below instead.'
+                          : 'Image hosting is not configured - paste a URL below instead.'
                       }
                       previewAlt="Shop logo preview"
                       onError={(message) => setImageError((e) => ({ ...e, logoUrl: message }))}
@@ -401,7 +401,7 @@ export function SellerShopSettingsPage() {
                       hint={
                         uploadsEnabled
                           ? 'Wide crop, around 3:1 · PNG or JPG · up to 4MB'
-                          : 'Image hosting is not configured — paste a URL below instead.'
+                          : 'Image hosting is not configured - paste a URL below instead.'
                       }
                       previewAlt="Shop banner preview"
                       onError={(message) => setImageError((e) => ({ ...e, bannerUrl: message }))}
@@ -541,7 +541,7 @@ export function SellerShopSettingsPage() {
                       pickupPoint
                         ? pickupCaption ||
                           'This is where the carrier collects parcels, and where the buyer’s tracking map starts.'
-                        : 'No pickup pin yet — without one the order tracking map has nowhere to start.'
+                        : 'No pickup pin yet - without one the order tracking map has nowhere to start.'
                     }
                   />
                 </div>

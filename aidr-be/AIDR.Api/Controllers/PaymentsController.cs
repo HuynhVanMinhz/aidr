@@ -58,7 +58,7 @@ public sealed class PaymentsController : ControllerBase
 
     /// <summary>
     /// Register or update the merchant webhook URL with payOS.
-    /// payOS probes the endpoint first — use a public HTTPS URL (e.g. ngrok) in local/dev.
+    /// payOS probes the endpoint first - use a public HTTPS URL (e.g. ngrok) in local/dev.
     /// </summary>
     [HttpPost("confirm-webhook")]
     [Authorize(Policy = "Admin")]

@@ -22,7 +22,7 @@ public sealed class AdminSellerRegistrationRecord
 
     /// <summary>
     /// The applicant's most recent check, whichever application it came from.
-    /// Identity belongs to the person, not to one submission — an application
+    /// Identity belongs to the person, not to one submission - an application
     /// filed before the user verified would otherwise look unverified forever.
     /// </summary>
     public Guid? LatestKycVerificationId { get; init; }

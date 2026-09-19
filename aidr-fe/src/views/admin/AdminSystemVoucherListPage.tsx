@@ -24,7 +24,7 @@ function formatDiscount(item: AdminSystemVoucher) {
 
 function formatDate(iso: string) {
   const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return '—';
+  if (Number.isNaN(d.getTime())) return '-';
   return d.toLocaleString();
 }
 

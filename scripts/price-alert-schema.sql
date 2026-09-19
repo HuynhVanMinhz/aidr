@@ -1,5 +1,5 @@
 /*
-  price-alert-schema.sql — buyer price drop / back-in-stock alerts.
+  price-alert-schema.sql - buyer price drop / back-in-stock alerts.
 
   See docs/solution-price-alerts-and-history.md.
   Safe to re-run.

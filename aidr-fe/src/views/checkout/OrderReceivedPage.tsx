@@ -167,7 +167,7 @@ export function OrderReceivedPage() {
 
   // Page notices are toasts, not banners.
   const cancelNotice = cancelled
-    ? 'Payment cancelled — your order is still reserved. Retry payment.'
+    ? 'Payment cancelled - your order is still reserved. Retry payment.'
     : null;
   const returnNotice = returnedFromPayOs
     ? allPaid
@@ -283,7 +283,7 @@ export function OrderReceivedPage() {
           </div>
 
           <div className="row receipt-layout">
-            {/* Left — what was ordered */}
+            {/* Left - what was ordered */}
             <div className="col-xl-7 receipt-main-col">
               {orders.map((order) => {
                 const link = paymentsByOrderId.get(order.orderId);
@@ -359,7 +359,7 @@ export function OrderReceivedPage() {
               })}
             </div>
 
-            {/* Right — finish paying */}
+            {/* Right - finish paying */}
             <div className="col-xl-5 receipt-side-col">
               <div className="receipt-sidebar">
                 <section className="receipt-card receipt-payment">
@@ -418,7 +418,7 @@ export function OrderReceivedPage() {
                         disabled={busyPay}
                         onClick={() => void handleCheckStatus()}
                       >
-                        {syncing ? 'Checking with payOS…' : 'I have already paid — check status'}
+                        {syncing ? 'Checking with payOS…' : 'I have already paid - check status'}
                       </button>
                       <p className="receipt-payment__hint">
                         {paymentLabel(primary.paymentStatus, paymentsByOrderId.get(primary.orderId))}{' '}
@@ -435,7 +435,7 @@ export function OrderReceivedPage() {
                         disabled={busyPay}
                         onClick={() => void handleCheckStatus()}
                       >
-                        {syncing ? 'Checking with payOS…' : 'I have already paid — check status'}
+                        {syncing ? 'Checking with payOS…' : 'I have already paid - check status'}
                       </button>
                       <p className="receipt-payment__hint">
                         {pendingOrders.length} of {orders.length} orders still need payment

@@ -40,7 +40,7 @@ export type BuyerOrderTracking = {
 /**
  * How far along the route the parcel is drawn, per shipment status.
  *
- * These are positions on a picture, not measurements — the carrier never says
+ * These are positions on a picture, not measurements - the carrier never says
  * where the parcel physically is, and the UI says so next to the map.
  */
 const PROGRESS_BY_SHIPMENT_STATUS: Record<string, number> = {
@@ -54,7 +54,7 @@ const PROGRESS_BY_SHIPMENT_STATUS: Record<string, number> = {
   Cancelled: 0,
 };
 
-/** Fallback for orders with no shipment row — the order's own status still tells a story. */
+/** Fallback for orders with no shipment row - the order's own status still tells a story. */
 const PROGRESS_BY_ORDER_STATUS: Record<string, number> = {
   PendingPayment: 0,
   Paid: 0,

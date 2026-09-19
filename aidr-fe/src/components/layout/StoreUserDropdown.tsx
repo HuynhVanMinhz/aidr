@@ -83,7 +83,7 @@ export function StoreUserDropdown({ isAuthenticated }: Props) {
           <div className="store-header-dropdown-head store-header-dropdown-head--user">
             <strong>{displayName}</strong>
             {user?.email ? <span className="store-header-dropdown-email">{user.email}</span> : null}
-            {/* Only elevated roles are shown — a "Buyer" badge tells nobody anything. */}
+            {/* Only elevated roles are shown - a "Buyer" badge tells nobody anything. */}
             {badges.length > 0 ? (
               <span className="store-header-role-badges">
                 {badges.map((badge) => (

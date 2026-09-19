@@ -190,7 +190,7 @@ export function BuyerReturnDetailPage() {
               {isRefunded
                 ? 'Sent to your bank'
                 : isRejected
-                  ? 'Not refunded — request declined'
+                  ? 'Not refunded - request declined'
                   : 'Estimated, pending approval'}
             </p>
             <div className="return-refund__actions">

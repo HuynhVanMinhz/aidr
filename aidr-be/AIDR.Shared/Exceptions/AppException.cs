@@ -31,7 +31,7 @@ public class ForbiddenAppException : AppException
 }
 
 /// <summary>
-/// An upstream provider could not be reached, or refused us — as opposed to the
+/// An upstream provider could not be reached, or refused us - as opposed to the
 /// user's input being wrong. Callers may fall back to a manual path.
 /// </summary>
 public class ProviderUnavailableException : AppException

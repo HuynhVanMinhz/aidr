@@ -1,4 +1,4 @@
-# AIDR — Solution: Seller onboarding có eKYC (FPT.AI)
+# AIDR - Solution: Seller onboarding có eKYC (FPT.AI)
 
 **Status:** Implemented
 **Module:** Profile (buyer) + Admin · **Use case:** UC-05 (Become a seller)
@@ -24,7 +24,7 @@ Luồng cũ chỉ có 1 bước: buyer gõ tên shop + mô tả + dán vài URL 
 ## 2. Luồng mới
 
 ```
-┌ Bước 1 — Danh tính (eKYC) ────────────────────────────────────┐
+┌ Bước 1 - Danh tính (eKYC) ────────────────────────────────────┐
 │ Upload mặt trước + mặt sau CCCD  → FPT.AI IDR (OCR)           │
 │ Upload ảnh chân dung             → FPT.AI Face Match          │
 │                                                                │
@@ -33,19 +33,19 @@ Luồng cũ chỉ có 1 bước: buyer gõ tên shop + mô tả + dán vài URL 
 │  OCR không đọc được / lệch mặt       →  Failed (được thử lại)  │
 └────────────────────────────────────────────────────────────────┘
                           ↓ bắt buộc Passed hoặc ManualReview
-┌ Bước 2 — Hồ sơ kinh doanh ────────────────────────────────────┐
+┌ Bước 2 - Hồ sơ kinh doanh ────────────────────────────────────┐
 │ Tên shop · Hình thức (Cá nhân | Hộ KD | Công ty)              │
 │ Mã số thuế (bắt buộc với Hộ KD và Công ty)                    │
 │ Địa chỉ kinh doanh · SĐT · Email liên hệ · Mô tả              │
 └────────────────────────────────────────────────────────────────┘
                           ↓
-┌ Bước 3 — Giấy tờ pháp lý ─────────────────────────────────────┐
+┌ Bước 3 - Giấy tờ pháp lý ─────────────────────────────────────┐
 │ Cá nhân : không cần thêm (eKYC là đủ)                         │
 │ Hộ / Cty: bắt buộc ảnh giấy phép kinh doanh                   │
 └────────────────────────────────────────────────────────────────┘
                           ↓
-┌ Bước 4 — Xem lại & gửi ───────────────────────────────────────┐
-│ Hiện lại tên trên CCCD (đã xác thực) — không sửa được         │
+┌ Bước 4 - Xem lại & gửi ───────────────────────────────────────┐
+│ Hiện lại tên trên CCCD (đã xác thực) - không sửa được         │
 └────────────────────────────────────────────────────────────────┘
                           ↓  Status = Pending
 ┌ Admin duyệt ──────────────────────────────────────────────────┐
@@ -55,7 +55,7 @@ Luồng cũ chỉ có 1 bước: buyer gõ tên shop + mô tả + dán vài URL 
 └────────────────────────────────────────────────────────────────┘
 ```
 
-`NeedsMoreInfo` là trạng thái mới: buyer **sửa và gửi lại chính hồ sơ đó**, không phải làm lại từ đầu — và eKYC đã pass thì không phải chụp CCCD lần nữa.
+`NeedsMoreInfo` là trạng thái mới: buyer **sửa và gửi lại chính hồ sơ đó**, không phải làm lại từ đầu - và eKYC đã pass thì không phải chụp CCCD lần nữa.
 
 ---
 
@@ -68,7 +68,7 @@ Luồng cũ chỉ có 1 bước: buyer gõ tên shop + mô tả + dán vài URL 
 
 ⚠️ Hai endpoint dùng **tên header khác nhau**: OCR là `api-key` (gạch ngang), face match là `api_key` (gạch dưới). Gửi nhầm sẽ nhận 401.
 
-Mặt sau CCCD chứa `issue_date` / `issue_loc` — mặt trước không có. `ReadIdCardAsync` OCR mặt sau riêng và ghép vào; nếu mặt sau lỗi thì bỏ qua, không làm hỏng cả lần xác thực.
+Mặt sau CCCD chứa `issue_date` / `issue_loc` - mặt trước không có. `ReadIdCardAsync` OCR mặt sau riêng và ghép vào; nếu mặt sau lỗi thì bỏ qua, không làm hỏng cả lần xác thực.
 
 `similarity` FPT.AI trả theo **phần trăm (0–100)**; client luôn chia 100 trước khi so với ngưỡng.
 
@@ -93,7 +93,7 @@ Vùng xám `ManualReview` là cố ý: ảnh mờ, đeo kính, ảnh CCCD cũ đ
 
 ### 3.3 Chống lạm dụng
 
-- Tối đa `MaxAttemptsPerDay` (5) lần eKYC / user / ngày — mỗi lần gọi FPT.AI đều tốn tiền.
+- Tối đa `MaxAttemptsPerDay` (5) lần eKYC / user / ngày - mỗi lần gọi FPT.AI đều tốn tiền.
 - Chỉ giữ **4 số cuối** CCCD ở dạng đọc được; số đầy đủ lưu dưới dạng **SHA-256 hash** để phát hiện trùng.
 - Một danh tính = một seller: unique index trên `DocumentNumberHash` với `Status = 'Passed'`.
 
@@ -149,7 +149,7 @@ LicenseImageUrl    NVARCHAR(512)
 | `GET` | `/api/kyc/me` | Kết quả eKYC mới nhất của tôi |
 | `POST` | `/api/kyc/verify` | Body `{frontImageUrl, backImageUrl, selfieImageUrl}` → chạy OCR + face match, trả kết quả |
 | `GET` | `/api/seller-registrations/me` | Hồ sơ đăng ký hiện tại (đã có) |
-| `POST` | `/api/seller-registrations` | Gửi hồ sơ — **từ chối nếu chưa có eKYC Passed/ManualReview** |
+| `POST` | `/api/seller-registrations` | Gửi hồ sơ - **từ chối nếu chưa có eKYC Passed/ManualReview** |
 | `PUT` | `/api/seller-registrations/me` | Sửa và gửi lại khi bị `NeedsMoreInfo` |
 
 ### Admin
@@ -168,7 +168,7 @@ LicenseImageUrl    NVARCHAR(512)
 3. **Mã số thuế bắt buộc** với `Household` và `Company`; định dạng 10 hoặc 13 chữ số (`0123456789-001`).
 4. **Giấy phép kinh doanh bắt buộc** với `Household` và `Company`.
 5. **Một CCCD = một shop.** Hash trùng với hồ sơ đã `Approved` → từ chối.
-6. **Tên trên hồ sơ lấy từ CCCD**, buyer không tự gõ — tránh khai khác giấy tờ.
+6. **Tên trên hồ sơ lấy từ CCCD**, buyer không tự gõ - tránh khai khác giấy tờ.
 7. eKYC `ManualReview` vẫn gửi được hồ sơ, nhưng admin thấy cảnh báo vàng.
 
 ---
@@ -177,13 +177,13 @@ LicenseImageUrl    NVARCHAR(512)
 
 | Rủi ro | Cách xử lý |
 |---|---|
-| FPT.AI chết / hết quota / chưa kích hoạt dịch vụ | Rơi về `ManualReview` — admin đọc giấy tờ bằng mắt. Không "pass ngầm", không mock |
+| FPT.AI chết / hết quota / chưa kích hoạt dịch vụ | Rơi về `ManualReview` - admin đọc giấy tờ bằng mắt. Không "pass ngầm", không mock |
 | Mock bị bật nhầm ở production | `Program.cs` từ chối khởi động nếu `FptAi:UseMock=true` ngoài môi trường Development |
 | Endpoint bị dùng để quét mạng nội bộ | Whitelist host ảnh (`AllowedImageHosts`) |
 | Ảnh CCCD rò rỉ | Chỉ lưu URL Cloudinary; không lưu ảnh trong DB; số CCCD chỉ để mask + hash |
 | Người thật bị loại oan | Vùng `ManualReview` để admin quyết bằng mắt |
 | Đốt quota API | Giới hạn số lần thử/ngày |
-| Ảnh chụp lại màn hình (spoof) | v1 chưa có liveness. FPT.AI có `/dmp/liveness/v3` — xem §8 |
+| Ảnh chụp lại màn hình (spoof) | v1 chưa có liveness. FPT.AI có `/dmp/liveness/v3` - xem §8 |
 
 ---
 
@@ -193,18 +193,18 @@ Nếu client ném `ProviderUnavailableException` (chưa có key, key sai, hoặc
 kích hoạt dịch vụ), `KycService` **không** chặn seller và cũng **không** cho pass:
 
 - lưu bản ghi `Status = ManualReview`, `Provider = MANUAL`, kèm 3 ảnh đã upload;
-- các trường OCR để trống — vì không máy nào đọc chúng, không bịa dữ liệu;
+- các trường OCR để trống - vì không máy nào đọc chúng, không bịa dữ liệu;
 - seller đi tiếp bước 2 (hồ sơ kinh doanh) như bình thường;
 - màn hình admin hiện cảnh báo đỏ *"No automated check ran"* và yêu cầu người duyệt tự đối chiếu
   ảnh chân dung với ảnh trên CCCD trước khi duyệt.
 
-Đây vẫn là xác thực thật — chỉ là do người làm thay vì máy.
+Đây vẫn là xác thực thật - chỉ là do người làm thay vì máy.
 
 ---
 
 ## 8. Chưa làm (v2)
 
-- **Liveness detection** (`POST https://api.fpt.ai/dmp/liveness/v3`) — chống chụp lại ảnh/màn hình. Cần buyer quay video ngắn, đổi UX bước 1.
+- **Liveness detection** (`POST https://api.fpt.ai/dmp/liveness/v3`) - chống chụp lại ảnh/màn hình. Cần buyer quay video ngắn, đổi UX bước 1.
 - Đối chiếu mã số thuế với API Tổng cục Thuế.
 - OCR giấy phép kinh doanh (hiện admin đọc bằng mắt).
 - Ký hợp đồng điện tử với seller.

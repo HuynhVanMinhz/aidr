@@ -14,11 +14,11 @@ namespace AIDR.Modules.Shipping.Services;
 /// clicking: books a real GHN shipment once payment settles, then lets the
 /// carrier's own events (webhook first, polling as a backstop) move the order.
 ///
-/// The seller can still push the status by hand at any point — automation and
+/// The seller can still push the status by hand at any point - automation and
 /// the manual path share the same forward-only transition rules, so whichever
 /// happens first wins and the other becomes a no-op.
 ///
-/// Delivered → Completed is not here — <c>SettlementBackgroundService</c> already
+/// Delivered → Completed is not here - <c>SettlementBackgroundService</c> already
 /// owns that step.
 /// </summary>
 public sealed class ShippingService : IShippingService
@@ -330,7 +330,7 @@ public sealed class ShippingService : IShippingService
                 Provider = options.NormalizedProvider,
                 RequiresSellerAction = true,
                 StalledReason = options.EnableAutoFulfillment
-                    ? $"{options.NormalizedProvider} has no credentials configured, so no shipment can be booked — update this order manually."
+                    ? $"{options.NormalizedProvider} has no credentials configured, so no shipment can be booked - update this order manually."
                     : "Automatic fulfillment is turned off; update this order manually.",
                 Shipment = shipment,
                 Route = route
@@ -376,8 +376,8 @@ public sealed class ShippingService : IShippingService
     }
 
     /// <summary>
-    /// The two ends of a delivery. A missing coordinate is normal — a shop that
-    /// never pinned its pickup point, or an order placed before the map existed —
+    /// The two ends of a delivery. A missing coordinate is normal - a shop that
+    /// never pinned its pickup point, or an order placed before the map existed -
     /// and the map is expected to cope with one end, or neither.
     /// </summary>
     public static OrderRouteDto BuildRoute(
@@ -463,7 +463,7 @@ public sealed class ShippingService : IShippingService
     /// <summary>
     /// The carrier needs a real pickup point. Failing here rather than at the
     /// carrier turns a cryptic GHN rejection into something the seller can act
-    /// on — the message lands in the shipment's LastError and on their screen.
+    /// on - the message lands in the shipment's LastError and on their screen.
     /// </summary>
     private static string RequireShopField(ShipmentDispatchCandidate candidate, string? value, string field) =>
         string.IsNullOrWhiteSpace(value)

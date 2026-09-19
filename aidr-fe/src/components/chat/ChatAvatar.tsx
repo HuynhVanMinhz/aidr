@@ -12,7 +12,7 @@ type ChatAvatarProps = {
 
 /**
  * Avatar that degrades to coloured initials whenever the image is missing, blank or fails to
- * load — a broken <img> icon is the most visible defect in a conversation list.
+ * load - a broken <img> icon is the most visible defect in a conversation list.
  */
 export function ChatAvatar({
   name,

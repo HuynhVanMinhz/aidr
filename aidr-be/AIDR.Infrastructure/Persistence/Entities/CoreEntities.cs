@@ -147,7 +147,7 @@ public class SellerRegistrationRequest
     public DateTime? ReviewedAt { get; set; }
     public DateTime CreatedAt { get; set; }
 
-    /* Identity + legal profile — see docs/solution-seller-onboarding-ekyc.md */
+    /* Identity + legal profile - see docs/solution-seller-onboarding-ekyc.md */
     public Guid? KycVerificationId { get; set; }
     public string? BusinessType { get; set; }
     public string? TaxCode { get; set; }
@@ -346,8 +346,8 @@ public class Product
     public ICollection<ProductReview> Reviews { get; set; } = new List<ProductReview>();
 
     /// <summary>
-    /// Empty for a product sold as one configuration. Once populated, a variant —
-    /// not the product — is what a buyer adds to the cart, and BasePrice /
+    /// Empty for a product sold as one configuration. Once populated, a variant -
+    /// not the product - is what a buyer adds to the cart, and BasePrice /
     /// StockQuantity above become rollups over these rows.
     /// </summary>
     public ICollection<ProductVariant> Variants { get; set; } = new List<ProductVariant>();
@@ -932,7 +932,7 @@ public class ShipmentEvent
     public Guid ShipmentEventId { get; set; }
     public Guid ShipmentId { get; set; }
 
-    /// <summary>Idempotency key — unique per shipment, so a replayed webhook is a no-op.</summary>
+    /// <summary>Idempotency key - unique per shipment, so a replayed webhook is a no-op.</summary>
     public string ExternalEventId { get; set; } = null!;
     public string ProviderStatus { get; set; } = null!;
     public string MappedStatus { get; set; } = null!;

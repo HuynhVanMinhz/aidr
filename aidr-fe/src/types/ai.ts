@@ -172,7 +172,7 @@ export type AiSuggestedProduct = {
   shopId: string;
   shopName: string;
   reason?: string | null;
-  /** Best match | Cheaper option | Step up — set on guided-consultation results. */
+  /** Best match | Cheaper option | Step up - set on guided-consultation results. */
   badge?: string | null;
 };
 

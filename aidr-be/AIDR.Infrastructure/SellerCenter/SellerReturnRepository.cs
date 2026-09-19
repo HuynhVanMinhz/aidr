@@ -254,7 +254,7 @@ public sealed class SellerReturnRepository : ISellerReturnRepository
             FromStatus = from,
             ToStatus = restoreTo,
             ChangedBy = changedBy,
-            Note = "Return request rejected — order status restored",
+            Note = "Return request rejected - order status restored",
             CreatedAt = now
         });
 

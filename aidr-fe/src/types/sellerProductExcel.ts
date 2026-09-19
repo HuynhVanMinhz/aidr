@@ -14,8 +14,8 @@ export type SellerProductImportRow = {
 };
 
 /**
- * One Inventory row. Stock always arrives as a new lot with a cost — the sheet
- * never sets a stock level outright — so the preview states what is being
+ * One Inventory row. Stock always arrives as a new lot with a cost - the sheet
+ * never sets a stock level outright - so the preview states what is being
  * received before the seller confirms it.
  */
 export type SellerInventoryImportRow = {

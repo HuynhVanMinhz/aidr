@@ -10,7 +10,7 @@ namespace AIDR.Api.Controllers;
 ///
 /// Proxied rather than called from the browser so the carrier token never leaves
 /// the server, and so every address in the system is spelled the way the carrier
-/// expects — a typed address is what makes a booking fail at dispatch time.
+/// expects - a typed address is what makes a booking fail at dispatch time.
 /// </summary>
 [ApiController]
 [Route("api/shipping/locations")]

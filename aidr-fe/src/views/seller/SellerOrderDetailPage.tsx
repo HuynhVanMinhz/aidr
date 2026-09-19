@@ -144,7 +144,7 @@ export function SellerOrderDetailPage() {
   const fulfillment = detail.fulfillment;
   const shipment = fulfillment?.shipment ?? null;
   const automated = Boolean(fulfillment?.autoEnabled && !fulfillment.requiresSellerAction);
-  // A carrier-issued code is the shipment's identity — the seller must not retype it.
+  // A carrier-issued code is the shipment's identity - the seller must not retype it.
   const carrierTracking = shipment?.trackingCode?.trim() || null;
   const recentEvents = shipment?.events.slice(0, 4) ?? [];
 
@@ -275,12 +275,12 @@ export function SellerOrderDetailPage() {
                 parcelLabel={
                   shipment ? formatShipmentStatus(shipment.status) : formatOrderStatus(detail.status)
                 }
-                emptyHint="No map yet — pin this shop's pickup point in Shop settings; the buyer's address needs a pinned delivery point too."
+                emptyHint="No map yet - pin this shop's pickup point in Shop settings; the buyer's address needs a pinned delivery point too."
                 height={340}
               />
               <p className="mb-0 mt-3 text-muted fs-13">
                 {fulfillment.provider} reports delivery milestones, not the driver's live
-                position — the parcel is drawn along the route at the point its latest
+                position - the parcel is drawn along the route at the point its latest
                 status implies.
               </p>
             </div>
@@ -391,7 +391,7 @@ export function SellerOrderDetailPage() {
 
               {automated ? (
                 <p className="mb-0 mt-3 text-muted fs-13">
-                  {fulfillment.provider} updates this order automatically — you can still
+                  {fulfillment.provider} updates this order automatically - you can still
                   move it forward yourself below if you need to.
                 </p>
               ) : null}
@@ -453,7 +453,7 @@ export function SellerOrderDetailPage() {
 
                 {carrierTracking ? (
                   <p className="text-muted fs-13 mt-n2 mb-3">
-                    Issued by {shipment?.provider} — nothing to type here.
+                    Issued by {shipment?.provider} - nothing to type here.
                   </p>
                 ) : automated ? (
                   <p className="text-muted fs-13 mt-n2 mb-3">

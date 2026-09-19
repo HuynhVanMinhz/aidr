@@ -124,7 +124,7 @@
   }
 }
 
-/* Bootstrap theme gốc dùng URL awaikenthemes làm divider — override */
+/* Bootstrap theme gốc dùng URL awaikenthemes làm divider - override */
 .page-header-box .breadcrumb {
   --bs-breadcrumb-divider: '/';
 }
@@ -743,7 +743,7 @@
   padding-right: 1rem;
 }
 
-/* —— Wishlist grid cards —— */
+/* -- Wishlist grid cards -- */
 .wishlist-toolbar__summary {
   margin: 0 0 0.85rem;
   font-size: 0.875rem;
@@ -1030,7 +1030,7 @@
   }
 }
 
-/* —— Account security: grouped tip cards instead of one dense bullet list —— */
+/* -- Account security: grouped tip cards instead of one dense bullet list -- */
 .account-security-groups {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
@@ -1108,7 +1108,7 @@
   --return-radius: 12px;
 }
 
-/* Status chip — colour plus an icon, so colour is never the only signal. */
+/* Status chip - colour plus an icon, so colour is never the only signal. */
 .return-status-chip {
   display: inline-flex;
   align-items: center;
@@ -1585,7 +1585,7 @@
     grid-template-columns: minmax(0, 1fr);
   }
 
-  /* Refund and progress matter most on a phone — pull them above the detail. */
+  /* Refund and progress matter most on a phone - pull them above the detail. */
   .return-detail__side {
     order: -1;
   }
@@ -1617,7 +1617,7 @@
 
 
 /* ==========================================================================
-   Account UI kit — shared toolbar / select / button / card / row primitives
+   Account UI kit - shared toolbar / select / button / card / row primitives
    so every account page (orders, returns, vouchers, addresses, following)
    looks like the same product.
    ========================================================================== */
@@ -3801,7 +3801,7 @@
 }
 
 /* ------------------------------------------------------------------ */
-/* Order tracking map — buyer order detail and seller order detail     */
+/* Order tracking map - buyer order detail and seller order detail     */
 /* ------------------------------------------------------------------ */
 
 .track-map {
@@ -4029,7 +4029,7 @@
 }
 
 /* No keyless dark basemap exists, so the light tiles are inverted instead.
-   Only the tile pane is filtered — markers and route lines keep their colours. */
+   Only the tile pane is filtered - markers and route lines keep their colours. */
 .leaflet-tiles-dark .leaflet-tile-pane {
   filter: invert(1) hue-rotate(180deg) brightness(0.92) contrast(0.9);
 }

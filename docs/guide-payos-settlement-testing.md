@@ -5,7 +5,7 @@
 
 ---
 
-## Phần 1 — Cấu hình payOS
+## Phần 1 - Cấu hình payOS
 
 ### 1.1 Hai tính năng khác nhau, đừng nhầm
 
@@ -14,7 +14,7 @@
 | **Payment Request (VietQR)** | Buyer trả tiền cho đơn | ✅ Đang chạy thật, credential hợp lệ |
 | **Chi hộ (Payouts)** | Sàn chuyển tiền cho seller | ⚠️ Phải **đăng ký riêng** với payOS |
 
-Chi hộ **không tự có** khi bạn tạo kênh thanh toán. Phải liên hệ payOS để bật, ký hợp đồng chi hộ, và **nạp tiền vào tài khoản chi hộ** — tiền buyer trả về tài khoản nhận thanh toán, không tự chảy sang tài khoản chi hộ.
+Chi hộ **không tự có** khi bạn tạo kênh thanh toán. Phải liên hệ payOS để bật, ký hợp đồng chi hộ, và **nạp tiền vào tài khoản chi hộ** - tiền buyer trả về tài khoản nhận thanh toán, không tự chảy sang tài khoản chi hộ.
 
 **Trước khi có Chi hộ, vẫn test và vận hành được đầy đủ** bằng `PayoutMode = "Manual"` (xem 1.4).
 
@@ -45,7 +45,7 @@ curl -H "x-client-id: <ClientId>" -H "x-api-key: <ApiKey>" https://api-merchant.
 
 Trả `{"code":"101","desc":"Mã thanh toán không tồn tại"}` là **auth OK**. Trả `401` là sai key.
 
-### 1.3 Webhook — bắt buộc nếu muốn đơn tự lên `Paid`
+### 1.3 Webhook - bắt buộc nếu muốn đơn tự lên `Paid`
 
 payOS chỉ gọi webhook tới **URL public**. `localhost` không được.
 
@@ -62,7 +62,7 @@ curl -X POST http://localhost:5080/api/payments/payos/confirm-webhook \
   -d '{"webhookUrl":"https://xxxx.ngrok-free.app/api/payments/payos/webhook"}'
 ```
 
-payOS sẽ probe endpoint trước khi chấp nhận. **Không có bước này thì buyer trả tiền thật nhưng đơn vẫn treo `PendingPayment`** — đây là lý do phổ biến nhất khiến "thanh toán rồi mà không thấy gì".
+payOS sẽ probe endpoint trước khi chấp nhận. **Không có bước này thì buyer trả tiền thật nhưng đơn vẫn treo `PendingPayment`** - đây là lý do phổ biến nhất khiến "thanh toán rồi mà không thấy gì".
 
 ### 1.4 Cấu hình settlement
 
@@ -82,8 +82,8 @@ Trong cùng file `appsettings.Development.json`:
 
 **Chọn `PayoutMode`:**
 
-- `"Manual"` — dùng khi **chưa có Chi hộ**. Admin duyệt xong tự chuyển khoản qua app ngân hàng rồi bấm **Mark paid**. Toàn bộ sổ sách vẫn đúng.
-- `"PayOs"` — cần Chi hộ đã bật + tài khoản chi hộ có số dư. Kiểm tra số dư bất cứ lúc nào:
+- `"Manual"` - dùng khi **chưa có Chi hộ**. Admin duyệt xong tự chuyển khoản qua app ngân hàng rồi bấm **Mark paid**. Toàn bộ sổ sách vẫn đúng.
+- `"PayOs"` - cần Chi hộ đã bật + tài khoản chi hộ có số dư. Kiểm tra số dư bất cứ lúc nào:
 
 ```bash
 curl -H "Authorization: Bearer <admin-token>" http://localhost:5080/api/admin/settlements/payout-balance
@@ -100,13 +100,13 @@ scripts/seed-settlement-backfill.sql
 
 ---
 
-## Phần 2 — Test trên UI
+## Phần 2 - Test trên UI
 
 ### 2.0 Rút ngắn thời gian chờ để test
 
 Vòng thật là 30 ngày. Để test trong vài phút, chọn **một** trong hai cách:
 
-**Cách A — đơn mới, giữ 0 ngày** (khuyến nghị, test đúng luồng code)
+**Cách A - đơn mới, giữ 0 ngày** (khuyến nghị, test đúng luồng code)
 
 ```jsonc
 "Settlement": { "HoldDays": 0, "AutoCompleteDays": 0, "JobIntervalMinutes": 1 }
@@ -114,7 +114,7 @@ Vòng thật là 30 ngày. Để test trong vài phút, chọn **một** trong h
 
 Restart API. Đơn nào `Completed` sẽ vào escrow rồi thành `Eligible` ngay ở lần sweep kế tiếp.
 
-**Cách B — kéo ngày đáo hạn của 14 entry đang giữ về quá khứ**
+**Cách B - kéo ngày đáo hạn của 14 entry đang giữ về quá khứ**
 
 ```sql
 UPDATE dbo.SettlementEntries
@@ -129,19 +129,19 @@ Rồi vào `/admin/settlements` bấm **Run sweep now**.
 ### 2.1 Seller khai tài khoản ngân hàng
 
 1. Đăng nhập **seller** → sidebar **Settlements** (`/seller/settlements`)
-2. Đầu trang có banner vàng *"Payouts are on hold — Add a bank account…"* → đúng, chưa khai thì chưa chi được
+2. Đầu trang có banner vàng *"Payouts are on hold - Add a bank account…"* → đúng, chưa khai thì chưa chi được
 3. Card **Payout bank account**, điền:
 
    | Trường | Giá trị test |
    |---|---|
-   | Bank BIN | `970422` (MB Bank) — [danh sách BIN](https://api.vietqr.io/v2/banks) |
+   | Bank BIN | `970422` (MB Bank) - [danh sách BIN](https://api.vietqr.io/v2/banks) |
    | Bank name | `MB Bank` |
    | Account number | số tài khoản thật của bạn nếu định test chi tiền thật |
    | Account holder | **đúng tên chủ tài khoản, không dấu** |
 
 4. **Save account** → toast *"Bank account saved…"*, badge chuyển **Unverified**
 
-✅ **Kỳ vọng:** banner đổi thành *"waiting for admin verification"*. Tên sai là nguyên nhân fail chi hộ số 1 — payOS đối chiếu tên.
+✅ **Kỳ vọng:** banner đổi thành *"waiting for admin verification"*. Tên sai là nguyên nhân fail chi hộ số 1 - payOS đối chiếu tên.
 
 ### 2.2 Admin duyệt tài khoản ngân hàng
 
@@ -151,7 +151,7 @@ Rồi vào `/admin/settlements` bấm **Run sweep now**.
 
 ✅ **Kỳ vọng:** badge thành **Verified**, cột Action đổi từ dòng lý do chặn sang nút **Approve & pay**.
 
-> Nếu shop chưa có entry `Eligible` thì chưa xuất hiện ở bảng này — làm 2.0 trước.
+> Nếu shop chưa có entry `Eligible` thì chưa xuất hiện ở bảng này - làm 2.0 trước.
 
 ### 2.3 Đặt một đơn mới đi trọn vòng
 
@@ -161,7 +161,7 @@ Rồi vào `/admin/settlements` bấm **Run sweep now**.
 4. **Seller** (`/seller/orders`): `Paid` → **Confirmed** → **Shipping** → **Delivered**
 5. **Buyer** (`/account/orders/{id}`): bấm **Confirm received** → đơn **`Completed`**
 
-✅ **Kỳ vọng ngay sau bước 5** — vào `/seller/settlements`:
+✅ **Kỳ vọng ngay sau bước 5** - vào `/seller/settlements`:
 
 | Cột | Giá trị |
 |---|---|
@@ -181,7 +181,7 @@ Card **Holding** tăng đúng bằng "You receive". Card **Wallet → Pending se
 1. **Admin** → `/admin/settlements` → **Run sweep now**
 
 ✅ **Kỳ vọng:**
-- Seller: entry đổi **Holding** → **Eligible**, cột Release ghi *"Ready — waiting for admin approval"*; card **Ready to pay out** tăng
+- Seller: entry đổi **Holding** → **Eligible**, cột Release ghi *"Ready - waiting for admin approval"*; card **Ready to pay out** tăng
 - Admin: shop xuất hiện ở bảng **Ready to pay out** với Orders / Gross / Fee / Net payout
 - Seller nhận notification
 
@@ -219,9 +219,9 @@ Card **Holding** tăng đúng bằng "You receive". Card **Wallet → Pending se
 | 3 | Settlement released | `+Net` | `+Net` | `−Net` |
 | 4 | Payout | `−Net` | `−Net` | 0 |
 
-### 2.7 Test đổi trả (quan trọng — 2 nhánh khác nhau)
+### 2.7 Test đổi trả (quan trọng - 2 nhánh khác nhau)
 
-**Nhánh A — trả hàng khi tiền còn đang giữ**
+**Nhánh A - trả hàng khi tiền còn đang giữ**
 
 1. Buyer `/account/orders/{id}` → **Request return**
 2. ✅ Seller: entry đổi ngay sang **On hold**, Release ghi *"Paused until the dispute closes"*
@@ -229,14 +229,14 @@ Card **Holding** tăng đúng bằng "You receive". Card **Wallet → Pending se
 4. Admin `/admin/return-requests` → Approve → Receiving → **Refunded**
 5. ✅ Entry → **Reversed**, `Pending` giảm, **sàn không thu 3%** trên đơn này
 
-**Nhánh B — trả hàng sau khi đã chi**
-- `Available` bị trừ (được phép âm theo BR-R04) **và** phần phí 3% được hoàn lại vào ví — sàn không ăn phí trên đơn bị trả
+**Nhánh B - trả hàng sau khi đã chi**
+- `Available` bị trừ (được phép âm theo BR-R04) **và** phần phí 3% được hoàn lại vào ví - sàn không ăn phí trên đơn bị trả
 
 **Từ chối return** → entry quay lại **Holding**/**Eligible** như cũ.
 
 ---
 
-## Phần 3 — Chẩn đoán nhanh
+## Phần 3 - Chẩn đoán nhanh
 
 | Hiện tượng | Nguyên nhân thường gặp |
 |---|---|
@@ -244,7 +244,7 @@ Card **Holding** tăng đúng bằng "You receive". Card **Wallet → Pending se
 | Đơn `Completed` mà không thấy entry | API chưa restart sau khi deploy code mới |
 | Bảng **Ready to pay out** trống dù escrow > 0 | Chưa hết `HoldDays`, hoặc entry đang `OnHold` vì có return mở |
 | Shop hiện nhưng không có nút Approve | Đọc cột lý do: chưa có TK / chưa verify / dưới 50.000đ / đang có batch mở |
-| `"payOS payout account holds …"` | Tài khoản chi hộ chưa đủ số dư — nạp thêm hoặc chuyển `PayoutMode=Manual` |
+| `"payOS payout account holds …"` | Tài khoản chi hộ chưa đủ số dư - nạp thêm hoặc chuyển `PayoutMode=Manual` |
 | Batch **Failed** | Xem `failureReason`. Sai tên/số TK là phổ biến nhất. Sửa TK → verify lại → **Retry** |
 | Phí hiện `No fee` | Đơn cũ được backfill ở mức 0% (grandfather, cố ý) |
 

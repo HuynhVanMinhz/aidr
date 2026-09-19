@@ -64,7 +64,7 @@ if (!useInMemoryCache)
     healthChecks.AddRedis(redisConnection, name: "redis", tags: ["ready"]);
 }
 
-// A mock identity check that looks real is worse than no check at all — refuse
+// A mock identity check that looks real is worse than no check at all - refuse
 // to start with it enabled anywhere but Development.
 if (!builder.Environment.IsDevelopment()
     && builder.Configuration.GetValue("Ekyc:UseMock", false))

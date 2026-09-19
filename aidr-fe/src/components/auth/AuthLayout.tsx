@@ -20,7 +20,7 @@ export function AuthLayout({ children }: AuthLayoutProps) {
       </header>
       {children}
       <footer className="auth-shell__footer">
-        <p>© AIDR — AI-Integrated Digital Retail</p>
+        <p>© AIDR - AI-Integrated Digital Retail</p>
       </footer>
     </div>
   );

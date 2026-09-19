@@ -46,7 +46,7 @@ public sealed class ShippingOptions
 
 public sealed class GhnOptions
 {
-    /// <summary>Sandbox: https://dev-online-gateway.ghn.vn — production: https://online-gateway.ghn.vn</summary>
+    /// <summary>Sandbox: https://dev-online-gateway.ghn.vn - production: https://online-gateway.ghn.vn</summary>
     public string BaseUrl { get; set; } = "https://dev-online-gateway.ghn.vn";
     public string Token { get; set; } = string.Empty;
     public int ShopId { get; set; }
@@ -102,7 +102,7 @@ public sealed class ShipmentDispatchRequest
     public string StreetAddress { get; init; } = null!;
     public string? Note { get; init; }
 
-    /// <summary>Buyer already paid through payOS, so COD is 0 — kept explicit for future COD orders.</summary>
+    /// <summary>Buyer already paid through payOS, so COD is 0 - kept explicit for future COD orders.</summary>
     public decimal CodAmount { get; init; }
     public decimal InsuranceValue { get; init; }
     public int TotalWeightGram { get; init; }
@@ -166,7 +166,7 @@ public sealed class ShipmentDispatchCandidate
     public string OrderCode { get; init; } = null!;
     public Guid ShopId { get; init; }
 
-    /// <summary>Pickup point — the seller's shop address, straight from Shop settings.</summary>
+    /// <summary>Pickup point - the seller's shop address, straight from Shop settings.</summary>
     public string ShopName { get; init; } = null!;
     public string? ShopPhone { get; init; }
     public string? ShopProvince { get; init; }
@@ -211,7 +211,7 @@ public sealed class ShipmentEventInput
     public DateTime? NextActionAt { get; init; }
 }
 
-/// <summary>What happened to one shipment event — enough to log it and notify the buyer.</summary>
+/// <summary>What happened to one shipment event - enough to log it and notify the buyer.</summary>
 public sealed class ShipmentTransitionResult
 {
     public bool Applied { get; init; }

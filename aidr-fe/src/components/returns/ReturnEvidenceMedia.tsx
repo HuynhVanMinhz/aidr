@@ -55,7 +55,7 @@ function InlineVideo({ url, title }: { url: string; title: string }) {
 }
 
 /**
- * Evidence list for admin / seller detail pages — playable inline video.
+ * Evidence list for admin / seller detail pages - playable inline video.
  */
 export function ReturnEvidencePanel({
   evidences,
@@ -106,7 +106,7 @@ type ReturnEvidenceGalleryProps = {
 };
 
 /**
- * Buyer storefront grid — click opens a lightbox video/image player.
+ * Buyer storefront grid - click opens a lightbox video/image player.
  */
 export function ReturnEvidenceGallery({ evidences }: ReturnEvidenceGalleryProps) {
   const [activeId, setActiveId] = useState<string | null>(null);

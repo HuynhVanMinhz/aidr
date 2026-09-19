@@ -777,7 +777,7 @@ progress {
   color: var(--bs-tertiary-color);
 }
 .blockquote-footer::before {
-  content: "— ";
+  content: "- ";
 }
 
 .img-fluid {

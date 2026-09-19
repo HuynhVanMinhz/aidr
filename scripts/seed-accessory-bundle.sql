@@ -1,5 +1,5 @@
 /*
-  seed-accessory-bundle.sql — phone + accessory products in the same shop for bundle testing.
+  seed-accessory-bundle.sql - phone + accessory products in the same shop for bundle testing.
 
   Prerequisites: demo seller/shop + category hierarchy seeds.
   Idempotent by fixed product GUIDs.
@@ -22,7 +22,7 @@ DECLARE
 
 IF @ShopId IS NULL OR @CatPhone IS NULL
 BEGIN
-    PRINT N'seed-accessory-bundle: skipped — missing shop or phone category.';
+    PRINT N'seed-accessory-bundle: skipped - missing shop or phone category.';
     RETURN;
 END;
 

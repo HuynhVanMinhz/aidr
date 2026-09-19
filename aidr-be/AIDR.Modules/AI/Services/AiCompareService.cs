@@ -364,7 +364,7 @@ public sealed class AiCompareService : IAiCompareService
 
     private static string FormatSpecValue(string key, string value)
     {
-        if (string.IsNullOrWhiteSpace(value) || value == "—" || value == "-")
+        if (string.IsNullOrWhiteSpace(value) || value == "-" || value == "-")
             return "Not available";
 
         if (key.Equals("screen", StringComparison.OrdinalIgnoreCase)
@@ -435,8 +435,8 @@ public sealed class AiCompareService : IAiCompareService
 
         var highlights = new List<string>
         {
-            $"Best price: {cheapest.Name} — {FormatPrice(cheapest.EffectivePrice, cheapest.Currency)}.",
-            $"Highest rating: {topRated.Name} — {topRated.AvgRating:0.0} ({topRated.ReviewCount} reviews)."
+            $"Best price: {cheapest.Name} - {FormatPrice(cheapest.EffectivePrice, cheapest.Currency)}.",
+            $"Highest rating: {topRated.Name} - {topRated.AvgRating:0.0} ({topRated.ReviewCount} reviews)."
         };
 
         if (!ReferenceEquals(cheapest, priciest))
@@ -474,7 +474,7 @@ public sealed class AiCompareService : IAiCompareService
     private static bool IsMissingCompareValue(string? value)
     {
         if (string.IsNullOrWhiteSpace(value)) return true;
-        return value is "—" or "-" or "Not available" or "Not specified" or "No reviews yet"
+        return value is "-" or "-" or "Not available" or "Not specified" or "No reviews yet"
             or "No sales yet" or "No discount" or "Out of stock";
     }
 

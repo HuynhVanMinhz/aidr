@@ -94,7 +94,7 @@ public sealed class PayOsClient : IPayOsClient
         if (UseMock)
         {
             // The mock checkout settles through the mockPayOs=1 return, so there
-            // is nothing to ask about here — report it as still pending.
+            // is nothing to ask about here - report it as still pending.
             return new PayOsPaymentLinkInfo
             {
                 OrderCode = payOsOrderCode,
@@ -271,7 +271,7 @@ public sealed class PayOsClient : IPayOsClient
                 {
                     mock = true,
                     webhookUrl = uri.ToString(),
-                    message = "Mock confirm — no call to payOS."
+                    message = "Mock confirm - no call to payOS."
                 })
             };
         }

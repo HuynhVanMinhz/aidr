@@ -56,7 +56,7 @@ export function StoreFooter() {
               </div>
               <div className="about-footer-content">
                 <p>
-                  AIDR — an AI-integrated electronics store with genuine devices and a transparent shopping experience.
+                  AIDR - an AI-integrated electronics store with genuine devices and a transparent shopping experience.
                 </p>
               </div>
               <div className="footer-social-links">

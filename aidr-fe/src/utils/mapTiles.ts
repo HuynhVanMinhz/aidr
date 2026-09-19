@@ -3,7 +3,7 @@ import L from 'leaflet';
 /**
  * Base layers for every Leaflet map in the app.
  *
- * `tile.openstreetmap.org` is unreachable from a lot of Vietnamese networks —
+ * `tile.openstreetmap.org` is unreachable from a lot of Vietnamese networks -
  * the request never resolves, so Leaflet paints its empty grey canvas and the
  * page looks broken. Tiles therefore come from a mirror, and the map walks down
  * the list when a source cannot be reached at all.
@@ -95,7 +95,7 @@ export function attachBaseLayer(map: L.Map): BaseLayerHandle {
 
   /**
    * There is no keyless dark basemap, so the light tiles are inverted in CSS.
-   * Only the tile pane is filtered — markers and route lines keep their colours.
+   * Only the tile pane is filtered - markers and route lines keep their colours.
    */
   function applyTheme() {
     map.getContainer().classList.toggle('leaflet-tiles-dark', isDark());

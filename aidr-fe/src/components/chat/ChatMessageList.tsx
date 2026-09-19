@@ -195,7 +195,7 @@ export function ChatMessageList({
         {!loading && messages.length === 0 ? (
           <div className="chat-thread__state">
             <p className="chat-thread__state-title">No messages yet</p>
-            <p>Say hello — {peerName} will be notified right away.</p>
+            <p>Say hello - {peerName} will be notified right away.</p>
           </div>
         ) : null}
 

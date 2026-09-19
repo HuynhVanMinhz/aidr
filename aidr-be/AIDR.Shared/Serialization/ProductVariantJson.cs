@@ -10,7 +10,7 @@ namespace AIDR.Shared.Serialization;
 ///   ProductVariants.AttributesJson  {"Color":"Orange","Storage":"128GB"}
 ///
 /// Both readers degrade to empty rather than throwing. The data is written by this
-/// application, so malformed JSON means it was hand-edited — and failing a whole product
+/// application, so malformed JSON means it was hand-edited - and failing a whole product
 /// page over that is worse than showing it without its variant picker.
 /// </summary>
 public static class ProductVariantJson

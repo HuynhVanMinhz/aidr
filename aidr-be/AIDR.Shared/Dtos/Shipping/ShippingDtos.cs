@@ -42,7 +42,7 @@ public sealed class OrderFulfillmentDto
     /// <summary>Provider that will handle (or is handling) this order.</summary>
     public string Provider { get; init; } = null!;
 
-    /// <summary>Automation cannot move this order any further — the seller has to.</summary>
+    /// <summary>Automation cannot move this order any further - the seller has to.</summary>
     public bool RequiresSellerAction { get; init; }
 
     /// <summary>Why automation stalled, if it did.</summary>
@@ -64,8 +64,8 @@ public sealed class GeoPointDto
 /// <summary>
 /// Where a parcel starts and where it is going.
 ///
-/// The carrier reports a status, never a position — there is no courier GPS feed
-/// behind any of this — so the map draws the parcel along this line at the point
+/// The carrier reports a status, never a position - there is no courier GPS feed
+/// behind any of this - so the map draws the parcel along this line at the point
 /// its status implies. Either end is null when nobody has pinned it yet, and the
 /// map then falls back to showing only the end it has.
 /// </summary>
@@ -81,7 +81,7 @@ public sealed class OrderRouteDto
 
 /// <summary>
 /// What the buyer may see about the parcel. Retry counts and raw carrier errors
-/// stay on the seller side — they are the seller's problem to fix, not the
+/// stay on the seller side - they are the seller's problem to fix, not the
 /// buyer's to read.
 /// </summary>
 public sealed class BuyerOrderTrackingDto

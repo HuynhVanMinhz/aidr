@@ -1,5 +1,5 @@
 /*
-  AIDR — Low-stock System notifications for demo seller (UC-17 + UC-44)
+  AIDR - Low-stock System notifications for demo seller (UC-17 + UC-44)
   Prerequisites: POST /api/dev/seed-demo-accounts (+ catalog products on demo shop).
   Idempotent by fixed NotificationId(s).
 
@@ -96,7 +96,7 @@ BEGIN
     );
 END;
 
-/* Second sample (read) so inbox list has variety — reuse same product. */
+/* Second sample (read) so inbox list has variety - reuse same product. */
 IF NOT EXISTS (SELECT 1 FROM dbo.Notifications WHERE NotificationId = @N2)
 BEGIN
     INSERT INTO dbo.Notifications (
@@ -106,7 +106,7 @@ BEGIN
         @N2,
         @SellerId,
         N'Low stock: ' + LEFT(@ProductName, 120),
-        N'Resolved or acknowledged earlier — sample read notification for inbox filters.',
+        N'Resolved or acknowledged earlier - sample read notification for inbox filters.',
         N'System',
         N'Product',
         @ProductId,

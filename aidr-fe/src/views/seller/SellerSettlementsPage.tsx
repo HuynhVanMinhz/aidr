@@ -38,16 +38,16 @@ function releaseLabel(entry: SettlementEntry): string {
     case 'Approved':
       return entry.batchCode ? `Transferring · ${entry.batchCode}` : 'Transferring';
     case 'Reversed':
-      return 'Returned — not paid';
+      return 'Returned - not paid';
     case 'OnHold':
       return 'Paused until the dispute closes';
     case 'Eligible':
-      return 'Ready — waiting for admin approval';
+      return 'Ready - waiting for admin approval';
     case 'Holding':
     default:
       return entry.daysUntilRelease > 0
         ? `In ${entry.daysUntilRelease} day${entry.daysUntilRelease === 1 ? '' : 's'}`
-        : 'Ready — waiting for admin approval';
+        : 'Ready - waiting for admin approval';
   }
 }
 
@@ -133,7 +133,7 @@ export function SellerSettlementsPage() {
   return (
     <>
       {/*
-        A persistent blocker, not a transient notification — it stays until the
+        A persistent blocker, not a transient notification - it stays until the
         seller fixes it, so it belongs on the page rather than in a toast.
       */}
       {needsBank ? (

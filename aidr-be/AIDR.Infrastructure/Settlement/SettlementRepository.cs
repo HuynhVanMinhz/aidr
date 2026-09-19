@@ -576,7 +576,7 @@ public sealed class SettlementRepository : ISettlementRepository
             .Where(e => e.PayoutBatchId == payoutBatchId)
             .ToListAsync(ct);
 
-        // If the batch was already approved the money was released — take it back.
+        // If the batch was already approved the money was released - take it back.
         if (string.Equals(batch.Status, SettlementConstants.BatchStatusApproved, StringComparison.OrdinalIgnoreCase)
             || string.Equals(batch.Status, SettlementConstants.BatchStatusFailed, StringComparison.OrdinalIgnoreCase))
         {
@@ -596,7 +596,7 @@ public sealed class SettlementRepository : ISettlementRepository
                     -net,
                     SettlementConstants.WalletReferenceTypePayoutBatch,
                     batch.PayoutBatchId,
-                    $"Release reverted — batch {batch.BatchCode} cancelled",
+                    $"Release reverted - batch {batch.BatchCode} cancelled",
                     now);
             }
         }

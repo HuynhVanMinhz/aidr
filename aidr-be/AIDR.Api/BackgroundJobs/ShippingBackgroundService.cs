@@ -41,7 +41,7 @@ public sealed class ShippingBackgroundService : BackgroundService
 
         if (!_options.Ghn.IsConfigured)
         {
-            // Booting is still correct — sellers can drive orders by hand — but
+            // Booting is still correct - sellers can drive orders by hand - but
             // silence here would look like the sweep is running when it is not.
             _logger.LogWarning(
                 "Shipping sweep is idle: {Provider} has no credentials. Set Shipping:Ghn:Token and Shipping:Ghn:ShopId to enable automatic fulfillment.",

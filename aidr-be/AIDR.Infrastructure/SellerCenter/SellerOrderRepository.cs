@@ -287,7 +287,7 @@ public sealed class SellerOrderRepository : ISellerOrderRepository
         string.Join(", ", parts.Where(p => !string.IsNullOrWhiteSpace(p)).Select(p => p!.Trim()));
 
     /// <summary>
-    /// Where to draw the delivery pin. The snapshot wins whenever it has one —
+    /// Where to draw the delivery pin. The snapshot wins whenever it has one -
     /// a past order must not move because the buyer edited their address book.
     /// Orders snapshotted before the buyer pinned that address carry no point at
     /// all, though, so fall back to the address book rather than draw no route;
@@ -401,7 +401,7 @@ public sealed class SellerOrderRepository : ISellerOrderRepository
 
     /// <summary>
     /// The seller can always push the next step by hand, even while the carrier
-    /// is driving the same order — both paths only ever move forward, so whoever
+    /// is driving the same order - both paths only ever move forward, so whoever
     /// gets there first wins and the other becomes a no-op.
     /// </summary>
     private static (bool CanUpdate, string? NextStatus) ResolveNextStatus(string status)

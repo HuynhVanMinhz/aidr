@@ -1,5 +1,5 @@
 /*
-  seed-product-qa.sql — demo Q&A on TechZone catalog products.
+  seed-product-qa.sql - demo Q&A on TechZone catalog products.
 
   Prerequisites:
     - POST /api/dev/seed-demo-accounts
@@ -49,7 +49,7 @@ BEGIN
         @AnswerId,
         @QuestionId,
         @SellerId,
-        N'Yes — all TechZone electronics include a 12-month shop warranty plus manufacturer support where applicable.',
+        N'Yes - all TechZone electronics include a 12-month shop warranty plus manufacturer support where applicable.',
         1,
         DATEADD(DAY, -1, SYSUTCDATETIME())
     );

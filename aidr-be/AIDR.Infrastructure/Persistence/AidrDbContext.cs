@@ -806,7 +806,7 @@ public class AidrDbContext : DbContext
                 .WithMany()
                 .HasForeignKey(x => x.OrderId)
                 .OnDelete(DeleteBehavior.Restrict);
-            // One order, one shipment — this is what stops a double dispatch.
+            // One order, one shipment - this is what stops a double dispatch.
             e.HasIndex(x => x.OrderId).IsUnique();
             e.HasIndex(x => new { x.Provider, x.ProviderShipmentId });
             e.HasIndex(x => new { x.Status, x.NextActionAt });

@@ -1,4 +1,4 @@
-# GitHub Actions — secrets & variables for production deploy
+# GitHub Actions - secrets & variables for production deploy
 
 Cấu hình tại: **GitHub repo → Settings → Secrets and variables → Actions**
 
@@ -50,4 +50,4 @@ Thêm tại: **Settings → Secrets and variables → Actions → Variables → 
 2. Packages: image GHCR của repo (Actions `packages: write` đã bật)
 3. Push một commit lên `main` hoặc chạy workflow **Deploy production** thủ công (Actions → Run workflow)
 
-`.env` trên VPS (`/opt/aidr/.env`) **không** bị ghi đè bởi CI — chỉ cập nhật `API_IMAGE=...`.
+`.env` trên VPS (`/opt/aidr/.env`) **không** bị ghi đè bởi CI - chỉ cập nhật `API_IMAGE=...`.

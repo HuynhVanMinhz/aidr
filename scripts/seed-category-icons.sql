@@ -1,5 +1,5 @@
 /*
-  AIDR — Assign dedicated transparent-background SVG icons to each active
+  AIDR - Assign dedicated transparent-background SVG icons to each active
   category (one icon per slug, matching its content: phone, laptop, tablet,
   charger, headphones, router, ...). Safe to re-run.
 

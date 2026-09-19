@@ -1,5 +1,5 @@
 /*
-  shipping-schema.sql — automatic order fulfillment via a carrier.
+  shipping-schema.sql - automatic order fulfillment via a carrier.
 
   See docs/solution-auto-fulfillment-shipping.md.
 
@@ -18,7 +18,7 @@ SET NOCOUNT ON;
 SET XACT_ABORT ON;
 
 /* -------------------------------------------------------------------------- */
-/* 1. Shipments — one row per order                                            */
+/* 1. Shipments - one row per order                                            */
 /* -------------------------------------------------------------------------- */
 
 IF OBJECT_ID('dbo.Shipments', 'U') IS NULL
@@ -57,7 +57,7 @@ END;
 GO
 
 /* -------------------------------------------------------------------------- */
-/* 2. ShipmentEvents — append-only carrier events                              */
+/* 2. ShipmentEvents - append-only carrier events                              */
 /* -------------------------------------------------------------------------- */
 
 IF OBJECT_ID('dbo.ShipmentEvents', 'U') IS NULL

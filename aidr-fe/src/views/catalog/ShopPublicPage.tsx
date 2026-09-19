@@ -276,7 +276,7 @@ export function ShopPublicPage() {
                       <span className="section-sub-title">
                         {shop?.isVerified ? 'Verified seller' : 'Seller'}
                       </span>
-                      <h2>{shop?.shopName ?? '—'}</h2>
+                      <h2>{shop?.shopName ?? '-'}</h2>
                       {shop?.tagline && <p>{shop.tagline}</p>}
                       {!shop?.tagline && shop?.shortDescription && <p>{shop.shortDescription}</p>}
                     </div>

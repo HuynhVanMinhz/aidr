@@ -42,7 +42,7 @@ export function sellerLotStatusBadgeClass(status: string): string {
 
 export function formatDateTime(
   value: string | null | undefined,
-  emptyLabel = '—',
+  emptyLabel = '-',
 ): string {
   if (!value) return emptyLabel;
   const date = new Date(value);

@@ -51,7 +51,7 @@ export function FaqPage() {
         <SupportSearch
           id="faq-search"
           label="Search frequently asked questions"
-          placeholder="Search questions — tracking, returns, vouchers…"
+          placeholder="Search questions - tracking, returns, vouchers…"
           value={query}
           onChange={setQuery}
         />

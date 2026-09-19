@@ -1,5 +1,5 @@
 /*
-  settlement-schema.sql — escrow / seller settlement / platform commission.
+  settlement-schema.sql - escrow / seller settlement / platform commission.
 
   See docs/solution-escrow-settlement.md.
 
@@ -15,7 +15,7 @@ SET NOCOUNT ON;
 SET XACT_ABORT ON;
 
 /* -------------------------------------------------------------------------- */
-/* 1. ShopBankAccounts — where a shop's payouts are sent                       */
+/* 1. ShopBankAccounts - where a shop's payouts are sent                       */
 /* -------------------------------------------------------------------------- */
 
 IF OBJECT_ID('dbo.ShopBankAccounts', 'U') IS NULL
@@ -47,7 +47,7 @@ END;
 GO
 
 /* -------------------------------------------------------------------------- */
-/* 2. SettlementEntries — one ledger row per order                            */
+/* 2. SettlementEntries - one ledger row per order                            */
 /* -------------------------------------------------------------------------- */
 
 IF OBJECT_ID('dbo.SettlementEntries', 'U') IS NULL
@@ -90,7 +90,7 @@ END;
 GO
 
 /* -------------------------------------------------------------------------- */
-/* 3. PayoutBatches — one admin approval = one batch per shop                  */
+/* 3. PayoutBatches - one admin approval = one batch per shop                  */
 /* -------------------------------------------------------------------------- */
 
 IF OBJECT_ID('dbo.PayoutBatches', 'U') IS NULL
@@ -147,7 +147,7 @@ END;
 GO
 
 /* -------------------------------------------------------------------------- */
-/* 4. WalletTransactions — track the pending side too                         */
+/* 4. WalletTransactions - track the pending side too                         */
 /* -------------------------------------------------------------------------- */
 
 IF COL_LENGTH('dbo.WalletTransactions', 'PendingAfter') IS NULL
@@ -165,7 +165,7 @@ CREATE OR ALTER VIEW dbo.vw_PlatformCommission
 AS
 /*
   Commission is recognised when the batch is approved (money released to the
-  seller), not while the order is still in the hold window — an order in hold can
+  seller), not while the order is still in the hold window - an order in hold can
   still be returned.
 */
 SELECT

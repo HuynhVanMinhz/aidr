@@ -182,14 +182,14 @@ public static class AiProductRanker
         decimal median,
         decimal cheapest)
     {
-        // Buyers want the most product their budget allows — peak just under the ceiling.
+        // Buyers want the most product their budget allows - peak just under the ceiling.
         decimal target;
         if (slots.MaxPrice is decimal max && max > 0)
             target = max * 0.85m;
         else if (slots.MinPrice is decimal min && min > 0)
             target = min * 1.15m;
         else if (priority?.Sort == DiscoveryConstants.SortPriceAsc)
-            // They asked for the best price and set no ceiling — do not pull them to the middle.
+            // They asked for the best price and set no ceiling - do not pull them to the middle.
             target = cheapest;
         else
             target = median;
@@ -210,7 +210,7 @@ public static class AiProductRanker
         if (priority is null)
             return 0d;
 
-        // "Best price" has no keywords — score it on relative cheapness inside the pool.
+        // "Best price" has no keywords - score it on relative cheapness inside the pool.
         if (priority.Keywords.Count == 0 && priority.Sort == DiscoveryConstants.SortPriceAsc)
         {
             var min = prices[0];
@@ -269,7 +269,7 @@ public static class AiProductRanker
             .ToList();
     }
 
-    /// <summary>Every clause traces back to a catalog field — nothing here is generated prose.</summary>
+    /// <summary>Every clause traces back to a catalog field - nothing here is generated prose.</summary>
     private static string BuildReason(
         AiCompareProductRecord p,
         SlotState slots,

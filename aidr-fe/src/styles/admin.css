@@ -1,4 +1,4 @@
-/* Admin-only extras — Larkon classes come from /admin-theme/css */
+/* Admin-only extras - Larkon classes come from /admin-theme/css */
 
 html[data-aidr-shell='admin'] .btn:disabled,
 html[data-aidr-shell='admin'] .btn.disabled,
@@ -24,7 +24,7 @@ html[data-aidr-shell='admin'] .dropdown-menu.show {
   display: block;
 }
 
-/* Flatpickr — follows the admin brand tokens, so it inverts in dark mode too. */
+/* Flatpickr - follows the admin brand tokens, so it inverts in dark mode too. */
 html[data-aidr-shell='admin'] .flatpickr-calendar {
   box-shadow: 0 0.5rem 1.5rem rgba(22, 24, 29, 0.12);
   border: 1px solid rgba(22, 24, 29, 0.08);
@@ -69,7 +69,7 @@ html[data-aidr-shell='admin'] .aidr-datepicker input.flatpickr-mobile {
   display: none !important;
 }
 
-/* KPI / stat cards — every card in a row is the same height regardless of how
+/* KPI / stat cards - every card in a row is the same height regardless of how
    many lines its value wraps to. Bootstrap already stretches the columns, so the
    card only has to fill its column; the subtracted 1.5rem is the theme's own
    `.card` margin-bottom, which sits inside the column height. */
@@ -132,14 +132,14 @@ html[data-aidr-shell='admin'] .wrapper .page-content > .container-xxl {
 /*
  * Larkon caps .container-xxl at 95%, which suits pages made of narrow cards but
  * strands a column of empty page beside the chat. The chat workspace is a
- * two-pane app view, not a document, so it takes the full content width — and
+ * two-pane app view, not a document, so it takes the full content width - and
  * the extra room goes to the message pane, since the thread list is fixed.
  */
 html[data-aidr-shell='admin'] .wrapper .page-content > .container-xxl:has(.chat-workspace--admin) {
   max-width: 100%;
 }
 
-/* Category form — preview card */
+/* Category form - preview card */
 .aidr-category-preview {
   position: relative;
   width: 100%;
@@ -183,7 +183,7 @@ html[data-aidr-shell='admin'] .wrapper .page-content > .container-xxl:has(.chat-
   font-size: 1.75rem;
 }
 
-/* Category form — upload dropzone */
+/* Category form - upload dropzone */
 .aidr-dropzone {
   position: relative;
   min-height: 220px;
@@ -265,7 +265,7 @@ html[data-aidr-shell='admin'] .wrapper .page-content > .container-xxl:has(.chat-
 /*
  * The dropzone was written for the light shell and paints its own paper-white
  * ground; on the dark theme that is a slab of white in the middle of the form.
- * Only the surfaces move — the accent still comes from --aidr-brand.
+ * Only the surfaces move - the accent still comes from --aidr-brand.
  */
 [data-bs-theme='dark'] .aidr-dropzone {
   border-color: rgba(233, 235, 239, 0.22);
@@ -286,7 +286,7 @@ html[data-aidr-shell='admin'] .wrapper .page-content > .container-xxl:has(.chat-
   background: #232830;
 }
 
-/* Theme select — Larkon btn-outline-light dropdown */
+/* Theme select - Larkon btn-outline-light dropdown */
 .aidr-admin-select .dropdown-toggle {
   display: inline-flex;
   align-items: center;
@@ -352,7 +352,7 @@ html[data-aidr-shell='admin'] .wrapper .page-content > .container-xxl:has(.chat-
   background: var(--bs-border-color, #e5e7eb);
 }
 
-/* A raw Cloudinary URL tells the reviewer nothing — show the document. */
+/* A raw Cloudinary URL tells the reviewer nothing - show the document. */
 .reg-doc {
   display: block;
   width: 110px;
@@ -389,7 +389,7 @@ html[data-aidr-shell='admin'] .wrapper .page-content > .container-xxl:has(.chat-
    every other field on the page. */
 /*
   Qualified with .form-control on purpose. The element carries both classes, and Bootstrap's
-  .form-control{display:block} is loaded after this file — at equal specificity source order
+  .form-control{display:block} is loaded after this file - at equal specificity source order
   would win and the chips would lay out inline, collapsing the gap below to nothing. Two
   classes beat one regardless of order.
 */
@@ -456,7 +456,7 @@ html[data-aidr-shell='admin'] .wrapper .page-content > .container-xxl:has(.chat-
   color: var(--bs-primary, #0d6efd);
 }
 
-/* Name / value / remove — the header row labels the columns once instead of
+/* Name / value / remove - the header row labels the columns once instead of
    repeating a placeholder on every line. */
 .kv-field__head,
 .kv-field__row {
@@ -629,7 +629,7 @@ html[data-aidr-shell='admin'] .wrapper .page-content > .container-xxl:has(.chat-
    inventory tables. Only sizing that utilities cannot express lives here.
 --------------------------------------------------------------------------- */
 
-/* Square, and the same height as the input it sits beside — matching .kv-field__remove. */
+/* Square, and the same height as the input it sits beside - matching .kv-field__remove. */
 .variant-option__remove {
   flex: 0 0 auto;
   display: inline-flex;

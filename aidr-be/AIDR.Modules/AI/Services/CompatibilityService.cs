@@ -124,7 +124,7 @@ public sealed class CompatibilityService : ICompatibilityService
 
             if (!hasPrimary || !hasSecondary)
             {
-                reasons.Add($"{label} is missing on one side — unable to confirm compatibility.");
+                reasons.Add($"{label} is missing on one side - unable to confirm compatibility.");
                 continue;
             }
 

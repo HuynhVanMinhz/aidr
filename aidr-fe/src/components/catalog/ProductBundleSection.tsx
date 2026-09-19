@@ -189,7 +189,7 @@ export function ProductBundleSection({ productId, productName }: Props) {
                       <div key={spec.label} className="catalog-compat-result__spec-row">
                         <dt>{spec.label}</dt>
                         <dd>
-                          {spec.primary ?? '—'} / {spec.secondary ?? '—'}
+                          {spec.primary ?? '-'} / {spec.secondary ?? '-'}
                         </dd>
                       </div>
                     ))}

@@ -1,9 +1,9 @@
 ---
-description: AIDR FE — storefront từ theme-for-aidr-fe; Admin/Seller từ theme-for-aidr-admin-fe.
+description: AIDR FE - storefront từ theme-for-aidr-fe; Admin/Seller từ theme-for-aidr-admin-fe.
 alwaysApply: true
 ---
 
-# AIDR UI — Theme Reference
+# AIDR UI - Theme Reference
 
 Khi implement **màn hình / component FE**:
 

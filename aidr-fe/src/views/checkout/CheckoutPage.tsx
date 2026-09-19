@@ -343,7 +343,7 @@ export function CheckoutPage() {
                     <div className="checkout-panel__head">
                       <div className="checkout-panel__heading">
                         <h2 className="checkout-panel__title">Order notes</h2>
-                        <p className="checkout-panel__hint">Optional — delivery instructions.</p>
+                        <p className="checkout-panel__hint">Optional - delivery instructions.</p>
                       </div>
                     </div>
 

@@ -1,4 +1,4 @@
-# AIDR — Hướng dẫn deploy từng bước (VPS + Docker + Nginx)
+# AIDR - Hướng dẫn deploy từng bước (VPS + Docker + Nginx)
 
 **Mục tiêu:** chạy toàn bộ trên 1 VPS theo sơ đồ:
 
@@ -17,7 +17,7 @@ Internet → domain → Nginx (:80/:443) → Docker network
 
 ---
 
-## Bước 0 — Chuẩn bị trước (máy local)
+## Bước 0 - Chuẩn bị trước (máy local)
 
 1. Có domain trỏ được DNS.
 2. Repo AIDR trên GitHub.
@@ -25,15 +25,15 @@ Internet → domain → Nginx (:80/:443) → Docker network
 
 Checklist tài khoản (có thể làm sau, mock trước):
 
-- [ ] payOS / GHN / Groq / FPT.AI / SMTP / Cloudinary — hoặc để `UseMock=true` lần đầu.
+- [ ] payOS / GHN / Groq / FPT.AI / SMTP / Cloudinary - hoặc để `UseMock=true` lần đầu.
 
 ---
 
-## Bước 1 — Thuê VPS
+## Bước 1 - Thuê VPS
 
 1. Thuê VPS **Ubuntu 24.04**.
-   - **4 GB RAM / 2 vCPU** — OK cho MVP nếu làm đúng phần **swap + giới hạn RAM** bên dưới (chậm hơn, dễ OOM nếu build trên VPS).
-   - **8 GB RAM** — thoải mái hơn khi có traffic / SQL nặng.
+   - **4 GB RAM / 2 vCPU** - OK cho MVP nếu làm đúng phần **swap + giới hạn RAM** bên dưới (chậm hơn, dễ OOM nếu build trên VPS).
+   - **8 GB RAM** - thoải mái hơn khi có traffic / SQL nặng.
    - Disk khuyến nghị **≥ 40–60 GB SSD**.
 2. Ghi lại **IP public**.
 3. SSH vào:
@@ -52,7 +52,7 @@ usermod -aG sudo deploy
 
 Đăng nhập lại bằng `deploy`.
 
-### Bắt buộc trên VPS 4 GB — tạo swap 4 GB
+### Bắt buộc trên VPS 4 GB - tạo swap 4 GB
 
 Không có swap, SQL Server + Keycloak dễ bị kill (OOM).
 
@@ -67,16 +67,16 @@ free -h   # kiểm tra Swap ~4.0Gi
 
 `docker-compose.prod.yml` đã giới hạn: SQL ~1.5–1.8 GB, Keycloak ~768 MB, API ~512 MB, Redis 64 MB.
 
-**Không** build image API / `npm run build` trên VPS 4 GB — build ở máy local hoặc GitHub Actions rồi kéo artifact/image xuống.
+**Không** build image API / `npm run build` trên VPS 4 GB - build ở máy local hoặc GitHub Actions rồi kéo artifact/image xuống.
 ---
 
-## Bước 2 — Cài Docker trên VPS
+## Bước 2 - Cài Docker trên VPS
 
 ```bash
 sudo apt update
 sudo apt install -y ca-certificates curl ufw git
 
-# Docker Engine (theo docs.docker.com — script tóm tắt):
+# Docker Engine (theo docs.docker.com - script tóm tắt):
 curl -fsSL https://get.docker.com | sudo sh
 sudo usermod -aG docker $USER
 ```
@@ -100,7 +100,7 @@ sudo ufw status
 
 ---
 
-## Bước 3 — DNS
+## Bước 3 - DNS
 
 Tại nhà đăng ký domain (hoặc Cloudflare):
 
@@ -113,7 +113,7 @@ Tại nhà đăng ký domain (hoặc Cloudflare):
 
 ---
 
-## Bước 4 — Clone repo + thư mục deploy trên VPS
+## Bước 4 - Clone repo + thư mục deploy trên VPS
 
 ```bash
 sudo mkdir -p /opt/aidr
@@ -128,12 +128,12 @@ Tạo thư mục FE + cert:
 
 ```bash
 mkdir -p fe-dist certbot/www certbot/conf
-echo '<h1>AIDR — FE chưa build</h1>' > fe-dist/index.html
+echo '<h1>AIDR - FE chưa build</h1>' > fe-dist/index.html
 ```
 
 ---
 
-## Bước 5 — File môi trường `.env`
+## Bước 5 - File môi trường `.env`
 
 ```bash
 cp infra/env/prod.env.example .env
@@ -143,8 +143,8 @@ nano .env
 Sửa tối thiểu:
 
 - `DOMAIN=aidr.example.com` (không có `https://`)
-- `MSSQL_SA_PASSWORD`, `REDIS_PASSWORD`, `KC_*` — mật khẩu mạnh
-- `Jwt__SigningKey` — chuỗi ngẫu nhiên dài
+- `MSSQL_SA_PASSWORD`, `REDIS_PASSWORD`, `KC_*` - mật khẩu mạnh
+- `Jwt__SigningKey` - chuỗi ngẫu nhiên dài
 - `API_IMAGE=ghcr.io/YOUR_GITHUB_USER/aidr-api:latest` (sẽ build ở bước 7)
 
 ```bash
@@ -153,7 +153,7 @@ chmod 600 .env
 
 ---
 
-## Bước 6 — Chạy stack lần đầu (HTTP, chưa SSL)
+## Bước 6 - Chạy stack lần đầu (HTTP, chưa SSL)
 
 Tạm dùng nginx HTTP-only (chưa có cert):
 
@@ -168,7 +168,7 @@ Hoặc chạy:
 
 ```bash
 cd /opt/aidr
-# Đảm bảo API_IMAGE tồn tại — nếu chưa có image trên GHCR, build local trước (bước 7a)
+# Đảm bảo API_IMAGE tồn tại - nếu chưa có image trên GHCR, build local trước (bước 7a)
 docker compose -f docker-compose.prod.yml --env-file .env up -d sqlserver redis kc-db
 docker compose -f docker-compose.prod.yml --env-file .env ps
 ```
@@ -182,16 +182,16 @@ docker compose -f docker-compose.prod.yml --env-file .env logs -f sqlserver
 
 ---
 
-## Bước 7 — Build & đẩy image API
+## Bước 7 - Build & đẩy image API
 
-### 7a — Trên máy local (hoặc trên VPS)
+### 7a - Trên máy local (hoặc trên VPS)
 
 ```bash
 cd aidr-be
 docker build -f AIDR.Api/Dockerfile -t ghcr.io/YOUR_GITHUB_USER/aidr-api:latest .
 ```
 
-### 7b — Đẩy GHCR (cần Personal Access Token với `write:packages`)
+### 7b - Đẩy GHCR (cần Personal Access Token với `write:packages`)
 
 ```bash
 echo YOUR_GITHUB_PAT | docker login ghcr.io -u YOUR_GITHUB_USER --password-stdin
@@ -216,7 +216,7 @@ docker build -f aidr-be/AIDR.Api/Dockerfile -t aidr-api:local ./aidr-be
 
 ---
 
-## Bước 8 — Schema database
+## Bước 8 - Schema database
 
 Chạy schema/data vào container SQL. **Trên Linux Docker dùng `data-new.linux.sql`** (đã bỏ đường dẫn `D:\...` Windows). Không import nguyên `data-new.sql` từ SSMS.
 
@@ -229,7 +229,7 @@ docker exec -it aidr-sqlserver /opt/mssql-tools18/bin/sqlcmd \
 ```
 ---
 
-## Bước 9 — Keycloak + API + Nginx
+## Bước 9 - Keycloak + API + Nginx
 
 ```bash
 cd /opt/aidr
@@ -245,7 +245,7 @@ curl -fsS http://YOUR_VPS_IP/api/health/live
 curl -fsS http://YOUR_VPS_IP/api/health/ready
 ```
 
-Keycloak admin (lần đầu): mở `http://YOUR_DOMAIN/auth/admin` — đổi password sau khi login.
+Keycloak admin (lần đầu): mở `http://YOUR_DOMAIN/auth/admin` - đổi password sau khi login.
 
 Cập nhật client `aidr-fe` trong realm:
 
@@ -254,7 +254,7 @@ Cập nhật client `aidr-fe` trong realm:
 
 ---
 
-## Bước 10 — SSL (Let's Encrypt)
+## Bước 10 - SSL (Let's Encrypt)
 
 ```bash
 cd /opt/aidr
@@ -280,7 +280,7 @@ curl -fsS https://aidr.example.com/api/health/ready
 
 ---
 
-## Bước 11 — Build Frontend
+## Bước 11 - Build Frontend
 
 Trên máy local:
 
@@ -317,7 +317,7 @@ Mở `https://aidr.example.com` trên trình duyệt.
 
 ---
 
-## Bước 12 — Kiểm tra sau deploy
+## Bước 12 - Kiểm tra sau deploy
 
 | Kiểm tra | Lệnh / hành động |
 |----------|------------------|
@@ -330,11 +330,11 @@ Mở `https://aidr.example.com` trên trình duyệt.
 
 ---
 
-## Bước 13 — CI/CD (GitHub Actions)
+## Bước 13 - CI/CD (GitHub Actions)
 
 Xem hướng dẫn đầy đủ: [`docs/guide-github-actions-deploy.md`](guide-github-actions-deploy.md).
 
-Workflow: `.github/workflows/deploy-production.yml` — push `main` → build API/FE → deploy VPS.
+Workflow: `.github/workflows/deploy-production.yml` - push `main` → build API/FE → deploy VPS.
 
 ---
 

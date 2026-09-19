@@ -1,7 +1,7 @@
-# AIDR — Solution: Smart Shopping Assistant (UC-56)
+# AIDR - Solution: Smart Shopping Assistant (UC-56)
 
 **Status:** Implemented (Phase 1–3)  
-**Module:** 29 — AI Shopping Assistant  
+**Module:** 29 - AI Shopping Assistant  
 **Use case:** UC-56 (enhance; không tạo UC mới)  
 **Liên quan:** UC-90 (NL → filter), UC-28 (compare), UC-53/54 (recommend / similar)  
 **Stack hiện tại:** `POST /api/ai/chat` (Buyer) · Groq JSON · heuristic fallback · `AiConversations` / `AiMessages`
@@ -27,7 +27,7 @@ Chatbot tư vấn mua sắm **hiểu ý định**, **nhớ ràng buộc qua nhi�
 - Chat Guest (UC-56 = Buyer).
 - Tra cứu đơn hàng / payOS / “where is my order”.
 - Đổi schema SQL.
-- Đổi LLM provider (giữ Groq; docs cũ ghi Ollama — không rollback).
+- Đổi LLM provider (giữ Groq; docs cũ ghi Ollama - không rollback).
 
 ---
 
@@ -65,7 +65,7 @@ message
 | `ProductQueryRequest` + Discovery search | Retrieve Approved products đúng DSL |
 | `IAiCompareService` | Compare-in-chat (Phase 3) |
 | `IRecommendationService` | Browse / similar |
-| `AiMessages.MetaJson` | Slot memory + product ids + actions — **không cần migration** |
+| `AiMessages.MetaJson` | Slot memory + product ids + actions - **không cần migration** |
 | `nlResultToCatalogFilters` (FE) | CTA “See all matching products” |
 | Heuristic FAQ trong assistant | Fallback khi Groq `UseMock` / fail |
 
@@ -113,7 +113,7 @@ sequenceDiagram
 - Groq trong repo đang dùng `json_object`, chưa wire function-calling.
 - Heuristic fallback bắt buộc khi `UseMock`.
 - 2+ roundtrip Groq làm chậm (timeout client đã cấu hình).
-- Intent hữu hạn (recommend / refine / FAQ / product QA / compare) — router đủ.
+- Intent hữu hạn (recommend / refine / FAQ / product QA / compare) - router đủ.
 
 Nếu 1 JSON call (plan+reply sau retrieve heuristic) kém chất lượng → **v1.1:** tách 2 call (plan rồi reply). Bắt đầu **1 call**.
 
@@ -132,7 +132,7 @@ Nếu 1 JSON call (plan+reply sau retrieve heuristic) kém chất lượng → *
 | `clarify` | thiếu slot quan trọng | hỏi **1** câu, không dump SP lệch |
 | `smalltalk` | chào / cảm ơn | trả ngắn + quick prompts |
 
-Heuristic keyword **vẫn** là fallback khi Groq tắt — nhưng search **phải** qua filter, không LIKE nguyên câu.
+Heuristic keyword **vẫn** là fallback khi Groq tắt - nhưng search **phải** qua filter, không LIKE nguyên câu.
 
 **Clarify rule:** thiếu **cả** category lẫn budget → hỏi 1 câu, 0 card. Đủ 1 trong 2 → search được.
 
@@ -184,7 +184,7 @@ Sanitize giống `AiNlFilterService` (category whitelist, cap giá, `MergeWithHe
 
 ## 6. Page context (FE → BE)
 
-Mở rộng `AiChatRequest` — field mới **optional**, client cũ không gửi vẫn chạy:
+Mở rộng `AiChatRequest` - field mới **optional**, client cũ không gửi vẫn chạy:
 
 ```json
 {
@@ -211,7 +211,7 @@ Widget gắn từ `useLocation` + compare selection (Redux).
 
 ## 7. Tool layer
 
-Tất cả tool **không tin LLM** — validate id thuộc pack, giá/tên/specs từ DB.
+Tất cả tool **không tin LLM** - validate id thuộc pack, giá/tên/specs từ DB.
 
 ### 7.1 Catalog search (thay LIKE)
 
@@ -243,7 +243,7 @@ Inject `IAiNlFilterService` vào assistant. Không gọi HTTP nội bộ.
 
 2–5 id từ: mention trong message, `context.compareProductIds`, hoặc **last suggested** `productIds` trong MetaJson.
 
-Reuse `IAiCompareService.CompareAsync` — summary + highlights nhét vào grounded pack, không bịa bảng specs.
+Reuse `IAiCompareService.CompareAsync` - summary + highlights nhét vào grounded pack, không bịa bảng specs.
 
 ### 7.5 FAQ grounded
 
@@ -349,7 +349,7 @@ Composer: giữ counter + Enter-to-send; disabled khi sending / empty. Không hi
 
 ## 11. Phased delivery
 
-### Phase 1 — Retrieve + memory (impact lớn nhất)
+### Phase 1 - Retrieve + memory (impact lớn nhất)
 
 - NL filter + Discovery search trong chat.
 - Slot merge + `MetaJson` slots / reasons.
@@ -357,24 +357,24 @@ Composer: giữ counter + Enter-to-send; disabled khi sending / empty. Không hi
 - Heuristic fallback **cùng** filter path.
 - Reply JSON + `suggestedProducts[].reason`.
 
-### Phase 2 — Context + FE
+### Phase 2 - Context + FE
 
 - `AiChatRequest.context`.
 - `product_qa` + SpecsJson / WarrantyMonths.
 - Recs / similar khi browse hoặc PDP alternatives.
 - Slot chips, contextual prompts, See all, hydrate history cards.
 
-### Phase 3 — Compare-in-chat
+### Phase 3 - Compare-in-chat
 
 - Intent `compare` → `IAiCompareService`.
 - CTA compare trên cards / tray.
 - Quick prompt PDP “Compare with similar”.
 
-### Phase 4 — Sau (nếu cần)
+### Phase 4 - Sau (nếu cần)
 
 - HTTP streaming / SignalR token.
 - Order-status tool.
-- Guest chat (đổi UC — không làm nếu chưa có yêu cầu).
+- Guest chat (đổi UC - không làm nếu chưa có yêu cầu).
 
 **Đề xuất implement trước:** Phase 1 + 2. Phase 3 nếu còn bandwidth.
 
@@ -412,11 +412,11 @@ Composer: giữ counter + Enter-to-send; disabled khi sending / empty. Không hi
 
 ### Backend
 
-- `AIDR.Shared/Dtos/AI/ChatDtos.cs` — `context`, `slots`, `actions`, `reason`
-- `AIDR.Modules/AI/Services/AiShoppingAssistantService.cs` — pipeline mới
-- `AIDR.Modules/AI/Abstractions/IAiCatalogRepository.cs` + `AiCatalogRepository.cs` — search theo `ProductQueryRequest`
-- `AIDR.Infrastructure/AI/AiConversationRepository.cs` — hydrate products từ MetaJson khi get detail (nếu làm ở repo/service)
-- `AIDR.Shared/Constants/AiConstants.cs` — intent names / meta keys nếu cần
+- `AIDR.Shared/Dtos/AI/ChatDtos.cs` - `context`, `slots`, `actions`, `reason`
+- `AIDR.Modules/AI/Services/AiShoppingAssistantService.cs` - pipeline mới
+- `AIDR.Modules/AI/Abstractions/IAiCatalogRepository.cs` + `AiCatalogRepository.cs` - search theo `ProductQueryRequest`
+- `AIDR.Infrastructure/AI/AiConversationRepository.cs` - hydrate products từ MetaJson khi get detail (nếu làm ở repo/service)
+- `AIDR.Shared/Constants/AiConstants.cs` - intent names / meta keys nếu cần
 - `scripts/seed-ai-assistant.sql` + `AiAssistantDemoSeeder.cs`
 
 Không đổi `database.sql`.
@@ -425,14 +425,14 @@ Không đổi `database.sql`.
 
 - `types/ai.ts`, `services/aiApi.ts`, `store/aiSlice.ts`, `hooks/useAi.ts`
 - `components/ai/ShoppingAssistantWidget.tsx`
-- `styles/chat.css` — chips / reason line / CTA, bám class hiện có
+- `styles/chat.css` - chips / reason line / CTA, bám class hiện có
 - Reuse `nlResultToCatalogFilters` từ `NlSearchBar.tsx` (export helper nếu chưa)
 
 ### Docs sau khi ship
 
-- `usecase.md` — UC-56 giữ **Done** (enhance); ghi chú 1 dòng nếu muốn
-- `architecture-aidr-be.md` §6.7 / `architecture-aidr-fe.md` §10 — cập nhật body `context` + MetaJson slots
-- `plan-implement-module.md` — module 29 vẫn Done
+- `usecase.md` - UC-56 giữ **Done** (enhance); ghi chú 1 dòng nếu muốn
+- `architecture-aidr-be.md` §6.7 / `architecture-aidr-fe.md` §10 - cập nhật body `context` + MetaJson slots
+- `plan-implement-module.md` - module 29 vẫn Done
 
 ---
 

@@ -699,7 +699,7 @@ public class DevController : ControllerBase
     }
 
     /// <summary>
-    /// Turn demo products into variant products — applies the variant schema, builds the
+    /// Turn demo products into variant products - applies the variant schema, builds the
     /// option matrix, and gives each configuration its own price and inventory lot (dev only).
     /// </summary>
     [HttpPost("seed-product-variants")]

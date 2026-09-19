@@ -5,7 +5,7 @@ type Props = {
   onChange: (value: number) => void;
   disabled?: boolean;
   label?: string;
-  /** Hides the "4/5 — Very good" caption when the caller has its own. */
+  /** Hides the "4/5 - Very good" caption when the caller has its own. */
   showCaption?: boolean;
 };
 
@@ -66,7 +66,7 @@ export function StarRatingInput({
       <span className={`review-star-caption${shown ? ' is-set' : ''}`}>
         {showCaption
           ? shown
-            ? `${shown}/5 — ${SCORE_WORDS[shown]}`
+            ? `${shown}/5 - ${SCORE_WORDS[shown]}`
             : 'Tap a star to rate'
           : null}
       </span>

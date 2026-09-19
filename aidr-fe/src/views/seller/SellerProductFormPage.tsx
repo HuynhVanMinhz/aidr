@@ -269,7 +269,7 @@ export function SellerProductFormPage() {
     setSubmitError(null);
 
     if (!isCloudinaryConfigured()) {
-      const message = 'Cloudinary is not configured — unable to upload images.';
+      const message = 'Cloudinary is not configured - unable to upload images.';
       setImageUploadError(message);
       markTouched('images');
       toast.error(message);
@@ -395,7 +395,7 @@ export function SellerProductFormPage() {
   /**
    * Receives the typed delivery against the saved product.
    *
-   * Runs after the product is written, because a lot needs a product id — and a
+   * Runs after the product is written, because a lot needs a product id - and a
    * variant row needs the id the server assigned it, which is why each draft is
    * matched back to the saved variant by id, then SKU, then its attributes.
    */
@@ -997,9 +997,9 @@ export function SellerProductFormPage() {
           <div className="card">
             <div className="card-header">
               <h4 className="card-title mb-1">Variants</h4>
-              {/* Avoid Bootstrap .card-subtitle — its negative margin pulls this into the title. */}
+              {/* Avoid Bootstrap .card-subtitle - its negative margin pulls this into the title. */}
               <p className="text-muted fs-13 mb-0 mt-1">
-                Use these when the price depends on the configuration — colour, capacity, size.
+                Use these when the price depends on the configuration - colour, capacity, size.
                 Each combination gets its own price, SKU and stock.
               </p>
             </div>

@@ -1,5 +1,5 @@
 /*
-  AIDR — Expand ReturnRequests CHECK constraints for Admin→Seller pipeline.
+  AIDR - Expand ReturnRequests CHECK constraints for Admin→Seller pipeline.
 
   Old CK_ReturnRequests_Status only allowed:
     Pending | Approved | Rejected | Receiving | Refunded | Closed
@@ -51,7 +51,7 @@ BEGIN
     PRINT N'Added CK_ReturnRequests_Status (full return pipeline)';
 END
 ELSE
-    PRINT N'CK_ReturnRequests_Status already present — skipped';
+    PRINT N'CK_ReturnRequests_Status already present - skipped';
 GO
 
 IF EXISTS (
@@ -77,7 +77,7 @@ BEGIN
     PRINT N'Added CK_ReturnRequests_Resolution (ReturnRefund | Exchange)';
 END
 ELSE
-    PRINT N'CK_ReturnRequests_Resolution already present — skipped';
+    PRINT N'CK_ReturnRequests_Resolution already present - skipped';
 GO
 
 /* Verify */

@@ -124,7 +124,7 @@ export function AddressMapPicker({
       },
       () => {
         setLocating(false);
-        setLocateError('Location permission was denied — drag the pin instead.');
+        setLocateError('Location permission was denied - drag the pin instead.');
       },
       { enableHighAccuracy: true, timeout: 10000 },
     );
@@ -160,7 +160,7 @@ export function AddressMapPicker({
           ? caption
           : point
             ? `${point.lat.toFixed(5)}, ${point.lng.toFixed(5)}`
-            : 'No pin yet — pick a ward or click the map.'}
+            : 'No pin yet - pick a ward or click the map.'}
       </p>
     </div>
   );

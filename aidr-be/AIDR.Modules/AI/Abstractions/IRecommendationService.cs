@@ -53,7 +53,7 @@ public interface IRecommendationRepository
 
     /// <summary>
     /// Active-variant price spans for the given products. Products with no variants are
-    /// absent from the result — the caller falls back to the product's own price.
+    /// absent from the result - the caller falls back to the product's own price.
     /// </summary>
     Task<IReadOnlyDictionary<Guid, ProductVariantPriceRange>> GetVariantPriceRangesAsync(
         IReadOnlyCollection<Guid> productIds,

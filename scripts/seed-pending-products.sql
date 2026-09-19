@@ -1,5 +1,5 @@
 /*
-  AIDR — Pending products for Admin Product Moderation queue (UC-18..21)
+  AIDR - Pending products for Admin Product Moderation queue (UC-18..21)
   Requires: demo accounts + categories (or catalog seed).
   Idempotent by product slug.
 */
@@ -51,7 +51,7 @@ BEGIN
     ) VALUES (
         @P1, @ShopId, @CatPhone,
         N'Xiaomi 14T Pro Pending Review', N'xiaomi-14t-pro-pending',
-        N'Awaiting admin moderation — sample pending phone.',
+        N'Awaiting admin moderation - sample pending phone.',
         N'Demo product for UC-18..20 Approve/Reject flow.',
         N'Xiaomi', N'2407FPN8EG', N'New', 12990000, 12490000, 'VND',
         8, 12, N'China',
@@ -87,7 +87,7 @@ BEGIN
     ) VALUES (
         @P3, @ShopId, @CatAccess,
         N'Sony WH-1000XM5 Pending', N'sony-wh-1000xm5-pending',
-        N'Incomplete specs — useful for Reject with reason.',
+        N'Incomplete specs - useful for Reject with reason.',
         N'Demo pending accessory.',
         N'Sony', N'New', 8990000, 'VND', 12, N'Pending'
     );

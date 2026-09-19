@@ -37,7 +37,7 @@ export type ProductListItem = {
   brand?: string | null;
   basePrice: number;
   salePrice?: number | null;
-  /** Cheapest way to buy it — with variants, the cheapest variant. */
+  /** Cheapest way to buy it - with variants, the cheapest variant. */
   effectivePrice: number;
   /** Dearest active variant; equals effectivePrice when the product has none. */
   maxEffectivePrice: number;

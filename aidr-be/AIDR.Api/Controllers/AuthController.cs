@@ -48,7 +48,7 @@ public sealed class AuthController : ControllerBase
         return Ok(ApiResult<GoogleAuthUrlResponse>.Ok(result));
     }
 
-    /// <summary>Complete Google login — exchange code and upsert app user.</summary>
+    /// <summary>Complete Google login - exchange code and upsert app user.</summary>
     [HttpPost("google/callback")]
     [AllowAnonymous]
     public async Task<ActionResult<ApiResult<AuthTokenResponse>>> GoogleCallback(

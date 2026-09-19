@@ -36,11 +36,11 @@ public static class VoucherDemoSeeder
 
         var seeds = new List<(Guid Id, string Code, string Scope, Guid? ShopId)>
         {
-            // System — Admin list + buyer apply
+            // System - Admin list + buyer apply
             (SystemPercentId, "AIDR10", VoucherConstants.ScopeSystem, null),
             (SystemFixedId, "AIDR50K", VoucherConstants.ScopeSystem, null),
             (SystemInactiveId, "AIDR_OFF", VoucherConstants.ScopeSystem, null),
-            // Shop — Seller list + buyer apply on demo shop cart
+            // Shop - Seller list + buyer apply on demo shop cart
             (ShopFixedId, "SHOP20K", VoucherConstants.ScopeShop, DemoAccountsSeeder.ShopId),
             (ShopPercentId, "SHOP15", VoucherConstants.ScopeShop, DemoAccountsSeeder.ShopId),
             (ShopExpiredId, "SHOP_OLD", VoucherConstants.ScopeShop, DemoAccountsSeeder.ShopId),
@@ -93,7 +93,7 @@ public static class VoucherDemoSeeder
             SystemInactiveId,
             code: "AIDR_OFF",
             name: "AIDR Disabled (test)",
-            description: "Inactive system voucher — use to test activate/disable.",
+            description: "Inactive system voucher - use to test activate/disable.",
             scope: VoucherConstants.ScopeSystem,
             shopId: null,
             discountType: VoucherConstants.DiscountTypePercent,
@@ -156,7 +156,7 @@ public static class VoucherDemoSeeder
             ShopExpiredId,
             code: "SHOP_OLD",
             name: "Shop Expired (test)",
-            description: "Expired shop voucher — appears in Expired KPI, not eligible for apply.",
+            description: "Expired shop voucher - appears in Expired KPI, not eligible for apply.",
             scope: VoucherConstants.ScopeShop,
             shopId: DemoAccountsSeeder.ShopId,
             discountType: VoucherConstants.DiscountTypeFixedAmount,

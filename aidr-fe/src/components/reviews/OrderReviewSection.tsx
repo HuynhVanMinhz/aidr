@@ -209,7 +209,7 @@ export function ProductReviewCreateForm({
             maxLength={REVIEW_MAX_CONTENT}
             value={form.content}
             disabled={mutating}
-            placeholder="What stood out? Build quality, battery, performance — anything that would have helped you before buying."
+            placeholder="What stood out? Build quality, battery, performance - anything that would have helped you before buying."
             onChange={(event) => setForm((current) => ({ ...current, content: event.target.value }))}
             onBlur={() => setTouched((current) => ({ ...current, content: true }))}
           />
@@ -284,7 +284,7 @@ function SellerRatingCreateForm({
   if (submittedOk) {
     return (
       <ReviewDone>
-        Thanks — your rating for <strong>{shopName}</strong> has been recorded.
+        Thanks - your rating for <strong>{shopName}</strong> has been recorded.
       </ReviewDone>
     );
   }

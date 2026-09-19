@@ -1,5 +1,5 @@
 ﻿/*
-  AIDR — Shopping Assistant demo seed (UC-56)
+  AIDR - Shopping Assistant demo seed (UC-56)
   Prerequisites:
     - POST /api/dev/seed-demo-accounts (demo buyer CCCC...)
     - POST /api/dev/seed-catalog (Approved products)
@@ -48,7 +48,7 @@ IF EXISTS (
        OR (UserId = @BuyerId AND Title = N'AI-SEED shopping assistant demo')
 )
 BEGIN
-    PRINT N'Shopping assistant demo conversation already present — skipped.';
+    PRINT N'Shopping assistant demo conversation already present - skipped.';
     SET @SeedBase = 0;
 END;
 
@@ -89,7 +89,7 @@ VALUES
 (
     @ConversationId,
     N'assistant',
-    N'You can request a return with full refund from your order detail after delivery. Upload unboxing and testing video evidence; our team reviews requests manually. AIDR does not offer same-item exchange — after a refund you can place a new order.',
+    N'You can request a return with full refund from your order detail after delivery. Upload unboxing and testing video evidence; our team reviews requests manually. AIDR does not offer same-item exchange - after a refund you can place a new order.',
     N'{"source":"heuristic","intent":"faq","productIds":[],"actions":[]}',
     DATEADD(MINUTE, -28, @Now)
 ),

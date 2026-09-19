@@ -47,7 +47,7 @@ export function ChatProductCard({ product, inBubble = false }: ChatProductCardPr
 
 /**
  * Renders whatever is known about a shared product. A failed lookup still produces a working
- * link to the product page — the shared item must never become a dead placeholder.
+ * link to the product page - the shared item must never become a dead placeholder.
  */
 export function ChatProductPreviewCard({
   productId,

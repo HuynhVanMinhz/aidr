@@ -1,21 +1,21 @@
 ---
-description: AIDR — mọi field form/API phải validate đầy đủ trừ khi business rule cho phép bỏ qua.
+description: AIDR - mọi field form/API phải validate đầy đủ trừ khi business rule cho phép bỏ qua.
 alwaysApply: true
 ---
 
-# AIDR — Field Validation
+# AIDR - Field Validation
 
 ## Nguyên tắc
 
 1. **Mặc định validate đầy đủ** mọi field người dùng nhập (required, format, length, range) trên **FE và BE**.
 2. Chỉ **không** validate (hoặc cho optional) khi `bussiness-system.md` / BR / UC mô tả rõ field đó không bắt buộc hoặc không ràng buộc.
-3. BE là nguồn chặn cuối — FE validate để UX, không thay thế BE.
+3. BE là nguồn chặn cuối - FE validate để UX, không thay thế BE.
 
 ## Form UX (FE)
 
-1. **Lỗi theo từng field** — hiển thị ngay dưới `input` / `select` / `textarea` tương ứng. Alert trên cùng chỉ dùng cho lỗi API/server.
-2. **Ẩn khi chưa vi phạm** — lúc mở form **không** hiện lỗi. Chỉ hiện sau khi field không hợp lệ (blur / đổi giá trị sai / bấm submit).
-3. **Validate đồng thời** — submit phải kiểm tra **tất cả** field, không dừng ở lỗi đầu tiên.
+1. **Lỗi theo từng field** - hiển thị ngay dưới `input` / `select` / `textarea` tương ứng. Alert trên cùng chỉ dùng cho lỗi API/server.
+2. **Ẩn khi chưa vi phạm** - lúc mở form **không** hiện lỗi. Chỉ hiện sau khi field không hợp lệ (blur / đổi giá trị sai / bấm submit).
+3. **Validate đồng thời** - submit phải kiểm tra **tất cả** field, không dừng ở lỗi đầu tiên.
 4. **Nút submit**
    - **Create:** `disabled` khi form chưa chỉnh (chưa dirty), còn lỗi, hoặc thiếu field bắt buộc.
    - **Update:** `disabled` khi chưa có thay đổi (`dirty`) hoặc còn lỗi validation.
@@ -23,10 +23,10 @@ alwaysApply: true
 5. Dùng helper chung (`tryValidateField`, `FormField`, `canSubmit*`, `visibleFieldErrors`) thay vì chỉ 1 alert chung.
 
 ```tsx
-// ❌ Sai — hiện lỗi required ngay khi form trống
+// ❌ Sai - hiện lỗi required ngay khi form trống
 <p className="form-field-error">{errors.name}</p>
 
-// ✅ Đúng — chỉ hiện khi field đã vi phạm
+// ✅ Đúng - chỉ hiện khi field đã vi phạm
 {visible.name && <p className="form-field-error">{visible.name}</p>}
 <button disabled={!canSubmit}>Save</button>
 ```

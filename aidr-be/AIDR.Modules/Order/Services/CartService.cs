@@ -38,7 +38,7 @@ public sealed class CartService : ICartService
         var variant = ResolveVariant(product, request.VariantId);
 
         // With a variant it is that configuration's price and stock that apply, not the
-        // product's — the product's figures only describe its cheapest variant.
+        // product's - the product's figures only describe its cheapest variant.
         var unitPrice = variant?.EffectivePrice ?? product.EffectivePrice;
         var available = variant?.AvailableQuantity ?? product.AvailableQuantity;
 

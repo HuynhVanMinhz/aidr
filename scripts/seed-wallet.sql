@@ -1,5 +1,5 @@
 /*
-  AIDR — Seller Wallet ledger demo seed (UC-85)
+  AIDR - Seller Wallet ledger demo seed (UC-85)
   Prerequisites: POST /api/dev/seed-demo-accounts (demo seller shop + wallet).
   Idempotent by Note prefix WAL-SEED-NN on WalletTransactions.
 
@@ -44,7 +44,7 @@ IF EXISTS (
       AND Note LIKE N'WAL-SEED-%'
 )
 BEGIN
-    PRINT N'Wallet demo seed already present — skipped.';
+    PRINT N'Wallet demo seed already present - skipped.';
     RETURN;
 END;
 

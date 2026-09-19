@@ -20,7 +20,7 @@ function InfoRow({
   value: ReactNode;
   emphasize?: boolean;
 }) {
-  if (value == null || value === '' || value === '—') return null;
+  if (value == null || value === '' || value === '-') return null;
   return (
     <div className={`catalog-info-row${emphasize ? ' is-emphasize' : ''}`}>
       <dt>{label}</dt>
@@ -124,7 +124,7 @@ export function ProductAdditionalInfo({ product, specs, onOpenReviews }: Props) 
         <div className="catalog-info-highlight">
           <span className="catalog-info-highlight__label">Rating</span>
           <span className="catalog-info-highlight__value">
-            ★ {product.avgRating > 0 ? product.avgRating.toFixed(1) : '—'}
+            ★ {product.avgRating > 0 ? product.avgRating.toFixed(1) : '-'}
           </span>
           <button type="button" className="catalog-info-highlight__link" onClick={onOpenReviews}>
             {product.reviewCount} review{product.reviewCount === 1 ? '' : 's'}

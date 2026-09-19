@@ -76,7 +76,7 @@ public sealed class SellerRegistrationService : ISellerRegistrationService
     }
 
     /// <summary>
-    /// No identity check, no application. Enforced here and not just in the UI —
+    /// No identity check, no application. Enforced here and not just in the UI -
     /// the endpoint is reachable directly.
     /// </summary>
     private async Task<KycVerificationDto> RequireUsableKycAsync(

@@ -1,16 +1,16 @@
 /*
-  AIDR — Seed demo vouchers (System + Shop) for local testing.
+  AIDR - Seed demo vouchers (System + Shop) for local testing.
 
   Prefer: POST http://localhost:5080/api/dev/seed-vouchers  (Development only)
   Prerequisite: POST /api/dev/seed-demo-accounts
 
   Codes:
-    AIDR10   — System 10% (max 50k), min 100k, active
-    AIDR50K  — System flat 50k, min 200k, active
-    AIDR_OFF — System 5%, inactive (activate/disable test)
-    SHOP20K  — Shop flat 20k, min 50k, active (demo seller shop)
-    SHOP15   — Shop 15% (max 30k), min 80k, active
-    SHOP_OLD — Shop flat 10k, expired
+    AIDR10   - System 10% (max 50k), min 100k, active
+    AIDR50K  - System flat 50k, min 200k, active
+    AIDR_OFF - System 5%, inactive (activate/disable test)
+    SHOP20K  - Shop flat 20k, min 50k, active (demo seller shop)
+    SHOP15   - Shop 15% (max 30k), min 80k, active
+    SHOP_OLD - Shop flat 10k, expired
 
   Demo IDs (must match DemoAccountsSeeder / VoucherDemoSeeder):
     Admin  AAAAAAAA-AAAA-AAAA-AAAA-AAAAAAAAAAAA
@@ -65,7 +65,7 @@ USING (VALUES
     (
         CONVERT(UNIQUEIDENTIFIER, 'EEEEEEEE-EEEE-EEEE-EEEE-EEEEEEEEEE02'),
         N'AIDR_OFF', N'AIDR Disabled (test)',
-        N'Inactive system voucher — use to test activate/disable.',
+        N'Inactive system voucher - use to test activate/disable.',
         N'System', CAST(NULL AS UNIQUEIDENTIFIER),
         N'Percent', CAST(5 AS DECIMAL(18,2)), CAST(20000 AS DECIMAL(18,2)), CAST(0 AS DECIMAL(18,2)),
         100, 1,
@@ -92,7 +92,7 @@ USING (VALUES
     (
         CONVERT(UNIQUEIDENTIFIER, 'FFFFFFFF-FFFF-FFFF-FFFF-FFFFFFFFFF02'),
         N'SHOP_OLD', N'Shop Expired (test)',
-        N'Expired shop voucher — appears in Expired KPI, not eligible for apply.',
+        N'Expired shop voucher - appears in Expired KPI, not eligible for apply.',
         N'Shop', @ShopId,
         N'FixedAmount', CAST(10000 AS DECIMAL(18,2)), CAST(NULL AS DECIMAL(18,2)), CAST(0 AS DECIMAL(18,2)),
         50, 1,

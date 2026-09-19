@@ -1,5 +1,5 @@
 /*
-  seed-inventory-lots.sql — backfill opening InventoryLots for seeded products.
+  seed-inventory-lots.sql - backfill opening InventoryLots for seeded products.
 
   Why: checkout allocates cost lots FIFO (OrderRepository.AllocateLotsFifoAsync).
   Most seed scripts insert Products.StockQuantity directly without creating any
@@ -48,7 +48,7 @@ LEFT JOIN (
 ) l ON l.ProductId = p.ProductId
 WHERE p.StockQuantity - ISNULL(l.Remaining, 0) > 0;
 
-/* Never write a zero/negative unit cost — CK_Lots_UnitCost requires >= 0. */
+/* Never write a zero/negative unit cost - CK_Lots_UnitCost requires >= 0. */
 UPDATE #Gap SET UnitCost = 0 WHERE UnitCost IS NULL OR UnitCost < 0;
 
 /* 2. Create the opening lots */
@@ -112,7 +112,7 @@ COMMIT;
 PRINT N'Opening lots created: ' + CAST(@Created AS NVARCHAR(10))
     + N' (' + CAST(@Units AS NVARCHAR(10)) + N' units).';
 
-/* 5. Verification — every product must now be lot-backed */
+/* 5. Verification - every product must now be lot-backed */
 SELECT
     p.Name,
     p.StockQuantity,

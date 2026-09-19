@@ -29,7 +29,7 @@ export function stockRowOf(delivery: StockDelivery, key: string): StockDraft {
   return delivery.rows[key] ?? { quantity: '', unitCost: '' };
 }
 
-/** Rows the seller actually filled in — the rest are simply not a delivery. */
+/** Rows the seller actually filled in - the rest are simply not a delivery. */
 export function filledStockRows(delivery: StockDelivery): Array<{ key: string } & StockDraft> {
   return Object.entries(delivery.rows)
     .filter(([, row]) => row.quantity.trim() !== '' || row.unitCost.trim() !== '')
@@ -111,7 +111,7 @@ export function ProductStockSection({
         <p className="text-muted fs-13 mb-0">
           {mode === 'create'
             ? 'Optional. Fill this in to stock the product as soon as it is created.'
-            : 'Optional. This adds a new lot on top of what you already hold — it never rewrites existing stock or its cost.'}
+            : 'Optional. This adds a new lot on top of what you already hold - it never rewrites existing stock or its cost.'}
         </p>
       </div>
       <div className="card-body">
@@ -144,7 +144,7 @@ export function ProductStockSection({
                       </td>
                       {mode === 'edit' ? (
                         <td className="text-end">
-                          {variant.stockQuantity ?? <span className="text-muted">—</span>}
+                          {variant.stockQuantity ?? <span className="text-muted">-</span>}
                         </td>
                       ) : null}
                       <td>

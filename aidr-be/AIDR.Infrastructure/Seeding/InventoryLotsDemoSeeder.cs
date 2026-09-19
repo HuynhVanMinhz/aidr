@@ -4,7 +4,7 @@ namespace AIDR.Infrastructure.Seeding;
 
 /// <summary>
 /// Dev-only: backfill opening InventoryLots for products whose StockQuantity is not lot-backed.
-/// Required before checkout — FIFO allocation reads InventoryLots, not Products.StockQuantity alone.
+/// Required before checkout - FIFO allocation reads InventoryLots, not Products.StockQuantity alone.
 /// </summary>
 public static class InventoryLotsDemoSeeder
 {

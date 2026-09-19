@@ -19,7 +19,7 @@ const STATUS_FILTERS: { value: SellerRegistrationStatusFilter; label: string }[]
 
 /**
  * Three states worth distinguishing at a glance: verified, needs a human, and
- * nothing on file. "Not filed with this form" is a footnote, not a warning —
+ * nothing on file. "Not filed with this form" is a footnote, not a warning -
  * the identity is still checked.
  */
 function IdentityBadge({
@@ -35,7 +35,7 @@ function IdentityBadge({
     return (
       <span
         className="badge bg-warning-subtle text-warning px-2 py-1 fs-13"
-        title="This applicant has never verified their identity — read the documents by hand."
+        title="This applicant has never verified their identity - read the documents by hand."
       >
         <IconifyIcon icon="solar:shield-cross-bold" className="me-1 align-middle" />
         None

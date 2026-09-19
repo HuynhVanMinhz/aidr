@@ -1,4 +1,4 @@
-# AIDR — Use Case Catalog
+# AIDR - Use Case Catalog
 
 **Legend**
 
@@ -15,14 +15,14 @@
 
 | id | name | description (chi tiết + business) | status | priority |
 |----|------|-------------------------------------|--------|----------|
-| UC-01 | Register Account | **Actor:** Guest. Khách nhập Full Name, Email, Password; hệ thống validate (email unique, password đủ phức tạp — BR-01/02), tạo tài khoản Buyer, gửi xác nhận email (nếu bật). **Business:** Mở rộng user base; mọi giao dịch mua bắt đầu từ account. | Done | P0 |
+| UC-01 | Register Account | **Actor:** Guest. Khách nhập Full Name, Email, Password; hệ thống validate (email unique, password đủ phức tạp - BR-01/02), tạo tài khoản Buyer, gửi xác nhận email (nếu bật). **Business:** Mở rộng user base; mọi giao dịch mua bắt đầu từ account. | Done | P0 |
 | UC-02 | Login With Email / Password | **Actor:** Guest. Xác thực credentials; kiểm tra Active/Locked; sau 5 lần sai khóa tạm 15 phút (BR-03); trả JWT + roles. **Business:** Cổng vào hệ thống cho mọi role. | Done | P0 |
 | UC-03 | Login With Google | **Actor:** Guest. OAuth/OIDC qua Keycloak + Google IdP; lần đầu upsert user app. **Business:** Giảm ma sát đăng ký, tăng conversion. | Done | P0 |
 | UC-04 | Logout | **Actor:** Buyer/Seller/Admin. Invalidate session/refresh; xóa token phía client. **Business:** Bảo mật phiên đăng nhập. | Done | P0 |
 | UC-05 | Forget Password | **Actor:** Guest. Nhập email đã đăng ký → token one-time có hạn → reset password (BR-09..11). **Business:** Giảm mất user do quên mật khẩu. | Done | P0 |
 | UC-06 | Change Password | **Actor:** Buyer/Seller. Yêu cầu mật khẩu cũ đúng; New = Confirm; hash lưu lại (BR-07/08). **Business:** Bảo mật tài khoản chủ động. | Done | P1 |
 | UC-07 | View Profile | **Actor:** Buyer/Seller. Xem thông tin cá nhân, avatar, SĐT, địa chỉ mặc định. **Business:** Minh bạch dữ liệu tài khoản. | Done | P0 |
-| UC-08 | Update Profile | **Actor:** Buyer/Seller. Cập nhật tên, SĐT, avatar (≤2MB), địa chỉ (≤10 — BR-05/06). **Business:** Dữ liệu giao hàng / liên hệ chính xác. | Done | P0 |
+| UC-08 | Update Profile | **Actor:** Buyer/Seller. Cập nhật tên, SĐT, avatar (≤2MB), địa chỉ (≤10 - BR-05/06). **Business:** Dữ liệu giao hàng / liên hệ chính xác. | Done | P0 |
 | UC-09 | View Product List | **Actor:** Guest/Buyer. Danh sách SP `Approved` + category Active; phân trang; cache Redis. **Business:** Catalog là bề mặt bán hàng chính. | Done | P0 |
 | UC-10 | View Product Details | **Actor:** Guest/Buyer. Chi tiết SP, ảnh, specs, giá bán, tồn, shop, reviews tóm tắt; ghi viewed history. **Business:** Hỗ trợ quyết định mua. | Done | P0 |
 | UC-11 | View Product Categories | **Actor:** Guest/Buyer. Cây danh mục đang Active để điều hướng. **Business:** Tổ chức catalog theo ngành hàng điện tử. | Done | P0 |
@@ -105,13 +105,13 @@
 | UC-94 | Confirm Return Handling / Reject | **Actor:** Seller. `Approved`→`SellerConfirmed` (xác nhận ResolutionType); hoặc Reject + note. Notify Buyer. **Business:** Chốt phương án hoàn tiền / đổi hàng. | Done | P1 |
 | UC-95 | Receive & Accept Returned Goods | **Actor:** Seller. `SellerConfirmed`→`Receiving`→`Accepted`; khi Accepted **notify Admin**. Reject nếu hàng không đạt. **Business:** Kiểm hàng trước khi Admin hoàn tất. | Done | P1 |
 
-### v2 — Done
+### v2 - Done
 
 | id | name | description (chi tiết + business) | status | priority |
 |----|------|-------------------------------------|--------|----------|
 | UC-51 | Manage Product Price Alerts | **Actor:** Buyer. Bật/tắt alert giá giảm hoặc có hàng lại trên SP (wishlist/PDP); nhận notification. **Business:** Retention, quay lại mua khi deal. Doc: `solution-price-alerts-and-history.md`. | Done | P1 |
 | UC-55 | View Product Price History | **Actor:** Guest/Buyer. Biểu đồ lịch sử giá bán công khai trên PDP (từ ProductPriceHistories). **Business:** Minh bạch giá, tăng trust. Doc: `solution-price-alerts-and-history.md`. | Done | P1 |
-| UC-68 | One-Click Reorder | **Actor:** Buyer. Mua lại đơn cũ — add cart với giá/tồn hiện tại. **Business:** Repeat purchase. Doc: `solution-v2-engagement-growth.md`. | Done | P2 |
+| UC-68 | One-Click Reorder | **Actor:** Buyer. Mua lại đơn cũ - add cart với giá/tồn hiện tại. **Business:** Repeat purchase. Doc: `solution-v2-engagement-growth.md`. | Done | P2 |
 | UC-82 | View AI Review Digest | **Actor:** Guest/Buyer. Tóm tắt pros/cons review bằng AI trên PDP. **Business:** Social proof nhanh. Doc: `solution-ai-review-digest.md`. | Done | P2 |
 | UC-83 | View Smart Accessory Bundle | **Actor:** Guest/Buyer. Gợi ý combo phụ kiện khi xem SP chính. **Business:** Tăng AOV. Doc: `solution-ai-bundle-and-compatibility.md`. | Done | P2 |
 | UC-84 | Check Product Compatibility | **Actor:** Guest/Buyer. Kiểm tra tương thích spec giữa 2 SP hoặc SP + thiết bị mô tả. **Business:** Giảm mua nhầm phụ kiện điện tử. Doc: `solution-ai-bundle-and-compatibility.md`. | Done | P2 |
@@ -128,6 +128,6 @@
 | P2 | ~15 | AI / social / polish |
 | P3 | 0 (hiện tại) | Dự phòng |
 
-**v2 Done:** UC-51, UC-55, UC-68, UC-82–84, UC-86 — xem `solution-v2-roadmap.md`.
+**v2 Done:** UC-51, UC-55, UC-68, UC-82–84, UC-86 - xem `solution-v2-roadmap.md`.
 
 **ID trống còn lại:** reserved cho Q&A, referral, flash sale… (xem `solution-v2-engagement-growth.md`, `solution-v2-seller-trust.md`).

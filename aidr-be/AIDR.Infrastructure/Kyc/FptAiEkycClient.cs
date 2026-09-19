@@ -247,7 +247,7 @@ public sealed class FptAiEkycClient : IEkycClient
         if (ours is null) return;
 
         throw new ProviderUnavailableException(
-            $"FPT.AI is unusable — {ours} (HTTP {(int)status}): {Trim(raw)}");
+            $"FPT.AI is unusable - {ours} (HTTP {(int)status}): {Trim(raw)}");
     }
 
     private void RequireConfigured()

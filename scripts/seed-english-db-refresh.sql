@@ -1,5 +1,5 @@
 /*
-  AIDR — Normalize ALL demo/catalog text to English.
+  AIDR - Normalize ALL demo/catalog text to English.
   Safe to re-run. Image URLs stay as https://cdn.aidr.local/mock/...
 
   Dev: POST /api/dev/seed-english-refresh
@@ -118,26 +118,26 @@ UPDATE dbo.Categories SET Name = N'Chargers & Cables', Description = N'GaN charg
 UPDATE dbo.Categories SET Name = N'Phone Cases', Description = N'Protective cases', UpdatedAt = @Now WHERE Slug = N'phu-kien-op';
 UPDATE dbo.Categories SET Name = N'Headphones', Description = N'Wired and wireless headphones', UpdatedAt = @Now WHERE Slug = N'phu-kien-tai-nghe';
 
-UPDATE dbo.Categories SET Name = N'[Inactive] Home Appliances', Description = N'Deactivated — not used in electronics catalog.', UpdatedAt = @Now WHERE Slug = N'thiet-bi-gia-dung';
-UPDATE dbo.Categories SET Name = N'[Inactive] Kitchen Appliances', Description = N'Deactivated — not used in electronics catalog.', UpdatedAt = @Now WHERE Slug = N'gia-dung-bep';
-UPDATE dbo.Categories SET Name = N'[Inactive] Home Cleaning', Description = N'Deactivated — not used in electronics catalog.', UpdatedAt = @Now WHERE Slug = N'gia-dung-lam-sach';
-UPDATE dbo.Categories SET Name = N'[Inactive] Fashion', Description = N'Deactivated — not used in electronics catalog.', UpdatedAt = @Now WHERE Slug = N'thoi-trang';
-UPDATE dbo.Categories SET Name = N'[Inactive] Men Fashion', Description = N'Deactivated — not used in electronics catalog.', UpdatedAt = @Now WHERE Slug = N'thoi-trang-nam';
-UPDATE dbo.Categories SET Name = N'[Inactive] Women Fashion', Description = N'Deactivated — not used in electronics catalog.', UpdatedAt = @Now WHERE Slug = N'thoi-trang-nu';
-UPDATE dbo.Categories SET Name = N'[Inactive] Footwear', Description = N'Deactivated — not used in electronics catalog.', UpdatedAt = @Now WHERE Slug = N'thoi-trang-giay';
-UPDATE dbo.Categories SET Name = N'[Inactive] Books & Stationery', Description = N'Deactivated — not used in electronics catalog.', UpdatedAt = @Now WHERE Slug = N'sach-van-phong-pham';
-UPDATE dbo.Categories SET Name = N'[Inactive] Self-help Books', Description = N'Deactivated — not used in electronics catalog.', UpdatedAt = @Now WHERE Slug = N'sach-ky-nang';
-UPDATE dbo.Categories SET Name = N'[Inactive] Kids Books', Description = N'Deactivated — not used in electronics catalog.', UpdatedAt = @Now WHERE Slug = N'sach-thieu-nhi';
-UPDATE dbo.Categories SET Name = N'[Inactive] Sports & Outdoors', Description = N'Deactivated — not used in electronics catalog.', UpdatedAt = @Now WHERE Slug = N'the-thao-ngoai-troi';
-UPDATE dbo.Categories SET Name = N'[Inactive] Yoga & Fitness', Description = N'Deactivated — not used in electronics catalog.', UpdatedAt = @Now WHERE Slug = N'the-thao-yoga';
-UPDATE dbo.Categories SET Name = N'[Inactive] Football', Description = N'Deactivated — not used in electronics catalog.', UpdatedAt = @Now WHERE Slug = N'the-thao-bong-da';
-UPDATE dbo.Categories SET Name = N'[Inactive] Beauty', Description = N'Deactivated — not used in electronics catalog.', UpdatedAt = @Now WHERE Slug = N'my-pham';
-UPDATE dbo.Categories SET Name = N'[Inactive] Skincare', Description = N'Deactivated — not used in electronics catalog.', UpdatedAt = @Now WHERE Slug = N'my-pham-skincare';
-UPDATE dbo.Categories SET Name = N'[Inactive] Makeup', Description = N'Deactivated — not used in electronics catalog.', UpdatedAt = @Now WHERE Slug = N'my-pham-makeup';
-UPDATE dbo.Categories SET Name = N'[Inactive] Mother & Baby', Description = N'Deactivated — not used in electronics catalog.', UpdatedAt = @Now WHERE Slug = N'me-be';
-UPDATE dbo.Categories SET Name = N'[Inactive] Baby Nutrition', Description = N'Deactivated — not used in electronics catalog.', UpdatedAt = @Now WHERE Slug = N'me-be-sua';
-UPDATE dbo.Categories SET Name = N'[Inactive] Auto & Motorbike', Description = N'Deactivated — not used in electronics catalog.', UpdatedAt = @Now WHERE Slug = N'o-to-xe-may';
-UPDATE dbo.Categories SET Name = N'[Inactive] Motorbike Accessories', Description = N'Deactivated — not used in electronics catalog.', UpdatedAt = @Now WHERE Slug = N'xe-may-phu-kien';
+UPDATE dbo.Categories SET Name = N'[Inactive] Home Appliances', Description = N'Deactivated - not used in electronics catalog.', UpdatedAt = @Now WHERE Slug = N'thiet-bi-gia-dung';
+UPDATE dbo.Categories SET Name = N'[Inactive] Kitchen Appliances', Description = N'Deactivated - not used in electronics catalog.', UpdatedAt = @Now WHERE Slug = N'gia-dung-bep';
+UPDATE dbo.Categories SET Name = N'[Inactive] Home Cleaning', Description = N'Deactivated - not used in electronics catalog.', UpdatedAt = @Now WHERE Slug = N'gia-dung-lam-sach';
+UPDATE dbo.Categories SET Name = N'[Inactive] Fashion', Description = N'Deactivated - not used in electronics catalog.', UpdatedAt = @Now WHERE Slug = N'thoi-trang';
+UPDATE dbo.Categories SET Name = N'[Inactive] Men Fashion', Description = N'Deactivated - not used in electronics catalog.', UpdatedAt = @Now WHERE Slug = N'thoi-trang-nam';
+UPDATE dbo.Categories SET Name = N'[Inactive] Women Fashion', Description = N'Deactivated - not used in electronics catalog.', UpdatedAt = @Now WHERE Slug = N'thoi-trang-nu';
+UPDATE dbo.Categories SET Name = N'[Inactive] Footwear', Description = N'Deactivated - not used in electronics catalog.', UpdatedAt = @Now WHERE Slug = N'thoi-trang-giay';
+UPDATE dbo.Categories SET Name = N'[Inactive] Books & Stationery', Description = N'Deactivated - not used in electronics catalog.', UpdatedAt = @Now WHERE Slug = N'sach-van-phong-pham';
+UPDATE dbo.Categories SET Name = N'[Inactive] Self-help Books', Description = N'Deactivated - not used in electronics catalog.', UpdatedAt = @Now WHERE Slug = N'sach-ky-nang';
+UPDATE dbo.Categories SET Name = N'[Inactive] Kids Books', Description = N'Deactivated - not used in electronics catalog.', UpdatedAt = @Now WHERE Slug = N'sach-thieu-nhi';
+UPDATE dbo.Categories SET Name = N'[Inactive] Sports & Outdoors', Description = N'Deactivated - not used in electronics catalog.', UpdatedAt = @Now WHERE Slug = N'the-thao-ngoai-troi';
+UPDATE dbo.Categories SET Name = N'[Inactive] Yoga & Fitness', Description = N'Deactivated - not used in electronics catalog.', UpdatedAt = @Now WHERE Slug = N'the-thao-yoga';
+UPDATE dbo.Categories SET Name = N'[Inactive] Football', Description = N'Deactivated - not used in electronics catalog.', UpdatedAt = @Now WHERE Slug = N'the-thao-bong-da';
+UPDATE dbo.Categories SET Name = N'[Inactive] Beauty', Description = N'Deactivated - not used in electronics catalog.', UpdatedAt = @Now WHERE Slug = N'my-pham';
+UPDATE dbo.Categories SET Name = N'[Inactive] Skincare', Description = N'Deactivated - not used in electronics catalog.', UpdatedAt = @Now WHERE Slug = N'my-pham-skincare';
+UPDATE dbo.Categories SET Name = N'[Inactive] Makeup', Description = N'Deactivated - not used in electronics catalog.', UpdatedAt = @Now WHERE Slug = N'my-pham-makeup';
+UPDATE dbo.Categories SET Name = N'[Inactive] Mother & Baby', Description = N'Deactivated - not used in electronics catalog.', UpdatedAt = @Now WHERE Slug = N'me-be';
+UPDATE dbo.Categories SET Name = N'[Inactive] Baby Nutrition', Description = N'Deactivated - not used in electronics catalog.', UpdatedAt = @Now WHERE Slug = N'me-be-sua';
+UPDATE dbo.Categories SET Name = N'[Inactive] Auto & Motorbike', Description = N'Deactivated - not used in electronics catalog.', UpdatedAt = @Now WHERE Slug = N'o-to-xe-may';
+UPDATE dbo.Categories SET Name = N'[Inactive] Motorbike Accessories', Description = N'Deactivated - not used in electronics catalog.', UpdatedAt = @Now WHERE Slug = N'xe-may-phu-kien';
 UPDATE dbo.Categories SET Name = N'[Inactive] Junk Category A', Description = N'Deactivated junk category.', UpdatedAt = @Now WHERE Slug = N'a';
 UPDATE dbo.Categories SET Name = N'[Inactive] Junk Category B', Description = N'Deactivated junk category.', UpdatedAt = @Now WHERE Slug = N'aaasasfsf';
 UPDATE dbo.Categories SET Name = N'[Inactive] Junk Category C', Description = N'Deactivated junk category.', UpdatedAt = @Now WHERE Slug = N'aaasasfsf1';
@@ -173,7 +173,7 @@ WHERE Slug = N'xiaomi-14-256gb';
 
 UPDATE dbo.Products SET
     ShortDescription = N'Apple M3, 16GB RAM, 512GB SSD',
-    Description = N'MacBook Air 13-inch — thin, silent, and all-day battery for work and study.',
+    Description = N'MacBook Air 13-inch - thin, silent, and all-day battery for work and study.',
     UpdatedAt = @Now
 WHERE Slug = N'macbook-air-m3-13';
 
@@ -215,7 +215,7 @@ WHERE Slug = N'samsung-galaxy-watch-6';
 
 UPDATE dbo.Products SET
     ShortDescription = N'Apple M2, Liquid Retina, Apple Pencil support',
-    Description = N'iPad Air 11-inch with M2 — ideal for notes, drawing, and streaming.',
+    Description = N'iPad Air 11-inch with M2 - ideal for notes, drawing, and streaming.',
     UpdatedAt = @Now
 WHERE Slug = N'ipad-air-m2-128gb';
 
@@ -288,7 +288,7 @@ WHERE ShopName LIKE N'Green Mart%';
 
 UPDATE dbo.SellerRegistrationRequests SET
     ShopName = N'Crafted Circuit House',
-    BusinessInfo = N'Boutique electronics accessories and custom PC cables — approved for filter testing.'
+    BusinessInfo = N'Boutique electronics accessories and custom PC cables - approved for filter testing.'
 WHERE ShopName LIKE N'Approved Craft%';
 
 UPDATE dbo.SellerRegistrationRequests SET

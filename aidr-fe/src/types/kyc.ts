@@ -7,7 +7,7 @@ export type KycVerification = {
   provider: string;
   status: KycStatus;
   documentType?: string | null;
-  /** Masked — only the last four digits are readable. */
+  /** Masked - only the last four digits are readable. */
   documentNumberMask?: string | null;
   fullName?: string | null;
   dateOfBirth?: string | null;

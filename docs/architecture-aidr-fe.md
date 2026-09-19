@@ -1,6 +1,6 @@
 # AIDR Frontend Architecture (`aidr-fe`)
 
-**Project:** AIDR — AI-Integrated Digital Retail  
+**Project:** AIDR - AI-Integrated Digital Retail  
 **UI:** React · **State:** Redux · **Media:** Cloudinary · **API:** HTTPS → NGINX / .NET · **Realtime:** SignalR client
 
 ---
@@ -14,7 +14,7 @@
 - Gọi REST API backend qua HTTPS
 - Nhận push realtime (chat, notification) qua SignalR
 
-FE **không** chứa business rule thanh toán / duyệt sản phẩm — chỉ gọi BE.
+FE **không** chứa business rule thanh toán / duyệt sản phẩm - chỉ gọi BE.
 
 ---
 
@@ -282,9 +282,9 @@ VITE_SIGNALR_HUB_URL=https://api.aidr.local/hubs
 
 ## 14. Tài liệu liên quan
 
-- `bussiness-system.md` — nghiệp vụ & UC
-- `database.sql` — schema (FE chỉ consume qua API)
-- `architecture-aidr-be.md` — backend contracts & hubs
-- `theme-for-aidr-fe/` — HTML theme storefront
-- `theme-for-aidr-admin-fe/` — HTML theme Admin / Seller
-- Report7 — System Design §1.1 / Table 20
+- `bussiness-system.md` - nghiệp vụ & UC
+- `database.sql` - schema (FE chỉ consume qua API)
+- `architecture-aidr-be.md` - backend contracts & hubs
+- `theme-for-aidr-fe/` - HTML theme storefront
+- `theme-for-aidr-admin-fe/` - HTML theme Admin / Seller
+- Report7 - System Design §1.1 / Table 20

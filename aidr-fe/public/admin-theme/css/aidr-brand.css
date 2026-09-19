@@ -3,12 +3,12 @@
  *
  * Larkon ships a purple-grey accent (#8486a7) across links, muted text and the
  * side nav. AIDR's mark is the near-black #16181D of the storefront, so every
- * one of those roles is remapped here — this file loads after app.min.css, so
+ * one of those roles is remapped here - this file loads after app.min.css, so
  * it is the last word without forking the vendor stylesheet.
  *
  * #16181D can only be the accent in light mode: on a dark ground a near-black
- * accent is invisible. Dark mode therefore inverts the pair — a light neutral
- * carries the accent and the brand becomes the colour written on top of it —
+ * accent is invisible. Dark mode therefore inverts the pair - a light neutral
+ * carries the accent and the brand becomes the colour written on top of it -
  * which keeps the two themes the same design rather than two different ones.
  * Everything below is expressed through the tokens in this first block, so the
  * inversion is a handful of values rather than a second copy of the rules.
@@ -23,7 +23,7 @@
   --aidr-brand-on: #ffffff;
   /* Secondary text: the role Larkon spent #8486a7 on, in a neutral grey. */
   --aidr-brand-muted: #5f636d;
-  /* Third-rank text — disabled options, dropdown headers. */
+  /* Third-rank text - disabled options, dropdown headers. */
   --aidr-brand-faint: #8a8f99;
   --aidr-brand-border: rgba(22, 24, 29, 0.14);
   --aidr-brand-subtle-bg: rgba(22, 24, 29, 0.08);

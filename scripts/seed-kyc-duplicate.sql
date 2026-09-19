@@ -1,5 +1,5 @@
 /*
-  seed-kyc-duplicate.sql — two pending seller apps sharing the same identity hash.
+  seed-kyc-duplicate.sql - two pending seller apps sharing the same identity hash.
 
   Prerequisites: POST /api/dev/seed-demo-accounts
   Idempotent: fixed user + KYC ids.

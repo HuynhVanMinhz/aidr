@@ -72,7 +72,7 @@ export function AdminSettlementsPage() {
   }
 
   function handlePayout(shop: SettlementEligibleShop) {
-    // Money leaving the platform is not undoable — make the amount and the
+    // Money leaving the platform is not undoable - make the amount and the
     // destination impossible to miss.
     const confirmed = window.confirm(
       `Pay ${formatVnd(shop.netAmount)} to ${shop.shopName}?\n\n` +
@@ -174,7 +174,7 @@ export function AdminSettlementsPage() {
               ) : eligible.length === 0 ? (
                 <tr>
                   <td colSpan={7} className="text-muted">
-                    Nothing is due for payout right now — settlements appear here once their hold
+                    Nothing is due for payout right now - settlements appear here once their hold
                     window ends. {formatVnd(report?.escrowHeld ?? 0)} is still in escrow.
                   </td>
                 </tr>
