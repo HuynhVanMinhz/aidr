@@ -233,7 +233,6 @@ export function SellerShopVoucherFormPage() {
                   id="shop-voucher-starts"
                   enableTime
                   value={form.startsAt}
-                  maxDate={form.endsAt || undefined}
                   onChange={(next) => {
                     patchForm({ startsAt: next });
                     markTouched('startsAt');
@@ -245,7 +244,6 @@ export function SellerShopVoucherFormPage() {
                   id="shop-voucher-ends"
                   enableTime
                   value={form.endsAt}
-                  minDate={form.startsAt || undefined}
                   onChange={(next) => {
                     patchForm({ endsAt: next });
                     markTouched('endsAt');
