@@ -27,10 +27,18 @@ export type CreateReturnItemPayload = {
   quantity: number;
 };
 
+export type RefundBankInfoPayload = {
+  bankBin?: string | null;
+  bankName?: string | null;
+  accountNumber: string;
+  accountName: string;
+};
+
 export type CreateReturnPayload = {
   reason: string;
   description?: string | null;
   resolutionType?: ReturnResolutionType | null;
+  refundBankInfo?: RefundBankInfoPayload | null;
   items?: CreateReturnItemPayload[] | null;
   evidences: CreateReturnEvidencePayload[];
 };
@@ -184,6 +192,10 @@ export type AdminReturnDetail = {
   reviewedBy?: string | null;
   reviewerFullName?: string | null;
   reviewedAt?: string | null;
+  refundBankBin?: string | null;
+  refundBankName?: string | null;
+  refundAccountNumberMasked?: string | null;
+  refundAccountName?: string | null;
   createdAt: string;
   updatedAt: string;
   items: AdminReturnItem[];

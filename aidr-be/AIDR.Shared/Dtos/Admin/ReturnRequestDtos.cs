@@ -61,6 +61,11 @@ public sealed class AdminReturnRequestDetailDto
     public Guid? ReviewedBy { get; init; }
     public string? ReviewerFullName { get; init; }
     public DateTime? ReviewedAt { get; init; }
+    /// <summary>Buyer-provided refund bank account (filled at return request creation).</summary>
+    public string? RefundBankBin { get; init; }
+    public string? RefundBankName { get; init; }
+    public string? RefundAccountNumberMasked { get; init; }
+    public string? RefundAccountName { get; init; }
     public DateTime CreatedAt { get; init; }
     public DateTime UpdatedAt { get; init; }
     public IReadOnlyList<AdminReturnItemDto> Items { get; init; } = Array.Empty<AdminReturnItemDto>();

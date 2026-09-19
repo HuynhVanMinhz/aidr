@@ -36,6 +36,7 @@ public sealed class SettlementSweepResult
 {
     public int AutoCompletedOrders { get; init; }
     public int EntriesMadeEligible { get; init; }
+    public int BatchesDispatched { get; init; }
     public int BatchesPolled { get; init; }
     public IReadOnlyList<string> Errors { get; init; } = Array.Empty<string>();
 }
@@ -135,6 +136,10 @@ public interface ISettlementRepository
         int limit,
         CancellationToken ct = default);
 
+    Task<IReadOnlyList<AdminShopBankAccountDto>> ListAllBankAccountsAsync(
+        string? status,
+        CancellationToken ct = default);
+
     Task<int> PromoteDueEntriesAsync(DateTime nowUtc, CancellationToken ct = default);
 
     Task<IReadOnlyList<(Guid PayoutBatchId, string ProviderPayoutId)>> GetBatchesAwaitingProviderAsync(
@@ -183,6 +188,10 @@ public interface ISettlementService
         CancellationToken ct = default);
 
     Task<IReadOnlyList<SettlementEligibleShopDto>> GetEligibleShopsAsync(CancellationToken ct = default);
+
+    Task<IReadOnlyList<AdminShopBankAccountDto>> ListAllBankAccountsAsync(
+        string? status,
+        CancellationToken ct = default);
 
     Task<PayoutBatchDto> CreateBatchAsync(
         CreatePayoutBatchRequest request,

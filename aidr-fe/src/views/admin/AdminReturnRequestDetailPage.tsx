@@ -89,6 +89,14 @@ export function AdminReturnRequestDetailPage() {
     if (cached) setItem(cached);
   }, [cached]);
 
+  // Pre-fill refund fields from buyer-provided bank when item loads
+  useEffect(() => {
+    if (!item) return;
+    if (item.refundAccountNumberMasked && !refundToAccountNumber) {
+      setRefundToBin(item.refundBankBin ?? '');
+    }
+  }, [item]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const noteError = useMemo(
     () => tryValidateField(() => validateReturnRejectNote(adminNote)),
     [adminNote],
@@ -453,10 +461,25 @@ export function AdminReturnRequestDetailPage() {
                 Next step: <strong>{formatReturnStatus(nextStatus)}</strong>
               </p>
               {nextStatus === 'Refunded' ? (
-                <div className="alert alert-info" role="alert">
-                  Refund calls payOS payout. Provide buyer bank BIN and account if the payment
-                  webhook did not store the counter account.
-                </div>
+                <>
+                  {item?.refundAccountNumberMasked ? (
+                    <div className="alert alert-success" role="alert">
+                      <strong>Buyer bank account on file:</strong>{' '}
+                      {item.refundBankName ? `${item.refundBankName} · ` : ''}
+                      {item.refundAccountNumberMasked}
+                      {item.refundAccountName ? ` (${item.refundAccountName})` : ''}
+                      <br />
+                      <span className="fs-12 text-muted">
+                        This will be used automatically. Override below only if incorrect.
+                      </span>
+                    </div>
+                  ) : (
+                    <div className="alert alert-warning" role="alert">
+                      Buyer did not provide a bank account. Fill in the fields below, or ensure
+                      the payment webhook stored the counter account.
+                    </div>
+                  )}
+                </>
               ) : null}
 
               <form onSubmit={handleStatusSubmit}>

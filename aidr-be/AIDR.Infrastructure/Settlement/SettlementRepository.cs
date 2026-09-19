@@ -970,6 +970,35 @@ public sealed class SettlementRepository : ISettlementRepository
             .Select(s => (Guid?)s.OwnerUserId)
             .FirstOrDefaultAsync(ct);
 
+    public async Task<IReadOnlyList<AdminShopBankAccountDto>> ListAllBankAccountsAsync(
+        string? status,
+        CancellationToken ct = default)
+    {
+        var q = _db.ShopBankAccounts.AsNoTracking()
+            .Where(a => a.IsDefault);
+
+        if (!string.IsNullOrWhiteSpace(status))
+            q = q.Where(a => a.Status == status);
+
+        return await q
+            .OrderBy(a => a.Status)
+            .ThenBy(a => a.UpdatedAt)
+            .Select(a => new AdminShopBankAccountDto
+            {
+                ShopId = a.ShopId,
+                ShopName = a.Shop.ShopName,
+                ShopBankAccountId = a.ShopBankAccountId,
+                BankBin = a.BankBin,
+                BankName = a.BankName ?? string.Empty,
+                AccountNumberMasked = "••••••" + a.AccountNumber.Substring(a.AccountNumber.Length > 4 ? a.AccountNumber.Length - 4 : 0),
+                AccountName = a.AccountName,
+                Status = a.Status,
+                RejectReason = a.RejectReason,
+                UpdatedAt = a.UpdatedAt
+            })
+            .ToListAsync(ct);
+    }
+
     /* ------------------------------------------------------------- helpers */
 
     private async Task MarkPaidInternalAsync(PayoutBatch batch, string? reference, CancellationToken ct)

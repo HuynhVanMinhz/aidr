@@ -12,6 +12,8 @@ public static class ReturnConstants
     public const string StatusReceiving = "Receiving";
     public const string StatusAccepted = "Accepted";
     public const string StatusRefunded = "Refunded";
+    public const string StatusRefundPending = "RefundPending";
+    public const string StatusRefundFailed = "RefundFailed";
     public const string StatusExchanged = "Exchanged";
     public const string StatusClosed = "Closed";
 

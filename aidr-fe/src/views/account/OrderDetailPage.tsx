@@ -35,11 +35,14 @@ import {
   canRequestReturn,
   canSubmitBuyerReturnForm,
   validateEvidenceMediaUrl,
-  validateResolutionType,
+  validateRefundAccountName,
+  validateRefundAccountNumber,
+  validateRefundBank,
   validateReturnDescription,
   validateReturnReason,
   type BuyerReturnFormValues,
 } from '../../utils/returnValidation';
+import { BankSelect, type BankOption } from '../../components/seller/BankSelect';
 
 const MAX_CANCEL_REASON = 300;
 
@@ -49,6 +52,8 @@ const emptyReturnForm: BuyerReturnFormValues = {
   resolutionType: 'ReturnRefund',
   unboxingUrl: '',
   testingUrl: '',
+  refundAccountNumber: '',
+  refundAccountName: '',
 };
 
 export function OrderDetailPage() {
@@ -72,6 +77,8 @@ export function OrderDetailPage() {
   const [cancelReasonError, setCancelReasonError] = useState<string | null>(null);
   const [showReturnForm, setShowReturnForm] = useState(false);
   const [returnForm, setReturnForm] = useState<BuyerReturnFormValues>(emptyReturnForm);
+  const [refundBank, setRefundBank] = useState<BankOption | null>(null);
+  const [refundBankTouched, setRefundBankTouched] = useState(false);
   const [returnDirty, setReturnDirty] = useState(false);
   const [returnTouched, setReturnTouched] = useState<
     Partial<Record<keyof BuyerReturnFormValues, boolean>>
@@ -88,6 +95,8 @@ export function OrderDetailPage() {
   useEffect(() => {
     setShowReturnForm(false);
     setReturnForm(emptyReturnForm);
+    setRefundBank(null);
+    setRefundBankTouched(false);
     setReturnDirty(false);
     setReturnTouched({});
     setReturnSubmitted(false);
@@ -102,21 +111,30 @@ export function OrderDetailPage() {
       description: tryValidateField(() => {
         validateReturnDescription(returnForm.description);
       }),
-      resolutionType: tryValidateField(() => {
-        validateResolutionType(returnForm.resolutionType);
-      }),
       unboxingUrl: tryValidateField(() => {
         validateEvidenceMediaUrl(returnForm.unboxingUrl, 'Unboxing video URL');
       }),
       testingUrl: tryValidateField(() => {
         validateEvidenceMediaUrl(returnForm.testingUrl, 'Testing video URL');
       }),
+      refundBank: tryValidateField(() => {
+        validateRefundBank(refundBank !== null);
+      }),
+      refundAccountNumber: tryValidateField(() => {
+        validateRefundAccountNumber(returnForm.refundAccountNumber);
+      }),
+      refundAccountName: tryValidateField(() => {
+        validateRefundAccountName(returnForm.refundAccountName);
+      }),
     }),
-    [returnForm],
+    [returnForm, refundBank],
   );
 
   const visibleReturnErrors = visibleFieldErrors(returnErrors, returnTouched, returnSubmitted);
-  const canSubmitReturn = canSubmitBuyerReturnForm(returnForm, returnDirty, returnErrors);
+  const canSubmitReturn = canSubmitBuyerReturnForm(returnForm, returnDirty, {
+    ...returnErrors,
+    refundBank: (refundBankTouched || returnSubmitted) ? returnErrors.refundBank : undefined,
+  });
 
   function patchReturnField<K extends keyof BuyerReturnFormValues>(key: K, value: string) {
     setReturnForm((prev) => ({ ...prev, [key]: value }));
@@ -172,20 +190,24 @@ export function OrderDetailPage() {
   async function handleSubmitReturn(event: FormEvent) {
     event.preventDefault();
     setReturnSubmitted(true);
+    setRefundBankTouched(true);
     setReturnTouched({
       reason: true,
       description: true,
-      resolutionType: true,
       unboxingUrl: true,
       testingUrl: true,
+      refundAccountNumber: true,
+      refundAccountName: true,
     });
 
     if (
       returnErrors.reason ||
       returnErrors.description ||
-      returnErrors.resolutionType ||
       returnErrors.unboxingUrl ||
-      returnErrors.testingUrl
+      returnErrors.testingUrl ||
+      returnErrors.refundBank ||
+      returnErrors.refundAccountNumber ||
+      returnErrors.refundAccountName
     ) {
       return;
     }
@@ -194,7 +216,15 @@ export function OrderDetailPage() {
       await submitReturn({
         reason: returnForm.reason.trim(),
         description: returnForm.description.trim() || null,
-        resolutionType: returnForm.resolutionType,
+        resolutionType: 'ReturnRefund',
+        refundBankInfo: refundBank
+          ? {
+              bankBin: refundBank.bin || null,
+              bankName: refundBank.shortName || null,
+              accountNumber: returnForm.refundAccountNumber.trim(),
+              accountName: returnForm.refundAccountName.trim(),
+            }
+          : null,
         evidences: [
           { evidenceType: 'Unboxing', mediaUrl: returnForm.unboxingUrl.trim() },
           { evidenceType: 'Testing', mediaUrl: returnForm.testingUrl.trim() },
@@ -203,6 +233,8 @@ export function OrderDetailPage() {
       toast.success('Return request submitted.');
       setShowReturnForm(false);
       setReturnForm(emptyReturnForm);
+      setRefundBank(null);
+      setRefundBankTouched(false);
       setReturnDirty(false);
       setReturnTouched({});
       setReturnSubmitted(false);
@@ -751,61 +783,56 @@ export function OrderDetailPage() {
 
             <div className="order-return-form__fields">
               <div className="form-group">
-                <span className="d-block" id="return-resolution-label">
-                  Resolution *
-                </span>
-                <div
-                  className="order-return-resolution"
-                  role="radiogroup"
-                  aria-labelledby="return-resolution-label"
-                >
-                  <label
-                    className={`order-return-resolution__option${
-                      returnForm.resolutionType === 'ReturnRefund'
-                        ? ' order-return-resolution__option--active'
-                        : ''
-                    }`}
-                  >
-                    <input
-                      type="radio"
-                      name="return-resolution"
-                      value="ReturnRefund"
-                      checked={returnForm.resolutionType === 'ReturnRefund'}
-                      onChange={() => patchReturnField('resolutionType', 'ReturnRefund')}
-                      onBlur={() =>
-                        setReturnTouched((prev) => ({ ...prev, resolutionType: true }))
-                      }
-                    />
-                    <span className="order-return-resolution__title">Return &amp; refund</span>
-                    <span className="order-return-resolution__hint">
-                      Send the item back and get a full refund
-                    </span>
-                  </label>
-                  <label
-                    className={`order-return-resolution__option${
-                      returnForm.resolutionType === 'Exchange'
-                        ? ' order-return-resolution__option--active'
-                        : ''
-                    }`}
-                  >
-                    <input
-                      type="radio"
-                      name="return-resolution"
-                      value="Exchange"
-                      checked={returnForm.resolutionType === 'Exchange'}
-                      onChange={() => patchReturnField('resolutionType', 'Exchange')}
-                      onBlur={() =>
-                        setReturnTouched((prev) => ({ ...prev, resolutionType: true }))
-                      }
-                    />
-                    <span className="order-return-resolution__title">Exchange</span>
-                    <span className="order-return-resolution__hint">
-                      Send the item back and receive a replacement
-                    </span>
-                  </label>
-                </div>
-                {visibleReturnErrors.resolutionType ? (
-                  <p className="form-field-error">{visibleReturnErrors.resolutionType}</p>
+                <label htmlFor="refund-bank-select">Bank *</label>
+                <BankSelect
+                  id="refund-bank-select"
+                  value={refundBank}
+                  onChange={(bank) => {
+                    setRefundBank(bank);
+                    setRefundBankTouched(true);
+                    setReturnDirty(true);
+                  }}
+                />
+                {(refundBankTouched || returnSubmitted) && returnErrors.refundBank ? (
+                  <p className="form-field-error">{returnErrors.refundBank}</p>
+                ) : null}
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="refund-account-number">Account number *</label>
+                <input
+                  id="refund-account-number"
+                  className="form-control"
+                  value={returnForm.refundAccountNumber}
+                  maxLength={30}
+                  inputMode="numeric"
+                  onBlur={() =>
+                    setReturnTouched((prev) => ({ ...prev, refundAccountNumber: true }))
+                  }
+                  onChange={(e) => patchReturnField('refundAccountNumber', e.target.value)}
+                />
+                {visibleReturnErrors.refundAccountNumber ? (
+                  <p className="form-field-error">{visibleReturnErrors.refundAccountNumber}</p>
+                ) : null}
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="refund-account-name">Account holder *</label>
+                <input
+                  id="refund-account-name"
+                  className="form-control"
+                  value={returnForm.refundAccountName}
+                  maxLength={200}
+                  onBlur={() =>
+                    setReturnTouched((prev) => ({ ...prev, refundAccountName: true }))
+                  }
+                  onChange={(e) => patchReturnField('refundAccountName', e.target.value)}
+                />
+                <p className="text-muted fs-12 mb-0 mt-1">
+                  Must match the name on the bank account.
+                </p>
+                {visibleReturnErrors.refundAccountName ? (
+                  <p className="form-field-error">{visibleReturnErrors.refundAccountName}</p>
                 ) : null}
               </div>
 

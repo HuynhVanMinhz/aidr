@@ -22,6 +22,8 @@ export type BuyerReturnFormValues = {
   resolutionType: 'ReturnRefund' | 'Exchange';
   unboxingUrl: string;
   testingUrl: string;
+  refundAccountNumber: string;
+  refundAccountName: string;
 };
 
 export function canRequestReturn(orderStatus: string | null | undefined): boolean {
@@ -71,10 +73,24 @@ export function validateBuyerReturnForm(values: BuyerReturnFormValues): void {
   validateEvidenceMediaUrl(values.testingUrl, 'Testing video URL');
 }
 
+export function validateRefundBank(selected: boolean): void {
+  if (!selected) throw new Error('Please select a bank.');
+}
+
+export function validateRefundAccountNumber(value: string): string {
+  const trimmed = validateRequired(value, 'Account number');
+  return validateMaxLength(trimmed, RETURN_MAX_BANK_ACCOUNT, 'Account number');
+}
+
+export function validateRefundAccountName(value: string): string {
+  const trimmed = validateRequired(value, 'Account holder name');
+  return validateMaxLength(trimmed, 200, 'Account holder name');
+}
+
 export function canSubmitBuyerReturnForm(
   values: BuyerReturnFormValues,
   dirty: boolean,
-  errors: Partial<Record<keyof BuyerReturnFormValues, string | undefined>>,
+  errors: Partial<Record<keyof BuyerReturnFormValues | 'refundBank', string | undefined>>,
 ): boolean {
   if (!dirty) return false;
   if (
@@ -82,7 +98,10 @@ export function canSubmitBuyerReturnForm(
     errors.description ||
     errors.resolutionType ||
     errors.unboxingUrl ||
-    errors.testingUrl
+    errors.testingUrl ||
+    errors.refundBank ||
+    errors.refundAccountNumber ||
+    errors.refundAccountName
   ) {
     return false;
   }
@@ -90,7 +109,9 @@ export function canSubmitBuyerReturnForm(
     !values.reason.trim() ||
     !values.resolutionType ||
     !values.unboxingUrl.trim() ||
-    !values.testingUrl.trim()
+    !values.testingUrl.trim() ||
+    !values.refundAccountNumber.trim() ||
+    !values.refundAccountName.trim()
   ) {
     return false;
   }

@@ -23,6 +23,10 @@ public sealed class ReturnRepository : IReturnRepository
         string reason,
         string? description,
         string resolutionType,
+        string? refundBankBin,
+        string? refundBankName,
+        string? refundAccountNumber,
+        string? refundAccountName,
         IReadOnlyList<(Guid OrderItemId, int Quantity)> items,
         IReadOnlyList<(string EvidenceType, string MediaUrl, string? PublicId)> evidences,
         CancellationToken cancellationToken = default)
@@ -62,6 +66,10 @@ public sealed class ReturnRepository : IReturnRepository
             Reason = reason,
             Description = description,
             ResolutionType = resolutionType,
+            RefundBankBin = refundBankBin,
+            RefundBankName = refundBankName,
+            RefundAccountNumber = refundAccountNumber,
+            RefundAccountName = refundAccountName,
             Status = ReturnConstants.StatusPending,
             CreatedAt = now,
             UpdatedAt = now

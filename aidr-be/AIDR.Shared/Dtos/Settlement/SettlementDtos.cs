@@ -19,6 +19,20 @@ public sealed class ShopBankAccountDto
     public DateTime UpdatedAt { get; init; }
 }
 
+public sealed class AdminShopBankAccountDto
+{
+    public Guid ShopId { get; init; }
+    public string ShopName { get; init; } = null!;
+    public Guid ShopBankAccountId { get; init; }
+    public string? BankBin { get; init; }
+    public string BankName { get; init; } = null!;
+    public string AccountNumberMasked { get; init; } = null!;
+    public string AccountName { get; init; } = null!;
+    public string Status { get; init; } = null!;
+    public string? RejectReason { get; init; }
+    public DateTime UpdatedAt { get; init; }
+}
+
 public sealed class UpsertShopBankAccountRequest
 {
     public string? BankBin { get; set; }
