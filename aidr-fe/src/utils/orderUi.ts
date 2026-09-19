@@ -1,3 +1,5 @@
+import { parseUtcDate } from './dateUtc';
+
 export const BUYER_ORDER_STATUS_FILTERS = [
   { value: '', label: 'All' },
   { value: 'PendingPayment', label: 'Pending payment' },
@@ -29,6 +31,8 @@ export function formatOrderStatus(status: string | null | undefined): string {
 
 export function formatOrderDate(iso: string | null | undefined): string {
   if (!iso) return '-';
+  const date = parseUtcDate(iso);
+  if (!date) return iso;
   try {
     return new Intl.DateTimeFormat('en-GB', {
       day: 'numeric',
@@ -36,7 +40,7 @@ export function formatOrderDate(iso: string | null | undefined): string {
       year: 'numeric',
       hour: '2-digit',
       minute: '2-digit',
-    }).format(new Date(iso));
+    }).format(date);
   } catch {
     return iso;
   }

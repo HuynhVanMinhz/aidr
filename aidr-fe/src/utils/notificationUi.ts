@@ -1,10 +1,11 @@
 import type { NotificationItem } from '../types/notification';
+import { parseUtcDate } from './dateUtc';
 
 export type NotificationAudience = 'buyer' | 'seller';
 
 export function formatNotificationTime(iso: string): string {
-  const date = new Date(iso);
-  if (Number.isNaN(date.getTime())) return '';
+  const date = parseUtcDate(iso);
+  if (!date) return '';
 
   const now = Date.now();
   const diffMs = now - date.getTime();

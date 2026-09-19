@@ -1,4 +1,5 @@
 import { adminBadgeClass } from './adminBadge';
+import { parseUtcDate } from './dateUtc';
 
 /** Format VND amounts for seller product UI. */
 export function formatVnd(value: number): string {
@@ -44,9 +45,8 @@ export function formatDateTime(
   value: string | null | undefined,
   emptyLabel = '-',
 ): string {
-  if (!value) return emptyLabel;
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return emptyLabel;
+  const date = parseUtcDate(value);
+  if (!date) return emptyLabel;
   return new Intl.DateTimeFormat('en-GB', {
     dateStyle: 'medium',
     timeStyle: 'short',

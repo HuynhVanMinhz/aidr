@@ -5,6 +5,7 @@ import type { AdminSystemVoucher } from '../../types/admin';
 import { adminBadgeClass, categoryVisibilityBadgeClass } from '../../utils/adminBadge';
 import { getApiErrorMessage } from '../../utils/apiError';
 import { formatMoney } from '../../utils/formatCatalog';
+import { parseUtcDate } from '../../utils/dateUtc';
 
 function formatDiscount(item: AdminSystemVoucher) {
   if (item.discountType.toLowerCase() === 'percent') {
@@ -19,8 +20,8 @@ function formatDiscount(item: AdminSystemVoucher) {
 
 function formatDate(value?: string | null) {
   if (!value) return '-';
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return value;
+  const date = parseUtcDate(value);
+  if (!date) return value;
   return date.toLocaleString();
 }
 
@@ -80,7 +81,8 @@ export function AdminSystemVoucherDetailPage() {
     );
   }
 
-  const expired = new Date(item.endsAt).getTime() < Date.now();
+  const ends = parseUtcDate(item.endsAt);
+  const expired = ends != null && ends.getTime() < Date.now();
 
   return (
     <div className="row">

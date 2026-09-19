@@ -1,6 +1,7 @@
 import type { FieldErrors } from './formValidation';
 import { tryValidateField } from './formValidation';
 import { validateMaxLength, validateRequired } from './validators';
+import { parseUtcDate } from './dateUtc';
 import type {
   AdjustSellerInventoryPayload,
   ImportStockLotPayload,
@@ -308,7 +309,8 @@ export function previewFifoDecrease(
     })
     .slice()
     .sort((a, b) => {
-      const byReceived = new Date(a.receivedAt).getTime() - new Date(b.receivedAt).getTime();
+      const byReceived =
+        (parseUtcDate(a.receivedAt)?.getTime() ?? 0) - (parseUtcDate(b.receivedAt)?.getTime() ?? 0);
       if (byReceived !== 0) return byReceived;
       return a.lotCode.localeCompare(b.lotCode);
     });

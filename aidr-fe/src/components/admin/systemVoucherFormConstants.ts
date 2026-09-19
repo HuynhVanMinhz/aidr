@@ -1,3 +1,5 @@
+import { parseUtcDate } from '../../utils/dateUtc';
+
 export const VOUCHER_MAX_CODE = 40;
 export const VOUCHER_MAX_NAME = 150;
 export const VOUCHER_MAX_DESCRIPTION = 500;
@@ -45,8 +47,8 @@ export function emptySystemVoucherForm(
 
 /** Local datetime → `yyyy-MM-ddTHH:mm` for AdminDatePicker (enableTime). */
 export function toDatetimeLocalValue(value: Date | string): string {
-  const d = typeof value === 'string' ? new Date(value) : value;
-  if (Number.isNaN(d.getTime())) return '';
+  const d = typeof value === 'string' ? parseUtcDate(value) : value;
+  if (!d || Number.isNaN(d.getTime())) return '';
   const pad = (n: number) => String(n).padStart(2, '0');
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }

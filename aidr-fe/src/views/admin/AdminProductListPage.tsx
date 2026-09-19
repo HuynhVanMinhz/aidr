@@ -9,6 +9,7 @@ import { useToast } from '../../hooks/useToast';
 import type { AdminProductStatusFilter } from '../../types/admin';
 import { productModerationBadgeClass } from '../../utils/adminBadge';
 import { formatVnd } from '../../utils/sellerProductUi';
+import { parseUtcDate } from '../../utils/dateUtc';
 
 const PAGE_SIZE = 10;
 
@@ -20,8 +21,8 @@ const STATUS_FILTERS: { value: AdminProductStatusFilter; label: string }[] = [
 ];
 
 function formatDate(value: string) {
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return value;
+  const date = parseUtcDate(value);
+  if (!date) return value;
   return date.toLocaleString();
 }
 

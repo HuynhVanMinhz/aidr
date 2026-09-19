@@ -5,6 +5,7 @@ import { AdminSelect } from '../../components/admin/AdminSelect';
 import { IconifyIcon } from '../../components/admin/IconifyIcon';
 import { useSellerReturns } from '../../hooks/useSellerReturns';
 import { formatMoney } from '../../utils/formatCatalog';
+import { parseUtcDate } from '../../utils/dateUtc';
 import {
   formatResolutionType,
   formatReturnStatus,
@@ -15,8 +16,8 @@ import {
 const PAGE_SIZE = 10;
 
 function formatDate(value: string) {
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return value;
+  const date = parseUtcDate(value);
+  if (!date) return value;
   return date.toLocaleString();
 }
 

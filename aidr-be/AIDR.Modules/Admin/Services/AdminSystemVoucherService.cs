@@ -2,6 +2,7 @@ using AIDR.Modules.Admin.Abstractions;
 using AIDR.Shared.Constants;
 using AIDR.Shared.Dtos.Admin;
 using AIDR.Shared.Exceptions;
+using AIDR.Shared.Serialization;
 
 namespace AIDR.Modules.Admin.Services;
 
@@ -90,8 +91,8 @@ public sealed class AdminSystemVoucherService : IAdminSystemVoucherService
             decimal.Round(request.MinOrderAmount, 2, MidpointRounding.AwayFromZero),
             request.UsageLimit,
             request.PerUserLimit,
-            request.StartsAt.ToUniversalTime(),
-            request.EndsAt.ToUniversalTime(),
+            UtcDateTime.Normalize(request.StartsAt),
+            UtcDateTime.Normalize(request.EndsAt),
             request.IsActive,
             adminUserId,
             cancellationToken);
@@ -138,8 +139,8 @@ public sealed class AdminSystemVoucherService : IAdminSystemVoucherService
             decimal.Round(request.MinOrderAmount, 2, MidpointRounding.AwayFromZero),
             request.UsageLimit,
             request.PerUserLimit,
-            request.StartsAt.ToUniversalTime(),
-            request.EndsAt.ToUniversalTime(),
+            UtcDateTime.Normalize(request.StartsAt),
+            UtcDateTime.Normalize(request.EndsAt),
             cancellationToken);
 
         return Map(record);

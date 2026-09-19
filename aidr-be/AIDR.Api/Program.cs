@@ -5,6 +5,7 @@ using AIDR.Api.Realtime;
 using AIDR.Infrastructure.DependencyInjection;
 using AIDR.Modules.DependencyInjection;
 using AIDR.Modules.Engagement.Abstractions;
+using AIDR.Shared.Serialization;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Serilog;
 using System.Text.Json;
@@ -16,9 +17,15 @@ builder.Host.UseSerilog((ctx, cfg) =>
         .Enrich.FromLogContext()
         .WriteTo.Console());
 
-builder.Services.AddControllers();
+static void ConfigureUtcJson(JsonSerializerOptions options)
+{
+    options.Converters.Add(new UtcDateTimeJsonConverter());
+    options.Converters.Add(new UtcNullableDateTimeJsonConverter());
+}
+
+builder.Services.AddControllers().AddJsonOptions(o => ConfigureUtcJson(o.JsonSerializerOptions));
 builder.Services.AddOpenApi();
-builder.Services.AddSignalR();
+builder.Services.AddSignalR().AddJsonProtocol(o => ConfigureUtcJson(o.PayloadSerializerOptions));
 builder.Services.AddAidrInfrastructure(builder.Configuration);
 builder.Services.AddAidrModules();
 
@@ -112,7 +119,14 @@ app.MapHealthChecks("/api/health/ready", new HealthCheckOptions
                 e => e.Value.Status.ToString()),
             timestampUtc = DateTime.UtcNow
         };
-        await context.Response.WriteAsync(JsonSerializer.Serialize(payload));
+        await context.Response.WriteAsync(JsonSerializer.Serialize(payload, new JsonSerializerOptions
+        {
+            Converters =
+            {
+                new UtcDateTimeJsonConverter(),
+                new UtcNullableDateTimeJsonConverter(),
+            }
+        }));
     }
 });
 

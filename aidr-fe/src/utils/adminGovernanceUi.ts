@@ -1,4 +1,5 @@
 import { adminBadgeClass } from './adminBadge';
+import { parseUtcDate } from './dateUtc';
 import { formatReportPeriodLabel, SELLER_REPORT_GRANULARITY_OPTIONS } from './sellerFinanceUi';
 
 export const ADMIN_ACCOUNT_STATUS_FILTERS = [
@@ -49,22 +50,22 @@ export function formatInsightPeriodLabel(periodKey: string, granularity: string)
 
 export function formatAccountDateTime(value?: string | null): string {
   if (!value) return 'Not available';
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return 'Not available';
+  const date = parseUtcDate(value);
+  if (!date) return 'Not available';
   return date.toLocaleString();
 }
 
 export function formatLastLoginAt(value?: string | null): string {
   if (!value) return 'Never logged in';
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return 'Never logged in';
+  const date = parseUtcDate(value);
+  if (!date) return 'Never logged in';
   return date.toLocaleString();
 }
 
 export function formatLockoutUntil(value?: string | null): string {
   if (!value) return 'No temporary lockout';
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return 'No temporary lockout';
+  const date = parseUtcDate(value);
+  if (!date) return 'No temporary lockout';
   return date.toLocaleString();
 }
 

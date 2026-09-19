@@ -1,3 +1,5 @@
+import { parseUtcDate } from './dateUtc';
+
 export function formatMoney(amount: number, currency = 'VND'): string {
   try {
     return new Intl.NumberFormat('vi-VN', {
@@ -44,7 +46,7 @@ export function parseTagsJson(raw?: string | null): string[] {
 
 export function formatDateVi(iso?: string | null): string {
   if (!iso) return '-';
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return '-';
+  const d = parseUtcDate(iso);
+  if (!d) return '-';
   return d.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
 }
