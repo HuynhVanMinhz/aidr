@@ -29,7 +29,7 @@ function formatAddressLine(address: Address): string {
 }
 
 export function AddressesPage() {
-  const { profile, loading, saving, updateProfile, getErrorMessage } = useProfile();
+  const { profile, loading, saving, updateProfile, clearError, getErrorMessage } = useProfile();
   const [form, setForm] = useState<AddressUpsert>(emptyForm);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
@@ -47,6 +47,7 @@ export function AddressesPage() {
   useToastMessage(formSuccess, 'success');
 
   function showAlert(message: string, title = 'Unable to update address') {
+    clearError();
     setDialog({ kind: 'alert', title, message });
   }
 

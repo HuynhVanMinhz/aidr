@@ -9,7 +9,8 @@ import {
 import { validateRequired, validateVnPhone } from '../../utils/validators';
 
 export function ProfilePage() {
-  const { profile, loading, saving, error, updateProfile, getErrorMessage } = useProfile();
+  const { profile, loading, saving, error, clearError, updateProfile, getErrorMessage } =
+    useProfile();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [fullName, setFullName] = useState('');
@@ -21,7 +22,12 @@ export function ProfilePage() {
   const [formError, setFormError] = useState<string | null>(null);
   const [formSuccess, setFormSuccess] = useState<string | null>(null);
 
-  useToastMessage(error);
+  // Drop leftover save errors from Addresses (and similar) before this page can toast them.
+  useEffect(() => {
+    clearError();
+  }, [clearError]);
+
+  // Save failures use formError only - avoids double toasts and stale address errors.
   useToastMessage(formError);
   useToastMessage(formSuccess, 'success');
 
@@ -98,6 +104,14 @@ export function ProfilePage() {
     return (
       <div className="account-details-content-box">
         <p className="account-muted">Loading profile…</p>
+      </div>
+    );
+  }
+
+  if (!profile) {
+    return (
+      <div className="account-details-content-box">
+        <p className="account-muted">{error || 'Unable to load profile.'}</p>
       </div>
     );
   }
