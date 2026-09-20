@@ -8,7 +8,13 @@ type GuestRouteProps = {
   redirectTo?: string;
 };
 
-/** Guest-only routes (login, register, forgot password). */
+function hasAnyRole(userRoles: string[], required: string[]): boolean {
+  return required.some((role) =>
+    userRoles.some((r) => r.toUpperCase() === role.toUpperCase()),
+  );
+}
+
+/** Guest-only routes (login, register). Authenticated users are sent to their home. */
 export function GuestRoute({ redirectTo = '/' }: GuestRouteProps) {
   const auth = useAppSelector((s: RootState) => s.auth);
   const isAuthenticated = useAppSelector(selectIsAuthenticated);
@@ -24,10 +30,23 @@ export function GuestRoute({ redirectTo = '/' }: GuestRouteProps) {
 }
 
 type ProtectedRouteProps = {
+  /** If set, the session must include at least one of these roles. */
   roles?: string[];
+  /**
+   * Where authenticated users go when they lack a required role.
+   * - `/403` — known area, wrong role (admin/seller consoles)
+   * - `/404` — hide that the route exists
+   */
+  unauthorizedTo?: '/403' | '/404';
 };
 
-export function ProtectedRoute({ roles }: ProtectedRouteProps) {
+/**
+ * Auth / role gate:
+ * 1. Not signed in → `/login?returnUrl=…`
+ * 2. Signed in but missing required role → `/403` or `/404`
+ * 3. Otherwise render child routes
+ */
+export function ProtectedRoute({ roles, unauthorizedTo = '/403' }: ProtectedRouteProps) {
   const auth = useAppSelector((s: RootState) => s.auth);
   const location = useLocation();
 
@@ -36,13 +55,8 @@ export function ProtectedRoute({ roles }: ProtectedRouteProps) {
     return <Navigate to={`/login?returnUrl=${returnUrl}`} replace />;
   }
 
-  if (roles?.length) {
-    const hasRole = roles.some((role) =>
-      auth.roles.some((r: string) => r.toUpperCase() === role.toUpperCase()),
-    );
-    if (!hasRole) {
-      return <Navigate to="/403" replace />;
-    }
+  if (roles?.length && !hasAnyRole(auth.roles, roles)) {
+    return <Navigate to={unauthorizedTo} replace />;
   }
 
   return <Outlet />;

@@ -12,6 +12,7 @@ import { AboutPage } from '../views/AboutPage';
 import { TermsPage } from '../views/TermsPage';
 import { NotFoundPage } from '../views/NotFoundPage';
 import { ForbiddenPage } from '../views/ForbiddenPage';
+import { ConsoleNotFoundPage } from '../views/ConsoleNotFoundPage';
 import { LoginPage } from '../views/auth/LoginPage';
 import { RegisterPage } from '../views/auth/RegisterPage';
 import { ForgotPasswordPage } from '../views/auth/ForgotPasswordPage';
@@ -105,9 +106,9 @@ export function App() {
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
         <Route path="/reset-password" element={<ResetPasswordPage />} />
         <Route path="/auth/callback" element={<GoogleCallbackPage />} />
-        <Route path="/403" element={<ForbiddenPage />} />
 
-        <Route element={<ProtectedRoute roles={['ADMIN']} />}>
+        {/* Admin: guest → login; wrong role → 403; unknown path → console 404 */}
+        <Route element={<ProtectedRoute roles={['ADMIN']} unauthorizedTo="/403" />}>
           <Route path="/admin" element={<AdminShell variant="admin" />}>
             <Route index element={<AdminHomePage />} />
             <Route path="categories" element={<AdminCategoryListPage />} />
@@ -130,10 +131,15 @@ export function App() {
             <Route path="accounts/:id" element={<AdminAccountDetailPage />} />
             <Route path="insights" element={<AdminCustomerInsightsPage />} />
             <Route path="notifications" element={<AdminNotificationsPage />} />
+            <Route
+              path="*"
+              element={<ConsoleNotFoundPage homeTo="/admin" homeLabel="Back to dashboard" />}
+            />
           </Route>
         </Route>
 
-        <Route element={<ProtectedRoute roles={['SELLER']} />}>
+        {/* Seller: guest → login; wrong role → 403; unknown path → console 404 */}
+        <Route element={<ProtectedRoute roles={['SELLER']} unauthorizedTo="/403" />}>
           <Route path="/seller" element={<AdminShell variant="seller" />}>
             <Route index element={<SellerHomePage />} />
             <Route path="shop-settings" element={<SellerShopSettingsPage />} />
@@ -157,6 +163,10 @@ export function App() {
             <Route path="vouchers" element={<SellerShopVoucherListPage />} />
             <Route path="vouchers/new" element={<SellerShopVoucherFormPage />} />
             <Route path="vouchers/:id/edit" element={<SellerShopVoucherFormPage />} />
+            <Route
+              path="*"
+              element={<ConsoleNotFoundPage homeTo="/seller" homeLabel="Back to dashboard" />}
+            />
           </Route>
         </Route>
 
@@ -171,8 +181,39 @@ export function App() {
           <Route path="about" element={<AboutPage />} />
           <Route path="terms" element={<TermsPage />} />
           <Route path="health" element={<HealthPage />} />
+          <Route path="403" element={<ForbiddenPage />} />
+          <Route path="404" element={<NotFoundPage />} />
 
+          {/* Any signed-in role may open shared account settings. */}
           <Route element={<ProtectedRoute />}>
+            <Route path="account" element={<AccountLayout />}>
+              <Route index element={<Navigate to="profile" replace />} />
+              <Route path="profile" element={<ProfilePage />} />
+              <Route path="security" element={<AccountSecurityPage />} />
+              <Route path="change-password" element={<ChangePasswordPage />} />
+              <Route path="notifications" element={<NotificationsPage />} />
+
+              {/* Buyer shopping under /account - admin-only → 403 */}
+              <Route element={<ProtectedRoute roles={['BUYER']} unauthorizedTo="/403" />}>
+                <Route path="orders" element={<OrdersPage />} />
+                <Route path="orders/:orderId" element={<OrderDetailPage />} />
+                <Route path="returns" element={<BuyerReturnsPage />} />
+                <Route path="returns/:returnId" element={<BuyerReturnDetailPage />} />
+                <Route path="vouchers" element={<BuyerVouchersPage />} />
+                <Route path="wishlist" element={<WishlistPage />} />
+                <Route path="following" element={<FollowingPage />} />
+                <Route path="following/feed" element={<FollowingFeedPage />} />
+                <Route path="addresses" element={<AddressesPage />} />
+                <Route path="become-seller" element={<BecomeSellerPage />} />
+              </Route>
+
+              <Route path="*" element={<Navigate to="/404" replace />} />
+            </Route>
+            <Route path="notifications" element={<Navigate to="/account/notifications" replace />} />
+          </Route>
+
+          {/* Buyer storefront flows (cart/checkout/chat/…). */}
+          <Route element={<ProtectedRoute roles={['BUYER']} unauthorizedTo="/403" />}>
             <Route path="compare" element={<ComparePage />} />
             <Route path="chat" element={<ChatPage />} />
             <Route path="ai/assistant" element={<Navigate to="/" replace />} />
@@ -180,26 +221,8 @@ export function App() {
             <Route path="checkout" element={<CheckoutPage />} />
             <Route path="checkout/success" element={<OrderReceivedPage />} />
             <Route path="order-received" element={<OrderReceivedPage />} />
-            <Route path="account" element={<AccountLayout />}>
-              <Route index element={<Navigate to="profile" replace />} />
-              <Route path="profile" element={<ProfilePage />} />
-              <Route path="orders" element={<OrdersPage />} />
-              <Route path="orders/:orderId" element={<OrderDetailPage />} />
-              <Route path="returns" element={<BuyerReturnsPage />} />
-              <Route path="returns/:returnId" element={<BuyerReturnDetailPage />} />
-              <Route path="vouchers" element={<BuyerVouchersPage />} />
-              <Route path="notifications" element={<NotificationsPage />} />
-              <Route path="wishlist" element={<WishlistPage />} />
-              <Route path="following" element={<FollowingPage />} />
-              <Route path="following/feed" element={<FollowingFeedPage />} />
-              <Route path="addresses" element={<AddressesPage />} />
-              <Route path="become-seller" element={<BecomeSellerPage />} />
-              <Route path="security" element={<AccountSecurityPage />} />
-              <Route path="change-password" element={<ChangePasswordPage />} />
-            </Route>
             <Route path="wishlist" element={<Navigate to="/account/wishlist" replace />} />
             <Route path="following" element={<Navigate to="/account/following" replace />} />
-            <Route path="notifications" element={<Navigate to="/account/notifications" replace />} />
             <Route path="orders" element={<Navigate to="/account/orders" replace />} />
             <Route path="orders/:orderId" element={<OrdersRedirect />} />
           </Route>
@@ -207,7 +230,7 @@ export function App() {
           <Route path="*" element={<NotFoundPage />} />
         </Route>
 
-        <Route path="*" element={<NotFoundPage />} />
+        <Route path="*" element={<Navigate to="/404" replace />} />
       </Routes>
     </>
   );

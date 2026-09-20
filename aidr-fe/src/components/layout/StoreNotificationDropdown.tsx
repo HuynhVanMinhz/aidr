@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useToast } from '../../hooks/useToast';
+import { useRoles } from '../../hooks/useRoles';
 import { useNotifications, useUnreadNotifications } from '../../hooks/useNotifications';
 import {
   formatNotificationTime,
@@ -17,6 +18,7 @@ export function StoreNotificationDropdown({
   loginReturnTo = '/account/notifications',
 }: Props) {
   const toast = useToast();
+  const { isBuyer, isSeller, isAdmin } = useRoles();
   const [open, setOpen] = useState(false);
   const { unreadCount, previewItems } = useUnreadNotifications({
     autoLoad: isAuthenticated,
@@ -24,6 +26,13 @@ export function StoreNotificationDropdown({
   const { markAllRead, markRead, getErrorMessage } = useNotifications(undefined, {
     autoLoad: false,
   });
+
+  const inboxTo = isAdmin
+    ? '/admin/notifications'
+    : isSeller && !isBuyer
+      ? '/seller/notifications'
+      : '/account/notifications';
+  const hrefAudience = isAdmin ? 'admin' : isSeller && !isBuyer ? 'seller' : 'buyer';
 
   useEffect(() => {
     if (!open) return;
@@ -104,7 +113,7 @@ export function StoreNotificationDropdown({
               <p className="store-header-dropdown-empty">No notifications yet.</p>
             ) : (
               previewItems.map((item) => {
-                const href = getNotificationHref(item, 'buyer') ?? '/account/notifications';
+                const href = getNotificationHref(item, hrefAudience) ?? inboxTo;
                 return (
                   <Link
                     key={item.notificationId}
@@ -129,7 +138,7 @@ export function StoreNotificationDropdown({
           </div>
 
           <div className="store-header-dropdown-foot">
-            <Link to="/account/notifications" onClick={() => setOpen(false)}>
+            <Link to={inboxTo} onClick={() => setOpen(false)}>
               View all notifications
             </Link>
           </div>
