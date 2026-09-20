@@ -1,6 +1,7 @@
 import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
 import * as profileApi from '../services/profileApi';
 import type { Profile, UpdateProfileRequest } from '../types/profile';
+import { getApiErrorMessage } from '../utils/apiError';
 import { patchAuthUser } from './authSlice';
 
 export type UserState = {
@@ -27,7 +28,7 @@ export const fetchProfile = createAsyncThunk('user/fetchProfile', async (_, { re
     }
     return result.data;
   } catch (error) {
-    return rejectWithValue(error instanceof Error ? error.message : 'Unable to load profile.');
+    return rejectWithValue(getApiErrorMessage(error, 'Unable to load profile.'));
   }
 });
 
@@ -42,7 +43,7 @@ export const saveProfile = createAsyncThunk(
       dispatch(patchAuthUser({ fullName: result.data.fullName }));
       return result.data;
     } catch (error) {
-      return rejectWithValue(error instanceof Error ? error.message : 'Unable to update profile.');
+      return rejectWithValue(getApiErrorMessage(error, 'Unable to update profile.'));
     }
   },
 );
