@@ -1,6 +1,7 @@
 import { useCallback, useEffect } from 'react';
 import * as authApi from '../services/authApi';
 import {
+  clearUserError,
   fetchProfile,
   saveProfile,
   selectProfile,
@@ -28,6 +29,10 @@ export function useProfile(options?: { autoFetch?: boolean }) {
 
   const reload = useCallback(() => dispatch(fetchProfile()), [dispatch]);
 
+  const clearError = useCallback(() => {
+    dispatch(clearUserError());
+  }, [dispatch]);
+
   const updateProfile = useCallback(
     (payload: UpdateProfileRequest) => dispatch(saveProfile(payload)).unwrap(),
     [dispatch],
@@ -47,6 +52,7 @@ export function useProfile(options?: { autoFetch?: boolean }) {
     saving,
     error,
     reload,
+    clearError,
     updateProfile,
     changePassword,
     getErrorMessage: getApiErrorMessage,

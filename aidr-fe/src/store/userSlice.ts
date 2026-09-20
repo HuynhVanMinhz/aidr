@@ -58,6 +58,9 @@ export const userSlice = createSlice({
       state.loading = false;
       state.saving = false;
     },
+    clearUserError(state) {
+      state.error = null;
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -75,20 +78,22 @@ export const userSlice = createSlice({
       })
       .addCase(saveProfile.pending, (state) => {
         state.saving = true;
-        state.error = null;
+        // Do not clear load errors here - save failures are returned via unwrap().
       })
       .addCase(saveProfile.fulfilled, (state, action) => {
         state.saving = false;
         state.profile = action.payload;
       })
-      .addCase(saveProfile.rejected, (state, action) => {
+      .addCase(saveProfile.rejected, (state) => {
+        // Leave state.error alone. Save failures are handled by the caller via
+        // unwrap() so a stale "cannot delete address" message cannot resurface
+        // as a toast on Account information or other profile screens.
         state.saving = false;
-        state.error = (action.payload as string) || 'Unable to update profile.';
       });
   },
 });
 
-export const { clearProfile } = userSlice.actions;
+export const { clearProfile, clearUserError } = userSlice.actions;
 
 export const selectProfile = (state: UserRoot) => state.user.profile;
 export const selectProfileLoading = (state: UserRoot) => state.user.loading;
