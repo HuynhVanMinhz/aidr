@@ -33,6 +33,7 @@ export function useRoles() {
 
     const isAdmin = upper.has('ADMIN');
     const isSeller = upper.has('SELLER');
+    const isBuyer = upper.has('BUYER');
 
     const workspaces: Workspace[] = [];
     if (isSeller) workspaces.push({ to: '/seller', label: 'Seller center', icon: 'fa-solid fa-store' });
@@ -40,7 +41,7 @@ export function useRoles() {
 
     // Only a plain shopper is offered the seller application. An admin applying
     // to sell, or a seller applying twice, is noise at best.
-    const canBecomeSeller = isAuthenticated && !isSeller && !isAdmin;
+    const canBecomeSeller = isAuthenticated && isBuyer && !isSeller && !isAdmin;
 
     const badges = (['ADMIN', 'SELLER'] as AppRole[])
       .filter((role) => upper.has(role))
@@ -50,8 +51,10 @@ export function useRoles() {
       isAuthenticated,
       isAdmin,
       isSeller,
+      /** Has the BUYER role (may also be a seller). Required for cart/orders APIs. */
+      isBuyer,
       /** Signed in with no elevated role - the default storefront experience. */
-      isBuyerOnly: isAuthenticated && !isSeller && !isAdmin,
+      isBuyerOnly: isAuthenticated && isBuyer && !isSeller && !isAdmin,
       canBecomeSeller,
       workspaces,
       /** Empty for a plain buyer: "Buyer" on a badge tells nobody anything. */

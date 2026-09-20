@@ -7,7 +7,7 @@ type Props = {
   isAuthenticated: boolean;
 };
 
-/** Shopping links every signed-in account gets, whatever else it can do. */
+/** Shopping links only for accounts with the BUYER role. */
 const SHOPPING_LINKS = [
   { to: '/account/orders', label: 'Orders' },
   { to: '/account/returns', label: 'Returns' },
@@ -18,13 +18,12 @@ const SHOPPING_LINKS = [
 const ACCOUNT_LINKS = [
   { to: '/account/profile', label: 'Account information' },
   { to: '/account/notifications', label: 'Notifications' },
-  { to: '/chat', label: 'Messages' },
   { to: '/account/security', label: 'Security' },
 ];
 
 export function StoreUserDropdown({ isAuthenticated }: Props) {
   const { user, logout } = useAuth();
-  const { workspaces, canBecomeSeller, badges } = useRoles();
+  const { workspaces, canBecomeSeller, badges, isBuyer } = useRoles();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
 
@@ -112,14 +111,19 @@ export function StoreUserDropdown({ isAuthenticated }: Props) {
             </div>
           ) : null}
 
-          <div className="store-header-dropdown-body store-header-dropdown-body--menu">
-            <span className="store-header-dropdown-group">Shopping</span>
-            {SHOPPING_LINKS.map((link) => (
-              <Link key={link.to} to={link.to} onClick={close}>
-                {link.label}
+          {isBuyer ? (
+            <div className="store-header-dropdown-body store-header-dropdown-body--menu">
+              <span className="store-header-dropdown-group">Shopping</span>
+              {SHOPPING_LINKS.map((link) => (
+                <Link key={link.to} to={link.to} onClick={close}>
+                  {link.label}
+                </Link>
+              ))}
+              <Link to="/chat" onClick={close}>
+                Messages
               </Link>
-            ))}
-          </div>
+            </div>
+          ) : null}
 
           <div className="store-header-dropdown-body store-header-dropdown-body--menu">
             <span className="store-header-dropdown-group">Account</span>

@@ -41,20 +41,28 @@ function formatVoucherPromo(item: {
 export function StoreHeader() {
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
-  const { canBecomeSeller, workspaces } = useRoles();
-  const { totalQuantity } = useCart({ autoLoad: isAuthenticated });
-  const { totalCount: wishlistCount } = useWishlistMembership({ autoLoad: isAuthenticated });
+  const { canBecomeSeller, workspaces, isBuyer } = useRoles();
+  const { totalQuantity } = useCart({ autoLoad: isAuthenticated && isBuyer });
+  const { totalCount: wishlistCount } = useWishlistMembership({
+    autoLoad: isAuthenticated && isBuyer,
+  });
   const { categories } = useCategories();
   const [q, setQ] = useState('');
   const [categoriesOpen, setCategoriesOpen] = useState(false);
   const [topbarText, setTopbarText] = useState(DEFAULT_TOPBAR);
-  const cartTo = isAuthenticated ? '/cart' : `/login?returnUrl=${encodeURIComponent('/cart')}`;
-  const wishlistTo = isAuthenticated
-    ? '/wishlist'
-    : `/login?returnUrl=${encodeURIComponent('/wishlist')}`;
+  const cartTo = !isAuthenticated
+    ? `/login?returnUrl=${encodeURIComponent('/cart')}`
+    : isBuyer
+      ? '/cart'
+      : workspaces[0]?.to ?? '/';
+  const wishlistTo = !isAuthenticated
+    ? `/login?returnUrl=${encodeURIComponent('/wishlist')}`
+    : isBuyer
+      ? '/wishlist'
+      : workspaces[0]?.to ?? '/';
 
   useEffect(() => {
-    if (!isAuthenticated) {
+    if (!isAuthenticated || !isBuyer) {
       setTopbarText(DEFAULT_TOPBAR);
       return;
     }
@@ -77,7 +85,7 @@ export function StoreHeader() {
     return () => {
       cancelled = true;
     };
-  }, [isAuthenticated]);
+  }, [isAuthenticated, isBuyer]);
 
   function handleSearch(e: FormEvent) {
     e.preventDefault();
@@ -150,36 +158,40 @@ export function StoreHeader() {
                   <li>
                     <StoreNotificationDropdown isAuthenticated={isAuthenticated} />
                   </li>
-                  <li>
-                    <Link to={wishlistTo} className="store-header-icon-btn" aria-label="Wishlist">
-                      <span className="store-header-icon-wrap">
-                        <img src="/theme/images/icon-wishlist-primary.svg" alt="" />
-                        {isAuthenticated && wishlistCount > 0 ? (
-                          <span
-                            className="store-header-badge"
-                            aria-label={`${wishlistCount} items in wishlist`}
-                          >
-                            {wishlistCount > 99 ? '99+' : wishlistCount}
+                  {isBuyer || !isAuthenticated ? (
+                    <>
+                      <li>
+                        <Link to={wishlistTo} className="store-header-icon-btn" aria-label="Wishlist">
+                          <span className="store-header-icon-wrap">
+                            <img src="/theme/images/icon-wishlist-primary.svg" alt="" />
+                            {isAuthenticated && wishlistCount > 0 ? (
+                              <span
+                                className="store-header-badge"
+                                aria-label={`${wishlistCount} items in wishlist`}
+                              >
+                                {wishlistCount > 99 ? '99+' : wishlistCount}
+                              </span>
+                            ) : null}
                           </span>
-                        ) : null}
-                      </span>
-                    </Link>
-                  </li>
-                  <li>
-                    <Link to={cartTo} className="store-header-cart-link">
-                      <span className="store-header-icon-wrap">
-                        <img src="/theme/images/icon-cart-primary.svg" alt="" />
-                        {isAuthenticated && totalQuantity > 0 ? (
-                          <span
-                            className="store-header-badge"
-                            aria-label={`${totalQuantity} items in cart`}
-                          >
-                            {totalQuantity > 99 ? '99+' : totalQuantity}
+                        </Link>
+                      </li>
+                      <li>
+                        <Link to={cartTo} className="store-header-cart-link">
+                          <span className="store-header-icon-wrap">
+                            <img src="/theme/images/icon-cart-primary.svg" alt="" />
+                            {isAuthenticated && totalQuantity > 0 ? (
+                              <span
+                                className="store-header-badge"
+                                aria-label={`${totalQuantity} items in cart`}
+                              >
+                                {totalQuantity > 99 ? '99+' : totalQuantity}
+                              </span>
+                            ) : null}
                           </span>
-                        ) : null}
-                      </span>
-                    </Link>
-                  </li>
+                        </Link>
+                      </li>
+                    </>
+                  ) : null}
                   {workspaces.length > 0 ? (
                     <li className="store-header-workspace-item">
                       <WorkspaceSwitcher workspaces={workspaces} />
@@ -248,19 +260,20 @@ export function StoreHeader() {
                         About Us
                       </Link>
                     </li>
-                    {isAuthenticated ? (
+                    {isAuthenticated && isBuyer ? (
                       <li className="nav-item">
                         <Link className="nav-link" to="/account/orders">
                           My Orders
                         </Link>
                       </li>
-                    ) : (
+                    ) : null}
+                    {!isAuthenticated ? (
                       <li className="nav-item">
                         <Link className="nav-link" to="/login">
                           Login / Register
                         </Link>
                       </li>
-                    )}
+                    ) : null}
                     {/* On desktop the workspaces live in the switcher beside the
                         account menu. That whole action row is hidden below lg,
                         so they come back into the nav there - otherwise a seller
