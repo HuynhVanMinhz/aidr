@@ -3,7 +3,7 @@ import { toast } from 'sonner';
 import { selectAccessToken, selectIsAuthenticated } from '../store/authSlice';
 import { notificationReceived } from '../store/notificationSlice';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
-import { startNotificationHub, stopNotificationHub } from '../realtime/signalr';
+import { removeNotificationHandler, startNotificationHub, stopNotificationHub } from '../realtime/signalr';
 import type { NotificationItem } from '../types/notification';
 
 const RETRY_MS = 4000;
@@ -29,21 +29,21 @@ export function useNotificationHub() {
     let cancelled = false;
     let retryTimer: ReturnType<typeof setTimeout> | null = null;
 
+    const handler = (notification: NotificationItem) => {
+      if (cancelled) return;
+      dispatch(notificationReceived(notification));
+      toast.message(notification.title, {
+        description: notification.body,
+      });
+    };
+
     const connect = async () => {
       if (cancelled) return;
       try {
-        await startNotificationHub(
-          () => tokenRef.current,
-          (notification: NotificationItem) => {
-            if (cancelled) return;
-            dispatch(notificationReceived(notification));
-            toast.message(notification.title, {
-              description: notification.body,
-            });
-          },
-        );
+        await startNotificationHub(() => tokenRef.current, handler);
       } catch {
         // Hub is best-effort; REST inbox still works. Retry when API comes back.
+        removeNotificationHandler(handler);
         if (!cancelled) {
           retryTimer = setTimeout(() => {
             void connect();
@@ -57,7 +57,8 @@ export function useNotificationHub() {
     return () => {
       cancelled = true;
       if (retryTimer) clearTimeout(retryTimer);
-      void stopNotificationHub();
+      // Remove only our handler; other subscribers (e.g. return detail page) stay alive.
+      void stopNotificationHub(handler);
     };
   }, [accessToken, dispatch, isAuthenticated]);
 }

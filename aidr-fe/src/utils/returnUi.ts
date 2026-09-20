@@ -7,6 +7,10 @@ export function formatReturnStatus(status: string | null | undefined): string {
     Approved: 'Approved (with seller)',
     Rejected: 'Rejected',
     SellerConfirmed: 'Seller confirmed',
+    AwaitingPickup: 'Awaiting pickup',
+    PickedUp: 'Picked up',
+    InTransit: 'In transit',
+    PickupFailed: 'Pickup failed',
     Receiving: 'Receiving',
     Accepted: 'Accepted',
     Refunded: 'Refunded',
@@ -33,8 +37,12 @@ export function returnStatusBadgeClass(status: string): string {
     case 'Closed':
       return adminBadgeClass.solidSuccess;
     case 'Rejected':
+    case 'PickupFailed':
       return adminBadgeClass.outlineDanger;
     case 'Receiving':
+    case 'AwaitingPickup':
+    case 'PickedUp':
+    case 'InTransit':
       return adminBadgeClass.outlinePrimary;
     case 'Pending':
       return adminBadgeClass.outlineWarning;
@@ -49,7 +57,15 @@ export function buyerReturnStatusClass(status: string | null | undefined): strin
   if (key === 'approved' || key === 'sellerconfirmed') {
     return 'buyer-order-status buyer-order-status--completed';
   }
-  if (key === 'receiving') return 'buyer-order-status buyer-order-status--progress';
+  if (
+    key === 'awaitingpickup' ||
+    key === 'pickedup' ||
+    key === 'intransit' ||
+    key === 'receiving'
+  ) {
+    return 'buyer-order-status buyer-order-status--progress';
+  }
+  if (key === 'pickupfailed') return 'buyer-order-status buyer-order-status--cancelled';
   if (key === 'accepted' || key === 'refunded' || key === 'exchanged') {
     return 'buyer-order-status buyer-order-status--completed';
   }
@@ -63,6 +79,10 @@ export const RETURN_STATUS_FILTERS = [
   { value: 'Pending', label: 'Pending' },
   { value: 'Approved', label: 'Approved' },
   { value: 'SellerConfirmed', label: 'Seller confirmed' },
+  { value: 'AwaitingPickup', label: 'Awaiting pickup' },
+  { value: 'PickedUp', label: 'Picked up' },
+  { value: 'InTransit', label: 'In transit' },
+  { value: 'PickupFailed', label: 'Pickup failed' },
   { value: 'Receiving', label: 'Receiving' },
   { value: 'Accepted', label: 'Accepted' },
   { value: 'Refunded', label: 'Refunded' },
@@ -91,6 +111,14 @@ export function returnStatusIcon(status: string | null | undefined): string {
       return 'fa-solid fa-share-from-square';
     case 'sellerconfirmed':
       return 'fa-solid fa-handshake';
+    case 'awaitingpickup':
+      return 'fa-solid fa-box';
+    case 'pickedup':
+      return 'fa-solid fa-truck-pickup';
+    case 'intransit':
+      return 'fa-solid fa-truck-moving';
+    case 'pickupfailed':
+      return 'fa-solid fa-triangle-exclamation';
     case 'receiving':
       return 'fa-solid fa-truck-ramp-box';
     case 'accepted':
@@ -115,9 +143,17 @@ export function returnStatusHint(status: string | null | undefined): string {
     case 'approved':
       return 'Your request was approved and sent to the seller. Wait for the seller to confirm the handling plan.';
     case 'sellerconfirmed':
-      return 'The seller confirmed the plan. Please ship the item back using the instructions from support or the seller.';
+      return 'The seller confirmed the plan. A shipper will come to your delivery address to pick up the item.';
+    case 'awaitingpickup':
+      return 'A shipper is scheduled to pick up the item from your delivery address. Please have it ready and packaged.';
+    case 'pickedup':
+      return 'The shipper has picked up your item and is on the way to the seller.';
+    case 'intransit':
+      return 'Your returned item is in transit to the seller.';
+    case 'pickupfailed':
+      return 'The shipper could not pick up the item. Our support team will arrange another pickup or guide you on next steps.';
     case 'receiving':
-      return 'The seller has marked your package as received and is inspecting it.';
+      return 'The seller has received your package and is inspecting it.';
     case 'accepted':
       return 'The seller accepted the returned item. AIDR support will complete your refund or exchange next.';
     case 'refunded':
@@ -137,6 +173,7 @@ export const RETURN_TIMELINE_STAGES = [
   'Pending',
   'Approved',
   'SellerConfirmed',
+  'AwaitingPickup',
   'Receiving',
   'Accepted',
   'Refunded',
@@ -145,16 +182,67 @@ export const RETURN_TIMELINE_STAGES = [
 
 export function returnTimelineStages(resolutionType?: string | null): readonly string[] {
   if (resolutionType === 'Exchange') {
-    return ['Pending', 'Approved', 'SellerConfirmed', 'Receiving', 'Accepted', 'Exchanged', 'Closed'];
+    return [
+      'Pending',
+      'Approved',
+      'SellerConfirmed',
+      'AwaitingPickup',
+      'Receiving',
+      'Accepted',
+      'Exchanged',
+      'Closed',
+    ];
   }
   return RETURN_TIMELINE_STAGES;
+}
+
+/** True for statuses that mean the shipper is handling logistics. */
+export function isLogisticsStatus(status: string | null | undefined): boolean {
+  return ['AwaitingPickup', 'PickedUp', 'InTransit', 'PickupFailed'].includes(status ?? '');
+}
+
+/** Collapse PickedUp / InTransit / PickupFailed → AwaitingPickup for timeline display */
+export function returnTimelineActiveStage(status: string | null | undefined): string {
+  if (status === 'PickedUp' || status === 'InTransit' || status === 'PickupFailed') {
+    return 'AwaitingPickup';
+  }
+  return status ?? '';
+}
+
+export function isTerminalReturnStatus(status: string | null | undefined): boolean {
+  return ['Closed', 'Rejected', 'Refunded', 'Exchanged'].includes(status ?? '');
+}
+
+/** Make raw status-history notes more buyer-friendly. */
+export function formatTimelineNote(
+  toStatus: string,
+  note: string | null | undefined,
+): string | null {
+  if (!note) return null;
+  if (toStatus === 'AwaitingPickup' && note.startsWith('Return shipment created:')) {
+    const code = note.split(':').slice(1).join(':').trim();
+    return `Tracking code: ${code}`;
+  }
+  return note;
 }
 
 export function returnHistoryActor(fromStatus: string | null | undefined): string {
   if (!fromStatus) return 'You';
   if (fromStatus === 'Pending') return 'AIDR support';
-  if (fromStatus === 'Approved' || fromStatus === 'SellerConfirmed' || fromStatus === 'Receiving') {
+  if (
+    fromStatus === 'Approved' ||
+    fromStatus === 'SellerConfirmed' ||
+    fromStatus === 'Receiving'
+  ) {
     return 'Seller';
+  }
+  if (
+    fromStatus === 'AwaitingPickup' ||
+    fromStatus === 'PickedUp' ||
+    fromStatus === 'InTransit' ||
+    fromStatus === 'PickupFailed'
+  ) {
+    return 'Carrier';
   }
   return 'AIDR support';
 }

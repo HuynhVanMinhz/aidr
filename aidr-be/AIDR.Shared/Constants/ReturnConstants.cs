@@ -9,6 +9,10 @@ public static class ReturnConstants
     public const string StatusApproved = "Approved";
     public const string StatusRejected = "Rejected";
     public const string StatusSellerConfirmed = "SellerConfirmed";
+    public const string StatusAwaitingPickup = "AwaitingPickup";
+    public const string StatusPickedUp = "PickedUp";
+    public const string StatusInTransit = "InTransit";
+    public const string StatusPickupFailed = "PickupFailed";
     public const string StatusReceiving = "Receiving";
     public const string StatusAccepted = "Accepted";
     public const string StatusRefunded = "Refunded";
@@ -22,7 +26,10 @@ public static class ReturnConstants
     public const string EvidenceTypeOther = "Other";
 
     public const string WalletTxTypeRefundDebit = "RefundDebit";
+    public const string WalletTxTypeReturnShippingFee = "ReturnShippingFee";
     public const string WalletReferenceTypeReturnRequest = "ReturnRequest";
+
+    public const string ReturnShipmentPrefix = "RTN-";
 
     public const int MaxReasonLength = 500;
     public const int MaxDescriptionLength = 2000;
@@ -49,6 +56,10 @@ public static class ReturnConstants
         StatusApproved,
         StatusRejected,
         StatusSellerConfirmed,
+        StatusAwaitingPickup,
+        StatusPickedUp,
+        StatusInTransit,
+        StatusPickupFailed,
         StatusReceiving,
         StatusAccepted,
         StatusRefunded,
@@ -77,11 +88,57 @@ public static class ReturnConstants
         StatusPending,
         StatusApproved,
         StatusSellerConfirmed,
+        StatusAwaitingPickup,
+        StatusPickedUp,
+        StatusInTransit,
+        StatusPickupFailed,
         StatusReceiving,
         StatusAccepted,
         StatusRefunded,
         StatusExchanged
     };
+
+    /// <summary>Return statuses driven by GHN webhook (shipper picking up from buyer).</summary>
+    public static readonly HashSet<string> LogisticsStatuses = new(StringComparer.OrdinalIgnoreCase)
+    {
+        StatusAwaitingPickup,
+        StatusPickedUp,
+        StatusInTransit,
+        StatusPickupFailed
+    };
+
+    /// <summary>
+    /// Order value for forward-only webhook transitions.
+    /// A webhook event is only applied when its target status has a higher order
+    /// than the return request's current status.
+    /// </summary>
+    public static readonly IReadOnlyDictionary<string, int> StatusOrder =
+        new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase)
+        {
+            [StatusPending]         = 0,
+            [StatusApproved]        = 1,
+            [StatusSellerConfirmed] = 2,
+            [StatusAwaitingPickup]  = 3,
+            [StatusPickupFailed]    = 3, // same level — either can follow AwaitingPickup
+            [StatusPickedUp]        = 4,
+            [StatusInTransit]       = 5,
+            [StatusReceiving]       = 6,
+            [StatusAccepted]        = 7,
+            [StatusRefunded]        = 8,
+            [StatusExchanged]       = 8,
+            [StatusClosed]          = 9,
+        };
+
+    /// <summary>GHN shipment status → ReturnRequest status.</summary>
+    public static readonly IReadOnlyDictionary<string, string> ReturnShipmentToReturnStatus =
+        new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        {
+            [ShippingConstants.ShipmentCreated]   = StatusAwaitingPickup,
+            [ShippingConstants.ShipmentPickedUp]  = StatusPickedUp,
+            [ShippingConstants.ShipmentInTransit] = StatusInTransit,
+            [ShippingConstants.ShipmentDelivered] = StatusReceiving,
+            [ShippingConstants.ShipmentFailed]    = StatusPickupFailed
+        };
 
     /// <summary>
     /// Admin pipeline after seller accepts goods: Accepted→Refunded|Exchanged→Closed.
@@ -94,13 +151,23 @@ public static class ReturnConstants
             [StatusExchanged] = [StatusClosed]
         };
 
-    /// <summary>Seller pipeline after admin forwards the request.</summary>
+    /// <summary>
+    /// Seller pipeline used by <c>SellerReturnRepository.AdvanceAsync</c>.
+    /// Note: Pending→Approved is admin-only (AdminReturnService.ApproveAsync).
+    ///       Approved→SellerConfirmed is handled by ConfirmAsync directly — NOT via AdvanceAsync.
+    ///       AdvanceAsync is only called for Receiving and Accepted transitions.
+    /// Logistics statuses (AwaitingPickup/PickedUp/InTransit/PickupFailed) are all valid
+    /// sources for manual receiving — seller marks "I have the item" regardless of where GHN left off.
+    /// </summary>
     public static readonly IReadOnlyDictionary<string, string> SellerStatusTransitions =
         new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
         {
-            [StatusApproved] = StatusSellerConfirmed,
             [StatusSellerConfirmed] = StatusReceiving,
-            [StatusReceiving] = StatusAccepted
+            [StatusAwaitingPickup]  = StatusReceiving,
+            [StatusPickedUp]        = StatusReceiving,
+            [StatusInTransit]       = StatusReceiving,
+            [StatusPickupFailed]    = StatusReceiving,
+            [StatusReceiving]       = StatusAccepted
         };
 
     /// <summary>Statuses from which seller may reject the request.</summary>

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type FormEvent } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { AdminConfirmModal } from '../../components/admin/AdminConfirmModal';
 import { FormField } from '../../components/admin/FormField';
@@ -11,18 +11,27 @@ import { useToast } from '../../hooks/useToast';
 import { formatMoney } from '../../utils/formatCatalog';
 import { parseUtcDate } from '../../utils/dateUtc';
 import { tryValidateField, visibleFieldErrors } from '../../utils/formValidation';
-import { formatReturnStatus, returnStatusBadgeClass } from '../../utils/returnUi';
+import {
+  formatReturnStatus,
+  isLogisticsStatus,
+  isTerminalReturnStatus,
+  returnStatusBadgeClass,
+} from '../../utils/returnUi';
+import { addNotificationHandler, removeNotificationHandler } from '../../realtime/signalr';
+import type { NotificationItem } from '../../types/notification';
 import {
   nextReturnStatus,
   RETURN_MAX_ADMIN_NOTE,
-  RETURN_MAX_BANK_ACCOUNT,
-  RETURN_MAX_BANK_BIN,
   RETURN_MAX_STATUS_NOTE,
-  validateOptionalBankAccount,
-  validateOptionalBankBin,
   validateReturnRejectNote,
   validateReturnStatusNote,
 } from '../../utils/returnValidation';
+import {
+  adminMarkReturnReceiving,
+  getAdminReturnShipment,
+  retryAdminReturnPickup,
+} from '../../services/returnApi';
+import type { ReturnShipment } from '../../types/return';
 
 function formatDate(value?: string | null) {
   if (!value) return '-';
@@ -54,14 +63,14 @@ export function AdminReturnRequestDetailPage() {
   const [rejectSubmitted, setRejectSubmitted] = useState(false);
 
   const [statusNote, setStatusNote] = useState('');
-  const [refundToBin, setRefundToBin] = useState('');
-  const [refundToAccountNumber, setRefundToAccountNumber] = useState('');
-  const [statusTouched, setStatusTouched] = useState<{
-    note?: boolean;
-    refundToBin?: boolean;
-    refundToAccountNumber?: boolean;
-  }>({});
+  const [statusTouched, setStatusTouched] = useState<{ note?: boolean }>({});
   const [statusSubmitted, setStatusSubmitted] = useState(false);
+
+  const [shipment, setShipment] = useState<ReturnShipment | null>(null);
+  const [retryOpen, setRetryOpen] = useState(false);
+  const [markReceivingOpen, setMarkReceivingOpen] = useState(false);
+  const [shipmentActing, setShipmentActing] = useState(false);
+  const itemStatusRef = useRef(item?.status);
 
   useEffect(() => {
     if (!id) return;
@@ -70,7 +79,7 @@ export function AdminReturnRequestDetailPage() {
     setLoadError(null);
     void loadOne(id)
       .then((data) => {
-        if (!cancelled) setItem(data);
+        if (!cancelled) { setItem(data); itemStatusRef.current = (data as typeof item)?.status ?? null; }
       })
       .catch((err) => {
         if (!cancelled) {
@@ -86,16 +95,51 @@ export function AdminReturnRequestDetailPage() {
   }, [id, loadOne]);
 
   useEffect(() => {
-    if (cached) setItem(cached);
+    if (cached) { setItem(cached); itemStatusRef.current = cached?.status ?? null; }
   }, [cached]);
 
-  // Pre-fill refund fields from buyer-provided bank when item loads
+  // Silent reload for SignalR / poll — updates Redux (→ cached → item).
+  const reloadSilent = useCallback(async () => {
+    try { await loadOne(id); } catch { /* background refresh, don't surface */ }
+  }, [id, loadOne]);
+
+  // Real-time: listen on shared notification hub.
+  useEffect(() => {
+    if (!id) return;
+    if (item && isTerminalReturnStatus(item.status)) return;
+
+    const handler = (n: NotificationItem) => {
+      if (n.referenceType === 'ReturnRequest' && n.referenceId?.toLowerCase() === id.toLowerCase()) {
+        void reloadSilent();
+      }
+    };
+    addNotificationHandler(handler);
+    return () => removeNotificationHandler(handler);
+  }, [id, reloadSilent, item?.status]);
+
+  // Fallback poll every 60 s.
+  useEffect(() => {
+    if (!item || isTerminalReturnStatus(item.status)) return;
+    const timer = setInterval(() => { void reloadSilent(); }, 60_000);
+    return () => clearInterval(timer);
+  }, [reloadSilent, item?.status]);
+
+  const loadShipment = useCallback(async (returnId: string) => {
+    const s = await getAdminReturnShipment(returnId);
+    setShipment(s);
+  }, []);
+
   useEffect(() => {
     if (!item) return;
-    if (item.refundAccountNumberMasked && !refundToAccountNumber) {
-      setRefundToBin(item.refundBankBin ?? '');
-    }
-  }, [item]); // eslint-disable-line react-hooks/exhaustive-deps
+    const shouldLoad =
+      isLogisticsStatus(item.status) ||
+      item.status === 'Receiving' ||
+      item.status === 'Accepted' ||
+      item.status === 'Refunded' ||
+      item.status === 'Exchanged' ||
+      item.status === 'Closed';
+    if (shouldLoad) void loadShipment(item.returnRequestId);
+  }, [item?.returnRequestId, item?.status]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const noteError = useMemo(
     () => tryValidateField(() => validateReturnRejectNote(adminNote)),
@@ -107,41 +151,24 @@ export function AdminReturnRequestDetailPage() {
     rejectSubmitted,
   ).adminNote;
 
-  const statusFieldErrors = useMemo(
-    () => ({
-      note: tryValidateField(() => {
-        validateReturnStatusNote(statusNote);
-      }),
-      refundToBin: tryValidateField(() => {
-        validateOptionalBankBin(refundToBin);
-      }),
-      refundToAccountNumber: tryValidateField(() => {
-        validateOptionalBankAccount(refundToAccountNumber);
-      }),
-    }),
-    [refundToAccountNumber, refundToBin, statusNote],
+  const statusNoteError = useMemo(
+    () => tryValidateField(() => validateReturnStatusNote(statusNote)),
+    [statusNote],
   );
-  const visibleStatusErrors = visibleFieldErrors(
-    statusFieldErrors,
-    statusTouched,
+  const visibleStatusNoteError = visibleFieldErrors(
+    { note: statusNoteError },
+    { note: statusTouched.note },
     statusSubmitted,
-  );
+  ).note;
 
   const isPending = item?.status === 'Pending';
   const nextStatus = nextReturnStatus(item?.status, item?.resolutionType);
-  const needsRefundBank =
-    nextStatus === 'Refunded' &&
-    (!refundToBin.trim() || !refundToAccountNumber.trim());
 
   const canReject =
     Boolean(item && isPending) && noteDirty && !noteError && !mutating;
 
   const canAdvanceStatus =
-    Boolean(item && nextStatus) &&
-    !statusFieldErrors.note &&
-    !statusFieldErrors.refundToBin &&
-    !statusFieldErrors.refundToAccountNumber &&
-    !mutating;
+    Boolean(item && nextStatus) && !statusNoteError && !mutating;
 
   async function confirmApprove() {
     if (!item || !isPending) return;
@@ -187,40 +214,23 @@ export function AdminReturnRequestDetailPage() {
     e.preventDefault();
     if (!item || !nextStatus) return;
     setStatusSubmitted(true);
-    setStatusTouched({ note: true, refundToBin: true, refundToAccountNumber: true });
-    if (
-      statusFieldErrors.note ||
-      statusFieldErrors.refundToBin ||
-      statusFieldErrors.refundToAccountNumber
-    ) {
-      return;
-    }
+    setStatusTouched({ note: true });
+    if (statusNoteError) return;
     setStatusOpen(true);
   }
 
   async function confirmStatusUpdate() {
-    if (!item || !nextStatus) return;
-    if (
-      statusFieldErrors.note ||
-      statusFieldErrors.refundToBin ||
-      statusFieldErrors.refundToAccountNumber
-    ) {
-      return;
-    }
+    if (!item || !nextStatus || statusNoteError) return;
 
     setActionError(null);
     try {
       const updated = await updateStatus(item.returnRequestId, {
         status: nextStatus,
         note: statusNote.trim() || null,
-        refundToBin: refundToBin.trim() || null,
-        refundToAccountNumber: refundToAccountNumber.trim() || null,
       });
       setItem(updated);
       setStatusOpen(false);
       setStatusNote('');
-      setRefundToBin('');
-      setRefundToAccountNumber('');
       setStatusTouched({});
       setStatusSubmitted(false);
       toast.success(`Return status updated to ${formatReturnStatus(nextStatus)}.`);
@@ -228,6 +238,43 @@ export function AdminReturnRequestDetailPage() {
       const message = err instanceof Error ? err.message : 'Unable to update return status.';
       setActionError(message);
       toast.error(message);
+    }
+  }
+
+  async function confirmRetryPickup() {
+    if (!item) return;
+    setShipmentActing(true);
+    try {
+      const result = await retryAdminReturnPickup(item.returnRequestId);
+      if (result.data) setShipment(result.data);
+      setRetryOpen(false);
+      toast.success('Retry pickup dispatched.');
+      void loadShipment(item.returnRequestId);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Unable to retry pickup.';
+      setActionError(message);
+      toast.error(message);
+    } finally {
+      setShipmentActing(false);
+    }
+  }
+
+  async function confirmMarkReceiving() {
+    if (!item) return;
+    setShipmentActing(true);
+    try {
+      await adminMarkReturnReceiving(item.returnRequestId);
+      setMarkReceivingOpen(false);
+      toast.success('Return marked as receiving.');
+      const updated = await loadOne(item.returnRequestId).catch(() => null);
+      if (updated) setItem(updated);
+      void loadShipment(item.returnRequestId);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Unable to mark receiving.';
+      setActionError(message);
+      toast.error(message);
+    } finally {
+      setShipmentActing(false);
     }
   }
 
@@ -357,7 +404,26 @@ export function AdminReturnRequestDetailPage() {
             </div>
 
             <div className="mb-0">
-              <p className="text-muted mb-2">Status history</p>
+              <p className="text-muted mb-2 d-flex align-items-center gap-2">
+                Status history
+                {item && !isTerminalReturnStatus(item.status) && (
+                  <span className="badge bg-success-subtle text-success fw-normal" style={{ fontSize: '0.7rem' }}>
+                    <span
+                      style={{
+                        display: 'inline-block',
+                        width: 7,
+                        height: 7,
+                        borderRadius: '50%',
+                        background: 'currentColor',
+                        marginRight: 4,
+                        animation: 'return-live-pulse 2s ease-in-out infinite',
+                      }}
+                      aria-hidden
+                    />
+                    Live
+                  </span>
+                )}
+              </p>
               {item.statusHistories.length === 0 ? (
                 <p className="text-muted mb-0">No history yet.</p>
               ) : (
@@ -387,6 +453,67 @@ export function AdminReturnRequestDetailPage() {
       </div>
 
       <div className="col-lg-4">
+        {shipment ? (
+          <div className="card">
+            <div className="card-header d-flex justify-content-between align-items-center">
+              <h4 className="card-title mb-0">Return shipment</h4>
+              <span className={`badge ${shipment.status === 'PickupFailed' ? 'badge-soft-danger' : 'badge-soft-primary'}`}>
+                {shipment.status}
+              </span>
+            </div>
+            <div className="card-body">
+              {shipment.trackingCode ? (
+                <div className="mb-2">
+                  <p className="text-muted mb-1">Tracking code</p>
+                  <p className="mb-0 fw-medium">{shipment.trackingCode}</p>
+                </div>
+              ) : null}
+              {shipment.shippingFeeQuoted != null ? (
+                <div className="mb-2">
+                  <p className="text-muted mb-1">Shipping fee (seller)</p>
+                  <p className="mb-0">{formatMoney(shipment.shippingFeeQuoted, 'VND')}</p>
+                </div>
+              ) : null}
+              {shipment.expectedDeliveryAt ? (
+                <div className="mb-2">
+                  <p className="text-muted mb-1">Expected delivery</p>
+                  <p className="mb-0">{formatDate(shipment.expectedDeliveryAt)}</p>
+                </div>
+              ) : null}
+              {shipment.attemptCount > 1 ? (
+                <p className="text-muted mb-2 fs-12">Attempt {shipment.attemptCount}</p>
+              ) : null}
+              {shipment.lastError ? (
+                <div className="alert alert-warning py-1 px-2 mb-2 fs-12" role="alert">
+                  {shipment.lastError}
+                </div>
+              ) : null}
+              <div className="d-flex gap-2 flex-column">
+                {item.status === 'PickupFailed' ? (
+                  <button
+                    type="button"
+                    className="btn btn-primary btn-sm w-100"
+                    disabled={shipmentActing}
+                    onClick={() => setRetryOpen(true)}
+                  >
+                    Retry pickup
+                  </button>
+                ) : null}
+                {(isLogisticsStatus(item.status) || item.status === 'PickupFailed') ? (
+                  <button
+                    type="button"
+                    className="btn btn-outline-secondary btn-sm w-100"
+                    disabled={shipmentActing}
+                    onClick={() => setMarkReceivingOpen(true)}
+                  >
+                    Mark as received (override)
+                  </button>
+                ) : null}
+              </div>
+            </div>
+          </div>
+        ) : null}
+
         {isPending ? (
           <div className="card">
             <div className="card-header">
@@ -461,32 +588,33 @@ export function AdminReturnRequestDetailPage() {
                 Next step: <strong>{formatReturnStatus(nextStatus)}</strong>
               </p>
               {nextStatus === 'Refunded' ? (
-                <>
-                  {item?.refundAccountNumberMasked ? (
-                    <div className="alert alert-success" role="alert">
-                      <strong>Buyer bank account on file:</strong>{' '}
-                      {item.refundBankName ? `${item.refundBankName} · ` : ''}
-                      {item.refundAccountNumberMasked}
-                      {item.refundAccountName ? ` (${item.refundAccountName})` : ''}
-                      <br />
-                      <span className="fs-12 text-muted">
-                        This will be used automatically. Override below only if incorrect.
-                      </span>
-                    </div>
-                  ) : (
-                    <div className="alert alert-warning" role="alert">
-                      Buyer did not provide a bank account. Fill in the fields below, or ensure
-                      the payment webhook stored the counter account.
-                    </div>
-                  )}
-                </>
+                item?.refundAccountNumber ? (
+                  <div className="alert alert-success" role="alert">
+                    <strong>Information buyer bank account:</strong>{' '}
+                    <br />
+                    <strong>Bank: </strong>{item.refundBankName ? `${item.refundBankName} ` : ''}
+                    <br />
+                    <strong>Account number: </strong>{item.refundAccountNumber}
+                    <br />
+                    <strong>Account name: </strong>{item.refundAccountName ? ` ${item.refundAccountName}` : ''}
+                    <br />
+                    <span className="fs-12 text-muted">
+                      Transfer to this account manually before marking Refunded.
+                    </span>
+                  </div>
+                ) : (
+                  <div className="alert alert-warning" role="alert">
+                    Buyer did not provide a bank account. Confirm the refund destination before
+                    proceeding.
+                  </div>
+                )
               ) : null}
 
               <form onSubmit={handleStatusSubmit}>
                 <FormField
                   htmlFor="return-status-note"
                   label="Note (optional)"
-                  error={visibleStatusErrors.note}
+                  error={visibleStatusNoteError}
                 >
                   <textarea
                     id="return-status-note"
@@ -498,54 +626,6 @@ export function AdminReturnRequestDetailPage() {
                     onChange={(e) => setStatusNote(e.target.value)}
                   />
                 </FormField>
-
-                {nextStatus === 'Refunded' ? (
-                  <>
-                    <FormField
-                      htmlFor="return-refund-bin"
-                      label="Refund bank BIN"
-                      error={visibleStatusErrors.refundToBin}
-                    >
-                      <input
-                        id="return-refund-bin"
-                        className="form-control"
-                        maxLength={RETURN_MAX_BANK_BIN}
-                        value={refundToBin}
-                        onBlur={() =>
-                          setStatusTouched((prev) => ({ ...prev, refundToBin: true }))
-                        }
-                        onChange={(e) => setRefundToBin(e.target.value)}
-                        placeholder="e.g. 970422"
-                      />
-                    </FormField>
-                    <FormField
-                      htmlFor="return-refund-account"
-                      label="Refund account number"
-                      error={visibleStatusErrors.refundToAccountNumber}
-                    >
-                      <input
-                        id="return-refund-account"
-                        className="form-control"
-                        maxLength={RETURN_MAX_BANK_ACCOUNT}
-                        value={refundToAccountNumber}
-                        onBlur={() =>
-                          setStatusTouched((prev) => ({
-                            ...prev,
-                            refundToAccountNumber: true,
-                          }))
-                        }
-                        onChange={(e) => setRefundToAccountNumber(e.target.value)}
-                        placeholder="Buyer bank account"
-                      />
-                    </FormField>
-                    {needsRefundBank ? (
-                      <p className="text-muted fs-12">
-                        Optional if webhook already stored counter account; required when payOS
-                        payout cannot resolve the destination.
-                      </p>
-                    ) : null}
-                  </>
-                ) : null}
 
                 <button
                   type="submit"
@@ -610,8 +690,37 @@ export function AdminReturnRequestDetailPage() {
       >
         <p className="mb-0">
           {nextStatus === 'Refunded'
-            ? 'This will refund the buyer via payOS payout and debit the seller wallet.'
+            ? 'Confirm you have transferred the refund to the buyer\'s bank account and mark this request as Refunded.'
             : `Confirm moving this return request to ${formatReturnStatus(nextStatus ?? '')}?`}
+        </p>
+      </AdminConfirmModal>
+
+      <AdminConfirmModal
+        open={retryOpen}
+        title="Retry return pickup"
+        confirmLabel="Retry"
+        confirmVariant="success"
+        confirming={shipmentActing}
+        onCancel={() => setRetryOpen(false)}
+        onConfirm={() => void confirmRetryPickup()}
+      >
+        <p className="mb-0">
+          Dispatch a new GHN pickup request for order <strong>{item.orderCode}</strong>? The seller
+          will be charged the shipping fee again if the previous charge was not applied.
+        </p>
+      </AdminConfirmModal>
+
+      <AdminConfirmModal
+        open={markReceivingOpen}
+        title="Mark return as received"
+        confirmLabel="Mark received"
+        confirming={shipmentActing}
+        onCancel={() => setMarkReceivingOpen(false)}
+        onConfirm={() => void confirmMarkReceiving()}
+      >
+        <p className="mb-0">
+          Manually mark this return as received by the seller, bypassing the carrier webhook? Use
+          this when the item arrived but the shipment tracking did not update.
         </p>
       </AdminConfirmModal>
     </div>

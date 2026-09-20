@@ -1,4 +1,5 @@
 import type {
+  AdminMarkReceivingPayload,
   AdminReturnDetail,
   AdminReturnDetailApiResult,
   AdminReturnListApiResult,
@@ -10,6 +11,8 @@ import type {
   CreateReturnPayload,
   RejectReturnPayload,
   RejectSellerReturnPayload,
+  ReturnShipment,
+  ReturnShipmentApiResult,
   SellerReturnActionPayload,
   SellerReturnDetail,
   SellerReturnDetailApiResult,
@@ -109,6 +112,32 @@ export async function updateAdminReturnStatus(id: string, payload: UpdateReturnS
     payload,
   );
   return data;
+}
+
+export async function retryAdminReturnPickup(id: string) {
+  const { data } = await apiClient.post<ReturnShipmentApiResult>(
+    `/admin/return-requests/${id}/retry-pickup`,
+  );
+  return data;
+}
+
+export async function adminMarkReturnReceiving(id: string, payload: AdminMarkReceivingPayload = {}) {
+  const { data } = await apiClient.post<ApiResult<string>>(
+    `/admin/return-requests/${id}/mark-receiving`,
+    payload,
+  );
+  return data;
+}
+
+export async function getAdminReturnShipment(id: string): Promise<ReturnShipment | null> {
+  try {
+    const { data } = await apiClient.get<ReturnShipmentApiResult>(
+      `/admin/return-requests/${id}/shipment`,
+    );
+    return data.data ?? null;
+  } catch {
+    return null;
+  }
 }
 
 export async function listSellerReturns(query?: {

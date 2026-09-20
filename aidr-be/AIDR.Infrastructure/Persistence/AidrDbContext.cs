@@ -54,6 +54,8 @@ public class AidrDbContext : DbContext
     public DbSet<ReturnRequestItem> ReturnRequestItems => Set<ReturnRequestItem>();
     public DbSet<ReturnEvidence> ReturnEvidences => Set<ReturnEvidence>();
     public DbSet<ReturnStatusHistory> ReturnStatusHistories => Set<ReturnStatusHistory>();
+    public DbSet<ReturnShipment> ReturnShipments => Set<ReturnShipment>();
+    public DbSet<ReturnShipmentEvent> ReturnShipmentEvents => Set<ReturnShipmentEvent>();
     public DbSet<ChatThread> ChatThreads => Set<ChatThread>();
     public DbSet<ChatMessage> ChatMessages => Set<ChatMessage>();
     public DbSet<AiConversation> AiConversations => Set<AiConversation>();
@@ -898,6 +900,41 @@ public class AidrDbContext : DbContext
                 .HasForeignKey(x => x.ReturnRequestId)
                 .OnDelete(DeleteBehavior.Cascade);
             e.HasIndex(x => x.ReturnRequestId);
+        });
+
+        modelBuilder.Entity<ReturnShipment>(e =>
+        {
+            e.ToTable("ReturnShipments");
+            e.HasKey(x => x.ReturnShipmentId);
+            e.Property(x => x.Provider).HasMaxLength(20).IsRequired();
+            e.Property(x => x.ProviderShipmentId).HasMaxLength(60);
+            e.Property(x => x.TrackingCode).HasMaxLength(60);
+            e.Property(x => x.Status).HasMaxLength(30).IsRequired();
+            e.Property(x => x.ProviderStatus).HasMaxLength(60);
+            e.Property(x => x.ShippingFeeQuoted).HasColumnType("decimal(12,2)");
+            e.Property(x => x.LastError).HasMaxLength(500);
+            e.HasOne(x => x.ReturnRequest)
+                .WithMany()
+                .HasForeignKey(x => x.ReturnRequestId)
+                .OnDelete(DeleteBehavior.Cascade);
+            e.HasIndex(x => x.ReturnRequestId);
+            e.HasIndex(x => x.ProviderShipmentId);
+        });
+
+        modelBuilder.Entity<ReturnShipmentEvent>(e =>
+        {
+            e.ToTable("ReturnShipmentEvents");
+            e.HasKey(x => x.ReturnShipmentEventId);
+            e.Property(x => x.ExternalEventId).HasMaxLength(120).IsRequired();
+            e.Property(x => x.ProviderStatus).HasMaxLength(60).IsRequired();
+            e.Property(x => x.MappedStatus).HasMaxLength(30).IsRequired();
+            e.Property(x => x.Description).HasMaxLength(300);
+            e.Property(x => x.Source).HasMaxLength(20).IsRequired();
+            e.HasOne(x => x.ReturnShipment)
+                .WithMany(x => x.Events)
+                .HasForeignKey(x => x.ReturnShipmentId)
+                .OnDelete(DeleteBehavior.Cascade);
+            e.HasIndex(x => new { x.ReturnShipmentId, x.ExternalEventId }).IsUnique();
         });
 
         modelBuilder.Entity<ChatThread>(e =>

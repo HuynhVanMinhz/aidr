@@ -1211,6 +1211,40 @@
   font-size: 1rem;
   font-weight: 600;
   color: var(--primary-color, #16181d);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Live poll indicator */
+.return-live-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-left: auto;
+  font-size: 0.7rem;
+  font-weight: 500;
+  color: #16a34a;
+  letter-spacing: 0.02em;
+}
+
+.return-live-badge__dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #16a34a;
+  animation: return-live-pulse 2s ease-in-out infinite;
+}
+
+@keyframes return-live-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: 0.45; transform: scale(0.8); }
+}
+
+.return-live-updated {
+  margin: -8px 0 10px;
+  font-size: 0.72rem;
+  color: var(--return-muted);
 }
 
 .return-facts {
@@ -1560,6 +1594,11 @@
 .return-timeline__step--upcoming .return-timeline__title,
 .return-timeline__step--upcoming .return-timeline__time {
   color: rgba(22, 24, 29, 0.42);
+}
+
+.return-timeline__note--pending {
+  color: var(--color-info, #2563eb);
+  font-style: italic;
 }
 
 .return-detail__foot {

@@ -853,6 +853,44 @@ public class ReturnStatusHistory
     public ReturnRequest ReturnRequest { get; set; } = null!;
 }
 
+public class ReturnShipment
+{
+    public Guid ReturnShipmentId { get; set; }
+    public Guid ReturnRequestId { get; set; }
+    public string Provider { get; set; } = null!;
+    public string? ProviderShipmentId { get; set; }
+    public string? TrackingCode { get; set; }
+    public string Status { get; set; } = null!;
+    public string? ProviderStatus { get; set; }
+    public decimal? ShippingFeeQuoted { get; set; }
+    public DateTime? ExpectedDeliveryAt { get; set; }
+    public int AttemptCount { get; set; }
+    public string? LastError { get; set; }
+    public string? RawCreateJson { get; set; }
+    public DateTime CreatedAt { get; set; }
+    public DateTime UpdatedAt { get; set; }
+
+    public ReturnRequest ReturnRequest { get; set; } = null!;
+    public ICollection<ReturnShipmentEvent> Events { get; set; } = new List<ReturnShipmentEvent>();
+}
+
+public class ReturnShipmentEvent
+{
+    public Guid ReturnShipmentEventId { get; set; }
+    public Guid ReturnShipmentId { get; set; }
+    public string ExternalEventId { get; set; } = null!;
+    public string ProviderStatus { get; set; } = null!;
+    public string MappedStatus { get; set; } = null!;
+    public string? Description { get; set; }
+    public string Source { get; set; } = null!;
+    public bool AppliedToReturn { get; set; }
+    public DateTime OccurredAt { get; set; }
+    public DateTime ReceivedAt { get; set; }
+    public string? RawJson { get; set; }
+
+    public ReturnShipment ReturnShipment { get; set; } = null!;
+}
+
 public class ChatThread
 {
     public Guid ThreadId { get; set; }
