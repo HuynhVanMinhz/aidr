@@ -1,15 +1,18 @@
-import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
-import { AddressMapPicker } from '../../components/address/AddressMapPicker';
+import { useEffect, useMemo, useState, type FormEvent } from 'react';
+import { AccountConfirmModal } from '../../components/account/AccountConfirmModal';
 import { useProfile } from '../../hooks/useProfile';
 import { useShippingLocations } from '../../hooks/useShippingLocations';
 import { useToastMessage } from '../../hooks/useToastMessage';
 import type { Address, AddressUpsert } from '../../types/profile';
 import type { LatLng } from '../../types/shippingLocation';
-import { geocodeAddress, reverseGeocode } from '../../utils/geocoding';
+import { reverseGeocode } from '../../utils/geocoding';
 import { validateRequired, validateVnPhone } from '../../utils/validators';
 
 const MAX_ADDRESSES = 10;
-const GEOCODE_DEBOUNCE_MS = 900;
+
+type AddressDialog =
+  | { kind: 'confirm-delete'; addressId: string; label: string }
+  | { kind: 'alert'; title: string; message: string };
 
 const emptyForm: AddressUpsert = {
   receiverName: '',
@@ -26,28 +29,26 @@ function formatAddressLine(address: Address): string {
 }
 
 export function AddressesPage() {
-  const { profile, loading, saving, error, updateProfile, getErrorMessage } = useProfile();
+  const { profile, loading, saving, updateProfile, getErrorMessage } = useProfile();
   const [form, setForm] = useState<AddressUpsert>(emptyForm);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
-  const [formError, setFormError] = useState<string | null>(null);
   const [formSuccess, setFormSuccess] = useState<string | null>(null);
+  const [dialog, setDialog] = useState<AddressDialog | null>(null);
 
   const locations = useShippingLocations();
   // Until the buyer touches a dropdown, a saved address keeps the names it was
   // stored with - the carrier lists may not resolve them, and losing them silently
   // would be worse than showing a blank select next to the value.
   const [locationsTouched, setLocationsTouched] = useState(false);
+  const [locating, setLocating] = useState(false);
+  const [locateError, setLocateError] = useState<string | null>(null);
 
-  const [point, setPoint] = useState<LatLng | null>(null);
-  const [mapCaption, setMapCaption] = useState<string | null>(null);
-  const [mapBusy, setMapBusy] = useState(false);
-  /** 'manual' means the buyer placed this pin; auto-geocoding must not move it. */
-  const pinSourceRef = useRef<'auto' | 'manual'>('auto');
-
-  useToastMessage(error);
-  useToastMessage(formError);
   useToastMessage(formSuccess, 'success');
+
+  function showAlert(message: string, title = 'Unable to update address') {
+    setDialog({ kind: 'alert', title, message });
+  }
 
   const addresses = useMemo(() => profile?.addresses ?? [], [profile?.addresses]);
   const canAddMore = addresses.length < MAX_ADDRESSES;
@@ -86,11 +87,6 @@ export function AddressesPage() {
       longitude: current.longitude ?? null,
       isDefault: current.isDefault,
     });
-    // A saved pin is the buyer's own; re-geocoding would move it under them.
-    if (current.latitude != null && current.longitude != null) {
-      setPoint({ lat: current.latitude, lng: current.longitude });
-      pinSourceRef.current = 'manual';
-    }
     setLocationsTouched(false);
     seed({
       province: current.province,
@@ -111,71 +107,39 @@ export function AddressesPage() {
     }));
   }, [provinceId, districtId, wardId, provinceName, districtName, wardName, locationsTouched]);
 
-  // Re-pin whenever the written address changes - unless the buyer moved the pin.
-  // Province + district are required so "Lý Thánh Tông" resolves in the chosen
-  // district, not a namesake street in another one (e.g. Sơn Trà vs Ngũ Hành Sơn).
-  const addressQuery = [form.streetAddress, form.ward, form.district, form.province]
-    .map((part) => part.trim())
-    .filter(Boolean)
-    .join(', ');
+  function resetForm() {
+    setForm(emptyForm);
+    setEditingId(null);
+    setShowForm(false);
+    setLocationsTouched(false);
+    setLocateError(null);
+    resetLocations();
+  }
 
-  useEffect(() => {
-    if (!showForm || pinSourceRef.current === 'manual') return;
-    if (!form.province.trim() || !form.district.trim()) return;
-    // Street-less lookups only centre on the district - wait until there is
-    // something more specific, or the buyer clicks the map themselves.
-    if (!form.streetAddress.trim() && !form.ward.trim()) return;
+  function applyLocationPoint(point: LatLng) {
+    setForm((f) => ({
+      ...f,
+      latitude: point.lat,
+      longitude: point.lng,
+    }));
+    setLocating(true);
+    setLocateError(null);
 
-    const controller = new AbortController();
-    const prefer = {
-      province: form.province,
-      district: form.district,
-      ward: form.ward,
-    };
-    const timer = setTimeout(() => {
-      setMapBusy(true);
-      void geocodeAddress(addressQuery, controller.signal, prefer)
-        .then((found) => {
-          if (controller.signal.aborted) return;
-          // No district-matching hit → drop a stale pin rather than keep the
-          // previous district's street under a new selection.
-          setPoint(found);
-          setMapCaption(found ? addressQuery : null);
-        })
-        .catch(() => undefined)
-        .finally(() => {
-          if (!controller.signal.aborted) setMapBusy(false);
-        });
-    }, GEOCODE_DEBOUNCE_MS);
-
-    return () => {
-      controller.abort();
-      clearTimeout(timer);
-    };
-  }, [addressQuery, form.district, form.province, form.ward, form.streetAddress, showForm]);
-
-  function handlePickOnMap(next: LatLng) {
-    pinSourceRef.current = 'manual';
-    setPoint(next);
-    setMapBusy(true);
-
-    void reverseGeocode(next)
+    void reverseGeocode(point)
       .then((result) => {
-        if (!result) return;
-        setMapCaption(result.displayName || null);
-        // The pin is the buyer's own answer to "where", so the written address
-        // follows it rather than the other way round - a pin and a street that
-        // disagree is how a parcel ends up on the wrong doorstep.
+        if (!result) {
+          setLocateError('Could not resolve this location to an address.');
+          return;
+        }
         setForm((f) => ({
           ...f,
           streetAddress: result.street ?? f.streetAddress,
           province: result.province ?? f.province,
           district: result.district ?? f.district,
           ward: result.ward ?? f.ward,
+          latitude: point.lat,
+          longitude: point.lng,
         }));
-        // OSM's spelling only stands in until the carrier lists resolve the same
-        // names back into selections; whatever they cannot match keeps the name
-        // above rather than blanking the field.
         setLocationsTouched(false);
         seed({
           province: result.province ?? undefined,
@@ -183,20 +147,34 @@ export function AddressesPage() {
           ward: result.ward ?? undefined,
         });
       })
-      .catch(() => undefined)
-      .finally(() => setMapBusy(false));
+      .catch(() => {
+        setLocateError('Could not resolve this location to an address.');
+      })
+      .finally(() => setLocating(false));
   }
 
-  function resetForm() {
-    setForm(emptyForm);
-    setEditingId(null);
-    setShowForm(false);
-    setFormError(null);
-    setLocationsTouched(false);
-    resetLocations();
-    setPoint(null);
-    setMapCaption(null);
-    pinSourceRef.current = 'auto';
+  function handleUseMyLocation() {
+    if (!navigator.geolocation) {
+      setLocateError('This browser cannot share a location.');
+      return;
+    }
+
+    setLocateError(null);
+    setLocating(true);
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        applyLocationPoint({
+          lat: position.coords.latitude,
+          lng: position.coords.longitude,
+        });
+      },
+      () => {
+        setLocating(false);
+        setLocateError('Location permission was denied. Fill the fields manually instead.');
+      },
+      { enableHighAccuracy: true, timeout: 10000 },
+    );
   }
 
   function startAdd() {
@@ -250,7 +228,6 @@ export function AddressesPage() {
     e.preventDefault();
     if (!profile) return;
 
-    setFormError(null);
     setFormSuccess(null);
 
     try {
@@ -262,8 +239,9 @@ export function AddressesPage() {
         district: validateRequired(form.district, 'District'),
         ward: validateRequired(form.ward, 'Ward'),
         streetAddress: validateRequired(form.streetAddress, 'Street address'),
-        latitude: point?.lat ?? null,
-        longitude: point?.lng ?? null,
+        // Keep any previously saved pin; this form no longer edits coordinates.
+        latitude: form.latitude ?? null,
+        longitude: form.longitude ?? null,
       };
       const base = addresses.map(toUpsert);
 
@@ -275,7 +253,7 @@ export function AddressesPage() {
         );
       } else {
         if (base.length >= MAX_ADDRESSES) {
-          setFormError(`Maximum of ${MAX_ADDRESSES} addresses.`);
+          showAlert(`Maximum of ${MAX_ADDRESSES} addresses.`);
           return;
         }
         next = [...base, { ...normalized, addressId: undefined }];
@@ -293,31 +271,43 @@ export function AddressesPage() {
       setFormSuccess(editingId ? 'Address updated.' : 'Address added.');
       resetForm();
     } catch (err) {
-      setFormError(getErrorMessage(err));
+      showAlert(getErrorMessage(err));
     }
   }
 
-  async function handleDelete(addressId: string) {
-    if (!profile || !window.confirm('Delete this address?')) return;
+  function requestDelete(address: Address) {
+    if (!profile) return;
+    setDialog({
+      kind: 'confirm-delete',
+      addressId: address.addressId,
+      label: formatAddressLine(address),
+    });
+  }
 
-    setFormError(null);
+  async function confirmDelete() {
+    if (!profile || dialog?.kind !== 'confirm-delete') return;
+
+    const addressId = dialog.addressId;
     setFormSuccess(null);
 
     try {
       const next = addresses.filter((a) => a.addressId !== addressId).map(toUpsert);
 
       await persistAddresses(next);
+      setDialog(null);
       setFormSuccess('Address deleted.');
       if (editingId === addressId) resetForm();
     } catch (err) {
-      setFormError(getErrorMessage(err));
+      showAlert(
+        getErrorMessage(err),
+        'Unable to delete address',
+      );
     }
   }
 
   async function handleSetDefault(addressId: string) {
     if (!profile) return;
 
-    setFormError(null);
     setFormSuccess(null);
 
     try {
@@ -329,7 +319,7 @@ export function AddressesPage() {
       await persistAddresses(next);
       setFormSuccess('Default address updated.');
     } catch (err) {
-      setFormError(getErrorMessage(err));
+      showAlert(getErrorMessage(err));
     }
   }
 
@@ -421,7 +411,7 @@ export function AddressesPage() {
                 <button
                   type="button"
                   className="account-btn account-btn--danger account-btn--sm"
-                  onClick={() => handleDelete(address.addressId)}
+                  onClick={() => requestDelete(address)}
                   disabled={saving}
                 >
                   <i className="fa-regular fa-trash-can" aria-hidden />
@@ -458,177 +448,172 @@ export function AddressesPage() {
           </header>
 
           <form className="address-form" onSubmit={handleSubmit} noValidate>
-            <div className="address-form__grid">
-              <div className="address-form__fields">
-                <div className="address-form__row">
-                  <div className="address-field">
-                    <label htmlFor="receiverName">Recipient *</label>
-                    <input
-                      id="receiverName"
-                      type="text"
-                      className="form-control"
-                      value={form.receiverName}
-                      onChange={(e) => setForm((f) => ({ ...f, receiverName: e.target.value }))}
-                      required
-                    />
-                  </div>
+            <div className="address-form__locate">
+              <p className="address-form__locate-hint">
+                Optionally fill province, district, ward and street from your current GPS
+                position. You can still edit every field afterwards.
+              </p>
+              <button
+                type="button"
+                className="account-btn account-btn--secondary account-btn--sm"
+                onClick={handleUseMyLocation}
+                disabled={locating || saving}
+              >
+                <i className="fa-solid fa-location-crosshairs" aria-hidden />
+                {locating ? 'Locating…' : 'Use my location'}
+              </button>
+            </div>
+            {locateError ? <p className="address-form__locate-error">{locateError}</p> : null}
 
-                  <div className="address-field">
-                    <label htmlFor="addrPhone">Phone number *</label>
-                    <input
-                      id="addrPhone"
-                      type="tel"
-                      className="form-control"
-                      value={form.phone}
-                      onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))}
-                      required
-                    />
-                  </div>
-                </div>
-
-                <div className="address-form__row">
-                  <div className="address-field">
-                    <label htmlFor="province">Province / City *</label>
-                    <select
-                      id="province"
-                      className="form-select"
-                      value={provinceId}
-                      disabled={locations.loadingProvinces}
-                      onChange={(e) => {
-                        setLocationsTouched(true);
-                        // Admin change invalidates the old pin - a street name
-                        // can exist in more than one district.
-                        pinSourceRef.current = 'auto';
-                        setPoint(null);
-                        setMapCaption(null);
-                        locations.selectProvince(e.target.value);
-                      }}
-                    >
-                      <option value="">
-                        {locations.loadingProvinces ? 'Loading…' : 'Select province / city'}
-                      </option>
-                      {locations.provinces.map((p) => (
-                        <option key={p.id} value={p.id}>
-                          {p.name}
-                        </option>
-                      ))}
-                    </select>
-                    {!provinceId && form.province ? (
-                      <p className="address-field__hint">Saved as “{form.province}”</p>
-                    ) : null}
-                  </div>
-
-                  <div className="address-field">
-                    <label htmlFor="district">District *</label>
-                    <select
-                      id="district"
-                      className="form-select"
-                      value={districtId}
-                      disabled={!provinceId || locations.loadingDistricts}
-                      onChange={(e) => {
-                        setLocationsTouched(true);
-                        pinSourceRef.current = 'auto';
-                        setPoint(null);
-                        setMapCaption(null);
-                        locations.selectDistrict(e.target.value);
-                      }}
-                    >
-                      <option value="">
-                        {!provinceId
-                          ? 'Pick a province first'
-                          : locations.loadingDistricts
-                            ? 'Loading…'
-                            : locations.districts.length === 0
-                              ? 'No districts listed'
-                              : 'Select district'}
-                      </option>
-                      {locations.districts.map((d) => (
-                        <option key={d.id} value={d.id}>
-                          {d.name}
-                        </option>
-                      ))}
-                    </select>
-                    {!districtId && form.district ? (
-                      <p className="address-field__hint">Saved as “{form.district}”</p>
-                    ) : null}
-                  </div>
-                </div>
-
-                <div className="address-form__row">
-                  <div className="address-field">
-                    <label htmlFor="ward">Ward *</label>
-                    <select
-                      id="ward"
-                      className="form-select"
-                      value={wardId}
-                      disabled={!districtId || locations.loadingWards}
-                      onChange={(e) => {
-                        setLocationsTouched(true);
-                        pinSourceRef.current = 'auto';
-                        // Keep the street text; re-geocode will re-pin inside this ward.
-                        locations.selectWard(e.target.value);
-                      }}
-                    >
-                      <option value="">
-                        {!districtId
-                          ? 'Pick a district first'
-                          : locations.loadingWards
-                            ? 'Loading…'
-                            : locations.wards.length === 0
-                              ? 'No wards listed'
-                              : 'Select ward'}
-                      </option>
-                      {locations.wards.map((w) => (
-                        <option key={w.id} value={w.id}>
-                          {w.name}
-                        </option>
-                      ))}
-                    </select>
-                    {!wardId && form.ward ? (
-                      <p className="address-field__hint">Saved as “{form.ward}”</p>
-                    ) : null}
-                  </div>
-
-                  <div className="address-field">
-                    <label htmlFor="streetAddress">Street address *</label>
-                    <input
-                      id="streetAddress"
-                      type="text"
-                      className="form-control"
-                      placeholder="House number, street name"
-                      value={form.streetAddress}
-                      onChange={(e) =>
-                        setForm((f) => ({ ...f, streetAddress: e.target.value }))
-                      }
-                      required
-                    />
-                  </div>
-                </div>
-
-                <label className="address-toggle">
+            <div className="address-form__fields">
+              <div className="address-form__row">
+                <div className="address-field">
+                  <label htmlFor="receiverName">Recipient *</label>
                   <input
-                    type="checkbox"
-                    checked={form.isDefault}
-                    onChange={(e) => setForm((f) => ({ ...f, isDefault: e.target.checked }))}
+                    id="receiverName"
+                    type="text"
+                    className="form-control"
+                    value={form.receiverName}
+                    onChange={(e) => setForm((f) => ({ ...f, receiverName: e.target.value }))}
+                    required
                   />
-                  <span className="address-toggle__text">
-                    <span className="address-toggle__title">Set as default address</span>
-                    <span className="address-toggle__sub">
-                      Checkout will pick this one first.
-                    </span>
-                  </span>
-                </label>
+                </div>
+
+                <div className="address-field">
+                  <label htmlFor="addrPhone">Phone number *</label>
+                  <input
+                    id="addrPhone"
+                    type="tel"
+                    className="form-control"
+                    value={form.phone}
+                    onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))}
+                    required
+                  />
+                </div>
               </div>
 
-              <aside className="address-form__map">
-                <AddressMapPicker
-                  point={point}
-                  onPick={handlePickOnMap}
-                  caption={mapCaption}
-                  busy={mapBusy}
-                  hint="Click or drag the pin to set the delivery point - fields follow it. Change district and the pin moves to that street inside the new district; a namesake street in another district is ignored."
+              <div className="address-form__row">
+                <div className="address-field">
+                  <label htmlFor="province">Province / City *</label>
+                  <select
+                    id="province"
+                    className="form-select"
+                    value={provinceId}
+                    disabled={locations.loadingProvinces}
+                    onChange={(e) => {
+                      setLocationsTouched(true);
+                      locations.selectProvince(e.target.value);
+                    }}
+                  >
+                    <option value="">
+                      {locations.loadingProvinces ? 'Loading…' : 'Select province / city'}
+                    </option>
+                    {locations.provinces.map((p) => (
+                      <option key={p.id} value={p.id}>
+                        {p.name}
+                      </option>
+                    ))}
+                  </select>
+                  {!provinceId && form.province ? (
+                    <p className="address-field__hint">Saved as “{form.province}”</p>
+                  ) : null}
+                </div>
+
+                <div className="address-field">
+                  <label htmlFor="district">District *</label>
+                  <select
+                    id="district"
+                    className="form-select"
+                    value={districtId}
+                    disabled={!provinceId || locations.loadingDistricts}
+                    onChange={(e) => {
+                      setLocationsTouched(true);
+                      locations.selectDistrict(e.target.value);
+                    }}
+                  >
+                    <option value="">
+                      {!provinceId
+                        ? 'Pick a province first'
+                        : locations.loadingDistricts
+                          ? 'Loading…'
+                          : locations.districts.length === 0
+                            ? 'No districts listed'
+                            : 'Select district'}
+                    </option>
+                    {locations.districts.map((d) => (
+                      <option key={d.id} value={d.id}>
+                        {d.name}
+                      </option>
+                    ))}
+                  </select>
+                  {!districtId && form.district ? (
+                    <p className="address-field__hint">Saved as “{form.district}”</p>
+                  ) : null}
+                </div>
+              </div>
+
+              <div className="address-form__row">
+                <div className="address-field">
+                  <label htmlFor="ward">Ward *</label>
+                  <select
+                    id="ward"
+                    className="form-select"
+                    value={wardId}
+                    disabled={!districtId || locations.loadingWards}
+                    onChange={(e) => {
+                      setLocationsTouched(true);
+                      locations.selectWard(e.target.value);
+                    }}
+                  >
+                    <option value="">
+                      {!districtId
+                        ? 'Pick a district first'
+                        : locations.loadingWards
+                          ? 'Loading…'
+                          : locations.wards.length === 0
+                            ? 'No wards listed'
+                            : 'Select ward'}
+                    </option>
+                    {locations.wards.map((w) => (
+                      <option key={w.id} value={w.id}>
+                        {w.name}
+                      </option>
+                    ))}
+                  </select>
+                  {!wardId && form.ward ? (
+                    <p className="address-field__hint">Saved as “{form.ward}”</p>
+                  ) : null}
+                </div>
+
+                <div className="address-field">
+                  <label htmlFor="streetAddress">Street address *</label>
+                  <input
+                    id="streetAddress"
+                    type="text"
+                    className="form-control"
+                    placeholder="House number, street name"
+                    value={form.streetAddress}
+                    onChange={(e) =>
+                      setForm((f) => ({ ...f, streetAddress: e.target.value }))
+                    }
+                    required
+                  />
+                </div>
+              </div>
+
+              <label className="address-toggle">
+                <input
+                  type="checkbox"
+                  checked={form.isDefault}
+                  onChange={(e) => setForm((f) => ({ ...f, isDefault: e.target.checked }))}
                 />
-              </aside>
+                <span className="address-toggle__text">
+                  <span className="address-toggle__title">Set as default address</span>
+                  <span className="address-toggle__sub">
+                    Checkout will pick this one first.
+                  </span>
+                </span>
+              </label>
             </div>
 
             <div className="address-form__actions">
@@ -647,6 +632,36 @@ export function AddressesPage() {
           </form>
         </section>
       )}
+
+      <AccountConfirmModal
+        open={dialog?.kind === 'confirm-delete'}
+        title="Delete this address?"
+        confirmLabel="Delete"
+        confirmVariant="danger"
+        confirming={saving}
+        onConfirm={() => {
+          void confirmDelete();
+        }}
+        onCancel={() => {
+          if (!saving) setDialog(null);
+        }}
+      >
+        <p>
+          This permanently removes “
+          {dialog?.kind === 'confirm-delete' ? dialog.label : 'this address'}” from your
+          account. If it is linked to an existing order, deletion will be blocked.
+        </p>
+      </AccountConfirmModal>
+
+      <AccountConfirmModal
+        open={dialog?.kind === 'alert'}
+        title={dialog?.kind === 'alert' ? dialog.title : 'Notice'}
+        showConfirm={false}
+        cancelLabel="OK"
+        onCancel={() => setDialog(null)}
+      >
+        <p>{dialog?.kind === 'alert' ? dialog.message : null}</p>
+      </AccountConfirmModal>
     </div>
   );
 }
