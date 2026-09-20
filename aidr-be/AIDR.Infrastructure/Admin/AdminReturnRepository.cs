@@ -751,10 +751,10 @@ public sealed class AdminReturnRepository : IAdminReturnRepository
             ReviewedAt = entity.ReviewedAt,
             RefundBankBin = entity.RefundBankBin,
             RefundBankName = entity.RefundBankName,
-            RefundAccountNumberMasked = entity.RefundAccountNumber is { Length: > 0 } acct
-                ? acct.Length <= 4 ? new string('*', acct.Length)
-                : $"{new string('*', acct.Length - 4)}{acct[^4..]}"
-                : null,
+            RefundAccountNumber = entity.RefundAccountNumber,
+            RefundAccountNumberMasked = entity.RefundAccountNumber is { Length: > 4 } acct
+                ? $"{new string('*', acct.Length - 4)}{acct[^4..]}"
+                : entity.RefundAccountNumber,
             RefundAccountName = entity.RefundAccountName,
             CreatedAt = entity.CreatedAt,
             UpdatedAt = entity.UpdatedAt,

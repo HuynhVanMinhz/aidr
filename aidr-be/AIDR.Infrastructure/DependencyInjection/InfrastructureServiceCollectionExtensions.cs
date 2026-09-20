@@ -117,6 +117,7 @@ public static class InfrastructureServiceCollectionExtensions
         services.AddScoped<ICartRepository, CartRepository>();
         services.AddScoped<IOrderRepository, OrderRepository>();
         services.AddScoped<IReturnRepository, ReturnRepository>();
+        services.AddScoped<IReturnShipmentRepository, ReturnShipmentRepository>();
         services.AddScoped<IVoucherRepository, VoucherRepository>();
         services.AddScoped<IPaymentRepository, PaymentRepository>();
         services.AddScoped<IShipmentRepository, ShipmentRepository>();

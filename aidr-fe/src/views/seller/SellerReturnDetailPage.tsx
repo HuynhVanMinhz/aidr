@@ -1,4 +1,4 @@
-import { useMemo, useState, type FormEvent } from 'react';
+import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { AdminConfirmModal } from '../../components/admin/AdminConfirmModal';
 import { AdminSelect } from '../../components/admin/AdminSelect';
@@ -6,12 +6,16 @@ import { FormField } from '../../components/admin/FormField';
 import { ReturnEvidencePanel } from '../../components/returns/ReturnEvidenceMedia';
 import { useSellerReturnDetail } from '../../hooks/useSellerReturns';
 import { useToast } from '../../hooks/useToast';
+import { addNotificationHandler, removeNotificationHandler } from '../../realtime/signalr';
+import type { NotificationItem } from '../../types/notification';
 import { formatMoney } from '../../utils/formatCatalog';
 import { parseUtcDate } from '../../utils/dateUtc';
 import { tryValidateField, visibleFieldErrors } from '../../utils/formValidation';
 import {
   formatResolutionType,
   formatReturnStatus,
+  isLogisticsStatus,
+  isTerminalReturnStatus,
   returnStatusBadgeClass,
 } from '../../utils/returnUi';
 import { RETURN_MAX_ADMIN_NOTE, RETURN_MAX_STATUS_NOTE } from '../../utils/returnValidation';
@@ -27,8 +31,29 @@ export function SellerReturnDetailPage() {
   const { id = '' } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const toast = useToast();
-  const { item, loading, mutating, error, confirm, markReceiving, acceptGoods, reject } =
+  const { item, loading, mutating, error, reload, confirm, markReceiving, acceptGoods, reject } =
     useSellerReturnDetail(id);
+
+  // Real-time: receive push from the shared notification hub when this return changes.
+  useEffect(() => {
+    if (!id) return;
+    if (item && isTerminalReturnStatus(item.status)) return;
+
+    const handler = (n: NotificationItem) => {
+      if (n.referenceType === 'ReturnRequest' && n.referenceId?.toLowerCase() === id.toLowerCase()) {
+        void reload();
+      }
+    };
+    addNotificationHandler(handler);
+    return () => removeNotificationHandler(handler);
+  }, [id, reload, item?.status]);
+
+  // Fallback poll every 60 s (catches SignalR reconnect gaps).
+  useEffect(() => {
+    if (!item || isTerminalReturnStatus(item.status)) return;
+    const timer = setInterval(() => { void reload(); }, 60_000);
+    return () => clearInterval(timer);
+  }, [reload, item?.status]);
 
   const [resolutionType, setResolutionType] = useState('');
   const [actionNote, setActionNote] = useState('');
@@ -86,7 +111,10 @@ export function SellerReturnDetailPage() {
   }
 
   const canConfirm = item.status === 'Approved' && !mutating && !noteLengthError;
-  const canReceiving = item.status === 'SellerConfirmed' && !mutating && !noteLengthError;
+  const canReceiving =
+    (item.status === 'SellerConfirmed' || isLogisticsStatus(item.status)) &&
+    !mutating &&
+    !noteLengthError;
   const canAccept = item.status === 'Receiving' && !mutating && !noteLengthError;
   const canReject =
     (item.status === 'Approved' || item.status === 'Receiving') &&
@@ -159,6 +187,18 @@ export function SellerReturnDetailPage() {
       toast.error(message);
     }
   }
+
+  // Extract tracking code from status history notes
+  const trackingCode = (() => {
+    for (const h of [...item.statusHistories].reverse()) {
+      if (h.toStatus === 'AwaitingPickup' && h.note?.startsWith('Return shipment created:')) {
+        return h.note.split(':').slice(1).join(':').trim();
+      }
+    }
+    return null;
+  })();
+
+  const showShipmentInfo = isLogisticsStatus(item.status) || !!trackingCode;
 
   return (
     <div className="row">
@@ -269,7 +309,26 @@ export function SellerReturnDetailPage() {
             </div>
 
             <div className="mb-0">
-              <p className="text-muted mb-2">Status history</p>
+              <p className="text-muted mb-2 d-flex align-items-center gap-2">
+                Status history
+                {!isTerminalReturnStatus(item.status) && (
+                  <span className="badge bg-success-subtle text-success fw-normal" style={{ fontSize: '0.7rem' }}>
+                    <span
+                      style={{
+                        display: 'inline-block',
+                        width: 7,
+                        height: 7,
+                        borderRadius: '50%',
+                        background: 'currentColor',
+                        marginRight: 4,
+                        animation: 'return-live-pulse 2s ease-in-out infinite',
+                      }}
+                      aria-hidden
+                    />
+                    Live
+                  </span>
+                )}
+              </p>
               {item.statusHistories.length === 0 ? (
                 <p className="text-muted mb-0">No history yet.</p>
               ) : (
@@ -299,6 +358,30 @@ export function SellerReturnDetailPage() {
       </div>
 
       <div className="col-lg-4">
+        {showShipmentInfo ? (
+          <div className="card">
+            <div className="card-header">
+              <h4 className="card-title mb-0">Return pickup in progress</h4>
+            </div>
+            <div className="card-body">
+              <p className="text-muted">
+                A shipper is picking up the item from the buyer and delivering it to your shop.
+              </p>
+              {trackingCode ? (
+                <div className="mb-2">
+                  <p className="text-muted mb-1">Tracking code</p>
+                  <p className="mb-0 fw-medium">{trackingCode}</p>
+                </div>
+              ) : null}
+              {item.status === 'PickupFailed' ? (
+                <div className="alert alert-warning py-2 px-3 mb-0 fs-12" role="alert">
+                  Pickup failed. AIDR support will arrange another attempt or contact you.
+                </div>
+              ) : null}
+            </div>
+          </div>
+        ) : null}
+
         {item.status === 'Approved' ? (
           <div className="card">
             <div className="card-header">
@@ -346,14 +429,16 @@ export function SellerReturnDetailPage() {
           </div>
         ) : null}
 
-        {item.status === 'SellerConfirmed' ? (
+        {(item.status === 'SellerConfirmed' || isLogisticsStatus(item.status)) ? (
           <div className="card">
             <div className="card-header">
               <h4 className="card-title mb-0">Receive goods</h4>
             </div>
             <div className="card-body">
               <p className="text-muted">
-                Mark when the buyer&apos;s package arrives and inspection starts.
+                {isLogisticsStatus(item.status)
+                  ? 'If the package arrived at your shop but tracking hasn\'t updated, mark it manually.'
+                  : 'Mark when the buyer\'s package arrives and inspection starts.'}
               </p>
               <FormField
                 label="Note (optional)"
@@ -416,7 +501,7 @@ export function SellerReturnDetailPage() {
           </div>
         ) : null}
 
-        {item.status === 'Approved' || item.status === 'Receiving' ? (
+        {(item.status === 'Approved' || item.status === 'Receiving') ? (
           <div className="card">
             <div className="card-header">
               <h4 className="card-title mb-0">Reject</h4>

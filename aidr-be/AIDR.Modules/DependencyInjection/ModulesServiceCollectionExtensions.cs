@@ -63,6 +63,7 @@ public static class ModulesServiceCollectionExtensions
         services.AddScoped<ICartService, CartService>();
         services.AddScoped<IOrderService, OrderService>();
         services.AddScoped<IReturnService, ReturnService>();
+        services.AddScoped<IReturnShipmentService, ReturnShipmentService>();
         services.AddScoped<IVoucherService, VoucherService>();
         services.AddScoped<OrderInvoiceMailer>();
         services.AddScoped<IPaymentService, PaymentService>();

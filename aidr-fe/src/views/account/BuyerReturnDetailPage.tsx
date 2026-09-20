@@ -1,8 +1,10 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { ReturnEvidenceGallery } from '../../components/returns/ReturnEvidenceMedia';
 import { useToastMessage } from '../../hooks/useToastMessage';
+import { addNotificationHandler, removeNotificationHandler } from '../../realtime/signalr';
 import { getBuyerReturnById, requireBuyerReturn } from '../../services/returnApi';
+import type { NotificationItem } from '../../types/notification';
 import type { BuyerReturnRequest } from '../../types/return';
 import { getApiErrorMessage } from '../../utils/apiError';
 import { PRODUCT_IMAGE_PLACEHOLDER, resolveProductImageUrl } from '../../utils/catalogImage';
@@ -12,40 +14,82 @@ import {
   buyerReturnStatusClass,
   formatResolutionType,
   formatReturnStatus,
+  formatTimelineNote,
+  isLogisticsStatus,
+  isTerminalReturnStatus,
   returnHistoryActor,
   returnStatusHint,
   returnStatusIcon,
+  returnTimelineActiveStage,
   returnTimelineStages,
 } from '../../utils/returnUi';
+
+// Fallback poll interval — SignalR is the primary trigger, this catches reconnect gaps.
+const FALLBACK_POLL_MS = 60_000;
 
 export function BuyerReturnDetailPage() {
   const { returnId } = useParams<{ returnId: string }>();
   const [item, setItem] = useState<BuyerReturnRequest | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [lastRefreshed, setLastRefreshed] = useState<Date | null>(null);
 
   useToastMessage(error);
 
+  const fetchData = useCallback(
+    async (silent = false) => {
+      if (!returnId) return;
+      try {
+        const result = await getBuyerReturnById(returnId);
+        const data = requireBuyerReturn(result);
+        setItem(data);
+        if (silent) setLastRefreshed(new Date());
+      } catch (err) {
+        if (!silent) setError(getApiErrorMessage(err));
+      } finally {
+        if (!silent) setLoading(false);
+      }
+    },
+    [returnId],
+  );
+
+  // Initial load
   useEffect(() => {
-    if (!returnId) return;
-    let cancelled = false;
     setLoading(true);
     setError(null);
-    void getBuyerReturnById(returnId)
-      .then((result) => {
-        if (cancelled) return;
-        setItem(requireBuyerReturn(result));
-      })
-      .catch((err) => {
-        if (!cancelled) setError(getApiErrorMessage(err));
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
-    return () => {
-      cancelled = true;
+    void fetchData(false);
+  }, [fetchData]);
+
+  // Real-time: listen to the shared notification hub.
+  // When a ReturnRequest notification for THIS return arrives, refetch silently.
+  useEffect(() => {
+    if (!returnId) return;
+    if (item && isTerminalReturnStatus(item.status)) return;
+
+    const handler = (notification: NotificationItem) => {
+      if (
+        notification.referenceType === 'ReturnRequest' &&
+        notification.referenceId?.toLowerCase() === returnId.toLowerCase()
+      ) {
+        void fetchData(true);
+      }
     };
-  }, [returnId]);
+
+    addNotificationHandler(handler);
+    return () => removeNotificationHandler(handler);
+  }, [returnId, fetchData, item?.status]);
+
+  // Fallback poll (60 s) — catches SignalR reconnect gaps / network hiccups.
+  useEffect(() => {
+    if (!item) return;
+    if (isTerminalReturnStatus(item.status)) return;
+
+    const id = setInterval(() => {
+      void fetchData(true);
+    }, FALLBACK_POLL_MS);
+
+    return () => clearInterval(id);
+  }, [fetchData, item?.status]);
 
   if (!returnId) {
     return (
@@ -89,12 +133,39 @@ export function BuyerReturnDetailPage() {
     item.refundAmount ?? item.items.reduce((sum, line) => sum + line.lineTotal, 0);
   const isRefunded = item.status === 'Refunded' || item.status === 'Closed';
   const isRejected = item.status === 'Rejected';
+  const isPickupFailed = item.status === 'PickupFailed';
   const hint = returnStatusHint(item.status);
 
-  // Completed stages come from the history, so a rejected return never shows
-  // later stages as done.
-  const reachedStages = new Set(item.statusHistories.map((h) => h.toStatus));
-  reachedStages.add(item.status);
+  // Find tracking code from status history notes (format "Return shipment created: XXXXX")
+  const trackingCode = (() => {
+    for (const h of [...item.statusHistories].reverse()) {
+      if (h.toStatus === 'AwaitingPickup' && h.note?.startsWith('Return shipment created:')) {
+        return h.note.split(':').slice(1).join(':').trim();
+      }
+    }
+    return null;
+  })();
+
+  // For timeline display, collapse PickedUp/InTransit/PickupFailed → AwaitingPickup
+  const activeTimelineStage = returnTimelineActiveStage(item.status);
+
+  // Stages reached by history (so rejected returns never show later stages as done).
+  const reachedStages = new Set(
+    item.statusHistories.map((h) => returnTimelineActiveStage(h.toStatus)),
+  );
+  reachedStages.add(activeTimelineStage);
+
+  // Upcoming = not yet reached AND still ahead of current stage in timeline order.
+  // Without the index guard, skipped stages (e.g. AwaitingPickup when seller marks
+  // receiving manually) would incorrectly appear as "Not yet" after Accepted/Closed.
+  const timelineStages = returnTimelineStages(item.resolutionType);
+  const activeStageIndex = timelineStages.indexOf(activeTimelineStage);
+  const upcomingStages = isRejected
+    ? []
+    : timelineStages.filter(
+        (stage) =>
+          !reachedStages.has(stage) && timelineStages.indexOf(stage) > activeStageIndex,
+      );
 
   return (
     <div className="return-detail">
@@ -183,6 +254,35 @@ export function BuyerReturnDetailPage() {
         </div>
 
         <aside className="return-detail__side">
+          {(isLogisticsStatus(item.status) || trackingCode) && (
+            <section
+              className={`return-card return-tracking${isPickupFailed ? ' return-tracking--failed' : ''}`}
+            >
+              <h3 className="return-card__title">
+                <i className="fa-solid fa-truck-moving" aria-hidden /> Return pickup
+              </h3>
+              {isPickupFailed ? (
+                <p className="return-tracking__status return-tracking__status--failed">
+                  <i className="fa-solid fa-triangle-exclamation" aria-hidden /> Pickup failed —
+                  our support team will contact you
+                </p>
+              ) : (
+                <p className="return-tracking__status">
+                  <i className={returnStatusIcon(item.status)} aria-hidden />{' '}
+                  {formatReturnStatus(item.status)}
+                </p>
+              )}
+              {trackingCode && (
+                <p className="return-tracking__code">
+                  Tracking code: <strong>{trackingCode}</strong>
+                </p>
+              )}
+              <p className="return-tracking__note">
+                The shipper will pick up from your original delivery address.
+              </p>
+            </section>
+          )}
+
           <section className="return-card return-refund">
             <h3 className="return-card__title">Refund</h3>
             <p className="return-refund__amount">{formatMoney(refundTotal, 'VND')}</p>
@@ -209,7 +309,20 @@ export function BuyerReturnDetailPage() {
           </section>
 
           <section className="return-card">
-            <h3 className="return-card__title">Progress</h3>
+            <h3 className="return-card__title">
+              Progress
+              {!isTerminalReturnStatus(item.status) && (
+                <span className="return-live-badge" title="Updates automatically every 30 s">
+                  <span className="return-live-badge__dot" aria-hidden />
+                  Live
+                </span>
+              )}
+            </h3>
+            {lastRefreshed && (
+              <p className="return-live-updated">
+                Updated {formatOrderDate(lastRefreshed.toISOString())}
+              </p>
+            )}
             <ol className="return-timeline">
               {item.statusHistories.map((entry, index) => (
                 <li
@@ -231,30 +344,44 @@ export function BuyerReturnDetailPage() {
                       </span>
                     </p>
                     <p className="return-timeline__time">{formatOrderDate(entry.createdAt)}</p>
-                    {entry.note ? <p className="return-timeline__note">{entry.note}</p> : null}
+                    {formatTimelineNote(entry.toStatus, entry.note) ? (
+                      <p className="return-timeline__note">
+                        {formatTimelineNote(entry.toStatus, entry.note)}
+                      </p>
+                    ) : null}
                   </div>
                 </li>
               ))}
 
-              {/* Stages still ahead, so the buyer sees where this is going. */}
-              {!isRejected
-                ? returnTimelineStages(item.resolutionType)
-                    .filter((stage) => !reachedStages.has(stage))
-                    .map((stage) => (
-                      <li
-                        key={stage}
-                        className="return-timeline__step return-timeline__step--upcoming"
-                      >
-                        <span className="return-timeline__marker" aria-hidden>
-                          <i className={returnStatusIcon(stage)} />
-                        </span>
-                        <div className="return-timeline__body">
-                          <p className="return-timeline__title">{formatReturnStatus(stage)}</p>
-                          <p className="return-timeline__time">Not yet</p>
-                        </div>
-                      </li>
-                    ))
-                : null}
+              {/* Stages still ahead (index-guarded so skipped stages don't reappear) */}
+              {upcomingStages.map((stage) => (
+                <li
+                  key={stage}
+                  className="return-timeline__step return-timeline__step--upcoming"
+                >
+                  <span className="return-timeline__marker" aria-hidden>
+                    <i className={returnStatusIcon(stage)} />
+                  </span>
+                  <div className="return-timeline__body">
+                    <p className="return-timeline__title">{formatReturnStatus(stage)}</p>
+                    {stage === 'AwaitingPickup' && item.status === 'SellerConfirmed' ? (
+                      <p className="return-timeline__note return-timeline__note--pending">
+                        <i className="fa-solid fa-circle-notch fa-spin" aria-hidden />{' '}
+                        Scheduling shipper pickup…
+                      </p>
+                    ) : (stage === 'Refunded' || stage === 'Exchanged') &&
+                      item.status === 'Accepted' ? (
+                      <p className="return-timeline__note return-timeline__note--pending">
+                        <i className="fa-solid fa-circle-notch fa-spin" aria-hidden />{' '}
+                        AIDR support is processing your{' '}
+                        {item.resolutionType === 'Exchange' ? 'exchange' : 'refund'}…
+                      </p>
+                    ) : (
+                      <p className="return-timeline__time">Not yet</p>
+                    )}
+                  </div>
+                </li>
+              ))}
             </ol>
           </section>
         </aside>

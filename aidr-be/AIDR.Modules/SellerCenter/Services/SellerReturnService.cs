@@ -1,4 +1,5 @@
 using AIDR.Modules.Engagement.Abstractions;
+using AIDR.Modules.Order.Abstractions;
 using AIDR.Modules.SellerCenter.Abstractions;
 using AIDR.Shared.Constants;
 using AIDR.Shared.Dtos.Engagement;
@@ -12,17 +13,23 @@ public sealed class SellerReturnService : ISellerReturnService
 {
     private readonly ISellerProductRepository _products;
     private readonly ISellerReturnRepository _returns;
+    private readonly IReturnShipmentService _returnShipment;
+    private readonly IReturnShipmentRepository _returnShipmentRepo;
     private readonly INotificationService _notifications;
     private readonly ILogger<SellerReturnService> _logger;
 
     public SellerReturnService(
         ISellerProductRepository products,
         ISellerReturnRepository returns,
+        IReturnShipmentService returnShipment,
+        IReturnShipmentRepository returnShipmentRepo,
         INotificationService notifications,
         ILogger<SellerReturnService> logger)
     {
         _products = products;
         _returns = returns;
+        _returnShipment = returnShipment;
+        _returnShipmentRepo = returnShipmentRepo;
         _notifications = notifications;
         _logger = logger;
     }
@@ -110,10 +117,26 @@ public sealed class SellerReturnService : ISellerReturnService
             note,
             cancellationToken);
 
+        // Auto-dispatch GHN reverse shipment; errors are captured inside DispatchAsync
+        // so a GHN failure downgrades to PickupFailed without rolling back the confirm.
+        try
+        {
+            await _returnShipment.DispatchAsync(returnRequestId, cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex,
+                "Return shipment dispatch raised unexpectedly for return {ReturnRequestId}",
+                returnRequestId);
+        }
+
+        // Reload after dispatch (status may have moved to AwaitingPickup or PickupFailed)
+        result = (await _returns.GetDetailForShopAsync(shop.ShopId, returnRequestId, cancellationToken))!;
+
         await NotifyBuyerAsync(
             result,
             "Return handling confirmed",
-            $"The seller confirmed your {(FormatResolution(result.ResolutionType))} for order {result.OrderCode}. Please ship the item back.",
+            $"The seller confirmed your {(FormatResolution(result.ResolutionType))} for order {result.OrderCode}. A shipper will pick up your item.",
             cancellationToken);
 
         return result;
@@ -132,8 +155,18 @@ public sealed class SellerReturnService : ISellerReturnService
         var existing = await _returns.GetDetailForShopAsync(shop.ShopId, returnRequestId, cancellationToken)
             ?? throw new NotFoundException("Return request not found.");
 
-        if (!string.Equals(existing.Status, ReturnConstants.StatusSellerConfirmed, StringComparison.OrdinalIgnoreCase))
-            throw new ConflictException("Only seller-confirmed returns can move to receiving.");
+        // Seller can manually mark receiving from SellerConfirmed (no GHN) or from any
+        // logistics status (buyer delivered by hand / GHN already delivered).
+        var receivableStatuses = new[]
+        {
+            ReturnConstants.StatusSellerConfirmed,
+            ReturnConstants.StatusAwaitingPickup,
+            ReturnConstants.StatusPickedUp,
+            ReturnConstants.StatusInTransit,
+            ReturnConstants.StatusPickupFailed
+        };
+        if (!receivableStatuses.Contains(existing.Status, StringComparer.OrdinalIgnoreCase))
+            throw new ConflictException("Cannot move return to receiving from its current status.");
 
         var note = NormalizeOptionalNote(request?.Note);
         var result = await _returns.AdvanceAsync(
@@ -185,6 +218,10 @@ public sealed class SellerReturnService : ISellerReturnService
             cancellationToken);
 
         await NotifyAdminsAcceptedAsync(result, cancellationToken);
+
+        // Deduct return shipping fee from seller wallet (non-critical)
+        await DeductShippingFeeQuietlyAsync(returnRequestId, cancellationToken);
+
         return result;
     }
 
@@ -386,6 +423,19 @@ public sealed class SellerReturnService : ISellerReturnService
         }
 
         return trimmed;
+    }
+
+    private async Task DeductShippingFeeQuietlyAsync(Guid returnRequestId, CancellationToken cancellationToken)
+    {
+        try
+        {
+            await _returnShipmentRepo.DeductReturnShippingFeeAsync(returnRequestId, cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex,
+                "Return shipping fee deduction failed for {ReturnRequestId}", returnRequestId);
+        }
     }
 
     private static string FormatResolution(string resolutionType) =>

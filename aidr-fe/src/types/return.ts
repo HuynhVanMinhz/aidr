@@ -5,12 +5,29 @@ export type ReturnStatus =
   | 'Approved'
   | 'Rejected'
   | 'SellerConfirmed'
+  | 'AwaitingPickup'
+  | 'PickedUp'
+  | 'InTransit'
+  | 'PickupFailed'
   | 'Receiving'
   | 'Accepted'
   | 'Refunded'
   | 'Exchanged'
   | 'Closed'
   | string;
+
+export type ReturnShipment = {
+  returnShipmentId: string;
+  returnRequestId: string;
+  provider: string;
+  trackingCode?: string | null;
+  status: string;
+  shippingFeeQuoted?: number | null;
+  expectedDeliveryAt?: string | null;
+  attemptCount: number;
+  lastError?: string | null;
+  createdAt: string;
+};
 
 export type ReturnResolutionType = 'ReturnRefund' | 'Exchange' | string;
 
@@ -194,6 +211,8 @@ export type AdminReturnDetail = {
   reviewedAt?: string | null;
   refundBankBin?: string | null;
   refundBankName?: string | null;
+  /** Full account number — returned only for admin endpoints. */
+  refundAccountNumber?: string | null;
   refundAccountNumberMasked?: string | null;
   refundAccountName?: string | null;
   createdAt: string;
@@ -280,8 +299,13 @@ export type SellerReturnActionPayload = {
   note?: string | null;
 };
 
+export type AdminMarkReceivingPayload = {
+  note?: string | null;
+};
+
 export type BuyerReturnApiResult = ApiResult<BuyerReturnRequest>;
 export type AdminReturnListApiResult = ApiResult<AdminReturnListResult>;
 export type AdminReturnDetailApiResult = ApiResult<AdminReturnDetail>;
+export type ReturnShipmentApiResult = ApiResult<ReturnShipment | null>;
 export type SellerReturnListApiResult = ApiResult<SellerReturnListResult>;
 export type SellerReturnDetailApiResult = ApiResult<SellerReturnDetail>;

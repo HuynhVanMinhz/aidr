@@ -64,6 +64,8 @@ public sealed class AdminReturnRequestDetailDto
     /// <summary>Buyer-provided refund bank account (filled at return request creation).</summary>
     public string? RefundBankBin { get; init; }
     public string? RefundBankName { get; init; }
+    /// <summary>Full account number — visible to admin only, never sent to buyer.</summary>
+    public string? RefundAccountNumber { get; init; }
     public string? RefundAccountNumberMasked { get; init; }
     public string? RefundAccountName { get; init; }
     public DateTime CreatedAt { get; init; }
@@ -73,6 +75,11 @@ public sealed class AdminReturnRequestDetailDto
         Array.Empty<AdminReturnEvidenceDto>();
     public IReadOnlyList<AdminReturnStatusHistoryDto> StatusHistories { get; init; } =
         Array.Empty<AdminReturnStatusHistoryDto>();
+}
+
+public sealed class AdminMarkReceivingRequest
+{
+    public string? Note { get; init; }
 }
 
 public sealed class AdminReturnItemDto
