@@ -88,8 +88,9 @@ export function FaqPage() {
       <SupportCta />
 
       <p className="support-links mb-0">
-        Still need help? Visit the <Link to="/help">Help Center</Link> or read our{' '}
-        <Link to="/terms">Terms of service</Link>.
+        Still need help? Visit the <Link to="/help">Help Center</Link>, read our{' '}
+        <Link to="/terms">Terms of service</Link>, or our{' '}
+        <Link to="/privacy">Privacy Policy</Link>.
       </p>
     </SupportPageLayout>
   );

@@ -108,6 +108,9 @@ export function StoreFooter() {
                     <Link to="/terms">Terms</Link>
                   </li>
                   <li>
+                    <Link to="/privacy">Privacy</Link>
+                  </li>
+                  <li>
                     <Link to="/login">Login</Link>
                   </li>
                 </ul>

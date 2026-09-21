@@ -1,9 +1,11 @@
 import { useRef, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useToast } from '../../hooks/useToast';
 import { verifyKyc } from '../../services/kycApi';
 import type { KycVerification } from '../../types/kyc';
 import { getApiErrorMessage } from '../../utils/apiError';
 import { isCloudinaryConfigured, uploadKycImageToCloudinary } from '../../utils/cloudinaryUpload';
+
 
 type Slot = 'front' | 'back' | 'selfie';
 
@@ -35,6 +37,7 @@ export function KycStep({ kyc, onVerified }: Props) {
   const [urls, setUrls] = useState<Record<Slot, string>>({ front: '', back: '', selfie: '' });
   const [uploading, setUploading] = useState<Slot | null>(null);
   const [verifying, setVerifying] = useState(false);
+  const [consentAccepted, setConsentAccepted] = useState(false);
   const inputs = {
     front: useRef<HTMLInputElement>(null),
     back: useRef<HTMLInputElement>(null),
@@ -47,7 +50,7 @@ export function KycStep({ kyc, onVerified }: Props) {
   // The automated check never ran, so there are no OCR fields to show - only the
   // photos the applicant uploaded, which a person will read.
   const awaitingHuman = kyc?.provider === 'MANUAL';
-  const canVerify = Boolean(urls.front && urls.selfie) && !verifying;
+  const canVerify = Boolean(urls.front && urls.selfie) && consentAccepted && !verifying;
 
   async function handlePick(slot: Slot, file: File | undefined) {
     if (!file) return;
@@ -176,8 +179,10 @@ export function KycStep({ kyc, onVerified }: Props) {
       ) : null}
 
       <p className="kyc-step__lead">
-        We verify your identity before you can sell. Photos are used only for this
-        check - we store the document number masked.
+        We verify your identity before you can sell. Your ID photos are used only for this check.
+        Images are uploaded to our storage provider and may be reviewed by our team. We keep a
+        masked document number and do not sell your KYC data. See our{' '}
+        <Link to="/privacy#identity-verification">Privacy Policy</Link> for details.
       </p>
 
       <div className="kyc-slot-grid">
@@ -222,6 +227,16 @@ export function KycStep({ kyc, onVerified }: Props) {
           );
         })}
       </div>
+
+      <label className="kyc-step__consent">
+        <input
+          type="checkbox"
+          checked={consentAccepted}
+          onChange={(e) => setConsentAccepted(e.target.checked)}
+          disabled={!cloudinaryReady || verifying}
+        />
+        <span>I understand how my ID photos will be used for identity verification.</span>
+      </label>
 
       <button
         type="button"
