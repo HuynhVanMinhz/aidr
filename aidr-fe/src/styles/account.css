@@ -3297,6 +3297,28 @@
   color: var(--acc-muted);
 }
 
+.kyc-step__lead a {
+  color: var(--primary-color, #16181d);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.kyc-step__consent {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.55rem;
+  margin: 0 0 14px;
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  color: var(--primary-color, #16181d);
+  cursor: pointer;
+}
+
+.kyc-step__consent input {
+  margin-top: 0.2rem;
+  flex-shrink: 0;
+}
+
 .kyc-step__warning {
   margin: 0 0 14px;
   padding: 10px 12px;

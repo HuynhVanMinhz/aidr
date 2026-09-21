@@ -33,8 +33,9 @@ export function TermsPage() {
 
               <h2>1. Acceptance</h2>
               <p>
-                By accessing or using AIDR, you agree to these Terms of Service and our marketplace
-                policies. If you do not agree, please do not use the platform.
+                By accessing or using AIDR, you agree to these Terms of Service and our{' '}
+                <Link to="/privacy">Privacy Policy</Link>. If you do not agree, please do not use the
+                platform.
               </p>
 
               <h2>2. Accounts</h2>
@@ -72,8 +73,8 @@ export function TermsPage() {
               </p>
 
               <p className="mb-0">
-                Questions? See the <Link to="/help">Help Center</Link> or{' '}
-                <Link to="/faq">FAQ</Link>.
+                Questions? See the <Link to="/help">Help Center</Link>,{' '}
+                <Link to="/faq">FAQ</Link>, or <Link to="/privacy">Privacy Policy</Link>.
               </p>
             </div>
           </div>

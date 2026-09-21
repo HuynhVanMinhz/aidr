@@ -92,7 +92,8 @@ export function RegisterPage() {
                         <div className="login-form-info">
                           <p>
                             Password must be at least 8 characters and include an uppercase letter and a
-                            special character. Personal data is used according to AIDR&apos;s privacy policy.
+                            special character. Personal data is used according to AIDR&apos;s{' '}
+                            <Link to="/privacy">privacy policy</Link>.
                           </p>
                         </div>
 

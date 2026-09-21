@@ -10,6 +10,8 @@ import { HelpPage } from '../views/HelpPage';
 import { FaqPage } from '../views/FaqPage';
 import { AboutPage } from '../views/AboutPage';
 import { TermsPage } from '../views/TermsPage';
+import { PrivacyPage } from '../views/PrivacyPage';
+
 import { NotFoundPage } from '../views/NotFoundPage';
 import { ForbiddenPage } from '../views/ForbiddenPage';
 import { ConsoleNotFoundPage } from '../views/ConsoleNotFoundPage';
@@ -180,6 +182,8 @@ export function App() {
           <Route path="faq" element={<FaqPage />} />
           <Route path="about" element={<AboutPage />} />
           <Route path="terms" element={<TermsPage />} />
+          <Route path="privacy" element={<PrivacyPage />} />
+
           <Route path="health" element={<HealthPage />} />
           <Route path="403" element={<ForbiddenPage />} />
           <Route path="404" element={<NotFoundPage />} />
