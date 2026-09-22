@@ -1,11 +1,14 @@
 using System.Text.Json;
 using System.Text.RegularExpressions;
+using AIDR.Modules.Engagement.Abstractions;
 using AIDR.Modules.SellerCenter.Abstractions;
 using AIDR.Shared.Caching;
 using AIDR.Shared.Constants;
 using AIDR.Shared.Dtos.Discovery;
+using AIDR.Shared.Dtos.Engagement;
 using AIDR.Shared.Dtos.Seller;
 using AIDR.Shared.Exceptions;
+using Microsoft.Extensions.Logging;
 
 namespace AIDR.Modules.SellerCenter.Services;
 
@@ -21,11 +24,19 @@ public sealed class SellerProductService : ISellerProductService
 
     private readonly ISellerProductRepository _repository;
     private readonly ICacheService _cache;
+    private readonly INotificationService _notifications;
+    private readonly ILogger<SellerProductService> _logger;
 
-    public SellerProductService(ISellerProductRepository repository, ICacheService cache)
+    public SellerProductService(
+        ISellerProductRepository repository,
+        ICacheService cache,
+        INotificationService notifications,
+        ILogger<SellerProductService> logger)
     {
         _repository = repository;
         _cache = cache;
+        _notifications = notifications;
+        _logger = logger;
     }
 
     public async Task<PagedResult<SellerProductListItemDto>> ListAsync(
@@ -113,6 +124,11 @@ public sealed class SellerProductService : ISellerProductService
             throw new ConflictException("Product slug already exists in your shop.");
 
         var record = await _repository.CreateAsync(shop.ShopId, model, cancellationToken);
+        await NotifyAdminsPendingModerationAsync(
+            shop,
+            record,
+            isResubmission: false,
+            cancellationToken);
         return MapDetail(record);
     }
 
@@ -130,6 +146,11 @@ public sealed class SellerProductService : ISellerProductService
 
         if (existing.Status == SellerProductConstants.StatusDeleted)
             throw new ConflictException("Cannot update a deleted product.");
+
+        var wasAlreadyPending = string.Equals(
+            existing.Status,
+            SellerProductConstants.StatusPending,
+            StringComparison.OrdinalIgnoreCase);
 
         var model = BuildWriteModel(
             request.CategoryId,
@@ -158,6 +179,18 @@ public sealed class SellerProductService : ISellerProductService
 
         var record = await _repository.UpdateAsync(shop.ShopId, productId, model, cancellationToken);
         await InvalidateProductCacheAsync(productId, cancellationToken);
+
+        // Already-pending edits stay in the same queue item; notify when the product
+        // newly enters (or re-enters) moderation after approve/reject/inactive.
+        if (!wasAlreadyPending)
+        {
+            await NotifyAdminsPendingModerationAsync(
+                shop,
+                record,
+                isResubmission: true,
+                cancellationToken);
+        }
+
         return MapDetail(record);
     }
 
@@ -236,6 +269,64 @@ public sealed class SellerProductService : ISellerProductService
     private async Task InvalidateProductCacheAsync(Guid productId, CancellationToken cancellationToken)
     {
         await _cache.RemoveAsync(SellerProductConstants.ProductDetailCacheKey(productId), cancellationToken);
+    }
+
+    private async Task NotifyAdminsPendingModerationAsync(
+        SellerShopRecord shop,
+        SellerProductRecord product,
+        bool isResubmission,
+        CancellationToken cancellationToken)
+    {
+        IReadOnlyList<Guid> adminIds;
+        try
+        {
+            adminIds = await _repository.ListAdminUserIdsAsync(cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to load admin users for product {ProductId}", product.ProductId);
+            return;
+        }
+
+        if (adminIds.Count == 0)
+            return;
+
+        var shopLabel = string.IsNullOrWhiteSpace(shop.ShopName) ? "a shop" : shop.ShopName.Trim();
+        var title = isResubmission
+            ? "Product resubmitted for approval"
+            : "New product awaiting approval";
+        var body = isResubmission
+            ? $"Shop \"{shopLabel}\" updated \"{product.Name}\" and resubmitted it for moderation."
+            : $"Shop \"{shopLabel}\" submitted \"{product.Name}\" for moderation.";
+
+        if (body.Length > NotificationConstants.MaxBodyLength)
+            body = body[..NotificationConstants.MaxBodyLength];
+
+        foreach (var adminId in adminIds)
+        {
+            try
+            {
+                await _notifications.CreateAsync(
+                    new CreateNotificationRequest
+                    {
+                        UserId = adminId,
+                        Title = title,
+                        Body = body,
+                        Type = NotificationConstants.TypeModeration,
+                        ReferenceType = NotificationConstants.RefProduct,
+                        ReferenceId = product.ProductId
+                    },
+                    cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(
+                    ex,
+                    "Failed to notify admin {AdminId} about pending product {ProductId}",
+                    adminId,
+                    product.ProductId);
+            }
+        }
     }
 
     private static void EnsureProductId(Guid productId)
