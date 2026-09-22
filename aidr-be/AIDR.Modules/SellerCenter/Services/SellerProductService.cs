@@ -170,7 +170,8 @@ public sealed class SellerProductService : ISellerProductService
             status: SellerProductConstants.StatusPending,
             publishedAt: null,
             images: null,
-            variants: SellerProductVariantNormalizer.Normalize(request.VariantOptions, request.Variants));
+            variants: SellerProductVariantNormalizer.Normalize(request.VariantOptions, request.Variants),
+            changedBy: ownerUserId);
 
         await EnsureCategoryActiveAsync(model.CategoryId, cancellationToken);
 
@@ -269,6 +270,8 @@ public sealed class SellerProductService : ISellerProductService
     private async Task InvalidateProductCacheAsync(Guid productId, CancellationToken cancellationToken)
     {
         await _cache.RemoveAsync(SellerProductConstants.ProductDetailCacheKey(productId), cancellationToken);
+        foreach (var key in PriceAlertConstants.PriceHistoryCacheKeysToInvalidate(productId))
+            await _cache.RemoveAsync(key, cancellationToken);
     }
 
     private async Task NotifyAdminsPendingModerationAsync(
@@ -374,7 +377,8 @@ public sealed class SellerProductService : ISellerProductService
         string status,
         DateTime? publishedAt,
         IReadOnlyList<SellerProductImageWriteModel>? images,
-        SellerProductVariantNormalizer.NormalizedVariants variants)
+        SellerProductVariantNormalizer.NormalizedVariants variants,
+        Guid? changedBy = null)
     {
         if (categoryId <= 0)
             throw new AppException("Category id is required.");
@@ -397,6 +401,7 @@ public sealed class SellerProductService : ISellerProductService
             SpecsJson = RequireJsonOptional(specsJson, "SpecsJson", SellerProductConstants.MaxSpecsJsonLength),
             Status = status,
             PublishedAt = publishedAt,
+            ChangedBy = changedBy,
             Images = images,
             VariantOptionsJson = variants.OptionsJson,
             Variants = variants.Variants

@@ -366,27 +366,15 @@ export function ProductDetailPage() {
                     )}
                   </div>
 
-                  {!hasVariants && (
-                    <>
-                      <ProductPriceHistorySection
-                        productId={productId}
-                        currency={product.currency}
-                      />
-                      <ProductPriceAlertToggles
-                        productId={productId}
-                        isAuthenticated={isAuthenticated}
-                        availableQuantity={availableQuantity}
-                      />
-                    </>
-                  )}
-
-                  {hasVariants && (
-                    <ProductPriceAlertToggles
-                      productId={productId}
-                      isAuthenticated={isAuthenticated}
-                      availableQuantity={availableQuantity}
-                    />
-                  )}
+                  <ProductPriceHistorySection
+                    productId={productId}
+                    currency={product.currency}
+                  />
+                  <ProductPriceAlertToggles
+                    productId={productId}
+                    isAuthenticated={isAuthenticated}
+                    availableQuantity={availableQuantity}
+                  />
 
                   {hasVariants && (
                     <ProductVariantPicker

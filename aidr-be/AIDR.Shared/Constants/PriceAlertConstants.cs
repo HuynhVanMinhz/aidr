@@ -40,4 +40,16 @@ public static class PriceAlertConstants
 
     public static string PriceHistoryCacheKey(Guid productId, int days) =>
         $"product:price-history:{productId:D}:{days}";
+
+    /// <summary>
+    /// Keys to drop after a selling-price change. Covers common <c>days</c> presets
+    /// (ICacheService has no prefix delete).
+    /// </summary>
+    public static IReadOnlyList<string> PriceHistoryCacheKeysToInvalidate(Guid productId) =>
+    [
+        PriceHistoryCacheKey(productId, MinHistoryDays),
+        PriceHistoryCacheKey(productId, 30),
+        PriceHistoryCacheKey(productId, DefaultHistoryDays),
+        PriceHistoryCacheKey(productId, MaxHistoryDays)
+    ];
 }

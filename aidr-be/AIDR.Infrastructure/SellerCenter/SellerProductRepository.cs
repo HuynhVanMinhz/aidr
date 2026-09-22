@@ -266,6 +266,9 @@ public sealed class SellerProductRepository : ISellerProductRepository
         if (entity.Status == SellerProductConstants.StatusDeleted)
             throw new ConflictException("Cannot update a deleted product.");
 
+        var oldBasePrice = entity.BasePrice;
+        var oldSalePrice = entity.SalePrice;
+
         entity.CategoryId = model.CategoryId;
         entity.Name = model.Name;
         entity.Slug = model.Slug;
@@ -292,6 +295,22 @@ public sealed class SellerProductRepository : ISellerProductRepository
         {
             entity.VariantOptionsJson = model.VariantOptionsJson;
             await ApplyVariantsAsync(entity, model.Variants, now, cancellationToken);
+        }
+
+        // Catalogue price may also change via variant rollup — record the same history as UC-92.
+        if (entity.BasePrice != oldBasePrice || entity.SalePrice != oldSalePrice)
+        {
+            _db.ProductPriceHistories.Add(new ProductPriceHistory
+            {
+                ProductId = productId,
+                OldBasePrice = oldBasePrice,
+                NewBasePrice = entity.BasePrice,
+                OldSalePrice = oldSalePrice,
+                NewSalePrice = entity.SalePrice,
+                ChangedBy = model.ChangedBy,
+                Reason = model.Variants is not null ? "ProductUpdateWithVariants" : "ProductUpdate",
+                ChangedAt = now
+            });
         }
 
         await _db.SaveChangesAsync(cancellationToken);

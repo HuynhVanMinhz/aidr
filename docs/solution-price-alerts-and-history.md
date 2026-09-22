@@ -86,12 +86,16 @@ CREATE TABLE dbo.ProductPriceAlerts (
 ### 4.1 Price history aggregation
 
 ```
-effectivePrice(t) = COALESCE(NewSalePrice, NewBasePrice) tại mỗi PriceHistory row
-current           = product effective price now
-points            = step function: mỗi ChangedAt → price mới; thêm điểm "now"
+effectiveNew(t) = COALESCE(NewSalePrice, NewBasePrice) tại mỗi PriceHistory row
+effectiveOld(t) = COALESCE(OldSalePrice, OldBasePrice) của row đầu trong cửa sổ
+current         = product effective price now
+points          = step function:
+                  - đầu kỳ (since) → giá cũ trước lần đổi đầu tiên trong cửa sổ
+                  - mỗi ChangedAt → giá mới
+                  - thêm điểm "now" = current
 ```
 
-Cache Redis key `product:price-history:{productId}:{days}` TTL 15 phút - invalidate khi UC-92 ghi history mới.
+Cache Redis key `product:price-history:{productId}:{days}` TTL 15 phút - invalidate khi UC-92 / product update ghi history mới.
 
 ---
 

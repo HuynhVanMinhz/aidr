@@ -294,8 +294,12 @@ public sealed class SellerInventoryService : ISellerInventoryService
             ?? throw new ForbiddenAppException("Active shop not found for the current seller.");
     }
 
-    private async Task InvalidateProductCacheAsync(Guid productId, CancellationToken cancellationToken) =>
+    private async Task InvalidateProductCacheAsync(Guid productId, CancellationToken cancellationToken)
+    {
         await _cache.RemoveAsync(SellerProductConstants.ProductDetailCacheKey(productId), cancellationToken);
+        foreach (var key in PriceAlertConstants.PriceHistoryCacheKeysToInvalidate(productId))
+            await _cache.RemoveAsync(key, cancellationToken);
+    }
 
     private static void ValidateMoney(decimal value, string fieldName)
     {
