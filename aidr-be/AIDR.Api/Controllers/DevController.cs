@@ -557,6 +557,36 @@ public class DevController : ControllerBase
         });
     }
 
+    /// <summary>
+    /// Apply review moderation schema + seed PendingTrust/Reported samples (dev only).
+    /// Prerequisites: seed-demo-accounts, catalog, optional seed-product-reviews.
+    /// </summary>
+    [HttpPost("seed-review-moderation")]
+    public async Task<IActionResult> SeedReviewModeration(
+        [FromServices] AidrDbContext db,
+        [FromServices] IWebHostEnvironment env,
+        CancellationToken ct)
+    {
+        if (!env.IsDevelopment())
+            return NotFound();
+
+        await ReviewModerationDemoSeeder.SeedAsync(db, env.ContentRootPath, ct);
+
+        var pending = await db.ProductReviews.CountAsync(
+            r => r.ModerationStatus == "PendingTrust" && r.IsVisible, ct);
+        var reported = await db.ProductReviews.CountAsync(
+            r => r.ModerationStatus == "Reported" && r.IsVisible, ct);
+        var openReports = await db.ProductReviewReports.CountAsync(r => r.Status == "Open", ct);
+
+        return Ok(new
+        {
+            message = "Review moderation demo seed completed. Try GET /api/admin/reviews/moderation",
+            pendingTrustCount = pending,
+            reportedCount = reported,
+            openReportCount = openReports
+        });
+    }
+
     /// <summary>Enrich SpecsJson on demo products for NL filter / compare testing (dev only).</summary>
     [HttpPost("seed-nl-compare")]
     public async Task<IActionResult> SeedNlCompare(

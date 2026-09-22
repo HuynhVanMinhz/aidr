@@ -44,6 +44,19 @@ export function productModerationBadgeClass(status: string): string {
   }
 }
 
+export function reviewModerationBadgeClass(status: string): string {
+  switch (status) {
+    case 'Reported':
+      return adminBadgeClass.outlineDanger;
+    case 'PendingTrust':
+      return adminBadgeClass.outlineWarning;
+    case 'Approved':
+      return adminBadgeClass.solidSuccess;
+    default:
+      return adminBadgeClass.outlineSecondary;
+  }
+}
+
 export function moderationActionBadgeClass(action: string): string {
   switch (action) {
     case 'Approve':

@@ -72,7 +72,7 @@
 | UC-57 | View Chat List | **Actor:** Buyer/Seller. Danh sách thread buyer↔shop. **Business:** Kênh thương lượng / hỗ trợ trước-sau bán. | Done | P1 |
 | UC-58 | Send Message | **Actor:** Buyer/Seller. Gửi tin nhắn realtime SignalR; optional attachment; share SP dạng card/chip; **notification chat gộp theo thread** (không 1 noti/tin). **Business:** Tăng trust & chốt sale. | Done | P1 |
 | UC-59 | View Product Reviews | **Actor:** Guest/Buyer. List review + rating; có thể hiện sentiment AI. **Business:** Social proof. | Done | P1 |
-| UC-60 | Add Product Review | **Actor:** Buyer. Chỉ sau mua hoàn tất; 1–5 sao + nội dung. **Business:** Feedback chất lượng SP. | Done | P1 |
+| UC-60 | Add Product Review | **Actor:** Buyer. Chỉ sau mua hoàn tất; 1–5 sao + nội dung. Rate-limit + trust gate (account mới / đơn thấp) có thể chưa tính vào AvgRating. **Business:** Feedback chất lượng SP, chống review bombing. | Done | P1 |
 | UC-61 | Update Product Review | **Actor:** Buyer (owner). Sửa review trong cửa sổ cho phép. **Business:** Cho phép chỉnh sau trải nghiệm. | Done | P2 |
 | UC-62a | Delete Product Review | **Actor:** Buyer (owner). Xóa / ẩn review của mình. **Business:** Quyền kiểm soát nội dung cá nhân. | Done | P2 |
 | UC-62b | Get Seller Detail | **Actor:** Buyer. Trang shop: mô tả, rating, SP, policy. **Business:** Đánh giá độ tin cậy seller. | Done | P0 |
@@ -116,6 +116,8 @@
 | UC-83 | View Smart Accessory Bundle | **Actor:** Guest/Buyer. Gợi ý combo phụ kiện khi xem SP chính. **Business:** Tăng AOV. Doc: `solution-ai-bundle-and-compatibility.md`. | Done | P2 |
 | UC-84 | Check Product Compatibility | **Actor:** Guest/Buyer. Kiểm tra tương thích spec giữa 2 SP hoặc SP + thiết bị mô tả. **Business:** Giảm mua nhầm phụ kiện điện tử. Doc: `solution-ai-bundle-and-compatibility.md`. | Done | P2 |
 | UC-86 | View Buyer Protection Timeline | **Actor:** Buyer. Timeline minh bạch escrow, giao hàng, return window trên order detail. **Business:** Trust sàn. Doc: `solution-buyer-protection-timeline.md`. | Done | P1 |
+| UC-96 | Report Product Review | **Actor:** Buyer / Seller (shop owner). Báo cáo review spam / xúc phạm / giả; tạm loại khỏi AvgRating khi Open report. **Business:** Chống mua hàng để đạp rating. | Done | P1 |
+| UC-97 | Moderate Product Reviews | **Actor:** Admin. Queue PendingTrust / Reported; ẩn hoặc duyệt lại; recalc AvgRating chỉ từ review CountsTowardRating. **Business:** Bảo vệ uy tín shop & tin cậy sàn. | Done | P1 |
 
 ---
 

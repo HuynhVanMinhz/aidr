@@ -62,4 +62,16 @@ public sealed class ReviewsController : ControllerBase
         await _reviews.DeleteAsync(User.GetUserId(), reviewId, cancellationToken);
         return Ok(ApiResult<object?>.Ok(null, "Review removed."));
     }
+
+    /// <summary>Report a product review for spam / abuse (buyer or authenticated user).</summary>
+    [HttpPost("reviews/{reviewId:guid}/report")]
+    [Authorize]
+    public async Task<ActionResult<ApiResult<ProductReviewReportDto>>> Report(
+        Guid reviewId,
+        [FromBody] ReportProductReviewRequest request,
+        CancellationToken cancellationToken)
+    {
+        var result = await _reviews.ReportAsync(User.GetUserId(), reviewId, request, cancellationToken);
+        return Ok(ApiResult<ProductReviewReportDto>.Ok(result, "Review reported."));
+    }
 }

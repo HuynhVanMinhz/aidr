@@ -103,11 +103,14 @@ Schema/script sẽ có trong từng doc khi bắt đầu phase tương ứng (`s
 ```
 POST /api/dev/seed-price-alerts
 POST /api/dev/seed-review-digest
+POST /api/dev/seed-review-moderation
 POST /api/dev/seed-bundle-demo
 POST /api/dev/seed-product-qa
 POST /api/dev/seed-reorder-demo
 POST /api/dev/seed-kyc-duplicate
 ```
+
+Schema review moderation: `scripts/review-moderation-schema.sql` (auto-run by seed-product-reviews / seed-review-moderation).
 
 **Catalog đa dạng (leaf categories có SP):**
 

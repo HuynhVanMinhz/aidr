@@ -3,11 +3,14 @@ using AIDR.Infrastructure.Persistence;
 namespace AIDR.Infrastructure.Seeding;
 
 /// <summary>
-/// Dev-only: seed storefront product reviews and sync denormalized rating counters.
+/// Dev-only: apply review moderation schema + seed PendingTrust / Reported samples.
 /// </summary>
-public static class ProductReviewsDemoSeeder
+public static class ReviewModerationDemoSeeder
 {
-    public static async Task SeedAsync(AidrDbContext db, string contentRootPath, CancellationToken ct = default)
+    public static async Task SeedAsync(
+        AidrDbContext db,
+        string contentRootPath,
+        CancellationToken ct = default)
     {
         await SqlScriptSeeder.ExecuteFileAsync(
             db,
@@ -18,7 +21,7 @@ public static class ProductReviewsDemoSeeder
         await SqlScriptSeeder.ExecuteFileAsync(
             db,
             contentRootPath,
-            Path.Combine("scripts", "seed-product-reviews.sql"),
+            Path.Combine("scripts", "seed-review-moderation.sql"),
             ct);
     }
 }

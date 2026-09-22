@@ -62,6 +62,7 @@ function pageTitle(pathname: string, variant: AdminShellVariant) {
   if (variant === 'seller' && pathname.includes('/returns')) return 'Return List';
   if (pathname.match(/\/return-requests\/[^/]+$/)) return 'Return Request Details';
   if (pathname.includes('/return-requests')) return 'Return List';
+  if (pathname.includes('/reviews')) return 'Review Moderation';
   if (pathname.match(/\/orders\/[^/]+$/)) return 'Order Details';
   if (pathname.includes('/orders')) return 'Orders List';
   if (pathname.match(/\/products\/[^/]+\/inventory$/)) return 'Product Inventory';
@@ -372,6 +373,17 @@ export function AdminShell({ variant = 'admin', children }: AdminShellProps) {
                     </li>
                   </ul>
                 </div>
+              </li>
+              <li className="nav-item">
+                <NavLink
+                  className={({ isActive }) => `nav-link${isActive ? ' active' : ''}`}
+                  to="/admin/reviews"
+                >
+                  <span className="nav-icon">
+                    <IconifyIcon icon="solar:chat-square-like-bold-duotone" />
+                  </span>
+                  <span className="nav-text">Reviews</span>
+                </NavLink>
               </li>
               <li className="nav-item">
                 <a

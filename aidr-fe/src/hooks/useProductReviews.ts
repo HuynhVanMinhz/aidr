@@ -4,6 +4,7 @@ import {
   createSellerRating,
   deleteProductReview,
   fetchProductReviews,
+  reportProductReview,
   selectReviewList,
   selectReviewListLoading,
   selectReviewMutating,
@@ -13,16 +14,30 @@ import { useAppDispatch, useAppSelector } from '../store/hooks';
 import type {
   CreateProductReviewRequest,
   CreateSellerRatingRequest,
+  ProductReview,
   ProductReviewListQuery,
+  ProductReviewListResult,
   UpdateProductReviewRequest,
 } from '../types/review';
 import { getApiErrorMessage } from '../utils/apiError';
+
+type UseProductReviewsResult = {
+  list: ProductReviewListResult | null;
+  loading: boolean;
+  mutating: boolean;
+  refresh: () => Promise<{ key: string; data: ProductReviewListResult }>;
+  submitReview: (request: CreateProductReviewRequest) => Promise<ProductReview>;
+  editReview: (reviewId: string, request: UpdateProductReviewRequest) => Promise<ProductReview>;
+  removeReview: (reviewId: string) => Promise<void>;
+  reportReview: (reviewId: string, reason: string, details?: string | null) => Promise<void>;
+  getErrorMessage: typeof getApiErrorMessage;
+};
 
 export function useProductReviews(
   productId: string | undefined,
   query?: ProductReviewListQuery,
   options?: { autoLoad?: boolean },
-) {
+): UseProductReviewsResult {
   const dispatch = useAppDispatch();
   const autoLoad = options?.autoLoad ?? true;
 
@@ -93,6 +108,16 @@ export function useProductReviews(
     [dispatch, normalizedQuery, productId],
   );
 
+  const reportReview = useCallback(
+    async (reviewId: string, reason: string, details?: string | null) => {
+      const result = await dispatch(reportProductReview({ reviewId, reason, details }));
+      if (reportProductReview.rejected.match(result)) {
+        throw new Error(result.payload || 'Unable to report review.');
+      }
+    },
+    [dispatch],
+  );
+
   return {
     list,
     loading,
@@ -101,6 +126,7 @@ export function useProductReviews(
     submitReview,
     editReview,
     removeReview,
+    reportReview,
     getErrorMessage: getApiErrorMessage,
   };
 }

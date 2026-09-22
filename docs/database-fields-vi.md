@@ -635,7 +635,22 @@ Cấu trúc giống `OrderStatusHistories`: `FromStatus`, `ToStatus`, `ChangedBy
 | `SentimentLabel` | NVARCHAR(20) | Nhãn AI | `Positive`, `Neutral`, `Negative` |
 | `SentimentScore` | DECIMAL(5,4) | Điểm sentiment | `0.9234` |
 | `IsVisible` | BIT | Hiển thị công khai | `1` |
+| `CountsTowardRating` | BIT | Có tính vào AvgRating | `1` |
+| `ModerationStatus` | NVARCHAR(20) | Approved / PendingTrust / Reported / HiddenByAdmin / HiddenByOwner | `Approved` |
+| `TrustReleaseAt` | DATETIME2 | Hết hạn trust hold (PendingTrust) | UTC |
 | `CreatedAt` / `UpdatedAt` | DATETIME2 | Audit | UTC |
+
+### `ProductReviewReports` - Báo cáo review spam
+
+| Trường | Kiểu | Mô tả | Ví dụ |
+|--------|------|--------|-------|
+| `ReportId` | UNIQUEIDENTIFIER (PK) | ID | GUID |
+| `ReviewId` | UNIQUEIDENTIFIER (FK) | Review bị báo | GUID |
+| `ReporterUserId` | UNIQUEIDENTIFIER (FK) | Người báo | GUID |
+| `Reason` | NVARCHAR(40) | Spam / Offensive / Irrelevant / Fake / Other | `Spam` |
+| `Details` | NVARCHAR(500) | Chi tiết | optional |
+| `Status` | NVARCHAR(20) | Open / Dismissed / Upheld | `Open` |
+| `CreatedAt` / `ResolvedAt` / `ResolvedBy` | | Audit resolve | UTC / GUID |
 
 ---
 

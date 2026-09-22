@@ -772,28 +772,64 @@ GO
 /* -------------------------------------------------------------------------- */
 
 CREATE TABLE dbo.ProductReviews (
-    ReviewId        UNIQUEIDENTIFIER NOT NULL CONSTRAINT PK_ProductReviews PRIMARY KEY
-                    CONSTRAINT DF_ProductReviews_Id DEFAULT (NEWSEQUENTIALID()),
-    ProductId       UNIQUEIDENTIFIER NOT NULL,
-    BuyerUserId     UNIQUEIDENTIFIER NOT NULL,
-    OrderId         UNIQUEIDENTIFIER NULL,
-    Rating          TINYINT          NOT NULL,
-    Title           NVARCHAR(150)    NULL,
-    Content         NVARCHAR(2000)   NULL,
-    SentimentLabel  NVARCHAR(20)     NULL,             -- Positive | Neutral | Negative (AI)
-    SentimentScore  DECIMAL(5,4)     NULL,
-    IsVisible       BIT              NOT NULL CONSTRAINT DF_ProductReviews_IsVisible DEFAULT (1),
-    CreatedAt       DATETIME2(3)     NOT NULL CONSTRAINT DF_ProductReviews_CreatedAt DEFAULT (SYSUTCDATETIME()),
-    UpdatedAt       DATETIME2(3)     NOT NULL CONSTRAINT DF_ProductReviews_UpdatedAt DEFAULT (SYSUTCDATETIME()),
+    ReviewId            UNIQUEIDENTIFIER NOT NULL CONSTRAINT PK_ProductReviews PRIMARY KEY
+                        CONSTRAINT DF_ProductReviews_Id DEFAULT (NEWSEQUENTIALID()),
+    ProductId           UNIQUEIDENTIFIER NOT NULL,
+    BuyerUserId         UNIQUEIDENTIFIER NOT NULL,
+    OrderId             UNIQUEIDENTIFIER NULL,
+    Rating              TINYINT          NOT NULL,
+    Title               NVARCHAR(150)    NULL,
+    Content             NVARCHAR(2000)   NULL,
+    SentimentLabel      NVARCHAR(20)     NULL,             -- Positive | Neutral | Negative (AI)
+    SentimentScore      DECIMAL(5,4)     NULL,
+    IsVisible           BIT              NOT NULL CONSTRAINT DF_ProductReviews_IsVisible DEFAULT (1),
+    CountsTowardRating  BIT              NOT NULL CONSTRAINT DF_ProductReviews_CountsTowardRating DEFAULT (1),
+    ModerationStatus    NVARCHAR(20)     NOT NULL CONSTRAINT DF_ProductReviews_ModerationStatus DEFAULT (N'Approved'),
+    TrustReleaseAt      DATETIME2(3)     NULL,
+    CreatedAt           DATETIME2(3)     NOT NULL CONSTRAINT DF_ProductReviews_CreatedAt DEFAULT (SYSUTCDATETIME()),
+    UpdatedAt           DATETIME2(3)     NOT NULL CONSTRAINT DF_ProductReviews_UpdatedAt DEFAULT (SYSUTCDATETIME()),
     CONSTRAINT FK_ProductReviews_Product FOREIGN KEY (ProductId) REFERENCES dbo.Products (ProductId),
     CONSTRAINT FK_ProductReviews_Buyer FOREIGN KEY (BuyerUserId) REFERENCES dbo.Users (UserId),
     CONSTRAINT FK_ProductReviews_Order FOREIGN KEY (OrderId) REFERENCES dbo.Orders (OrderId),
     CONSTRAINT CK_ProductReviews_Rating CHECK (Rating BETWEEN 1 AND 5),
+    CONSTRAINT CK_ProductReviews_ModerationStatus CHECK (ModerationStatus IN (
+        N'Approved', N'PendingTrust', N'Reported', N'HiddenByAdmin', N'HiddenByOwner'
+    )),
     CONSTRAINT UQ_ProductReviews_Buyer_Product_Order UNIQUE (BuyerUserId, ProductId, OrderId)
 );
 GO
 
 CREATE INDEX IX_ProductReviews_ProductId ON dbo.ProductReviews (ProductId);
+GO
+
+CREATE TABLE dbo.ProductReviewReports (
+    ReportId        UNIQUEIDENTIFIER NOT NULL CONSTRAINT PK_ProductReviewReports PRIMARY KEY
+                    CONSTRAINT DF_ProductReviewReports_Id DEFAULT (NEWSEQUENTIALID()),
+    ReviewId        UNIQUEIDENTIFIER NOT NULL,
+    ReporterUserId  UNIQUEIDENTIFIER NOT NULL,
+    Reason          NVARCHAR(40)     NOT NULL,
+    Details         NVARCHAR(500)    NULL,
+    Status          NVARCHAR(20)     NOT NULL CONSTRAINT DF_ProductReviewReports_Status DEFAULT (N'Open'),
+    CreatedAt       DATETIME2(3)     NOT NULL CONSTRAINT DF_ProductReviewReports_CreatedAt DEFAULT (SYSUTCDATETIME()),
+    ResolvedAt      DATETIME2(3)     NULL,
+    ResolvedBy      UNIQUEIDENTIFIER NULL,
+    CONSTRAINT FK_ProductReviewReports_Review FOREIGN KEY (ReviewId) REFERENCES dbo.ProductReviews (ReviewId),
+    CONSTRAINT FK_ProductReviewReports_Reporter FOREIGN KEY (ReporterUserId) REFERENCES dbo.Users (UserId),
+    CONSTRAINT FK_ProductReviewReports_Resolver FOREIGN KEY (ResolvedBy) REFERENCES dbo.Users (UserId),
+    CONSTRAINT CK_ProductReviewReports_Status CHECK (Status IN (N'Open', N'Dismissed', N'Upheld')),
+    CONSTRAINT CK_ProductReviewReports_Reason CHECK (Reason IN (
+        N'Spam', N'Offensive', N'Irrelevant', N'Fake', N'Other'
+    ))
+);
+GO
+
+CREATE UNIQUE INDEX UX_ProductReviewReports_Open
+    ON dbo.ProductReviewReports (ReviewId, ReporterUserId)
+    WHERE Status = N'Open';
+GO
+
+CREATE INDEX IX_ProductReviewReports_Status_CreatedAt
+    ON dbo.ProductReviewReports (Status, CreatedAt DESC);
 GO
 
 /* -------------------------------------------------------------------------- */

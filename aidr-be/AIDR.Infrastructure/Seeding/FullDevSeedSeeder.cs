@@ -50,6 +50,7 @@ public static class FullDevSeedSeeder
         steps.Add("seller-registrations");
 
         await ProductReviewsDemoSeeder.SeedAsync(db, contentRootPath, ct);
+        await ReviewModerationDemoSeeder.SeedAsync(db, contentRootPath, ct);
         steps.Add("product-reviews");
 
         await RecommendationDemoSeeder.SeedAsync(db, contentRootPath, ct);

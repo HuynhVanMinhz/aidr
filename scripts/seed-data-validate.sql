@@ -52,13 +52,13 @@ FROM dbo.Shops s
 WHERE NOT EXISTS (SELECT 1 FROM dbo.Wallets w WHERE w.ShopId = s.ShopId);
 
 SELECT Issue = N'ProductReviewDrift', p.ProductId, p.Name, p.ReviewCount AS StoredCount, p.AvgRating AS StoredAvg,
-    ActualCount = (SELECT COUNT(*) FROM dbo.ProductReviews r WHERE r.ProductId = p.ProductId AND r.IsVisible = 1),
+    ActualCount = (SELECT COUNT(*) FROM dbo.ProductReviews r WHERE r.ProductId = p.ProductId AND r.IsVisible = 1 AND ISNULL(r.CountsTowardRating, 1) = 1),
     ActualAvg = ISNULL((SELECT CAST(ROUND(AVG(CAST(Rating AS DECIMAL(5,2))), 2) AS DECIMAL(3,2))
-        FROM dbo.ProductReviews r WHERE r.ProductId = p.ProductId AND r.IsVisible = 1), 0)
+        FROM dbo.ProductReviews r WHERE r.ProductId = p.ProductId AND r.IsVisible = 1 AND ISNULL(r.CountsTowardRating, 1) = 1), 0)
 FROM dbo.Products p
-WHERE p.ReviewCount <> (SELECT COUNT(*) FROM dbo.ProductReviews r WHERE r.ProductId = p.ProductId AND r.IsVisible = 1)
+WHERE p.ReviewCount <> (SELECT COUNT(*) FROM dbo.ProductReviews r WHERE r.ProductId = p.ProductId AND r.IsVisible = 1 AND ISNULL(r.CountsTowardRating, 1) = 1)
    OR p.AvgRating <> ISNULL((SELECT CAST(ROUND(AVG(CAST(Rating AS DECIMAL(5,2))), 2) AS DECIMAL(3,2))
-        FROM dbo.ProductReviews r WHERE r.ProductId = p.ProductId AND r.IsVisible = 1), 0);
+        FROM dbo.ProductReviews r WHERE r.ProductId = p.ProductId AND r.IsVisible = 1 AND ISNULL(r.CountsTowardRating, 1) = 1), 0);
 
 SELECT Issue = N'VoucherUsedCountDrift', v.VoucherId, v.Code, v.UsedCount AS StoredCount,
     ActualCount = (SELECT COUNT(*) FROM dbo.VoucherRedemptions r WHERE r.VoucherId = v.VoucherId)

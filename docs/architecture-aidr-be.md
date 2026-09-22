@@ -180,9 +180,11 @@ aidr-be/
 | UC-37 | `POST /api/wishlist/items` - body `{ productId }`; unique user+product; only Approved + active shop/category | Engagement |
 | UC-38 | `DELETE /api/wishlist/items/{wishlistItemId}`; `DELETE /api/wishlist/products/{productId}` | Engagement |
 | UC-59 | `GET /api/products/{productId}/reviews?page=&pageSize=&rating=` - visible reviews (paged); includes avg/count + optional sentiment fields | Engagement |
-| UC-60 | `POST /api/products/{productId}/reviews` - body `{ orderId, rating, title?, content }`; Completed order containing product; unique buyer+product+order | Engagement |
+| UC-60 | `POST /api/products/{productId}/reviews` - body `{ orderId, rating, title?, content }`; Completed order; unique buyer+product+order; rate-limit + trust gate may set `CountsTowardRating=false` / `PendingTrust` | Engagement |
 | UC-61 | `PUT /api/reviews/{reviewId}` - owner update within 30 days | Engagement |
-| UC-62a | `DELETE /api/reviews/{reviewId}` - owner soft-hide (`IsVisible=false`); recalc product AvgRating/ReviewCount | Engagement |
+| UC-62a | `DELETE /api/reviews/{reviewId}` - owner soft-hide (`IsVisible=false`, `HiddenByOwner`); recalc AvgRating from visible+CountsTowardRating only | Engagement |
+| UC-96 | `POST /api/reviews/{reviewId}/report` - body `{ reason, details? }`; Buyer or shop owner; unique open report per reporter; sets `Reported` + drops from AvgRating | Engagement |
+| UC-97 | `GET /api/admin/reviews/moderation`; `POST .../approve`; `POST .../hide` - Admin queue for PendingTrust/Reported | Admin |
 | UC-63 | `POST /api/seller-ratings` - body `{ shopId, orderId, score, comment? }`; Completed order of shop; unique buyer+shop+order; updates Shop.AvgRating/RatingCount | Engagement |
 | UC-65 | `POST /api/follows/shops` - body `{ shopId }`; unique buyer+shop; only Active shop; cannot follow own shop; updates Shop.FollowerCount | Engagement |
 | UC-66 | `DELETE /api/follows/shops/{shopId}` - unfollow; recalc Shop.FollowerCount | Engagement |

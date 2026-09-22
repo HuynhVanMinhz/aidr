@@ -51,6 +51,7 @@ import { AdminSystemVoucherFormPage } from '../views/admin/AdminSystemVoucherFor
 import { AdminSystemVoucherDetailPage } from '../views/admin/AdminSystemVoucherDetailPage';
 import { AdminReturnRequestListPage } from '../views/admin/AdminReturnRequestListPage';
 import { AdminReturnRequestDetailPage } from '../views/admin/AdminReturnRequestDetailPage';
+import { AdminReviewModerationPage } from '../views/admin/AdminReviewModerationPage';
 import { AdminAccountListPage } from '../views/admin/AdminAccountListPage';
 import { AdminAccountDetailPage } from '../views/admin/AdminAccountDetailPage';
 import { AdminCustomerInsightsPage } from '../views/admin/AdminCustomerInsightsPage';
@@ -120,6 +121,7 @@ export function App() {
             <Route path="seller-registrations/:id" element={<AdminSellerRegistrationDetailPage />} />
             <Route path="products" element={<AdminProductListPage />} />
             <Route path="products/:id" element={<AdminProductDetailPage />} />
+            <Route path="reviews" element={<AdminReviewModerationPage />} />
             <Route path="return-requests" element={<AdminReturnRequestListPage />} />
             <Route path="return-requests/:id" element={<AdminReturnRequestDetailPage />} />
             <Route path="orders" element={<AdminOrderListPage />} />

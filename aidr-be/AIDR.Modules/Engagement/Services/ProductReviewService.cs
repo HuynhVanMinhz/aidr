@@ -1,6 +1,7 @@
 using AIDR.Modules.Engagement.Abstractions;
 using AIDR.Shared.Caching;
 using AIDR.Shared.Constants;
+using AIDR.Shared.Dtos.Admin;
 using AIDR.Shared.Dtos.Engagement;
 using AIDR.Shared.Exceptions;
 
@@ -77,6 +78,31 @@ public sealed class ProductReviewService : IProductReviewService
         if (await _reviews.ReviewExistsAsync(userId, productId, request.OrderId, cancellationToken))
             throw new ConflictException("You have already reviewed this product for this order.");
 
+        var sinceDay = DateTime.UtcNow.AddHours(-24);
+        var recentCount = await _reviews.CountBuyerReviewsSinceAsync(userId, sinceDay, cancellationToken);
+        if (recentCount >= ReviewConstants.MaxReviewsPerBuyerPerDay)
+            throw new AppException(
+                $"You can submit at most {ReviewConstants.MaxReviewsPerBuyerPerDay} reviews per day.");
+
+        if (request.Rating <= ReviewConstants.LowRatingThreshold)
+        {
+            var sinceLow = DateTime.UtcNow.AddDays(-ReviewConstants.LowRatingWindowDays);
+            var lowCount = await _reviews.CountBuyerLowRatingsForShopSinceAsync(
+                userId,
+                order.ShopId,
+                ReviewConstants.LowRatingThreshold,
+                sinceLow,
+                cancellationToken);
+            if (lowCount >= ReviewConstants.MaxLowRatingsPerShopPerWindow)
+                throw new AppException(
+                    $"You can submit at most {ReviewConstants.MaxLowRatingsPerShopPerWindow} low ratings for the same shop within {ReviewConstants.LowRatingWindowDays} days.");
+        }
+
+        var trust = await _reviews.GetBuyerTrustAsync(userId, cancellationToken)
+            ?? throw new NotFoundException("User not found.");
+
+        var outcome = ResolveCreateOutcome(trust, order);
+
         var created = await _reviews.CreateAsync(
             userId,
             productId,
@@ -84,6 +110,7 @@ public sealed class ProductReviewService : IProductReviewService
             request.Rating,
             title,
             content,
+            outcome,
             cancellationToken);
 
         await InvalidateProductCacheAsync(productId, cancellationToken);
@@ -133,9 +160,120 @@ public sealed class ProductReviewService : IProductReviewService
         if (!existing.IsVisible)
             throw new ConflictException("Review is already hidden.");
 
-        await _reviews.HideAsync(reviewId, cancellationToken);
+        await _reviews.HideByOwnerAsync(reviewId, cancellationToken);
         await InvalidateProductCacheAsync(existing.ProductId, cancellationToken);
         await _reviewDigest.InvalidateAsync(existing.ProductId, cancellationToken);
+    }
+
+    public async Task<ProductReviewReportDto> ReportAsync(
+        Guid userId,
+        Guid reviewId,
+        ReportProductReviewRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        if (reviewId == Guid.Empty)
+            throw new AppException("Review id is required.");
+
+        var reason = (request.Reason ?? string.Empty).Trim();
+        if (!ReviewConstants.AllowedReportReasons.Contains(reason))
+            throw new AppException("Invalid report reason.");
+
+        var details = string.IsNullOrWhiteSpace(request.Details) ? null : request.Details.Trim();
+        if (details is not null && details.Length > ReviewConstants.MaxReportDetailsLength)
+            throw new AppException(
+                $"Report details must not exceed {ReviewConstants.MaxReportDetailsLength} characters.");
+
+        var shopOwnerId = await _reviews.GetShopOwnerUserIdForReviewAsync(reviewId, cancellationToken)
+            ?? throw new NotFoundException("Review not found.");
+
+        var isShopOwner = shopOwnerId == userId;
+
+        var report = await _reviews.ReportAsync(
+            reviewId,
+            userId,
+            reason,
+            details,
+            isShopOwner,
+            cancellationToken);
+
+        await InvalidateDigestForReviewAsync(reviewId, cancellationToken);
+        return report;
+    }
+
+    public async Task<AdminReviewModerationListResult> ListModerationQueueAsync(
+        AdminReviewModerationListQuery query,
+        CancellationToken cancellationToken = default)
+    {
+        var status = string.IsNullOrWhiteSpace(query.Status)
+            ? ReviewConstants.StatusReported
+            : query.Status.Trim();
+
+        if (!string.Equals(status, "all", StringComparison.OrdinalIgnoreCase)
+            && !ReviewConstants.AdminQueueStatuses.Contains(status))
+            throw new AppException("Status filter must be PendingTrust, Reported, or all.");
+
+        var (page, pageSize) = ReviewConstants.NormalizeAdminPaging(query.Page, query.PageSize);
+        return await _reviews.ListModerationQueueAsync(status, query.Q, page, pageSize, cancellationToken);
+    }
+
+    public async Task ApproveModerationAsync(
+        Guid adminUserId,
+        Guid reviewId,
+        CancellationToken cancellationToken = default)
+    {
+        if (reviewId == Guid.Empty)
+            throw new AppException("Review id is required.");
+
+        await _reviews.ApproveModerationAsync(reviewId, adminUserId, cancellationToken);
+        await InvalidateDigestForReviewAsync(reviewId, cancellationToken);
+    }
+
+    public async Task HideByAdminAsync(
+        Guid adminUserId,
+        Guid reviewId,
+        CancellationToken cancellationToken = default)
+    {
+        if (reviewId == Guid.Empty)
+            throw new AppException("Review id is required.");
+
+        await _reviews.HideByAdminAsync(reviewId, adminUserId, cancellationToken);
+        await InvalidateDigestForReviewAsync(reviewId, cancellationToken);
+    }
+
+    private static ReviewCreateOutcome ResolveCreateOutcome(BuyerTrustSnapshot trust, EligibleOrderSnapshot order)
+    {
+        var accountAgeDays = (DateTime.UtcNow - trust.CreatedAt).TotalDays;
+        var needsTrustHold =
+            accountAgeDays < ReviewConstants.TrustMinAccountAgeDays
+            || trust.CompletedOrderCount < ReviewConstants.TrustMinCompletedOrders
+            || order.TotalAmount < ReviewConstants.MinOrderTotalForFullWeight;
+
+        if (!needsTrustHold)
+        {
+            return new ReviewCreateOutcome
+            {
+                CountsTowardRating = true,
+                ModerationStatus = ReviewConstants.StatusApproved,
+                TrustReleaseAt = null
+            };
+        }
+
+        return new ReviewCreateOutcome
+        {
+            CountsTowardRating = false,
+            ModerationStatus = ReviewConstants.StatusPendingTrust,
+            TrustReleaseAt = DateTime.UtcNow.AddHours(ReviewConstants.TrustHoldHours)
+        };
+    }
+
+    private async Task InvalidateDigestForReviewAsync(Guid reviewId, CancellationToken cancellationToken)
+    {
+        var productId = await _reviews.GetProductIdForReviewAsync(reviewId, cancellationToken);
+        if (productId is null)
+            return;
+
+        await InvalidateProductCacheAsync(productId.Value, cancellationToken);
+        await _reviewDigest.InvalidateAsync(productId.Value, cancellationToken);
     }
 
     private static void ValidateRatingAndContent(

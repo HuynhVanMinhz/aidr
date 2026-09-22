@@ -72,15 +72,22 @@ function displayReviewTitle(title: string | null | undefined): string | null {
 function ReviewItem({
   review,
   mutating,
+  isAuthenticated,
   onEdit,
   onDelete,
+  onReport,
 }: {
   review: ProductReview;
   mutating: boolean;
+  isAuthenticated: boolean;
   onEdit: (reviewId: string, values: ProductReviewFormValues) => Promise<void>;
   onDelete: (reviewId: string) => Promise<void>;
+  onReport: (reviewId: string, reason: string, details?: string | null) => Promise<void>;
 }) {
   const [editing, setEditing] = useState(false);
+  const [reporting, setReporting] = useState(false);
+  const [reportReason, setReportReason] = useState('Spam');
+  const [reportDetails, setReportDetails] = useState('');
   const [form, setForm] = useState<ProductReviewFormValues>({
     rating: review.rating,
     title: review.title ?? '',
@@ -94,8 +101,11 @@ function ReviewItem({
   const errors = useMemo(() => validateProductReviewForm(form), [form]);
   const visible = visibleFieldErrors(errors, touched, submitted);
   const canSave = canSubmitProductReviewForm(form, errors);
-  const isVerified = true; // AIDR only accepts reviews after a completed purchase
+  const isVerified = true;
   const title = displayReviewTitle(review.title);
+  const showPendingBadge =
+    !(review.countsTowardRating ?? true) &&
+    (review.moderationStatus === 'PendingTrust' || review.moderationStatus === 'Reported');
 
   async function handleSave(event: FormEvent) {
     event.preventDefault();
@@ -112,6 +122,13 @@ function ReviewItem({
     const confirmed = window.confirm('Remove this review from the product page?');
     if (!confirmed) return;
     await onDelete(review.reviewId);
+  }
+
+  async function handleReport(event: FormEvent) {
+    event.preventDefault();
+    await onReport(review.reviewId, reportReason, reportDetails.trim() || null);
+    setReporting(false);
+    setReportDetails('');
   }
 
   function handleHelpful() {
@@ -213,6 +230,11 @@ function ReviewItem({
                 Verified Purchase
               </span>
             ) : null}
+            {showPendingBadge ? (
+              <span className="catalog-review-badge catalog-review-badge--pending">
+                Under review
+              </span>
+            ) : null}
             <StarRatingDisplay rating={review.rating} />
           </div>
         </div>
@@ -263,6 +285,60 @@ function ReviewItem({
             </button>
           </div>
         ) : null}
+
+        {!review.isOwn && isAuthenticated && (review.canReport ?? false) ? (
+          <div className="review-item-actions">
+            {reporting ? (
+              <form className="review-report-form" onSubmit={(e) => void handleReport(e)}>
+                <label htmlFor={`report-reason-${review.reviewId}`} className="visually-hidden">
+                  Report reason
+                </label>
+                <select
+                  id={`report-reason-${review.reviewId}`}
+                  className="form-control"
+                  value={reportReason}
+                  disabled={mutating}
+                  onChange={(e) => setReportReason(e.target.value)}
+                >
+                  <option value="Spam">Spam</option>
+                  <option value="Offensive">Offensive</option>
+                  <option value="Irrelevant">Irrelevant</option>
+                  <option value="Fake">Fake / paid attack</option>
+                  <option value="Other">Other</option>
+                </select>
+                <textarea
+                  className="form-control"
+                  rows={2}
+                  maxLength={500}
+                  placeholder="Optional details"
+                  value={reportDetails}
+                  disabled={mutating}
+                  onChange={(e) => setReportDetails(e.target.value)}
+                />
+                <button type="submit" className="btn-default btn-accent" disabled={mutating}>
+                  {mutating ? 'Sending…' : 'Submit report'}
+                </button>
+                <button
+                  type="button"
+                  className="btn-default btn-accent btn-border"
+                  disabled={mutating}
+                  onClick={() => setReporting(false)}
+                >
+                  Cancel
+                </button>
+              </form>
+            ) : (
+              <button
+                type="button"
+                className="btn-default btn-accent btn-border"
+                disabled={mutating}
+                onClick={() => setReporting(true)}
+              >
+                Report
+              </button>
+            )}
+          </div>
+        ) : null}
       </div>
     </article>
   );
@@ -279,11 +355,8 @@ export function ProductReviewsPanel({ productId, active = true }: Props) {
     [page, ratingFilter],
   );
 
-  const { list, loading, mutating, editReview, removeReview, getErrorMessage } = useProductReviews(
-    productId,
-    query,
-    { autoLoad: active },
-  );
+  const { list, loading, mutating, editReview, removeReview, reportReview, getErrorMessage } =
+    useProductReviews(productId, query, { autoLoad: active });
 
   const items = list?.items ?? [];
   const totalPages = list?.totalPages ?? 0;
@@ -317,6 +390,16 @@ export function ProductReviewsPanel({ productId, active = true }: Props) {
       }
     } catch (error) {
       toast.error(getErrorMessage(error, 'Unable to remove review.'));
+    }
+  }
+
+  async function handleReport(reviewId: string, reason: string, details?: string | null) {
+    try {
+      await reportReview(reviewId, reason, details);
+      toast.success('Review reported. Thank you.');
+    } catch (error) {
+      toast.error(getErrorMessage(error, 'Unable to report review.'));
+      throw error;
     }
   }
 
@@ -409,8 +492,10 @@ export function ProductReviewsPanel({ productId, active = true }: Props) {
               key={review.reviewId}
               review={review}
               mutating={mutating}
+              isAuthenticated={isAuthenticated}
               onEdit={handleEdit}
               onDelete={handleDelete}
+              onReport={handleReport}
             />
           ))}
         </div>

@@ -43,7 +43,7 @@ Cột **assign**: GitHub username - owner module (maintain, demo, bugfix).
 | 17 | Admin - System Voucher | CRUD/activate voucher toàn sàn. | UC-78, UC-79, UC-80, UC-81 | Done | Ha20203 |
 | 18 | SellerCenter - Shop Voucher | CRUD voucher của shop. | UC-87, UC-88, UC-89 | Done | manhisme10 |
 | 19 | Engagement - Wishlist | Wishlist CRUD. | UC-36, UC-37, UC-38 | Done | minhvanhuynh |
-| 20 | Engagement - Reviews & Ratings | Review SP + rate seller. | UC-59, UC-60, UC-61, UC-62a, UC-63 | Done | minhvanhuynh |
+| 20 | Engagement - Reviews & Ratings | Review SP + rate seller + anti-spam (trust/rate-limit/report/admin). | UC-59, UC-60, UC-61, UC-62a, UC-63, UC-96, UC-97 | Done | minhvanhuynh |
 | 21 | Engagement - Follow | Follow / unfollow / list. | UC-65, UC-66, UC-67 | Done | minhvanhuynh |
 | 22 | Return & Refund / Exchange | Buyer request Trả hàng+Hoàn tiền **hoặc Đổi hàng** (video Unboxing/Testing); Admin duyệt → forward Seller; Seller xác nhận & Accepted → Admin Refunded/Exchanged→Closed. | UC-43, UC-48, UC-49, UC-50, UC-52, UC-93, UC-94, UC-95 | Done | Ha20203 |
 | 23 | Notifications | REST inbox + SignalR push (order/payment/moderation). | UC-44, UC-45 | Done | thuandn03 |
