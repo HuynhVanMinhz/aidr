@@ -70,6 +70,8 @@ export function ProductDetailPage() {
   const [activeImage, setActiveImage] = useState(0);
   const [tab, setTab] = useState<'description' | 'specs' | 'reviews' | 'qa'>('description');
   const [qty, setQty] = useState(1);
+  /** While focused, allow empty / partial digits so typing e.g. 20 is not forced through 2 → 1. */
+  const [qtyDraft, setQtyDraft] = useState<string | null>(null);
   const [selection, setSelection] = useState<VariantSelection>({});
   const [adding, setAdding] = useState(false);
   const [buying, setBuying] = useState(false);
@@ -120,6 +122,7 @@ export function ProductDetailPage() {
     setSelection(defaultSelection(product.variants ?? [], product.variantOptions ?? []));
     setActiveImage(0);
     setQty(1);
+    setQtyDraft(null);
   }, [product]);
 
   const selectedVariant = useMemo(
@@ -392,24 +395,53 @@ export function ProductDetailPage() {
                         type="button"
                         className="qty-btn minus"
                         aria-label="Decrease quantity"
-                        disabled={safeQty <= 1}
-                        onClick={() => setQty((v) => Math.max(1, v - 1))}
+                        disabled={safeQty <= 1 || addBusy}
+                        onClick={() => {
+                          setQtyDraft(null);
+                          setQty((v) => Math.max(1, v - 1));
+                        }}
                       >
                         -
                       </button>
                       <input
                         type="text"
+                        inputMode="numeric"
+                        pattern="[0-9]*"
                         className="qty-input"
-                        readOnly
-                        value={String(safeQty).padStart(2, '0')}
+                        value={qtyDraft ?? String(safeQty)}
+                        disabled={cannotBuy || addBusy}
                         aria-label="Quantity"
+                        onFocus={(e) => {
+                          setQtyDraft(String(safeQty));
+                          e.currentTarget.select();
+                        }}
+                        onChange={(e) => {
+                          const digits = e.target.value.replace(/\D/g, '').slice(0, 2);
+                          setQtyDraft(digits);
+                          if (digits === '') return;
+                          const n = Number.parseInt(digits, 10);
+                          if (!Number.isFinite(n)) return;
+                          setQty(Math.min(maxQty, Math.max(1, n)));
+                        }}
+                        onBlur={() => {
+                          const parsed = Number.parseInt(qtyDraft ?? '', 10);
+                          const next =
+                            Number.isFinite(parsed) && parsed >= 1
+                              ? Math.min(maxQty, parsed)
+                              : 1;
+                          setQty(next);
+                          setQtyDraft(null);
+                        }}
                       />
                       <button
                         type="button"
                         className="qty-btn plus"
                         aria-label="Increase quantity"
-                        disabled={safeQty >= maxQty}
-                        onClick={() => setQty((v) => Math.min(maxQty, v + 1))}
+                        disabled={safeQty >= maxQty || addBusy}
+                        onClick={() => {
+                          setQtyDraft(null);
+                          setQty((v) => Math.min(maxQty, v + 1));
+                        }}
                       >
                         +
                       </button>
