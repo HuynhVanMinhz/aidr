@@ -125,12 +125,12 @@ public sealed class UpdateReturnStatusRequest
     public string? Note { get; set; }
 
     /// <summary>
-    /// Optional Napas bank BIN for payOS refund payout when webhook counter account is missing.
+    /// Optional bank BIN recorded on the manual refund audit trail (admin already transferred offline).
     /// </summary>
     public string? RefundToBin { get; set; }
 
     /// <summary>
-    /// Optional buyer bank account number for payOS refund payout when webhook counter account is missing.
+    /// Optional bank account number recorded on the manual refund audit trail.
     /// </summary>
     public string? RefundToAccountNumber { get; set; }
 }
