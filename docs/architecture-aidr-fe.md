@@ -268,7 +268,7 @@ VITE_SIGNALR_HUB_URL=https://api.aidr.local/hubs
 | Seller orders | UC-46/47 (`/seller/orders`, `/seller/orders/:orderId`, `sellerOrdersSlice`, update status + tracking) |
 | Seller returns | UC-93..95 (`/seller/returns`, `/seller/returns/:id`, confirm → receiving → accept; notify Admin on Accepted) |
 | Seller shop settings / alerts | `/seller/shop-settings`, `/seller/alerts` (`sellerApi` shop GET/PUT; inventory low-stock) |
-| Admin returns | UC-48..52 (`/admin/return-requests`, approve→forward Seller; after Accepted: Refunded\|Exchanged→Closed) |
+| Admin returns | UC-48..52 (`/admin/return-requests`, approve→forward Seller; after Accepted: VietQR refund panel → Confirm Refunded\|Exchanged→Closed; `AdminRefundTransferPanel` + `vietQr.ts`) |
 | Admin orders / dashboard | `/admin/orders`, `/admin/dashboard` KPI (`adminApi`) |
 | Recommend / Similar blocks | UC-53/54 (`RecommendedProductsSection` on home; `SimilarProductsSection` on product detail; `aiApi` + `recommendationSlice`) |
 | NL filter + Compare | UC-90 (`NlSearchBar` on `/products` → `POST /ai/nl-filter` → bind catalog filters); UC-28 (compare icon on card/detail → tray → `/compare` + `POST /ai/compare`, Buyer) |
