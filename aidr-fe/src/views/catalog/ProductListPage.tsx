@@ -5,7 +5,6 @@ import { CatalogFilterDrawer } from '../../components/catalog/CatalogFilterDrawe
 import { CatalogFiltersPanel } from '../../components/catalog/CatalogFiltersPanel';
 import { CatalogSortDropdown } from '../../components/catalog/CatalogSortDropdown';
 import { CatalogBreadcrumb } from '../../components/catalog/CatalogBreadcrumb';
-import { NlSearchBar } from '../../components/catalog/NlSearchBar';
 import { ProductCard } from '../../components/catalog/ProductCard';
 import { ProductFilters, SORT_OPTIONS } from '../../components/catalog/ProductFilters';
 import { useCategories } from '../../hooks/useCatalog';
@@ -116,8 +115,6 @@ export function ProductListPage() {
             </div>
 
             <div className="col-xl-9 col-lg-8">
-              <NlSearchBar onApplyFilters={(filters) => syncUrl(filters)} />
-
               <div className="catalog-mobile-filter-bar">
                 <button
                   type="button"
