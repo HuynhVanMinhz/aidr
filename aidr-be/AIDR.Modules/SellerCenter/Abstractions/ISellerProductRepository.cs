@@ -113,6 +113,8 @@ public sealed class SellerProductWriteModel
     public string? SpecsJson { get; init; }
     public string Status { get; init; } = null!;
     public DateTime? PublishedAt { get; init; }
+    /// <summary>Seller who applied this write; used when appending price history.</summary>
+    public Guid? ChangedBy { get; init; }
     public IReadOnlyList<SellerProductImageWriteModel>? Images { get; init; }
     /// <summary>Serialised option axes; null leaves the stored value alone on update.</summary>
     public string? VariantOptionsJson { get; init; }

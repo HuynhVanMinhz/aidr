@@ -57,6 +57,8 @@ public sealed class ProductPriceHistoryService : IProductPriceHistoryService
         var currentPrice = product.SalePrice ?? product.BasePrice;
         var since = DateTime.UtcNow.AddDays(-normalizedDays);
 
+        // Load both old and new effective prices so a single change still forms a step
+        // (start-of-window at old → ChangedAt at new → now), not a flat line at the new price.
         var historyRows = await _db.ProductPriceHistories
             .AsNoTracking()
             .Where(h => h.ProductId == productId && h.ChangedAt >= since)
@@ -64,7 +66,8 @@ public sealed class ProductPriceHistoryService : IProductPriceHistoryService
             .Select(h => new
             {
                 h.ChangedAt,
-                Price = h.NewSalePrice ?? h.NewBasePrice ?? currentPrice
+                OldPrice = h.OldSalePrice ?? h.OldBasePrice,
+                NewPrice = h.NewSalePrice ?? h.NewBasePrice
             })
             .ToListAsync(cancellationToken);
 
@@ -76,12 +79,16 @@ public sealed class ProductPriceHistoryService : IProductPriceHistoryService
         }
         else
         {
+            var first = historyRows[0];
+            var startPrice = first.OldPrice ?? first.NewPrice ?? currentPrice;
+            points.Add(new ProductPriceHistoryPointDto { At = since, Price = startPrice });
+
             foreach (var row in historyRows)
             {
                 points.Add(new ProductPriceHistoryPointDto
                 {
                     At = row.ChangedAt,
-                    Price = row.Price
+                    Price = row.NewPrice ?? currentPrice
                 });
             }
         }
