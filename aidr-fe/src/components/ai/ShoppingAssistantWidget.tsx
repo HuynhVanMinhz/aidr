@@ -62,10 +62,11 @@ function SuggestedProducts({
 
   return (
     <div className="aidr-assistant__products">
-      {products.map((p) => {
+      {products.map((p, index) => {
         const showsRating = p.reviewCount > 0;
         // Keep the rating on its own line only; drop it from the reason so it is not repeated.
         const reason = showsRating ? stripRatingFromReason(p.reason) : (p.reason ?? '');
+        const ordinal = index + 1;
         return (
           <div key={p.productId} className="aidr-assistant__product-row">
             <Link
@@ -73,6 +74,9 @@ function SuggestedProducts({
               className="aidr-assistant__product-card"
               onClick={onNavigate}
             >
+              <span className="aidr-assistant__product-ordinal" aria-hidden>
+                #{ordinal}
+              </span>
               <img src={p.primaryImageUrl || PLACEHOLDER} alt="" />
               <div className="aidr-assistant__product-meta">
                 <span className="aidr-assistant__product-name">{p.name}</span>
@@ -128,6 +132,7 @@ function QuickReplies({
   const asked = consult?.askedCount ?? 0;
   const max = consult?.maxQuestions ?? 0;
   const showProgress = consult?.stage === 'collecting' && asked > 0 && max > 0;
+  const showSkip = consult?.stage === 'collecting';
 
   return (
     <div className="aidr-assistant__quick">
@@ -149,14 +154,16 @@ function QuickReplies({
           </button>
         ))}
       </div>
-      <button
-        type="button"
-        className="aidr-assistant__quick-skip"
-        disabled={disabled}
-        onClick={onSkip}
-      >
-        Skip questions &amp; show options
-      </button>
+      {showSkip ? (
+        <button
+          type="button"
+          className="aidr-assistant__quick-skip"
+          disabled={disabled}
+          onClick={onSkip}
+        >
+          Skip questions &amp; show options
+        </button>
+      ) : null}
     </div>
   );
 }
@@ -371,6 +378,11 @@ export function ShoppingAssistantWidget() {
     if (type === 'open_catalog') {
       const filters = slotsOrNlToCatalogFilters(lastSlots);
       navigate(catalogFiltersToSearchParams(filters));
+      handleClose();
+      return;
+    }
+    if (type === 'open_orders') {
+      navigate('/account/orders');
       handleClose();
       return;
     }

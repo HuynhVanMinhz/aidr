@@ -71,7 +71,7 @@ public sealed class AiConsultStateDto
 
 public sealed class AiChatActionDto
 {
-    /// <summary>open_catalog | open_compare | open_product | none</summary>
+    /// <summary>open_catalog | open_compare | open_product | open_orders | none</summary>
     public string Type { get; init; } = "none";
 
     public string? Label { get; init; }
@@ -141,6 +141,23 @@ public sealed class AiChatResultDto
 
     /// <summary>Guided-consultation progress, when a consultation round is active.</summary>
     public AiConsultStateDto? Consult { get; init; }
+
+    /// <summary>Follow-up act applied this turn (show_more, explain, …), when any.</summary>
+    public string? FollowUpAct { get; init; }
+
+    /// <summary>Product the dialogue is currently focused on.</summary>
+    public Guid? FocusProductId { get; init; }
+
+    /// <summary>Cards shown on the last present turn (ordinal / badge / price).</summary>
+    public IReadOnlyList<AiDialogueLastShownDto>? LastShown { get; init; }
+}
+
+public sealed class AiDialogueLastShownDto
+{
+    public Guid ProductId { get; init; }
+    public string? Badge { get; init; }
+    public decimal Price { get; init; }
+    public int Ordinal { get; init; }
 }
 
 public sealed class AiConversationSummaryDto
