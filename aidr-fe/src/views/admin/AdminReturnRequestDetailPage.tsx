@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { AdminConfirmModal } from '../../components/admin/AdminConfirmModal';
+import { AdminRefundTransferPanel } from '../../components/admin/AdminRefundTransferPanel';
 import { FormField } from '../../components/admin/FormField';
 import { ReturnEvidencePanel } from '../../components/returns/ReturnEvidenceMedia';
 import {
@@ -163,6 +164,19 @@ export function AdminReturnRequestDetailPage() {
 
   const isPending = item?.status === 'Pending';
   const nextStatus = nextReturnStatus(item?.status, item?.resolutionType);
+  const isReturnRefund = item?.resolutionType !== 'Exchange';
+  const refundAmount = item
+    ? (item.refundAmount ?? item.orderTotalAmount)
+    : 0;
+  const showRefundTransferPanel =
+    Boolean(item) &&
+    isReturnRefund &&
+    (item!.status === 'Accepted' ||
+      item!.status === 'Refunded' ||
+      (item!.status === 'Closed' && item!.refundAmount != null));
+  const refundCompleted =
+    item?.status === 'Refunded' ||
+    (item?.status === 'Closed' && item.refundAmount != null);
 
   const canReject =
     Boolean(item && isPending) && noteDirty && !noteError && !mutating;
@@ -227,13 +241,23 @@ export function AdminReturnRequestDetailPage() {
       const updated = await updateStatus(item.returnRequestId, {
         status: nextStatus,
         note: statusNote.trim() || null,
+        ...(nextStatus === 'Refunded'
+          ? {
+              refundToBin: item.refundBankBin ?? null,
+              refundToAccountNumber: item.refundAccountNumber ?? null,
+            }
+          : {}),
       });
       setItem(updated);
       setStatusOpen(false);
       setStatusNote('');
       setStatusTouched({});
       setStatusSubmitted(false);
-      toast.success(`Return status updated to ${formatReturnStatus(nextStatus)}.`);
+      toast.success(
+        nextStatus === 'Refunded'
+          ? 'Refund marked as completed.'
+          : `Return status updated to ${formatReturnStatus(nextStatus)}.`,
+      );
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Unable to update return status.';
       setActionError(message);
@@ -578,6 +602,18 @@ export function AdminReturnRequestDetailPage() {
           </div>
         ) : null}
 
+        {showRefundTransferPanel ? (
+          <AdminRefundTransferPanel
+            refunded={Boolean(refundCompleted)}
+            orderCode={item.orderCode}
+            amount={refundAmount}
+            bankBin={item.refundBankBin}
+            bankName={item.refundBankName}
+            accountNumber={item.refundAccountNumber}
+            accountName={item.refundAccountName}
+          />
+        ) : null}
+
         {nextStatus ? (
           <div className="card">
             <div className="card-header">
@@ -588,26 +624,9 @@ export function AdminReturnRequestDetailPage() {
                 Next step: <strong>{formatReturnStatus(nextStatus)}</strong>
               </p>
               {nextStatus === 'Refunded' ? (
-                item?.refundAccountNumber ? (
-                  <div className="alert alert-success" role="alert">
-                    <strong>Information buyer bank account:</strong>{' '}
-                    <br />
-                    <strong>Bank: </strong>{item.refundBankName ? `${item.refundBankName} ` : ''}
-                    <br />
-                    <strong>Account number: </strong>{item.refundAccountNumber}
-                    <br />
-                    <strong>Account name: </strong>{item.refundAccountName ? ` ${item.refundAccountName}` : ''}
-                    <br />
-                    <span className="fs-12 text-muted">
-                      Transfer to this account manually before marking Refunded.
-                    </span>
-                  </div>
-                ) : (
-                  <div className="alert alert-warning" role="alert">
-                    Buyer did not provide a bank account. Confirm the refund destination before
-                    proceeding.
-                  </div>
-                )
+                <p className="text-muted fs-12">
+                  Transfer via the QR above (or the account details), then confirm below.
+                </p>
               ) : null}
 
               <form onSubmit={handleStatusSubmit}>
@@ -632,7 +651,9 @@ export function AdminReturnRequestDetailPage() {
                   className="btn btn-primary w-100"
                   disabled={!canAdvanceStatus}
                 >
-                  Move to {formatReturnStatus(nextStatus)}
+                  {nextStatus === 'Refunded'
+                    ? 'Confirm refunded'
+                    : `Move to ${formatReturnStatus(nextStatus)}`}
                 </button>
               </form>
             </div>
