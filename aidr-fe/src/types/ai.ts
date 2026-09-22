@@ -110,7 +110,20 @@ export type AiChatSlots = {
   sort?: ProductSort | string | null;
 };
 
-export type AiChatActionType = 'open_catalog' | 'open_compare' | 'open_product' | 'none' | string;
+export type AiChatActionType =
+  | 'open_catalog'
+  | 'open_compare'
+  | 'open_product'
+  | 'open_orders'
+  | 'none'
+  | string;
+
+export type AiDialogueLastShown = {
+  productId: string;
+  badge?: string | null;
+  price: number;
+  ordinal: number;
+};
 
 export type AiChatAction = {
   type: AiChatActionType;
@@ -188,6 +201,10 @@ export type AiChatResult = {
   actions?: AiChatAction[] | null;
   quickReplies?: AiQuickReply[] | null;
   consult?: AiConsultState | null;
+  /** Discourse follow-up act after products were shown (show_more, explain, …). */
+  followUpAct?: string | null;
+  focusProductId?: string | null;
+  lastShown?: AiDialogueLastShown[] | null;
 };
 
 export type AiConversationSummary = {

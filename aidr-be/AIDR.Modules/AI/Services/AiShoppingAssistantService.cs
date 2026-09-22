@@ -27,6 +27,8 @@ public sealed class AiShoppingAssistantService : IAiShoppingAssistantService
     private readonly IAiNlFilterService _nlFilter;
     private readonly IRecommendationService _recommendations;
     private readonly IAiCompareService _compare;
+    private readonly IProductBundleService _bundle;
+    private readonly ICompatibilityService _compatibility;
     private readonly ILogger<AiShoppingAssistantService> _logger;
 
     /// <summary>Cap on products remembered per round for "show me other options".</summary>
@@ -39,6 +41,8 @@ public sealed class AiShoppingAssistantService : IAiShoppingAssistantService
         IAiNlFilterService nlFilter,
         IRecommendationService recommendations,
         IAiCompareService compare,
+        IProductBundleService bundle,
+        ICompatibilityService compatibility,
         ILogger<AiShoppingAssistantService> logger)
     {
         _llm = llm;
@@ -47,6 +51,8 @@ public sealed class AiShoppingAssistantService : IAiShoppingAssistantService
         _nlFilter = nlFilter;
         _recommendations = recommendations;
         _compare = compare;
+        _bundle = bundle;
+        _compatibility = compatibility;
         _logger = logger;
     }
 
@@ -90,24 +96,36 @@ public sealed class AiShoppingAssistantService : IAiShoppingAssistantService
         var previousMeta = FindLastAssistantMeta(history);
         var previousSlots = FromSlotsDto(previousMeta?.Slots);
         var previousProductIds = previousMeta?.ProductIds ?? Array.Empty<Guid>();
+        var previousReasons = previousMeta?.Reasons
+            ?? new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
         var categories = await _catalog.GetActiveCategoriesAsync(cancellationToken);
         var consult = previousMeta?.Consult;
+        var dialogue = previousMeta?.Dialogue?.Clone() ?? new DialogueState();
 
-        // A tapped chip is authoritative - it never goes through NLU, and its label must not
-        // be re-read as free text ("Not sure" skips one slot, it does not end the round).
-        var quickReply = AiConsultQuestionBank.ParseQuickReply(request.QuickReplyValue);
+        // Act chips (act:show_more, …) bypass NLU and consult-slot parsing.
+        var actFromChip = AiFollowUpResolver.TryParseActQuickReply(request.QuickReplyValue, dialogue);
+        var quickReply = actFromChip is null
+            ? AiConsultQuestionBank.ParseQuickReply(request.QuickReplyValue)
+            : null;
+
+        var inFollowUpContext = AiFollowUpResolver.IsFollowUpContext(consult, dialogue);
 
         SlotState slots;
-        if (quickReply is null)
+        if (quickReply is null && actFromChip is null)
         {
             var nl = await _nlFilter.ParseAsync(new NlFilterRequest { Query = message }, cancellationToken);
-            slots = MergeSlots(previousSlots, nl, message, previousProductIds);
+            slots = MergeSlots(
+                previousSlots,
+                nl,
+                message,
+                previousProductIds,
+                dialogue,
+                applyCheaperHeuristic: !inFollowUpContext);
         }
         else
         {
-            // Carry the remembered filters forward untouched: parsing the chip's own label
-            // would let "Gaming" drag a laptop shopper over to Gaming Gear.
+            // Carry remembered filters: chip labels must not be re-parsed as free text.
             slots = previousSlots is null ? new SlotState() : CloneSlots(previousSlots);
         }
 
@@ -125,33 +143,165 @@ public sealed class AiShoppingAssistantService : IAiShoppingAssistantService
         await PromoteToStockedCategoryAsync(slots, categories, cancellationToken);
         var group = AiConsultQuestionBank.ResolveGroup(slots.CategoryId, categories);
 
-        var intent = quickReply is not null
-            ? AiConstants.IntentRecommend
-            : ClassifyIntent(message, context, previousSlots, slots, previousProductIds);
-        if (intent == AiConstants.IntentClarify && HasUsefulSlots(slots))
-            intent = AiConstants.IntentRecommend;
+        var categoryChangedPreview = quickReply is null
+                                     && actFromChip is null
+                                     && HasSwitchedShelf(previousSlots?.CategoryId, slots.CategoryId, categories);
+
+        FollowUpDecision? followUp = actFromChip;
+        if (followUp is null && inFollowUpContext && quickReply is null)
+        {
+            followUp = AiFollowUpResolver.Classify(
+                message, dialogue, context, slots, previousSlots, categoryChangedPreview);
+        }
+
+        // --- Early exits for discourse acts ---
+        if (followUp?.Act == AiFollowUpActs.Restart)
+        {
+            slots = new SlotState();
+            consult = null;
+            dialogue = new DialogueState { LastAct = AiFollowUpActs.Restart };
+            return await PersistTurnAsync(
+                conversation,
+                message,
+                "Sure — what are you looking for?",
+                AiConstants.IntentClarify,
+                slots,
+                consult,
+                dialogue,
+                Array.Empty<AiSuggestedProductDto>(),
+                new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase),
+                Array.Empty<AiChatActionDto>(),
+                Array.Empty<AiQuickReplyDto>(),
+                AiConstants.SourceHeuristic,
+                followUp.Act,
+                cancellationToken);
+        }
+
+        if (followUp?.Act == AiFollowUpActs.OutOfScope)
+        {
+            dialogue.LastAct = AiFollowUpActs.OutOfScope;
+            return await PersistTurnAsync(
+                conversation,
+                message,
+                "I can't look up order status in this chat. Open Account → Orders to track shipments and returns.",
+                AiConstants.IntentClarify,
+                slots,
+                consult,
+                dialogue,
+                Array.Empty<AiSuggestedProductDto>(),
+                new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase),
+                [
+                    new AiChatActionDto
+                    {
+                        Type = AiConstants.ActionOpenOrders,
+                        Label = "View my orders",
+                        ProductIds = Array.Empty<Guid>()
+                    }
+                ],
+                Array.Empty<AiQuickReplyDto>(),
+                AiConstants.SourceHeuristic,
+                followUp.Act,
+                cancellationToken);
+        }
+
+        if (followUp is { NeedsClarify: true } or { Act: AiFollowUpActs.Ambiguous })
+        {
+            dialogue.LastAct = AiFollowUpActs.Ambiguous;
+            var clarifyChips = AiDialogueQuickReplies.AmbiguousClarify(dialogue);
+            return await PersistTurnAsync(
+                conversation,
+                message,
+                "Which product do you mean?",
+                AiConstants.IntentClarify,
+                slots,
+                consult,
+                dialogue,
+                Array.Empty<AiSuggestedProductDto>(),
+                new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase),
+                Array.Empty<AiChatActionDto>(),
+                clarifyChips,
+                AiConstants.SourceHeuristic,
+                followUp.Act,
+                cancellationToken);
+        }
+
+        if (followUp?.Act == AiFollowUpActs.TopicSwitch)
+        {
+            ClearCategoryBoundSlots(slots);
+            consult = consult?.CloneForNewRound(keepBudget: true) ?? new ConsultState();
+            dialogue = new DialogueState { LastAct = AiFollowUpActs.TopicSwitch };
+            await DropBudgetIfItDoesNotFitShelfAsync(slots, consult, cancellationToken);
+            group = AiConsultQuestionBank.ResolveGroup(slots.CategoryId, categories);
+            // Fall through into the normal consult planner (do not return early).
+        }
+
+        string intent;
+        var skipConsultAsk = false;
+
+        if (followUp?.Act == AiFollowUpActs.InterruptFaq)
+        {
+            intent = AiConstants.IntentFaq;
+            skipConsultAsk = true;
+            dialogue.LastAct = AiFollowUpActs.InterruptFaq;
+        }
+        else if (followUp is not null
+                 && followUp.Act != AiFollowUpActs.None
+                 && followUp.Act != AiFollowUpActs.TopicSwitch
+                 && IsProductishFollowUp(followUp.Act))
+        {
+            if (followUp.Act == AiFollowUpActs.RefineRelative)
+                AiRelativeConstraints.Apply(followUp, slots, dialogue);
+
+            if (followUp.ClearShown || followUp.StrongFilterChange)
+            {
+                if (consult is not null)
+                    consult.ShownIds = [];
+                dialogue.LastShown = [];
+                dialogue.ExcludeShownOnNextSearch = false;
+            }
+
+            intent = MapFollowUpToIntent(followUp.Act);
+            skipConsultAsk = true;
+        }
+        else
+        {
+            intent = quickReply is not null
+                ? AiConstants.IntentRecommend
+                : ClassifyIntent(message, context, previousSlots, slots, previousProductIds);
+            if (intent == AiConstants.IntentClarify && HasUsefulSlots(slots))
+                intent = AiConstants.IntentRecommend;
+        }
 
         // A support question is not a product keyword - keep it out of the remembered filters.
         if (intent is AiConstants.IntentFaq or AiConstants.IntentSmalltalk)
             slots.Q = previousSlots?.Q;
 
-        // Interruption: the buyer asked something else mid-consultation. Answer it, then
-        // resume the pending question at the end of the same reply without spending budget.
-        var pendingQuestion = intent is AiConstants.IntentFaq
-            or AiConstants.IntentProductQa
-            or AiConstants.IntentSmalltalk
+        // Interruption: answer, then resume the pending question without spending budget.
+        var pendingQuestion = !skipConsultAsk
+                              && intent is AiConstants.IntentFaq
+                                  or AiConstants.IntentProductQa
+                                  or AiConstants.IntentSmalltalk
             ? await RebuildPendingQuestionAsync(consult, slots, group, categories, cancellationToken)
             : null;
 
-        ConsultDecision? decision = null;
-        if (pendingQuestion is null && AiConsultPlanner.IsEligibleIntent(intent))
+        // FAQ interrupt while collecting still resumes the pending chip question.
+        if (skipConsultAsk
+            && followUp?.Act == AiFollowUpActs.InterruptFaq
+            && string.Equals(consult?.Stage, AiConstants.ConsultStageCollecting, StringComparison.Ordinal))
         {
-            var categoryChanged = quickReply is null
-                                  && HasSwitchedShelf(previousSlots?.CategoryId, slots.CategoryId, categories);
+            pendingQuestion = await RebuildPendingQuestionAsync(
+                consult, slots, group, categories, cancellationToken);
+        }
 
-            // Clear the old shelf's slots before planning, so the count and the price bands
-            // below describe the shelf the buyer just moved to.
-            if (categoryChanged)
+        ConsultDecision? decision = null;
+        if (!skipConsultAsk
+            && pendingQuestion is null
+            && AiConsultPlanner.IsEligibleIntent(intent))
+        {
+            var categoryChanged = categoryChangedPreview
+                                  || followUp?.Act == AiFollowUpActs.TopicSwitch;
+
+            if (categoryChanged && followUp?.Act != AiFollowUpActs.TopicSwitch)
             {
                 ClearCategoryBoundSlots(slots);
                 await DropBudgetIfItDoesNotFitShelfAsync(slots, consult, cancellationToken);
@@ -199,12 +349,42 @@ public sealed class AiShoppingAssistantService : IAiShoppingAssistantService
                 AiConstants.IntentClarify,
                 slots,
                 consult,
+                dialogue,
                 Array.Empty<AiSuggestedProductDto>(),
                 new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase),
                 Array.Empty<AiChatActionDto>(),
                 AiConsultPlanner.ToQuickReplies(decision.Question),
                 questionSource,
+                followUp?.Act,
                 cancellationToken);
+        }
+
+        IReadOnlyCollection<Guid>? excludeIds = null;
+        var shouldExcludeShown = followUp?.Act == AiFollowUpActs.ShowMore
+            || (dialogue.ExcludeShownOnNextSearch
+                && followUp is not null
+                && followUp.Act is AiFollowUpActs.RefineFilter
+                    or AiFollowUpActs.RefineRelative
+                    or AiFollowUpActs.ShowMore
+                && !followUp.StrongFilterChange
+                && !followUp.ClearShown)
+            || (dialogue.ExcludeShownOnNextSearch
+                && followUp is null
+                && intent == AiConstants.IntentRefine);
+        if (shouldExcludeShown)
+        {
+            var excludeSet = new HashSet<Guid>();
+            if (consult?.ShownIds is { Count: > 0 } shown)
+            {
+                foreach (var id in shown)
+                    excludeSet.Add(id);
+            }
+
+            foreach (var item in dialogue.LastShown)
+                excludeSet.Add(item.ProductId);
+
+            if (excludeSet.Count > 0)
+                excludeIds = excludeSet;
         }
 
         var pack = await BuildGroundedPackAsync(
@@ -215,16 +395,28 @@ public sealed class AiShoppingAssistantService : IAiShoppingAssistantService
             context,
             previousProductIds,
             categories,
+            followUp,
+            dialogue,
+            excludeIds,
+            previousReasons,
             cancellationToken);
 
-        // After a consultation, present a small structured set (best / cheaper / step up)
-        // instead of a flat result list, and let the LLM cite only those.
+        // After a consultation, present a small structured set (best / cheaper / step up).
         IReadOnlyList<RankedProduct> ranked = Array.Empty<RankedProduct>();
-        if (decision is { ShouldAsk: false }
-            && pack.Products.Count > 0
-            && intent is AiConstants.IntentRecommend or AiConstants.IntentRefine or AiConstants.IntentBrowse)
+        var mayRank = (decision is null || !decision.ShouldAsk)
+                      && pack.Products.Count > 0
+                      && intent is (AiConstants.IntentRecommend
+                          or AiConstants.IntentRefine
+                          or AiConstants.IntentBrowse)
+                      && followUp?.Act is not (
+                          AiFollowUpActs.Explain
+                          or AiFollowUpActs.FocusQa
+                          or AiFollowUpActs.SelectFocus
+                          or AiFollowUpActs.CompareSet
+                          or AiFollowUpActs.CompatOrBundle);
+
+        if (mayRank)
         {
-            // A consultation answers with a structured trio; open-ended browsing keeps breadth.
             var presentCount = intent == AiConstants.IntentBrowse
                 ? AiConstants.MaxSuggestedProducts
                 : AiConstants.ConsultPresentCount;
@@ -245,8 +437,6 @@ public sealed class AiShoppingAssistantService : IAiShoppingAssistantService
         Dictionary<string, string> reasons;
         IReadOnlyList<AiChatActionDto> actions;
 
-        // With nothing to cite, a shopping turn must say the catalog is empty - left to the
-        // model it answers with generic buying advice that reads like a recommendation.
         var nothingToRecommend = pack.Products.Count == 0
             && intent is AiConstants.IntentRecommend
                 or AiConstants.IntentRefine
@@ -254,16 +444,19 @@ public sealed class AiShoppingAssistantService : IAiShoppingAssistantService
 
         if (_llm.UseMock || nothingToRecommend)
         {
-            (reply, suggested, reasons, actions) = BuildHeuristicOutcome(intent, message, pack, slots, context);
+            (reply, suggested, reasons, actions) = BuildHeuristicOutcome(
+                intent, message, pack, slots, context, followUp);
             source = AiConstants.SourceHeuristic;
         }
         else
         {
-            var llmResult = await TryLlmReplyAsync(message, history, intent, slots, consult, pack, cancellationToken);
+            var llmResult = await TryLlmReplyAsync(
+                message, history, intent, slots, consult, pack, followUp, dialogue, cancellationToken);
             if (llmResult is null)
             {
                 _logger.LogInformation("Shopping assistant falling back to heuristic (no Groq response).");
-                (reply, suggested, reasons, actions) = BuildHeuristicOutcome(intent, message, pack, slots, context);
+                (reply, suggested, reasons, actions) = BuildHeuristicOutcome(
+                    intent, message, pack, slots, context, followUp);
                 source = AiConstants.SourceHeuristic;
             }
             else
@@ -277,10 +470,18 @@ public sealed class AiShoppingAssistantService : IAiShoppingAssistantService
                         or AiConstants.IntentRefine
                         or AiConstants.IntentBrowse
                         or AiConstants.IntentProductQa
-                        or AiConstants.IntentCompare)
+                        or AiConstants.IntentCompare
+                        or AiConstants.IntentExplain)
                 {
                     suggested = pack.Products.Take(AiConstants.MaxSuggestedProducts).ToList();
                 }
+
+                // Explain must not swap in different products.
+                if (followUp?.Act == AiFollowUpActs.Explain && pack.Products.Count > 0)
+                    suggested = pack.Products.Take(AiConstants.MaxSuggestedProducts).ToList();
+
+                if (followUp?.Act == AiFollowUpActs.SelectFocus && pack.Products.Count > 0)
+                    suggested = pack.Products.Take(1).ToList();
 
                 reasons = FilterReasons(llmResult.Value.Reasons, suggested);
                 actions = SanitizeActions(llmResult.Value.Actions, suggested, slots, intent);
@@ -295,9 +496,6 @@ public sealed class AiShoppingAssistantService : IAiShoppingAssistantService
                 suggested = Array.Empty<AiCompareProductRecord>();
         }
 
-        // On a consultation turn the ranker already chose the structured set (best / cheaper /
-        // step up) and every pick is grounded. The model writes the prose, not the shortlist -
-        // otherwise two questions can end in a single card.
         if (ranked.Count > 0 && suggested.Count < ranked.Count && intent != AiConstants.IntentBrowse)
             suggested = ranked.Select(r => r.Product).ToList();
 
@@ -307,8 +505,6 @@ public sealed class AiShoppingAssistantService : IAiShoppingAssistantService
             {
                 var key = p.ProductId.ToString("D");
                 rankedById.TryGetValue(p.ProductId, out var rank);
-                // The ranker's reason is assembled from catalog fields, so it beats both the
-                // model's prose and the generic heuristic line whenever the product was ranked.
                 var reason = !string.IsNullOrWhiteSpace(rank?.Reason)
                     ? rank!.Reason
                     : reasons.GetValueOrDefault(key);
@@ -316,14 +512,12 @@ public sealed class AiShoppingAssistantService : IAiShoppingAssistantService
             })
             .ToList();
 
-        // Persist ranker reasons too, so reopening the conversation keeps them.
         foreach (var dto in suggestedDtos)
         {
             if (!string.IsNullOrWhiteSpace(dto.Reason))
                 reasons[dto.ProductId.ToString("D")] = dto.Reason!;
         }
 
-        // Never silently return results that miss the buyer's stated constraints.
         if (pack.Relaxed.Count > 0)
             reply = BuildRelaxNote(pack.Relaxed) + Environment.NewLine + Environment.NewLine + reply;
 
@@ -336,8 +530,54 @@ public sealed class AiShoppingAssistantService : IAiShoppingAssistantService
             quickReplies = AiConsultPlanner.ToQuickReplies(pendingQuestion);
         }
 
-        if (consult is not null)
+        // Update discourse memory after a present / focus turn.
+        dialogue.LastAct = followUp?.Act ?? intent;
+        var isPresentPath = suggestedDtos.Count > 0
+            && intent is AiConstants.IntentRecommend
+                or AiConstants.IntentRefine
+                or AiConstants.IntentBrowse;
+
+        if (isPresentPath
+            && followUp?.Act is not (
+                AiFollowUpActs.Explain
+                or AiFollowUpActs.FocusQa
+                or AiFollowUpActs.SelectFocus
+                or AiFollowUpActs.CompatOrBundle))
         {
+            dialogue.LastShown = suggestedDtos
+                .Select((p, i) => new DialogueLastShownItem
+                {
+                    ProductId = p.ProductId,
+                    Badge = p.Badge,
+                    Price = p.EffectivePrice,
+                    Ordinal = i + 1,
+                    AvgRating = p.AvgRating
+                })
+                .ToList();
+            dialogue.AnchorPrice = dialogue.LastShown.Count > 0
+                ? dialogue.LastShown.Min(x => x.Price)
+                : null;
+            dialogue.CompareCandidateIds = dialogue.LastShown.Select(x => x.ProductId).ToList();
+            dialogue.ExcludeShownOnNextSearch = true;
+        }
+
+        if (followUp?.Act == AiFollowUpActs.SelectFocus
+            && followUp.FocusIds.Count > 0)
+        {
+            dialogue.FocusProductId = followUp.FocusIds[0];
+        }
+        else if (followUp?.Act is AiFollowUpActs.Explain or AiFollowUpActs.FocusQa
+                 && followUp.FocusIds.Count > 0)
+        {
+            dialogue.FocusProductId = followUp.FocusIds[0];
+        }
+
+        if (suggestedDtos.Count > 0
+            && intent is AiConstants.IntentRecommend
+                or AiConstants.IntentRefine
+                or AiConstants.IntentBrowse)
+        {
+            consult ??= new ConsultState();
             consult.Relaxed = pack.Relaxed.ToList();
             foreach (var dto in suggestedDtos)
             {
@@ -347,6 +587,21 @@ public sealed class AiShoppingAssistantService : IAiShoppingAssistantService
 
             if (consult.ShownIds.Count > MaxTrackedShownIds)
                 consult.ShownIds = consult.ShownIds.TakeLast(MaxTrackedShownIds).ToList();
+
+            consult.Stage = AiConstants.ConsultStagePresented;
+            consult.PendingQuestion = null;
+        }
+        else if (consult is not null)
+        {
+            consult.Relaxed = pack.Relaxed.ToList();
+        }
+
+        if (quickReplies.Count == 0
+            && suggestedDtos.Count > 0
+            && dialogue.LastShown.Count > 0
+            && pendingQuestion is null)
+        {
+            quickReplies = AiDialogueQuickReplies.AfterPresent(dialogue);
         }
 
         return await PersistTurnAsync(
@@ -356,11 +611,13 @@ public sealed class AiShoppingAssistantService : IAiShoppingAssistantService
             intent,
             slots,
             consult,
+            dialogue,
             suggestedDtos,
             reasons,
             actions,
             quickReplies,
             source,
+            followUp?.Act,
             cancellationToken);
     }
 
@@ -372,14 +629,17 @@ public sealed class AiShoppingAssistantService : IAiShoppingAssistantService
         string intent,
         SlotState slots,
         ConsultState? consult,
+        DialogueState? dialogue,
         IReadOnlyList<AiSuggestedProductDto> suggested,
         Dictionary<string, string> reasons,
         IReadOnlyList<AiChatActionDto> actions,
         IReadOnlyList<AiQuickReplyDto> quickReplies,
         string source,
+        string? followUpAct,
         CancellationToken cancellationToken)
     {
-        var metaJson = BuildMetaJson(intent, slots, consult, suggested, reasons, actions, quickReplies, source);
+        var metaJson = BuildMetaJson(
+            intent, slots, consult, dialogue, suggested, reasons, actions, quickReplies, source);
         var (userMsg, assistantMsg) = await _conversations.AppendTurnAsync(
             conversation.ConversationId,
             message,
@@ -409,7 +669,18 @@ public sealed class AiShoppingAssistantService : IAiShoppingAssistantService
             Slots = ToSlotsDto(slots),
             Actions = actions,
             QuickReplies = quickReplies,
-            Consult = consult is null ? null : AiConsultPlanner.ToDto(consult)
+            Consult = consult is null ? null : AiConsultPlanner.ToDto(consult),
+            FollowUpAct = followUpAct,
+            FocusProductId = dialogue?.FocusProductId,
+            LastShown = dialogue?.LastShown is { Count: > 0 } shown
+                ? shown.Select(x => new AiDialogueLastShownDto
+                {
+                    ProductId = x.ProductId,
+                    Badge = x.Badge,
+                    Price = x.Price,
+                    Ordinal = x.Ordinal
+                }).ToList()
+                : null
         };
     }
 
@@ -507,6 +778,10 @@ public sealed class AiShoppingAssistantService : IAiShoppingAssistantService
         AiChatContextDto? context,
         IReadOnlyList<Guid> previousProductIds,
         IReadOnlyList<AiCategoryLookup> categories,
+        FollowUpDecision? followUp,
+        DialogueState? dialogue,
+        IReadOnlyCollection<Guid>? excludeIds,
+        IReadOnlyDictionary<string, string>? previousReasons,
         CancellationToken cancellationToken)
     {
         var products = new List<AiCompareProductRecord>();
@@ -517,6 +792,12 @@ public sealed class AiShoppingAssistantService : IAiShoppingAssistantService
         IReadOnlyList<string> compareHighlights = Array.Empty<string>();
         string? focusNotes = null;
 
+        if (followUp?.Act == AiFollowUpActs.CompatOrBundle)
+        {
+            return await BuildCompatOrBundlePackAsync(
+                message, followUp, dialogue, context, cancellationToken);
+        }
+
         switch (intent)
         {
             case AiConstants.IntentFaq:
@@ -524,12 +805,43 @@ public sealed class AiShoppingAssistantService : IAiShoppingAssistantService
                 faqText = ResolveFaqText(faqTopic);
                 break;
 
+            case AiConstants.IntentExplain:
+            {
+                var explainIds = ResolveFocusProductIds(followUp, dialogue, context, previousProductIds, take: 3);
+                if (explainIds.Count > 0)
+                {
+                    products = (await _catalog.GetApprovedProductsByIdsAsync(explainIds, cancellationToken))
+                        .ToList();
+                    var sb = new StringBuilder();
+                    foreach (var p in products)
+                    {
+                        var key = p.ProductId.ToString("D");
+                        if (previousReasons is not null
+                            && previousReasons.TryGetValue(key, out var prior)
+                            && !string.IsNullOrWhiteSpace(prior))
+                        {
+                            sb.AppendLine($"Prior reason for {p.Name}: {prior}");
+                        }
+
+                        sb.AppendLine(BuildProductQaNotes(p));
+                    }
+
+                    focusNotes = sb.ToString().Trim();
+                }
+
+                break;
+            }
+
             case AiConstants.IntentProductQa:
             {
-                var focusId = context?.ProductId;
-                if (focusId is Guid pid && pid != Guid.Empty)
+                var focusIds = followUp is { FocusIds.Count: > 0 }
+                    ? followUp.FocusIds
+                    : ResolveFocusProductIds(followUp, dialogue, context, previousProductIds, take: 1);
+
+                if (focusIds.Count > 0)
                 {
-                    products = (await _catalog.GetApprovedProductsByIdsAsync([pid], cancellationToken)).ToList();
+                    products = (await _catalog.GetApprovedProductsByIdsAsync(
+                        focusIds.Take(1).ToList(), cancellationToken)).ToList();
                     if (products.Count > 0)
                         focusNotes = BuildProductQaNotes(products[0]);
                 }
@@ -542,6 +854,7 @@ public sealed class AiShoppingAssistantService : IAiShoppingAssistantService
                         cancellationToken);
                     var ids = similar.Select(s => s.ProductId).ToList();
                     products = (await _catalog.GetApprovedProductsByIdsAsync(ids, cancellationToken)).ToList();
+                    products = ApplyExclude(products, excludeIds);
                 }
 
                 break;
@@ -549,7 +862,8 @@ public sealed class AiShoppingAssistantService : IAiShoppingAssistantService
 
             case AiConstants.IntentCompare:
             {
-                var compareIds = ResolveCompareIds(message, context, previousProductIds);
+                var compareIds = ResolveCompareIdsEnhanced(
+                    message, context, previousProductIds, dialogue, followUp);
                 if (compareIds.Count >= AiConstants.MinCompareProducts)
                 {
                     try
@@ -588,6 +902,7 @@ public sealed class AiShoppingAssistantService : IAiShoppingAssistantService
                     cancellationToken);
                 var ids = recs.Items.Select(i => i.ProductId).ToList();
                 products = (await _catalog.GetApprovedProductsByIdsAsync(ids, cancellationToken)).ToList();
+                products = ApplyExclude(products, excludeIds);
                 break;
             }
 
@@ -607,10 +922,11 @@ public sealed class AiShoppingAssistantService : IAiShoppingAssistantService
                     products = (await _catalog.GetApprovedProductsByIdsAsync(
                         similar.Select(s => s.ProductId).ToList(),
                         cancellationToken)).ToList();
+                    products = ApplyExclude(products, excludeIds);
                 }
                 else if (HasUsefulSlots(slots))
                 {
-                    var search = await SearchWithRelaxAsync(slots, categories, cancellationToken);
+                    var search = await SearchWithRelaxAsync(slots, categories, excludeIds, cancellationToken);
                     products = search.Products.ToList();
                     relaxed = search.Relaxed;
                 }
@@ -627,6 +943,7 @@ public sealed class AiShoppingAssistantService : IAiShoppingAssistantService
                     products = (await _catalog.GetApprovedProductsByIdsAsync(
                         recs.Items.Select(i => i.ProductId).ToList(),
                         cancellationToken)).ToList();
+                    products = ApplyExclude(products, excludeIds);
                 }
 
                 break;
@@ -645,6 +962,221 @@ public sealed class AiShoppingAssistantService : IAiShoppingAssistantService
         };
     }
 
+    private async Task<GroundedPack> BuildCompatOrBundlePackAsync(
+        string message,
+        FollowUpDecision followUp,
+        DialogueState? dialogue,
+        AiChatContextDto? context,
+        CancellationToken cancellationToken)
+    {
+        var focusId = followUp.FocusIds.Count > 0
+            ? followUp.FocusIds[0]
+            : dialogue?.FocusProductId
+              ?? context?.ProductId
+              ?? Guid.Empty;
+
+        if (focusId == Guid.Empty)
+        {
+            return new GroundedPack
+            {
+                FocusNotes = "I need a product to check accessories or compatibility against."
+            };
+        }
+
+        var lower = message.ToLowerInvariant();
+        var secondaryFromFocus = followUp.FocusIds.Count >= 2 ? followUp.FocusIds[1] : (Guid?)null;
+        var secondaryFromMessage = ExtractGuids(message)
+            .FirstOrDefault(id => id != focusId && id != Guid.Empty);
+        var secondaryId = secondaryFromFocus
+                          ?? (secondaryFromMessage != Guid.Empty ? secondaryFromMessage : null);
+        var freeText = TryExtractCompatFreeText(lower);
+
+        var wantsCompat = secondaryId is not null
+                          || !string.IsNullOrWhiteSpace(freeText)
+                          || ContainsAny(lower,
+                              "compatible", "compatibility", "hợp với", "hop voi", "work with", "works with");
+
+        if (wantsCompat && (secondaryId is not null || !string.IsNullOrWhiteSpace(freeText)))
+        {
+            try
+            {
+                var result = await _compatibility.CheckAsync(
+                    new CompatibilityCheckRequest
+                    {
+                        PrimaryProductId = focusId,
+                        SecondaryProductId = secondaryId,
+                        FreeTextDevice = secondaryId is null ? freeText : null
+                    },
+                    cancellationToken);
+
+                var ids = new List<Guid> { focusId };
+                if (secondaryId is Guid sid)
+                    ids.Add(sid);
+                var products = (await _catalog.GetApprovedProductsByIdsAsync(ids, cancellationToken)).ToList();
+                var notes = new StringBuilder();
+                notes.AppendLine($"{result.Verdict}: {result.Headline}");
+                foreach (var r in result.Reasons.Take(5))
+                    notes.AppendLine($"- {r}");
+
+                return new GroundedPack
+                {
+                    Products = products,
+                    FocusNotes = notes.ToString().Trim()
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogInformation(ex, "Compatibility check failed; falling back to bundle.");
+            }
+        }
+
+        try
+        {
+            var bundle = await _bundle.GetBundleAsync(focusId, cancellationToken);
+            var itemIds = bundle.Items.Select(i => i.ProductId).Take(AiConstants.MaxSuggestedProducts).ToList();
+            var products = itemIds.Count == 0
+                ? []
+                : (await _catalog.GetApprovedProductsByIdsAsync(itemIds, cancellationToken)).ToList();
+
+            var sb = new StringBuilder();
+            sb.AppendLine(CultureInfo.InvariantCulture,
+                $"Suggested accessories to buy with {bundle.ProductName}:");
+            foreach (var item in bundle.Items.Take(AiConstants.MaxSuggestedProducts))
+            {
+                var line = FormattableString.Invariant(
+                    $"- {item.Name}: {item.EffectivePrice:0} {item.Currency}");
+                if (!string.IsNullOrWhiteSpace(item.Reason))
+                    line += $" ({item.Reason})";
+                sb.AppendLine(line);
+            }
+
+            return new GroundedPack
+            {
+                Products = products,
+                FocusNotes = sb.ToString().Trim()
+            };
+        }
+        catch (Exception ex)
+        {
+            _logger.LogInformation(ex, "Bundle lookup failed.");
+            var products = (await _catalog.GetApprovedProductsByIdsAsync([focusId], cancellationToken)).ToList();
+            return new GroundedPack
+            {
+                Products = products,
+                FocusNotes = "I could not load accessory suggestions right now."
+            };
+        }
+    }
+
+    private static List<AiCompareProductRecord> ApplyExclude(
+        List<AiCompareProductRecord> products,
+        IReadOnlyCollection<Guid>? excludeIds)
+    {
+        if (excludeIds is null || excludeIds.Count == 0 || products.Count == 0)
+            return products;
+
+        var set = excludeIds as HashSet<Guid> ?? excludeIds.ToHashSet();
+        return products.Where(p => !set.Contains(p.ProductId)).ToList();
+    }
+
+    private static IReadOnlyList<Guid> ResolveFocusProductIds(
+        FollowUpDecision? followUp,
+        DialogueState? dialogue,
+        AiChatContextDto? context,
+        IReadOnlyList<Guid> previousProductIds,
+        int take)
+    {
+        if (followUp is { FocusIds.Count: > 0 })
+            return followUp.FocusIds.Take(take).ToList();
+        if (dialogue?.FocusProductId is Guid focus && focus != Guid.Empty)
+            return [focus];
+        if (context?.ProductId is Guid pdp && pdp != Guid.Empty)
+            return [pdp];
+        if (dialogue?.LastShown is { Count: > 0 })
+            return dialogue.LastShown.OrderBy(x => x.Ordinal).Select(x => x.ProductId).Take(take).ToList();
+        return previousProductIds.Take(take).ToList();
+    }
+
+    private static IReadOnlyList<Guid> ResolveCompareIdsEnhanced(
+        string message,
+        AiChatContextDto? context,
+        IReadOnlyList<Guid> previousProductIds,
+        DialogueState? dialogue,
+        FollowUpDecision? followUp)
+    {
+        if (followUp is { FocusIds.Count: >= AiConstants.MinCompareProducts })
+            return followUp.FocusIds.Take(AiConstants.MaxCompareProducts).ToList();
+
+        var ordinals = AiEntityResolver.ParseOrdinals(message);
+        var fromOrdinals = AiEntityResolver.ResolveFromOrdinals(ordinals, dialogue);
+        if (fromOrdinals.Count >= AiConstants.MinCompareProducts)
+            return fromOrdinals.Take(AiConstants.MaxCompareProducts).ToList();
+
+        return ResolveCompareIds(message, context, previousProductIds);
+    }
+
+    private static IReadOnlyList<Guid> ExtractGuids(string message)
+    {
+        var ids = new List<Guid>();
+        foreach (Match match in Regex.Matches(
+                     message,
+                     @"[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}"))
+        {
+            if (Guid.TryParse(match.Value, out var id) && id != Guid.Empty)
+                ids.Add(id);
+        }
+
+        return ids;
+    }
+
+    private static string? TryExtractCompatFreeText(string lower)
+    {
+        foreach (var marker in new[]
+                 {
+                     "compatible with ", "compatibility with ", "hợp với ", "hop voi ",
+                     "work with ", "works with ", "dùng với ", "dung voi "
+                 })
+        {
+            var idx = lower.IndexOf(marker, StringComparison.Ordinal);
+            if (idx < 0)
+                continue;
+            var rest = lower[(idx + marker.Length)..].Trim();
+            if (rest.Length == 0)
+                continue;
+            // Drop trailing question fluff
+            var cut = rest.IndexOfAny(['?', '.', '!']);
+            if (cut > 0)
+                rest = rest[..cut].Trim();
+            if (rest.Length is >= 2 and <= 80)
+                return rest;
+        }
+
+        return null;
+    }
+
+    private static bool IsProductishFollowUp(string act)
+        => act is AiFollowUpActs.ShowMore
+            or AiFollowUpActs.RefineFilter
+            or AiFollowUpActs.RefineRelative
+            or AiFollowUpActs.Explain
+            or AiFollowUpActs.FocusQa
+            or AiFollowUpActs.SelectFocus
+            or AiFollowUpActs.CompareSet
+            or AiFollowUpActs.CompatOrBundle;
+
+    private static string MapFollowUpToIntent(string act)
+        => act switch
+        {
+            AiFollowUpActs.ShowMore or AiFollowUpActs.RefineFilter or AiFollowUpActs.RefineRelative
+                => AiConstants.IntentRefine,
+            AiFollowUpActs.Explain => AiConstants.IntentExplain,
+            AiFollowUpActs.FocusQa or AiFollowUpActs.SelectFocus => AiConstants.IntentProductQa,
+            AiFollowUpActs.CompareSet => AiConstants.IntentCompare,
+            AiFollowUpActs.CompatOrBundle => AiConstants.IntentRecommend,
+            AiFollowUpActs.InterruptFaq => AiConstants.IntentFaq,
+            _ => AiConstants.IntentRecommend
+        };
+
     /// <summary>
     /// Search by slots, relaxing one constraint at a time when nothing matches, and reporting
     /// what was dropped so the reply can say it out loud instead of silently returning misfits.
@@ -653,6 +1185,7 @@ public sealed class AiShoppingAssistantService : IAiShoppingAssistantService
         SearchWithRelaxAsync(
             SlotState slots,
             IReadOnlyList<AiCategoryLookup> categories,
+            IReadOnlyCollection<Guid>? excludeIds,
             CancellationToken cancellationToken)
     {
         // Relax INFERRED constraints before STATED ones. The NL parser guesses the keyword and
@@ -662,7 +1195,7 @@ public sealed class AiShoppingAssistantService : IAiShoppingAssistantService
         var current = CloneSlots(slots);
         var relaxed = new List<string>();
 
-        var hits = await SearchAsync(current, cancellationToken);
+        var hits = await SearchAsync(current, excludeIds, cancellationToken);
         if (hits.Count > 0)
             return (hits, relaxed);
 
@@ -671,7 +1204,7 @@ public sealed class AiShoppingAssistantService : IAiShoppingAssistantService
         {
             current.MinRating = null;
             relaxed.Add("the minimum rating");
-            hits = await SearchAsync(current, cancellationToken);
+            hits = await SearchAsync(current, excludeIds, cancellationToken);
             if (hits.Count > 0)
                 return (hits, relaxed);
         }
@@ -680,7 +1213,7 @@ public sealed class AiShoppingAssistantService : IAiShoppingAssistantService
         if (!string.IsNullOrWhiteSpace(current.Q))
         {
             current.Q = null;
-            hits = await SearchAsync(current, cancellationToken);
+            hits = await SearchAsync(current, excludeIds, cancellationToken);
             if (hits.Count > 0)
                 return (hits, relaxed);
         }
@@ -700,7 +1233,7 @@ public sealed class AiShoppingAssistantService : IAiShoppingAssistantService
             current.CategoryName = parent.Name;
             node = parent;
 
-            hits = await SearchAsync(current, cancellationToken);
+            hits = await SearchAsync(current, excludeIds, cancellationToken);
             if (hits.Count > 0)
                 return (hits, relaxed);
         }
@@ -714,7 +1247,7 @@ public sealed class AiShoppingAssistantService : IAiShoppingAssistantService
             current.MinPrice = null;
             relaxed.Add(string.Format(
                 CultureInfo.InvariantCulture, "the budget up to {0:#,0} VND", current.MaxPrice));
-            hits = await SearchAsync(current, cancellationToken);
+            hits = await SearchAsync(current, excludeIds, cancellationToken);
             if (hits.Count > 0)
                 return (hits, relaxed);
         }
@@ -722,7 +1255,7 @@ public sealed class AiShoppingAssistantService : IAiShoppingAssistantService
         {
             current.MinPrice = null;
             relaxed.Add("the minimum price");
-            hits = await SearchAsync(current, cancellationToken);
+            hits = await SearchAsync(current, excludeIds, cancellationToken);
             if (hits.Count > 0)
                 return (hits, relaxed);
         }
@@ -732,7 +1265,7 @@ public sealed class AiShoppingAssistantService : IAiShoppingAssistantService
         {
             relaxed.Add($"the {current.Brand} brand filter");
             current.Brand = null;
-            hits = await SearchAsync(current, cancellationToken);
+            hits = await SearchAsync(current, excludeIds, cancellationToken);
             if (hits.Count > 0)
                 return (hits, relaxed);
         }
@@ -741,13 +1274,29 @@ public sealed class AiShoppingAssistantService : IAiShoppingAssistantService
         return (Array.Empty<AiCompareProductRecord>(), Array.Empty<string>());
     }
 
-    private Task<IReadOnlyList<AiCompareProductRecord>> SearchAsync(
+    private async Task<IReadOnlyList<AiCompareProductRecord>> SearchAsync(
         SlotState slots,
+        IReadOnlyCollection<Guid>? excludeIds,
         CancellationToken cancellationToken)
-        => _catalog.SearchApprovedProductsAsync(
+    {
+        var excludeCount = excludeIds?.Count ?? 0;
+        var take = AiConstants.CatalogContextProductLimit + excludeCount;
+        var hits = await _catalog.SearchApprovedProductsAsync(
             ToProductQuery(slots),
-            AiConstants.CatalogContextProductLimit,
+            take,
             cancellationToken);
+
+        if (excludeIds is { Count: > 0 })
+        {
+            var set = excludeIds as HashSet<Guid> ?? excludeIds.ToHashSet();
+            return hits
+                .Where(p => !set.Contains(p.ProductId))
+                .Take(AiConstants.CatalogContextProductLimit)
+                .ToList();
+        }
+
+        return hits.Take(AiConstants.CatalogContextProductLimit).ToList();
+    }
 
     private static string BuildRelaxNote(IReadOnlyList<string> relaxed)
         => $"Nothing matched every requirement, so I relaxed {string.Join(", ", relaxed)}.";
@@ -1120,21 +1669,38 @@ public sealed class AiShoppingAssistantService : IAiShoppingAssistantService
         SlotState slots,
         ConsultState? consult,
         GroundedPack pack,
+        FollowUpDecision? followUp,
+        DialogueState? dialogue,
         CancellationToken cancellationToken)
     {
+        var followUpHint = followUp is null || followUp.Act is AiFollowUpActs.None
+            ? string.Empty
+            : $"""
+               Follow-up act: {followUp.Act}. Focus product ids: [{string.Join(", ", followUp.FocusIds)}].
+               Refer to products by badge or ordinal only if provided in the pack.
+               Do not re-ask the 3 consultation questions.
+               {(followUp.Act == AiFollowUpActs.Explain
+                   ? "If act=explain, do not suggest different products."
+                   : string.Empty)}
+               {(followUp.Act == AiFollowUpActs.ShowMore
+                   ? "If act=show_more, acknowledge these are additional options under the same filters."
+                   : string.Empty)}
+               """;
+
         var systemPrompt =
-            """
+            $$"""
             You are AIDR shopping assistant for a multi-vendor consumer electronics marketplace.
             Help buyers with product advice and shopping FAQs (shipping, payment, returns, vouchers, warranty).
             Reply in clear English. Be concise (2-5 short paragraphs or bullets). Ask at most one clarifying question.
             Use ONLY grounded context below. Never invent product ids, prices, stock, or policies.
             When FAQ text is provided, paraphrase it - do not add new policy rules.
+            {{followUpHint}}
             Return ONLY JSON:
             {
               "reply": string,
               "productIds": string[],
               "reasons": { "<productId>": "short why" },
-              "actions": [ { "type": "open_catalog|open_compare|open_product|none", "label": string, "productIds": string[] } ]
+              "actions": [ { "type": "open_catalog|open_compare|open_product|open_orders|none", "label": string, "productIds": string[] } ]
             }
             productIds must be empty for FAQ/clarify/smalltalk unless context products are explicitly discussed.
             Max 5 productIds, all from catalog context.
@@ -1149,6 +1715,9 @@ public sealed class AiShoppingAssistantService : IAiShoppingAssistantService
         }
 
         var consultNotes = BuildConsultNotes(consult);
+        var focusHint = dialogue?.FocusProductId is Guid fid
+            ? $"Dialogue focus product: {fid:D}"
+            : string.Empty;
         turns.Add(new LlmChatMessage
         {
             Role = AiConstants.RoleUser,
@@ -1156,6 +1725,7 @@ public sealed class AiShoppingAssistantService : IAiShoppingAssistantService
                 $"""
                 Intent: {intent}
                 Active slots: {JsonSerializer.Serialize(ToSlotsDto(slots), JsonOptions)}
+                {focusHint}
                 {(consultNotes is null
                     ? string.Empty
                     : $"Buyer answered: {consultNotes}. Open with one sentence tying the picks to those answers. Ask no new question.")}
@@ -1243,7 +1813,8 @@ public sealed class AiShoppingAssistantService : IAiShoppingAssistantService
             string message,
             GroundedPack pack,
             SlotState slots,
-            AiChatContextDto? context)
+            AiChatContextDto? context,
+            FollowUpDecision? followUp = null)
     {
         var reasons = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         var products = pack.Products.Take(AiConstants.MaxSuggestedProducts).ToList();
@@ -1272,21 +1843,49 @@ public sealed class AiShoppingAssistantService : IAiShoppingAssistantService
                 Array.Empty<AiChatActionDto>());
         }
 
+        if (intent == AiConstants.IntentExplain && products.Count > 0)
+        {
+            var p = products[0];
+            var sb = new StringBuilder();
+            sb.AppendLine(CultureInfo.InvariantCulture,
+                $"Here is why I highlighted {p.Name}:");
+            if (!string.IsNullOrWhiteSpace(pack.FocusNotes))
+                sb.AppendLine(pack.FocusNotes);
+            else
+                sb.AppendLine(BuildHeuristicReason(p, slots));
+            reasons[p.ProductId.ToString("D")] = "Explained from grounded facts";
+            return (sb.ToString().Trim(), products, reasons, DefaultActions(intent, products, slots));
+        }
+
         if (intent == AiConstants.IntentProductQa && products.Count > 0)
         {
             var p = products[0];
             var price = EffectivePrice(p);
             var available = Math.Max(0, p.StockQuantity - p.ReservedQuantity);
             var sb = new StringBuilder();
-            sb.Append(CultureInfo.InvariantCulture,
-                $"{p.Name} ({p.Brand ?? "-"}) is listed at {price:0} {p.Currency}");
-            if (p.WarrantyMonths is int w)
-                sb.Append(CultureInfo.InvariantCulture, $", with {w} months warranty");
-            sb.Append(CultureInfo.InvariantCulture, $". Rating {p.AvgRating:0.0} from {p.ReviewCount} reviews. ");
-            sb.Append(available > 0 ? "In stock." : "Currently out of stock.");
+            if (followUp?.Act == AiFollowUpActs.SelectFocus)
+            {
+                sb.Append(CultureInfo.InvariantCulture,
+                    $"Focusing on {p.Name} ({p.Brand ?? "-"}) at {price:0} {p.Currency}. ");
+                sb.Append(CultureInfo.InvariantCulture,
+                    $"Rating {p.AvgRating:0.0} from {p.ReviewCount} reviews. ");
+                sb.Append(available > 0 ? "In stock." : "Currently out of stock.");
+            }
+            else
+            {
+                sb.Append(CultureInfo.InvariantCulture,
+                    $"{p.Name} ({p.Brand ?? "-"}) is listed at {price:0} {p.Currency}");
+                if (p.WarrantyMonths is int w)
+                    sb.Append(CultureInfo.InvariantCulture, $", with {w} months warranty");
+                sb.Append(CultureInfo.InvariantCulture, $". Rating {p.AvgRating:0.0} from {p.ReviewCount} reviews. ");
+                sb.Append(available > 0 ? "In stock." : "Currently out of stock.");
+            }
+
             if (!string.IsNullOrWhiteSpace(pack.FocusNotes))
                 sb.Append(' ').Append(pack.FocusNotes);
-            reasons[p.ProductId.ToString("D")] = "Currently viewing this product";
+            reasons[p.ProductId.ToString("D")] = followUp?.Act == AiFollowUpActs.SelectFocus
+                ? "Selected from previous suggestions"
+                : "Currently viewing this product";
             return (sb.ToString(), products, reasons, DefaultActions(intent, products, slots));
         }
 
@@ -1325,20 +1924,39 @@ public sealed class AiShoppingAssistantService : IAiShoppingAssistantService
         if (products.Count > 0)
         {
             var sb = new StringBuilder();
-            sb.AppendLine(intent == AiConstants.IntentBrowse
-                ? "Based on your activity, here are products you may like:"
-                : "Here are Approved products that match your preferences:");
-            foreach (var p in products)
+            if (followUp?.Act == AiFollowUpActs.CompatOrBundle && !string.IsNullOrWhiteSpace(pack.FocusNotes))
             {
-                var price = EffectivePrice(p);
-                var reason = BuildHeuristicReason(p, slots);
-                reasons[p.ProductId.ToString("D")] = reason;
-                sb.AppendLine(CultureInfo.InvariantCulture,
-                    $"- {p.Name} ({p.Brand ?? "-"}) - {price:0} {p.Currency}, rating {p.AvgRating:0.0}");
+                sb.AppendLine(pack.FocusNotes);
+            }
+            else
+            {
+                sb.AppendLine(intent == AiConstants.IntentBrowse
+                    ? "Based on your activity, here are products you may like:"
+                    : followUp?.Act == AiFollowUpActs.ShowMore
+                        ? "Here are more options under your current filters:"
+                        : "Here are Approved products that match your preferences:");
+                foreach (var p in products)
+                {
+                    var price = EffectivePrice(p);
+                    var reason = BuildHeuristicReason(p, slots);
+                    reasons[p.ProductId.ToString("D")] = reason;
+                    sb.AppendLine(CultureInfo.InvariantCulture,
+                        $"- {p.Name} ({p.Brand ?? "-"}) - {price:0} {p.Currency}, rating {p.AvgRating:0.0}");
+                }
+
+                sb.Append("Open a product for specs and reviews, or ask me to refine by brand, budget, or rating.");
             }
 
-            sb.Append("Open a product for specs and reviews, or ask me to refine by brand, budget, or rating.");
             return (sb.ToString().Trim(), products, reasons, DefaultActions(intent, products, slots));
+        }
+
+        if (followUp?.Act == AiFollowUpActs.ShowMore)
+        {
+            return (
+                "That's all I found under your current filters. Try widening budget or brand.",
+                Array.Empty<AiCompareProductRecord>(),
+                reasons,
+                DefaultActions(AiConstants.IntentRefine, Array.Empty<AiCompareProductRecord>(), slots));
         }
 
         if (context?.ProductId is not null)
@@ -1420,7 +2038,9 @@ public sealed class AiShoppingAssistantService : IAiShoppingAssistantService
         SlotState? previous,
         NlFilterResultDto nl,
         string message,
-        IReadOnlyList<Guid> previousProductIds)
+        IReadOnlyList<Guid> previousProductIds,
+        DialogueState? dialogue = null,
+        bool applyCheaperHeuristic = true)
     {
         var lower = message.ToLowerInvariant();
         var next = previous is null
@@ -1465,10 +2085,28 @@ public sealed class AiShoppingAssistantService : IAiShoppingAssistantService
         if (!string.IsNullOrWhiteSpace(nl.Q))
             next.Q = nl.Q;
 
-        if (IsCheaperIntent(lower))
+        // Relative cheaper on the follow-up path uses AiRelativeConstraints as source of truth.
+        if (applyCheaperHeuristic && IsCheaperIntent(lower))
         {
             next.Sort = DiscoveryConstants.SortPriceAsc;
-            if (next.MaxPrice is decimal max)
+            decimal? anchor = null;
+            if (dialogue?.FocusProductId is Guid fid)
+            {
+                var focused = dialogue.LastShown.FirstOrDefault(x => x.ProductId == fid);
+                if (focused is not null && focused.Price > 0)
+                    anchor = focused.Price;
+            }
+
+            anchor ??= dialogue?.LastShown.Count > 0
+                ? dialogue.LastShown.Where(x => x.Price > 0).Select(x => x.Price).DefaultIfEmpty().Min()
+                : null;
+            if (anchor is 0)
+                anchor = null;
+            anchor ??= dialogue?.AnchorPrice;
+
+            if (anchor is decimal a && a > 0)
+                next.MaxPrice = Math.Round(a * 0.9m, 0, MidpointRounding.AwayFromZero);
+            else if (next.MaxPrice is decimal max)
                 next.MaxPrice = Math.Round(max * 0.85m, 0, MidpointRounding.AwayFromZero);
             else if (previousProductIds.Count > 0)
             {
@@ -1591,6 +2229,7 @@ public sealed class AiShoppingAssistantService : IAiShoppingAssistantService
         string intent,
         SlotState slots,
         ConsultState? consult,
+        DialogueState? dialogue,
         IReadOnlyList<AiSuggestedProductDto> products,
         Dictionary<string, string> reasons,
         IReadOnlyList<AiChatActionDto> actions,
@@ -1607,6 +2246,7 @@ public sealed class AiShoppingAssistantService : IAiShoppingAssistantService
             Intent = intent,
             Slots = ToSlotsDto(slots),
             Consult = consult,
+            Dialogue = dialogue,
             ProductIds = products.Select(p => p.ProductId).ToArray(),
             Reasons = reasons.Count == 0 ? null : reasons,
             Badges = badges.Count == 0 ? null : badges,
@@ -1709,6 +2349,7 @@ public sealed class AiShoppingAssistantService : IAiShoppingAssistantService
                 AiConstants.ActionOpenCatalog
                 or AiConstants.ActionOpenCompare
                 or AiConstants.ActionOpenProduct
+                or AiConstants.ActionOpenOrders
                 or AiConstants.ActionNone))
                 continue;
 
@@ -1762,7 +2403,9 @@ public sealed class AiShoppingAssistantService : IAiShoppingAssistantService
             });
         }
         else if (suggested.Count == 1
-                 && intent is AiConstants.IntentProductQa or AiConstants.IntentRecommend)
+                 && intent is AiConstants.IntentProductQa
+                     or AiConstants.IntentRecommend
+                     or AiConstants.IntentExplain)
         {
             actions.Add(new AiChatActionDto
             {
@@ -1781,6 +2424,7 @@ public sealed class AiShoppingAssistantService : IAiShoppingAssistantService
             AiConstants.ActionOpenCatalog => "See all matching products",
             AiConstants.ActionOpenCompare => "Compare these",
             AiConstants.ActionOpenProduct => "View product",
+            AiConstants.ActionOpenOrders => "View my orders",
             _ => "Continue"
         };
 
@@ -2069,6 +2713,7 @@ public sealed class AiShoppingAssistantService : IAiShoppingAssistantService
         public Dictionary<string, string>? Badges { get; set; }
         public AiChatActionDto[]? Actions { get; set; }
         public ConsultState? Consult { get; set; }
+        public DialogueState? Dialogue { get; set; }
         public AiQuickReplyDto[]? QuickReplies { get; set; }
     }
 

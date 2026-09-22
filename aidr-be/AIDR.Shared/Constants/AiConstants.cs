@@ -81,6 +81,7 @@ public static class AiConstants
     public const string ActionOpenCatalog = "open_catalog";
     public const string ActionOpenCompare = "open_compare";
     public const string ActionOpenProduct = "open_product";
+    public const string ActionOpenOrders = "open_orders";
     public const string ActionNone = "none";
 
     public const string FaqTopicReturn = "return";
