@@ -99,6 +99,20 @@ export const deleteProductReview = createAsyncThunk<
   }
 });
 
+export const reportProductReview = createAsyncThunk<
+  string,
+  { reviewId: string; reason: string; details?: string | null },
+  { rejectValue: string }
+>('review/reportProductReview', async ({ reviewId, reason, details }, { rejectWithValue }) => {
+  try {
+    const result = await reviewApi.reportProductReview(reviewId, { reason, details });
+    requireData(result, 'Unable to report review.');
+    return reviewId;
+  } catch (error) {
+    return rejectWithValue(getApiErrorMessage(error, 'Unable to report review.'));
+  }
+});
+
 export const createSellerRating = createAsyncThunk<
   SellerRating,
   CreateSellerRatingRequest,
@@ -199,6 +213,32 @@ export const reviewSlice = createSlice({
       .addCase(deleteProductReview.rejected, (state, action) => {
         state.mutating = false;
         state.error = action.payload ?? 'Unable to remove review.';
+      })
+      .addCase(reportProductReview.pending, (state) => {
+        state.mutating = true;
+        state.error = null;
+      })
+      .addCase(reportProductReview.fulfilled, (state, action) => {
+        state.mutating = false;
+        for (const [key, list] of Object.entries(state.lists)) {
+          state.lists[key] = {
+            ...list,
+            items: list.items.map((item) =>
+              item.reviewId === action.payload
+                ? {
+                    ...item,
+                    canReport: false,
+                    countsTowardRating: false,
+                    moderationStatus: 'Reported',
+                  }
+                : item,
+            ),
+          };
+        }
+      })
+      .addCase(reportProductReview.rejected, (state, action) => {
+        state.mutating = false;
+        state.error = action.payload ?? 'Unable to report review.';
       })
       .addCase(createSellerRating.pending, (state) => {
         state.mutating = true;

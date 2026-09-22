@@ -167,7 +167,7 @@ BEGIN
     INNER JOIN @Reviewers r ON r.Idx = v.Idx;
 END;
 
-/* Sync denormalized product rating stats from visible reviews */
+/* Sync denormalized product rating stats from rating-eligible visible reviews */
 UPDATE p
 SET
     ReviewCount = ISNULL(s.Cnt, 0),
@@ -179,7 +179,9 @@ OUTER APPLY (
         COUNT(*) AS Cnt,
         CAST(AVG(CAST(r.Rating AS DECIMAL(9, 2))) AS DECIMAL(3, 2)) AS AvgRating
     FROM dbo.ProductReviews r
-    WHERE r.ProductId = p.ProductId AND r.IsVisible = 1
+    WHERE r.ProductId = p.ProductId
+      AND r.IsVisible = 1
+      AND ISNULL(r.CountsTowardRating, 1) = 1
 ) s
 WHERE p.ProductId IN (@AirPods, @Sony, @S24)
    OR p.Slug IN (N'airpods-pro-2', N'sony-wh-1000xm5', N'samsung-galaxy-s24-256gb');

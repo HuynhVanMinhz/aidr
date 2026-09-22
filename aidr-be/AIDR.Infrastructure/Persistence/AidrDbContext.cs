@@ -29,6 +29,7 @@ public class AidrDbContext : DbContext
     public DbSet<ProductPriceAlert> ProductPriceAlerts => Set<ProductPriceAlert>();
     public DbSet<InventoryTransaction> InventoryTransactions => Set<InventoryTransaction>();
     public DbSet<ProductReview> ProductReviews => Set<ProductReview>();
+    public DbSet<ProductReviewReport> ProductReviewReports => Set<ProductReviewReport>();
     public DbSet<ProductReviewDigestSnapshot> ProductReviewDigestSnapshots => Set<ProductReviewDigestSnapshot>();
     public DbSet<ProductQuestion> ProductQuestions => Set<ProductQuestion>();
     public DbSet<ProductAnswer> ProductAnswers => Set<ProductAnswer>();
@@ -430,6 +431,7 @@ public class AidrDbContext : DbContext
             e.Property(x => x.Content).HasMaxLength(2000);
             e.Property(x => x.SentimentLabel).HasMaxLength(20);
             e.Property(x => x.SentimentScore).HasPrecision(5, 4);
+            e.Property(x => x.ModerationStatus).HasMaxLength(20).IsRequired();
             e.HasOne(x => x.Product)
                 .WithMany(x => x.Reviews)
                 .HasForeignKey(x => x.ProductId)
@@ -444,6 +446,29 @@ public class AidrDbContext : DbContext
                 .OnDelete(DeleteBehavior.Restrict);
             e.HasIndex(x => x.ProductId);
             e.HasIndex(x => new { x.BuyerUserId, x.ProductId, x.OrderId }).IsUnique();
+            e.HasIndex(x => new { x.ModerationStatus, x.CreatedAt });
+        });
+
+        modelBuilder.Entity<ProductReviewReport>(e =>
+        {
+            e.ToTable("ProductReviewReports");
+            e.HasKey(x => x.ReportId);
+            e.Property(x => x.Reason).HasMaxLength(40).IsRequired();
+            e.Property(x => x.Details).HasMaxLength(500);
+            e.Property(x => x.Status).HasMaxLength(20).IsRequired();
+            e.HasOne(x => x.Review)
+                .WithMany(x => x.Reports)
+                .HasForeignKey(x => x.ReviewId)
+                .OnDelete(DeleteBehavior.Restrict);
+            e.HasOne(x => x.Reporter)
+                .WithMany()
+                .HasForeignKey(x => x.ReporterUserId)
+                .OnDelete(DeleteBehavior.Restrict);
+            e.HasOne(x => x.Resolver)
+                .WithMany()
+                .HasForeignKey(x => x.ResolvedBy)
+                .OnDelete(DeleteBehavior.Restrict);
+            e.HasIndex(x => new { x.Status, x.CreatedAt });
         });
 
         modelBuilder.Entity<ProductReviewDigestSnapshot>(e =>

@@ -4,8 +4,12 @@ import type {
   ProductReviewListApiResult,
   ProductReviewListQuery,
   ProductReviewApiResult,
+  ProductReviewReportApiResult,
+  ReportProductReviewRequest,
   SellerRatingApiResult,
   UpdateProductReviewRequest,
+  AdminReviewModerationListApiResult,
+  AdminReviewModerationStatusFilter,
 } from '../types/review';
 import { apiClient } from './apiClient';
 
@@ -46,7 +50,49 @@ export async function deleteProductReview(reviewId: string) {
   return data;
 }
 
+export async function reportProductReview(reviewId: string, request: ReportProductReviewRequest) {
+  const { data } = await apiClient.post<ProductReviewReportApiResult>(
+    `/reviews/${reviewId}/report`,
+    request,
+  );
+  return data;
+}
+
 export async function createSellerRating(request: CreateSellerRatingRequest) {
   const { data } = await apiClient.post<SellerRatingApiResult>('/seller-ratings', request);
+  return data;
+}
+
+export async function getAdminReviewModeration(params: {
+  status?: AdminReviewModerationStatusFilter;
+  q?: string;
+  page?: number;
+  pageSize?: number;
+}) {
+  const { data } = await apiClient.get<AdminReviewModerationListApiResult>(
+    '/admin/reviews/moderation',
+    {
+      params: {
+        status: params.status ?? 'Reported',
+        q: params.q || undefined,
+        page: params.page ?? 1,
+        pageSize: params.pageSize ?? 10,
+      },
+    },
+  );
+  return data;
+}
+
+export async function approveAdminReview(reviewId: string) {
+  const { data } = await apiClient.post<{ success: boolean; message?: string | null }>(
+    `/admin/reviews/${reviewId}/approve`,
+  );
+  return data;
+}
+
+export async function hideAdminReview(reviewId: string) {
+  const { data } = await apiClient.post<{ success: boolean; message?: string | null }>(
+    `/admin/reviews/${reviewId}/hide`,
+  );
   return data;
 }

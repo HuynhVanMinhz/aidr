@@ -16,7 +16,9 @@ public sealed class ReviewDigestRepository : IReviewDigestRepository
 
     public Task<int> GetVisibleReviewCountAsync(Guid productId, CancellationToken cancellationToken = default)
         => _db.ProductReviews.AsNoTracking()
-            .CountAsync(r => r.ProductId == productId && r.IsVisible, cancellationToken);
+            .CountAsync(
+                r => r.ProductId == productId && r.IsVisible && r.CountsTowardRating,
+                cancellationToken);
 
     public async Task<IReadOnlyList<ReviewDigestReviewRecord>> GetVisibleReviewsForDigestAsync(
         Guid productId,
@@ -26,7 +28,7 @@ public sealed class ReviewDigestRepository : IReviewDigestRepository
         maxCount = Math.Clamp(maxCount, 1, 100);
 
         return await _db.ProductReviews.AsNoTracking()
-            .Where(r => r.ProductId == productId && r.IsVisible)
+            .Where(r => r.ProductId == productId && r.IsVisible && r.CountsTowardRating)
             .OrderByDescending(r => r.CreatedAt)
             .Take(maxCount)
             .Select(r => new ReviewDigestReviewRecord

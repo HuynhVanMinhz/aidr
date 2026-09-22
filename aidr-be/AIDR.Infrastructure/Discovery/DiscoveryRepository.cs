@@ -209,7 +209,7 @@ public sealed class DiscoveryRepository : IDiscoveryRepository
             return null;
 
         var reviews = await _db.ProductReviews.AsNoTracking()
-            .Where(r => r.ProductId == productId && r.IsVisible)
+            .Where(r => r.ProductId == productId && r.IsVisible && r.CountsTowardRating)
             .OrderByDescending(r => r.CreatedAt)
             .Take(recentReviewsLimit)
             .Select(r => new ProductReviewRecord

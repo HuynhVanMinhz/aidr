@@ -13,10 +13,28 @@ export type ProductReview = {
   buyerName: string;
   buyerAvatarUrl?: string | null;
   isVisible: boolean;
+  countsTowardRating?: boolean;
+  moderationStatus?: string;
   isOwn: boolean;
   canEdit: boolean;
+  canReport?: boolean;
   createdAt: string;
   updatedAt: string;
+};
+
+export type ReportProductReviewRequest = {
+  reason: string;
+  details?: string | null;
+};
+
+export type ProductReviewReport = {
+  reportId: string;
+  reviewId: string;
+  reporterUserId: string;
+  reason: string;
+  details?: string | null;
+  status: string;
+  createdAt: string;
 };
 
 export type ProductReviewListQuery = {
@@ -75,4 +93,47 @@ export type SellerRating = {
 
 export type ProductReviewListApiResult = ApiResult<ProductReviewListResult>;
 export type ProductReviewApiResult = ApiResult<ProductReview>;
+export type ProductReviewReportApiResult = ApiResult<ProductReviewReport>;
 export type SellerRatingApiResult = ApiResult<SellerRating>;
+
+export type AdminReviewModerationStatusFilter = 'PendingTrust' | 'Reported' | 'all';
+
+export type AdminReviewModerationItem = {
+  reviewId: string;
+  productId: string;
+  productName: string;
+  shopId: string;
+  shopName: string;
+  buyerUserId: string;
+  buyerName: string;
+  buyerEmail?: string | null;
+  rating: number;
+  title?: string | null;
+  content?: string | null;
+  moderationStatus: string;
+  countsTowardRating: boolean;
+  isVisible: boolean;
+  openReportCount: number;
+  latestReportReason?: string | null;
+  latestReportDetails?: string | null;
+  latestReporterUserId?: string | null;
+  latestReporterName?: string | null;
+  latestReporterEmail?: string | null;
+  latestReporterIsShopOwner?: boolean;
+  createdAt: string;
+  trustReleaseAt?: string | null;
+};
+
+export type AdminReviewModerationListResult = {
+  summary: {
+    pendingTrustCount: number;
+    reportedCount: number;
+  };
+  items: AdminReviewModerationItem[];
+  page: number;
+  pageSize: number;
+  totalCount: number;
+  totalPages: number;
+};
+
+export type AdminReviewModerationListApiResult = ApiResult<AdminReviewModerationListResult>;

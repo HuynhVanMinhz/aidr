@@ -507,6 +507,19 @@ header.main-header .main-menu .navbar-collapse {
   color: var(--positive-text, #1a7f37);
 }
 
+.catalog-review-badge--pending {
+  background: rgba(22, 24, 29, 0.08);
+  color: #16181d;
+}
+
+.review-report-form {
+  display: grid;
+  gap: 8px;
+  width: 100%;
+  max-width: 360px;
+  margin-top: 8px;
+}
+
 .catalog-review-card__title {
   margin: 0 0 6px;
   font-size: 16px;

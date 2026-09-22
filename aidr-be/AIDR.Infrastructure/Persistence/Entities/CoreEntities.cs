@@ -482,12 +482,33 @@ public class ProductReview
     public string? SentimentLabel { get; set; }
     public decimal? SentimentScore { get; set; }
     public bool IsVisible { get; set; } = true;
+    public bool CountsTowardRating { get; set; } = true;
+    public string ModerationStatus { get; set; } = "Approved";
+    public DateTime? TrustReleaseAt { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
 
     public Product Product { get; set; } = null!;
     public User Buyer { get; set; } = null!;
     public Order? Order { get; set; }
+    public ICollection<ProductReviewReport> Reports { get; set; } = new List<ProductReviewReport>();
+}
+
+public class ProductReviewReport
+{
+    public Guid ReportId { get; set; }
+    public Guid ReviewId { get; set; }
+    public Guid ReporterUserId { get; set; }
+    public string Reason { get; set; } = null!;
+    public string? Details { get; set; }
+    public string Status { get; set; } = "Open";
+    public DateTime CreatedAt { get; set; }
+    public DateTime? ResolvedAt { get; set; }
+    public Guid? ResolvedBy { get; set; }
+
+    public ProductReview Review { get; set; } = null!;
+    public User Reporter { get; set; } = null!;
+    public User? Resolver { get; set; }
 }
 
 public class ProductReviewDigestSnapshot

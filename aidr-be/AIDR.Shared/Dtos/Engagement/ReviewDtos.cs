@@ -22,6 +22,12 @@ public sealed class UpdateProductReviewRequest
     public string Content { get; set; } = null!;
 }
 
+public sealed class ReportProductReviewRequest
+{
+    public string Reason { get; set; } = null!;
+    public string? Details { get; set; }
+}
+
 public sealed class ProductReviewDto
 {
     public Guid ReviewId { get; init; }
@@ -36,10 +42,24 @@ public sealed class ProductReviewDto
     public string BuyerName { get; init; } = null!;
     public string? BuyerAvatarUrl { get; init; }
     public bool IsVisible { get; init; }
+    public bool CountsTowardRating { get; init; }
+    public string ModerationStatus { get; init; } = null!;
     public bool IsOwn { get; init; }
     public bool CanEdit { get; init; }
+    public bool CanReport { get; init; }
     public DateTime CreatedAt { get; init; }
     public DateTime UpdatedAt { get; init; }
+}
+
+public sealed class ProductReviewReportDto
+{
+    public Guid ReportId { get; init; }
+    public Guid ReviewId { get; init; }
+    public Guid ReporterUserId { get; init; }
+    public string Reason { get; init; } = null!;
+    public string? Details { get; init; }
+    public string Status { get; init; } = null!;
+    public DateTime CreatedAt { get; init; }
 }
 
 public sealed class ProductReviewListResult
@@ -49,7 +69,7 @@ public sealed class ProductReviewListResult
     public int ReviewCount { get; init; }
 
     /// <summary>
-    /// Counts of visible reviews for stars 1–5 (index 0 = 1★ … index 4 = 5★).
+    /// Counts of rating-eligible visible reviews for stars 1–5 (index 0 = 1★ … index 4 = 5★).
     /// Unfiltered by the rating query so the breakdown stays stable while filtering.
     /// </summary>
     public IReadOnlyList<int> RatingBreakdown { get; init; } = new[] { 0, 0, 0, 0, 0 };
