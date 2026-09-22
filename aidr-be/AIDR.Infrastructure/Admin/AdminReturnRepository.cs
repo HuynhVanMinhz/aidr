@@ -2,7 +2,6 @@ using System.Text.Json;
 using AIDR.Infrastructure.Persistence;
 using AIDR.Infrastructure.Persistence.Entities;
 using AIDR.Modules.Admin.Abstractions;
-using AIDR.Modules.Payment.Abstractions;
 using AIDR.Shared.Constants;
 using AIDR.Shared.Dtos.Admin;
 using AIDR.Shared.Exceptions;
@@ -13,12 +12,10 @@ namespace AIDR.Infrastructure.Admin;
 public sealed class AdminReturnRepository : IAdminReturnRepository
 {
     private readonly AidrDbContext _db;
-    private readonly IPayOsClient _payOs;
 
-    public AdminReturnRepository(AidrDbContext db, IPayOsClient payOs)
+    public AdminReturnRepository(AidrDbContext db)
     {
         _db = db;
-        _payOs = payOs;
     }
 
     public async Task<(IReadOnlyList<AdminReturnListRecord> Items, int TotalCount, int Page, AdminReturnRequestListSummary Summary)>
@@ -292,168 +289,36 @@ public sealed class AdminReturnRepository : IAdminReturnRepository
         if (payment is null)
             throw new ConflictException("No succeeded payment was found to refund for this order.");
 
+        // Admin transfers manually (no payOS Chi hộ). Mark payment refunded and keep an audit trail.
         if (!string.Equals(payment.Status, PaymentConstants.StatusRefunded, StringComparison.OrdinalIgnoreCase))
         {
-            await ExecutePayOsRefundAsync(
-                entity,
-                payment,
-                refundAmount,
-                refundToBin,
-                refundToAccountNumber,
-                now,
-                cancellationToken);
+            var toBin = !string.IsNullOrWhiteSpace(refundToBin)
+                ? refundToBin.Trim()
+                : entity.RefundBankBin?.Trim();
+            var toAccount = !string.IsNullOrWhiteSpace(refundToAccountNumber)
+                ? refundToAccountNumber.Trim()
+                : entity.RefundAccountNumber?.Trim();
 
             payment.Status = PaymentConstants.StatusRefunded;
             payment.UpdatedAt = now;
+            payment.RawResponseJson = MergeManualRefundIntoPaymentRaw(
+                payment.RawResponseJson,
+                entity.ReturnRequestId,
+                refundAmount,
+                toBin,
+                toAccount,
+                now);
         }
 
         await ReverseSettlementAsync(order, entity.ReturnRequestId, refundAmount, now, cancellationToken);
     }
 
-    private async Task ExecutePayOsRefundAsync(
-        ReturnRequest entity,
-        Payment payment,
-        decimal refundAmount,
-        string? refundToBin,
-        string? refundToAccountNumber,
-        DateTime now,
-        CancellationToken cancellationToken)
-    {
-        if (refundAmount != Math.Floor(refundAmount) || refundAmount > int.MaxValue)
-            throw new AppException("Refund amount must be a whole VND amount for payOS.");
-
-        var (toBin, toAccountNumber) = ResolveRefundDestination(
-            payment.RawResponseJson,
-            refundToBin,
-            refundToAccountNumber,
-            entity.RefundBankBin,
-            entity.RefundAccountNumber);
-
-        if (string.IsNullOrWhiteSpace(toBin) || string.IsNullOrWhiteSpace(toAccountNumber))
-        {
-            if (_payOs.UseMock)
-            {
-                toBin = "970422";
-                toAccountNumber = "0000000000";
-            }
-            else
-            {
-                throw new AppException(
-                    "Buyer bank account is required for payOS refund. " +
-                    "Provide refundToBin and refundToAccountNumber, or ensure the payment webhook stored the counter account.");
-            }
-        }
-
-        var referenceId = $"refund_{entity.ReturnRequestId:N}";
-        var refund = await _payOs.RefundAsync(
-            new PayOsRefundCommand
-            {
-                ReferenceId = referenceId,
-                AmountVnd = (int)refundAmount,
-                Description = $"RF {entity.Order.OrderCode}",
-                ToBin = toBin,
-                ToAccountNumber = toAccountNumber
-            },
-            cancellationToken);
-
-        payment.RawResponseJson = MergeRefundIntoPaymentRaw(
-            payment.RawResponseJson,
-            refund,
-            toBin,
-            toAccountNumber,
-            now);
-    }
-
-    private static (string? ToBin, string? ToAccountNumber) ResolveRefundDestination(
-        string? paymentRawJson,
-        string? overrideBin,
-        string? overrideAccountNumber,
-        string? buyerBankBin = null,
-        string? buyerAccountNumber = null)
-    {
-        // Priority 1: admin override
-        if (!string.IsNullOrWhiteSpace(overrideBin) && !string.IsNullOrWhiteSpace(overrideAccountNumber))
-            return (overrideBin.Trim(), overrideAccountNumber.Trim());
-
-        // Priority 2: buyer-provided bank (stored on ReturnRequest)
-        if (!string.IsNullOrWhiteSpace(buyerAccountNumber))
-            return (buyerBankBin?.Trim(), buyerAccountNumber.Trim());
-
-        // Priority 3: webhook counter account
-        var fromWebhook = TryReadCounterAccount(paymentRawJson);
-        var toBin = !string.IsNullOrWhiteSpace(overrideBin) ? overrideBin.Trim() : fromWebhook.ToBin;
-        var toAccount = !string.IsNullOrWhiteSpace(overrideAccountNumber)
-            ? overrideAccountNumber.Trim()
-            : fromWebhook.ToAccountNumber;
-        return (toBin, toAccount);
-    }
-
-    private static (string? ToBin, string? ToAccountNumber) TryReadCounterAccount(string? rawJson)
-    {
-        if (string.IsNullOrWhiteSpace(rawJson))
-            return (null, null);
-
-        try
-        {
-            using var doc = JsonDocument.Parse(rawJson);
-            var root = doc.RootElement;
-
-            if (TryReadCounterFromElement(root, out var bin, out var account))
-                return (bin, account);
-
-            if (root.TryGetProperty("data", out var data)
-                && TryReadCounterFromElement(data, out bin, out account))
-            {
-                return (bin, account);
-            }
-
-            if (root.TryGetProperty("Data", out var dataPascal)
-                && TryReadCounterFromElement(dataPascal, out bin, out account))
-            {
-                return (bin, account);
-            }
-        }
-        catch (JsonException)
-        {
-            // ignore malformed payload
-        }
-
-        return (null, null);
-    }
-
-    private static bool TryReadCounterFromElement(
-        JsonElement element,
-        out string? bin,
-        out string? accountNumber)
-    {
-        bin = ReadString(element, "counterAccountBankId")
-              ?? ReadString(element, "CounterAccountBankId");
-        accountNumber = ReadString(element, "counterAccountNumber")
-                        ?? ReadString(element, "CounterAccountNumber");
-
-        if (string.IsNullOrWhiteSpace(bin) || string.IsNullOrWhiteSpace(accountNumber))
-        {
-            bin = null;
-            accountNumber = null;
-            return false;
-        }
-
-        return true;
-    }
-
-    private static string? ReadString(JsonElement element, string propertyName)
-    {
-        if (!element.TryGetProperty(propertyName, out var prop))
-            return null;
-        var value = prop.GetString()?.Trim();
-        return string.IsNullOrWhiteSpace(value) ? null : value;
-    }
-
-    private static string MergeRefundIntoPaymentRaw(
+    private static string MergeManualRefundIntoPaymentRaw(
         string? existingRaw,
-        PayOsRefundResult refund,
-        string toBin,
-        string toAccountNumber,
+        Guid returnRequestId,
+        decimal refundAmount,
+        string? toBin,
+        string? toAccountNumber,
         DateTime now)
     {
         object? previous = null;
@@ -472,16 +337,14 @@ public sealed class AdminReturnRepository : IAdminReturnRepository
         return JsonSerializer.Serialize(new
         {
             previous,
-            payOsRefund = new
+            manualRefund = new
             {
-                refund.PayoutId,
-                refund.ReferenceId,
-                refund.ApprovalState,
-                refund.IsMock,
+                mode = "manual",
+                returnRequestId,
+                amount = refundAmount,
                 toBin,
                 toAccountNumber,
-                refundedAt = now,
-                providerRaw = refund.RawJson
+                refundedAt = now
             }
         });
     }
