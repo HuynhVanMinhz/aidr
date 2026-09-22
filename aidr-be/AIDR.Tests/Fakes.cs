@@ -24,8 +24,12 @@ internal sealed class FakeProductRepository : ISellerProductRepository
         {
             ShopId = ShopId,
             OwnerUserId = OwnerId,
+            ShopName = "Demo Shop",
             Status = "Active",
         });
+
+    public Task<IReadOnlyList<Guid>> ListAdminUserIdsAsync(CancellationToken ct = default) =>
+        Task.FromResult<IReadOnlyList<Guid>>([]);
 
     public Task<Guid?> FindIdBySlugAsync(Guid shopId, string slug, CancellationToken ct = default) =>
         Task.FromResult(_bySlug.TryGetValue(slug, out var found) ? found.ProductId : (Guid?)null);

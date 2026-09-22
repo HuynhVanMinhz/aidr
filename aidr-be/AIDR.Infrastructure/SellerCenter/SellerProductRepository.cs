@@ -23,9 +23,19 @@ public sealed class SellerProductRepository : ISellerProductRepository
             {
                 ShopId = s.ShopId,
                 OwnerUserId = s.OwnerUserId,
+                ShopName = s.ShopName,
                 Status = s.Status
             })
             .FirstOrDefaultAsync(cancellationToken);
+    }
+
+    public async Task<IReadOnlyList<Guid>> ListAdminUserIdsAsync(CancellationToken cancellationToken = default)
+    {
+        return await _db.UserRoles.AsNoTracking()
+            .Where(ur => ur.Role.RoleCode == RoleCodes.Admin)
+            .Select(ur => ur.UserId)
+            .Distinct()
+            .ToListAsync(cancellationToken);
     }
 
     public Task<bool> CategoryExistsAndActiveAsync(int categoryId, CancellationToken cancellationToken = default) =>

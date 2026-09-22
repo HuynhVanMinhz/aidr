@@ -4,6 +4,7 @@ public sealed class SellerShopRecord
 {
     public Guid ShopId { get; init; }
     public Guid OwnerUserId { get; init; }
+    public string ShopName { get; init; } = null!;
     public string Status { get; init; } = null!;
 }
 
@@ -200,4 +201,7 @@ public interface ISellerProductRepository
     Task<IReadOnlyDictionary<Guid, IReadOnlyList<string>>> ListImageUrlsAsync(
         IReadOnlyCollection<Guid> productIds,
         CancellationToken cancellationToken = default);
+
+    /// <summary>Active admin user ids (for pending-product moderation alerts).</summary>
+    Task<IReadOnlyList<Guid>> ListAdminUserIdsAsync(CancellationToken cancellationToken = default);
 }
