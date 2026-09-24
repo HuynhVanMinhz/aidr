@@ -297,7 +297,8 @@ public static class AiFollowUpResolver
         // 7. explain
         if (ContainsAny(lower,
                 "why", "sao chọn", "sao chon", "why this", "why best", "why the first",
-                "why recommend", "vì sao", "vi sao", "tại sao chọn", "tai sao chon",
+                "why recommend", "why match", "best match", "vì sao", "vi sao",
+                "tại sao chọn", "tai sao chon",
                 "explain", "giải thích", "giai thich"))
         {
             var focus = resolved.Count > 0
@@ -342,9 +343,10 @@ public static class AiFollowUpResolver
 
         // 9. show_more
         if (ContainsAny(lower,
-                "other options", "còn cái khác", "con cai khac", "show more", "next options",
-                "anything else", "còn lựa chọn", "con lua chon", "more options", "khác nữa", "khac nua",
-                "còn gì nữa", "con gi nua", "see more", "thêm lựa chọn", "them lua chon"))
+                "other options", "other option", "còn cái khác", "con cai khac", "show more",
+                "next options", "anything else", "còn lựa chọn", "con lua chon", "more options",
+                "khác nữa", "khac nua", "còn gì nữa", "con gi nua", "see more",
+                "thêm lựa chọn", "them lua chon", "another option", "more choices"))
         {
             return new FollowUpDecision { Act = AiFollowUpActs.ShowMore };
         }

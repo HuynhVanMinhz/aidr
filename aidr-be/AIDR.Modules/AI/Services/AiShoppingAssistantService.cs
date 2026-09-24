@@ -109,7 +109,8 @@ public sealed class AiShoppingAssistantService : IAiShoppingAssistantService
             ? AiConsultQuestionBank.ParseQuickReply(request.QuickReplyValue)
             : null;
 
-        var inFollowUpContext = AiFollowUpResolver.IsFollowUpContext(consult, dialogue);
+        var inFollowUpContext = AiFollowUpResolver.IsFollowUpContext(consult, dialogue)
+                                || previousProductIds.Length > 0;
 
         SlotState slots;
         if (quickReply is null && actFromChip is null)
@@ -446,6 +447,7 @@ public sealed class AiShoppingAssistantService : IAiShoppingAssistantService
         {
             (reply, suggested, reasons, actions) = BuildHeuristicOutcome(
                 intent, message, pack, slots, context, followUp);
+            reply = SanitizeAssistantReply(reply);
             source = AiConstants.SourceHeuristic;
         }
         else
@@ -457,11 +459,12 @@ public sealed class AiShoppingAssistantService : IAiShoppingAssistantService
                 _logger.LogInformation("Shopping assistant falling back to heuristic (no Groq response).");
                 (reply, suggested, reasons, actions) = BuildHeuristicOutcome(
                     intent, message, pack, slots, context, followUp);
+                reply = SanitizeAssistantReply(reply);
                 source = AiConstants.SourceHeuristic;
             }
             else
             {
-                reply = llmResult.Value.Reply;
+                reply = SanitizeAssistantReply(llmResult.Value.Reply);
                 source = AiConstants.SourceGroq;
                 suggested = ResolveSuggestedProducts(llmResult.Value.ProductIds, pack.Products);
                 if (suggested.Count == 0
@@ -846,17 +849,6 @@ public sealed class AiShoppingAssistantService : IAiShoppingAssistantService
                         focusNotes = BuildProductQaNotes(products[0]);
                 }
 
-                if (products.Count == 0 && LooksLikeAlternatives(message) && context?.ProductId is Guid sid)
-                {
-                    var similar = await _recommendations.GetSimilarProductsAsync(
-                        sid,
-                        new SimilarProductsQueryRequest { Limit = AiConstants.CatalogContextProductLimit },
-                        cancellationToken);
-                    var ids = similar.Select(s => s.ProductId).ToList();
-                    products = (await _catalog.GetApprovedProductsByIdsAsync(ids, cancellationToken)).ToList();
-                    products = ApplyExclude(products, excludeIds);
-                }
-
                 break;
             }
 
@@ -864,6 +856,40 @@ public sealed class AiShoppingAssistantService : IAiShoppingAssistantService
             {
                 var compareIds = ResolveCompareIdsEnhanced(
                     message, context, previousProductIds, dialogue, followUp);
+
+                // PDP: "compare with similar products" → current + similar alternatives.
+                if (compareIds.Count < AiConstants.MinCompareProducts
+                    && context?.ProductId is Guid compareSource
+                    && LooksLikeAlternatives(message))
+                {
+                    var similar = await _recommendations.GetSimilarProductsAsync(
+                        compareSource,
+                        new SimilarProductsQueryRequest { Limit = AiConstants.CatalogContextProductLimit },
+                        cancellationToken);
+                    var built = new List<Guid> { compareSource };
+                    foreach (var s in similar)
+                    {
+                        if (s.ProductId == compareSource)
+                            continue;
+                        built.Add(s.ProductId);
+                        if (built.Count >= AiConstants.MaxCompareProducts)
+                            break;
+                    }
+
+                    compareIds = built;
+                }
+
+                // Fallback: compare the cards just shown when user asks to compare without ids.
+                if (compareIds.Count < AiConstants.MinCompareProducts
+                    && dialogue?.LastShown is { Count: >= AiConstants.MinCompareProducts } shown)
+                {
+                    compareIds = shown
+                        .OrderBy(x => x.Ordinal)
+                        .Select(x => x.ProductId)
+                        .Take(AiConstants.MaxCompareProducts)
+                        .ToList();
+                }
+
                 if (compareIds.Count >= AiConstants.MinCompareProducts)
                 {
                     try
@@ -913,7 +939,15 @@ public sealed class AiShoppingAssistantService : IAiShoppingAssistantService
             default:
             {
                 // recommend / refine
-                if (LooksLikeAlternatives(message) && context?.ProductId is Guid similarOf)
+                // "Other options" / refine chips must keep current filters + exclude shown —
+                // do not divert to PDP-similar just because the message contains "other/similar".
+                var preferSlotSearch = followUp?.Act is AiFollowUpActs.ShowMore
+                    or AiFollowUpActs.RefineFilter
+                    or AiFollowUpActs.RefineRelative;
+
+                if (!preferSlotSearch
+                    && LooksLikeAlternatives(message)
+                    && context?.ProductId is Guid similarOf)
                 {
                     var similar = await _recommendations.GetSimilarProductsAsync(
                         similarOf,
@@ -1693,6 +1727,7 @@ public sealed class AiShoppingAssistantService : IAiShoppingAssistantService
             Help buyers with product advice and shopping FAQs (shipping, payment, returns, vouchers, warranty).
             Reply in clear English. Be concise (2-5 short paragraphs or bullets). Ask at most one clarifying question.
             Use ONLY grounded context below. Never invent product ids, prices, stock, or policies.
+            Never paste raw JSON, SpecsJson, or key=value dumps — describe specs in plain readable sentences.
             When FAQ text is provided, paraphrase it - do not add new policy rules.
             {{followUpHint}}
             Return ONLY JSON:
@@ -1881,12 +1916,19 @@ public sealed class AiShoppingAssistantService : IAiShoppingAssistantService
                 sb.Append(available > 0 ? "In stock." : "Currently out of stock.");
             }
 
-            if (!string.IsNullOrWhiteSpace(pack.FocusNotes))
+            if (!string.IsNullOrWhiteSpace(p.ShortDescription))
+                sb.Append(' ').Append(p.ShortDescription.Trim().TrimEnd('.'));
+            var specs = FormatSpecsReadable(p.SpecsJson);
+            if (!string.IsNullOrWhiteSpace(specs))
+                sb.Append(CultureInfo.InvariantCulture, $". Key specs: {specs}.");
+            else if (!string.IsNullOrWhiteSpace(pack.FocusNotes)
+                     && !pack.FocusNotes.Contains("SpecsJson=", StringComparison.Ordinal))
                 sb.Append(' ').Append(pack.FocusNotes);
+
             reasons[p.ProductId.ToString("D")] = followUp?.Act == AiFollowUpActs.SelectFocus
                 ? "Selected from previous suggestions"
                 : "Currently viewing this product";
-            return (sb.ToString(), products, reasons, DefaultActions(intent, products, slots));
+            return (sb.ToString().Trim(), products, reasons, DefaultActions(intent, products, slots));
         }
 
         if (intent == AiConstants.IntentCompare)
@@ -2007,10 +2049,18 @@ public sealed class AiShoppingAssistantService : IAiShoppingAssistantService
         if (IsSmalltalk(lower))
             return AiConstants.IntentSmalltalk;
 
+        // Compare before alternatives so "compare with similar products" stays compare.
         if (IsCompareIntent(lower, context, previousProductIds))
             return AiConstants.IntentCompare;
 
-        if (LooksLikeProductQaOnPdp(lower, context) || (context?.ProductId is not null && LooksLikeAlternatives(lower)))
+        // PDP "suggest similar / alternatives" → recommend (similar retrieval), not product_qa on self.
+        if (LooksLikeAlternatives(lower))
+            return AiConstants.IntentRecommend;
+
+        if (LooksLikeExplain(lower) && (previousProductIds.Count > 0 || context?.ProductId is not null))
+            return AiConstants.IntentExplain;
+
+        if (LooksLikeProductQaOnPdp(lower, context))
             return AiConstants.IntentProductQa;
 
         if (IsRefineIntent(lower) && previousSlots is not null && HasUsefulSlots(previousSlots))
@@ -2464,14 +2514,114 @@ public sealed class AiShoppingAssistantService : IAiShoppingAssistantService
     {
         var sb = new StringBuilder();
         sb.Append(CultureInfo.InvariantCulture,
-            $"WarrantyMonths={p.WarrantyMonths?.ToString(CultureInfo.InvariantCulture) ?? "n/a"}; ");
+            $"Warranty: {p.WarrantyMonths?.ToString(CultureInfo.InvariantCulture) ?? "n/a"} months. ");
         sb.Append(CultureInfo.InvariantCulture,
-            $"Condition={p.ConditionType}; Origin={p.OriginCountry ?? "n/a"}; ");
+            $"Condition: {p.ConditionType}. Origin: {p.OriginCountry ?? "n/a"}. ");
         if (!string.IsNullOrWhiteSpace(p.ShortDescription))
-            sb.Append($"ShortDescription={p.ShortDescription}; ");
-        if (!string.IsNullOrWhiteSpace(p.SpecsJson) && p.SpecsJson.Length <= 800)
-            sb.Append($"SpecsJson={p.SpecsJson}");
-        return sb.ToString();
+            sb.Append(CultureInfo.InvariantCulture, $"Summary: {p.ShortDescription.Trim()} ");
+        var specs = FormatSpecsReadable(p.SpecsJson);
+        if (!string.IsNullOrWhiteSpace(specs))
+            sb.Append(CultureInfo.InvariantCulture, $"Key specs: {specs}.");
+        return sb.ToString().Trim();
+    }
+
+    /// <summary>Parse SpecsJson into "RAM: 16GB; Storage: 512GB" — never dump raw JSON into replies.</summary>
+    private static string FormatSpecsReadable(string? specsJson, int maxKeys = 8)
+    {
+        if (string.IsNullOrWhiteSpace(specsJson))
+            return string.Empty;
+
+        try
+        {
+            using var doc = JsonDocument.Parse(specsJson);
+            if (doc.RootElement.ValueKind != JsonValueKind.Object)
+                return string.Empty;
+
+            var parts = new List<string>();
+            foreach (var prop in doc.RootElement.EnumerateObject())
+            {
+                if (parts.Count >= maxKeys)
+                    break;
+
+                var value = prop.Value.ValueKind switch
+                {
+                    JsonValueKind.String => prop.Value.GetString(),
+                    JsonValueKind.Number => prop.Value.ToString(),
+                    JsonValueKind.True => "Yes",
+                    JsonValueKind.False => "No",
+                    JsonValueKind.Null => null,
+                    _ => null
+                };
+                if (string.IsNullOrWhiteSpace(value))
+                    continue;
+
+                parts.Add($"{HumanizeSpecKey(prop.Name)}: {value.Trim()}");
+            }
+
+            return string.Join("; ", parts);
+        }
+        catch (JsonException)
+        {
+            return string.Empty;
+        }
+    }
+
+    private static string HumanizeSpecKey(string key)
+    {
+        if (string.IsNullOrWhiteSpace(key))
+            return key;
+
+        var known = key.Trim() switch
+        {
+            var k when k.Equals("ram", StringComparison.OrdinalIgnoreCase) => "RAM",
+            var k when k.Equals("rom", StringComparison.OrdinalIgnoreCase) => "ROM",
+            var k when k.Equals("cpu", StringComparison.OrdinalIgnoreCase) => "CPU",
+            var k when k.Equals("gpu", StringComparison.OrdinalIgnoreCase) => "GPU",
+            var k when k.Equals("os", StringComparison.OrdinalIgnoreCase) => "OS",
+            _ => null
+        };
+        if (known is not null)
+            return known;
+
+        var sb = new StringBuilder(key.Length + 4);
+        for (var i = 0; i < key.Length; i++)
+        {
+            var c = key[i];
+            if (c is '_' or '-' or '.')
+            {
+                sb.Append(' ');
+                continue;
+            }
+
+            if (i > 0 && char.IsUpper(c) && char.IsLower(key[i - 1]))
+                sb.Append(' ');
+            sb.Append(i == 0 || sb[^1] == ' ' ? char.ToUpperInvariant(c) : c);
+        }
+
+        return sb.ToString().Trim();
+    }
+
+    /// <summary>Strip accidental raw SpecsJson / key=value dumps from assistant text.</summary>
+    private static string SanitizeAssistantReply(string? reply)
+    {
+        if (string.IsNullOrWhiteSpace(reply))
+            return reply ?? string.Empty;
+
+        var cleaned = Regex.Replace(
+            reply,
+            @"SpecsJson\s*=\s*\{[^{}]*\}",
+            string.Empty,
+            RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+
+        cleaned = Regex.Replace(
+            cleaned,
+            @"\b(WarrantyMonths|ShortDescription|Condition|Origin)\s*=\s*[^\s;]+;?\s*",
+            string.Empty,
+            RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+
+        cleaned = Regex.Replace(cleaned, @"[ \t]{2,}", " ");
+        cleaned = Regex.Replace(cleaned, @"\n{3,}", "\n\n");
+        return cleaned.Trim();
     }
 
     private static string BuildHeuristicReason(AiCompareProductRecord p, SlotState slots)
@@ -2563,8 +2713,14 @@ public sealed class AiShoppingAssistantService : IAiShoppingAssistantService
 
     private static bool LooksLikeAlternatives(string lower)
         => ContainsAny(lower,
-            "similar", "alternative", "alternatives", "other options", "tương tự", "tuong tu",
-            "khác", "khac", "instead");
+            "similar", "alternative", "alternatives", "other options", "other option",
+            "tương tự", "tuong tu", "thay thế", "thay the", "khác", "khac", "instead");
+
+    private static bool LooksLikeExplain(string lower)
+        => ContainsAny(lower,
+            "why best", "why this", "why recommend", "why the first", "why match",
+            "best match", "sao chọn", "sao chon", "vì sao", "vi sao",
+            "tại sao chọn", "tai sao chon", "giải thích", "giai thich", "explain why");
 
     private static bool IsCompareIntent(
         string lower,
