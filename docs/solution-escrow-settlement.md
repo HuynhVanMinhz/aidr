@@ -96,29 +96,36 @@ Tách ③ và ④ để: payOS fail → tiền vẫn nằm trong ví seller (`Av
 ## 4. Công thức tiền
 
 ```
-Gross          = Orders.TotalAmount              -- đúng số buyer đã trả
-Commissionable = Orders.SubtotalAmount - Orders.DiscountAmount
-Commission     = ROUND(Commissionable * CommissionRate)   -- VND, làm tròn về số nguyên
-Net            = Gross - Commission
+Gross            = Orders.TotalAmount              -- đúng số buyer đã trả
+isPlatformVoucher = Voucher.Scope == System
+SubsidyAmount    = isPlatformVoucher ? Discount : 0
+sellerDiscount   = isPlatformVoucher ? 0 : Discount
+Commissionable   = Subtotal - sellerDiscount       -- loại ShippingFee
+Commission       = ROUND(Commissionable * CommissionRate)
+Net              = Gross - Commission + SubsidyAmount
 ```
 
 Quyết định và lý do:
 
 - **Không tính phí trên phí ship.** `Commissionable` loại `ShippingFee` ra. Hiện `DefaultShippingFee = 0` nên chưa khác gì, nhưng khi bật ship thật thì tính 3% trên tiền ship là sai.
-- **Làm tròn về VND nguyên.** payOS nhận `amount` kiểu integer (`PaymentService.ToVndInteger` đã ép điều này). `Net = Gross − Commission` chứ không làm tròn riêng, để tổng luôn khớp, không lệch 1đ.
-- **Voucher (v1): sàn quyết toán trên tiền thực thu.** Buyer dùng voucher sàn 50k → sàn chỉ thu về `Gross` đã trừ 50k, và shop cũng chịu phần giảm đó. Đây là đơn giản hoá có chủ đích. Cột `SubsidyAmount` được tạo sẵn (mặc định 0) để v2 cho phép sàn bù phần voucher của sàn mà **không cần migration**.
+- **Làm tròn về VND nguyên.** payOS nhận `amount` kiểu integer (`PaymentService.ToVndInteger` đã ép điều này).
+- **Voucher System (Admin): sàn bù.** Buyer giảm giá nhờ voucher sàn → `SubsidyAmount = Discount`, seller vẫn nhận gần như đủ (chỉ trừ phí nền tảng). Phí tính trên full Subtotal.
+- **Voucher Shop (Seller): shop chịu.** `SubsidyAmount = 0`, phí tính trên `Subtotal − Discount`.
 - **Phí chuyển khoản payOS do sàn chịu**, trừ vào 3%. Nếu tính vào Net thì seller nhận số lẻ khó đối soát.
 
-Ví dụ đơn 20.990.000đ, voucher sàn 50.000đ, ship 0:
+Ví dụ đơn 20.990.000đ, voucher **sàn** 50.000đ, ship 0:
 
 | | |
 |---|---|
 | Subtotal | 20.990.000 |
 | Discount | −50.000 |
 | Gross (buyer trả) | **20.940.000** |
-| Commissionable | 20.940.000 |
-| Commission 3% | **628.200** |
-| Net (seller nhận) | **20.311.800** |
+| SubsidyAmount | **50.000** |
+| Commissionable | 20.990.000 |
+| Commission 3% | **629.700** |
+| Net (seller nhận) | **20.360.300** |
+
+Cùng đơn với voucher **shop** 50.000đ: Subsidy = 0, Commissionable = 20.940.000, Commission = 628.200, Net = **20.311.800**.
 
 ---
 
@@ -538,7 +545,7 @@ Các đơn `Completed` cũ đã được cộng **nguyên `TotalAmount`** vào `
 ## 14. Câu hỏi cần chốt trước khi code
 
 1. **Mốc đếm 30 ngày** - từ `CompletedAt` (buyer nhận hàng, đề xuất) hay từ `PaidAt`? Nếu từ `PaidAt` thì đơn ship chậm sẽ được giải phóng gần như ngay khi nhận hàng, mất tác dụng bảo vệ buyer.
-2. **Voucher của sàn** - sàn có bù phần giảm giá cho shop không? v1 đề xuất **không** (shop chịu), cột `SubsidyAmount` để sẵn cho v2.
+2. **Voucher của sàn** - sàn có bù phần giảm giá cho shop không? **Có** — `SubsidyAmount = Discount` khi Scope=System; Shop voucher thì shop chịu.
 3. **Chu kỳ chi** - admin duyệt theo từng shop lúc nào cũng được, hay cố định (vd ngày 1 và 15 hằng tháng)? Ảnh hưởng tới việc có cần cron thật hay chỉ cần nút bấm.
 4. **Phí chuyển khoản payOS** - sàn chịu (đề xuất) hay trừ vào tiền seller?
 5. **Ngưỡng chi tối thiểu** - 50.000đ có hợp lý không, hay để 0 và chi hết?
@@ -553,7 +560,7 @@ Các quyết định ở §14 đã chốt như sau:
 | # | Câu hỏi | Chốt |
 |---|---|---|
 | 1 | Mốc 30 ngày | Từ **`CompletedAt`** - phủ trọn cửa sổ đổi trả |
-| 2 | Voucher sàn | v1 **không bù**, shop chịu. Cột `SubsidyAmount` để sẵn cho v2 |
+| 2 | Voucher sàn | **Sàn bù** (`SubsidyAmount`); Shop voucher → shop chịu |
 | 3 | Chu kỳ chi | Admin bấm bất kỳ lúc nào; job chỉ hạ cờ `Eligible`, không cron cứng |
 | 4 | Phí chuyển khoản payOS | **Sàn chịu**, trừ vào 3% |
 | 5 | Ngưỡng chi tối thiểu | **50.000đ**, dưới mức dồn sang kỳ sau |
