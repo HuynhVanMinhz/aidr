@@ -1,3 +1,4 @@
+using System.Text.Json;
 using AIDR.Infrastructure.Persistence;
 using AIDR.Modules.Admin.Abstractions;
 using AIDR.Shared.Dtos.Admin;
@@ -101,6 +102,7 @@ public sealed class AdminOrderRepository : IAdminOrderRepository
             CancelledAt = order.CancelledAt,
             DeliveredAt = order.DeliveredAt,
             CompletedAt = order.CompletedAt,
+            Shipping = ParseShippingSnapshot(order.ShippingSnapshotJson),
             Items = order.Items
                 .OrderBy(i => i.OrderItemId)
                 .Select(i => new AdminOrderItemDto
@@ -129,4 +131,31 @@ public sealed class AdminOrderRepository : IAdminOrderRepository
                 .ToList()
         };
     }
+
+    private static AdminOrderShippingDto ParseShippingSnapshot(string snapshotJson)
+    {
+        try
+        {
+            using var doc = JsonDocument.Parse(snapshotJson);
+            var root = doc.RootElement;
+            return new AdminOrderShippingDto
+            {
+                ReceiverName = TryGetString(root, "receiverName") ?? string.Empty,
+                Phone = TryGetString(root, "phone") ?? string.Empty,
+                Province = TryGetString(root, "province") ?? string.Empty,
+                District = TryGetString(root, "district") ?? string.Empty,
+                Ward = TryGetString(root, "ward") ?? string.Empty,
+                StreetAddress = TryGetString(root, "streetAddress") ?? string.Empty
+            };
+        }
+        catch (JsonException)
+        {
+            return new AdminOrderShippingDto();
+        }
+    }
+
+    private static string? TryGetString(JsonElement root, string propertyName) =>
+        root.TryGetProperty(propertyName, out var value) && value.ValueKind == JsonValueKind.String
+            ? value.GetString()
+            : null;
 }
