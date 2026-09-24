@@ -225,7 +225,14 @@ public sealed class PlatformCommissionReportDto
     public decimal CommissionRate { get; init; }
     public int OrderCount { get; init; }
     public decimal Gmv { get; init; }
+    /// <summary>Commission recognised when payout batches were approved in the period.</summary>
     public decimal Commission { get; init; }
+    /// <summary>
+    /// Platform fee already snapshotted on Holding / OnHold / Eligible entries
+    /// (orders completed but not yet paid out). Visible so admins see fee from
+    /// successful payments before the hold window ends.
+    /// </summary>
+    public decimal AccruedCommission { get; init; }
     /// <summary>Total platform voucher subsidies paid out to sellers in this period.</summary>
     public decimal PlatformSubsidy { get; init; }
     /// <summary>Net platform earning = Commission − PlatformSubsidy.</summary>

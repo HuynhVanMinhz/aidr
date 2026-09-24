@@ -206,7 +206,9 @@ Card **Holding** tăng đúng bằng "You receive". Card **Wallet → Pending se
 ✅ **Sau khi Paid:**
 - Seller: entry → **Paid**, Release ghi *"Paid · PAY-…"*, card **Paid out** tăng, **Recent payouts** có dòng mới
 - Ví seller: `Available` giảm về mức trước khi release
-- Admin KPI: **Platform commission** = tổng 3%, **GMV settled** tăng, **Held in escrow** giảm
+- Admin KPI: **Platform commission** = phí đã release + phí đang giữ (held), **GMV settled** tăng khi batch được duyệt, **Held in escrow** giảm
+
+> Ngay sau khi đơn **Completed**, phí 3% đã snapshot trên entry (status Holding). Card **Platform commission** cộng luôn phần accrued trong escrow — không cần đợi hết hold mới thấy số.
 
 ### 2.6 Kiểm tra sổ ví
 

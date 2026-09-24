@@ -880,11 +880,13 @@ public sealed class SettlementRepository : ISettlementRepository
             .Take(10)
             .ToList();
 
-        var escrowHeld = await _db.SettlementEntries.AsNoTracking()
+        var inEscrow = _db.SettlementEntries.AsNoTracking()
             .Where(e => e.Status == SettlementConstants.EntryStatusHolding
                         || e.Status == SettlementConstants.EntryStatusOnHold
-                        || e.Status == SettlementConstants.EntryStatusEligible)
-            .SumAsync(e => (decimal?)e.NetAmount, ct) ?? 0m;
+                        || e.Status == SettlementConstants.EntryStatusEligible);
+
+        var escrowHeld = await inEscrow.SumAsync(e => (decimal?)e.NetAmount, ct) ?? 0m;
+        var accruedCommission = await inEscrow.SumAsync(e => (decimal?)e.CommissionAmount, ct) ?? 0m;
 
         var awaitingPayout = await _db.SettlementEntries.AsNoTracking()
             .Where(e => e.Status == SettlementConstants.EntryStatusApproved)
@@ -901,6 +903,7 @@ public sealed class SettlementRepository : ISettlementRepository
             OrderCount = rows.Count,
             Gmv = rows.Sum(r => r.GrossAmount),
             Commission = totalCommission,
+            AccruedCommission = accruedCommission,
             PlatformSubsidy = totalSubsidy,
             NetPlatformEarning = totalCommission - totalSubsidy,
             PaidToSeller = rows.Sum(r => r.NetAmount),

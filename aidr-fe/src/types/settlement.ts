@@ -170,7 +170,10 @@ export type PlatformCommissionReport = {
   commissionRate: number;
   orderCount: number;
   gmv: number;
+  /** Fee recognised when payout batches were approved in the period. */
   commission: number;
+  /** Fee already snapshotted on Holding / OnHold / Eligible entries. */
+  accruedCommission: number;
   platformSubsidy: number;
   netPlatformEarning: number;
   paidToSeller: number;
