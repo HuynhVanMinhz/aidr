@@ -582,9 +582,8 @@ public sealed class OrderRepository : IOrderRepository
             .FirstOrDefaultAsync(w => w.ShopId == order.ShopId, cancellationToken)
             ?? throw new AppException("Seller wallet was not found for this shop.");
 
-        // Detect whether the applied voucher is a platform (System) voucher.
-        // Platform vouchers are absorbed by the platform - the seller is made whole.
-        // Shop vouchers are the seller's own cost and reduce their commissionable base.
+        // System (Admin) vouchers: platform subsidises the discount so the seller
+        // is made whole. Shop vouchers: seller bears the cost (reduces fee base).
         var isPlatformVoucher = false;
         if (order.VoucherId.HasValue && order.DiscountAmount > 0)
         {
@@ -602,8 +601,6 @@ public sealed class OrderRepository : IOrderRepository
         var rate = _settlementOptions.CommissionRate;
         var gross = decimal.Round(order.TotalAmount, 2, MidpointRounding.AwayFromZero);
 
-        // Platform voucher discount is a platform cost, not the seller's.
-        // Seller commission is therefore based on the full subtotal.
         var subsidyAmount = isPlatformVoucher ? order.DiscountAmount : 0m;
         var sellerDiscount = isPlatformVoucher ? 0m : order.DiscountAmount;
 
@@ -666,7 +663,7 @@ public sealed class OrderRepository : IOrderRepository
             CreatedAt = now
         });
 
-        // Informational row for the platform subsidy so the ledger shows why net > gross - commission.
+        // Informational row: platform voucher top-up (why Net can exceed Gross − fee).
         if (subsidyAmount > 0)
         {
             _db.WalletTransactions.Add(new WalletTransaction

@@ -60,7 +60,7 @@ public sealed class SettlementEntryDto
     public Guid ShopId { get; init; }
     public string? ShopName { get; init; }
     public decimal GrossAmount { get; init; }
-    /// <summary>Platform voucher discount absorbed by the platform; 0 for shop vouchers.</summary>
+    /// <summary>Platform top-up when buyer used a System voucher; 0 for Shop vouchers.</summary>
     public decimal SubsidyAmount { get; init; }
     public decimal CommissionRate { get; init; }
     public decimal CommissionAmount { get; init; }
@@ -233,7 +233,7 @@ public sealed class PlatformCommissionReportDto
     /// successful payments before the hold window ends.
     /// </summary>
     public decimal AccruedCommission { get; init; }
-    /// <summary>Total platform voucher subsidies paid out to sellers in this period.</summary>
+    /// <summary>Total System-voucher subsidies paid out to sellers in this period.</summary>
     public decimal PlatformSubsidy { get; init; }
     /// <summary>Net platform earning = Commission − PlatformSubsidy.</summary>
     public decimal NetPlatformEarning { get; init; }
