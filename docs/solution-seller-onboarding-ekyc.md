@@ -1,8 +1,10 @@
-# AIDR - Solution: Seller onboarding có eKYC (FPT.AI)
+# AIDR - Solution: Seller onboarding có eKYC (Gemini Vision)
 
 **Status:** Implemented
 **Module:** Profile (buyer) + Admin · **Use case:** UC-05 (Become a seller)
-**Phạm vi:** siết chặt luồng đăng ký bán hàng và bắt buộc xác thực danh tính bằng **FPT.AI eKYC** trước khi hồ sơ được gửi cho admin duyệt.
+**Phạm vi:** siết chặt luồng đăng ký bán hàng và bắt buộc xác thực danh tính bằng **Google Gemini Vision** (OCR + face match) trước khi hồ sơ được gửi cho admin duyệt. FPT.AI vẫn giữ làm provider dự phòng (`Ekyc:Provider=FptAi`).
+
+> **Production:** bắt buộc `Gemini__ApiKey` (hoặc `FptAi__ApiKey` nếu dùng FPT). Thiếu key → bản ghi `Provider=MANUAL` và admin thấy “No automated check ran”.
 
 ---
 
@@ -25,12 +27,13 @@ Luồng cũ chỉ có 1 bước: buyer gõ tên shop + mô tả + dán vài URL 
 
 ```
 ┌ Bước 1 - Danh tính (eKYC) ────────────────────────────────────┐
-│ Upload mặt trước + mặt sau CCCD  → FPT.AI IDR (OCR)           │
-│ Upload ảnh chân dung             → FPT.AI Face Match          │
+│ Upload mặt trước + mặt sau CCCD  → Gemini Vision (OCR)        │
+│ Upload ảnh chân dung             → Gemini face compare        │
 │                                                                │
 │  OCR đọc được + face match ≥ ngưỡng  →  Passed                │
 │  face match dưới ngưỡng nhưng > sàn  →  ManualReview           │
 │  OCR không đọc được / lệch mặt       →  Failed (được thử lại)  │
+│  Provider lỗi / thiếu API key        →  MANUAL (admin đọc tay) │
 └────────────────────────────────────────────────────────────────┘
                           ↓ bắt buộc Passed hoặc ManualReview
 ┌ Bước 2 - Hồ sơ kinh doanh ────────────────────────────────────┐
@@ -59,26 +62,25 @@ Luồng cũ chỉ có 1 bước: buyer gõ tên shop + mô tả + dán vài URL 
 
 ---
 
-## 3. FPT.AI eKYC
+## 3. Gemini Vision eKYC (mặc định)
 
-| Việc | Endpoint | Ghi chú |
-|---|---|---|
-| Đọc CCCD/CMND | `POST https://api.fpt.ai/vision/idr/vnm` | header `api-key`; multipart field `image`; trả `id, name, dob, sex, home, address, doe, type` |
-| So khớp khuôn mặt | `POST https://api.fpt.ai/dmp/checkface/v1` | header `api_key`; multipart `file[]` = ảnh CCCD + ảnh chân dung; trả `isMatch`, `similarity` |
+Provider mặc định: `Ekyc:Provider = Gemini` → `GeminiEkycClient` gọi
+`generativelanguage.googleapis.com` (`generateContent`) với ảnh CCCD + selfie, trả JSON OCR + similarity.
 
-⚠️ Hai endpoint dùng **tên header khác nhau**: OCR là `api-key` (gạch ngang), face match là `api_key` (gạch dưới). Gửi nhầm sẽ nhận 401.
+FPT.AI vẫn có trong codebase (`FptAiEkycClient`) khi set `Ekyc:Provider=FptAi`.
 
-Mặt sau CCCD chứa `issue_date` / `issue_loc` - mặt trước không có. `ReadIdCardAsync` OCR mặt sau riêng và ghép vào; nếu mặt sau lỗi thì bỏ qua, không làm hỏng cả lần xác thực.
+| Việc | Cách làm |
+|---|---|
+| Đọc CCCD/CMND | Gemini multimodal + prompt JSON (front, optional back) |
+| So khớp khuôn mặt | Cùng request (hoặc tách) so portrait trên CCCD với selfie → `similarity` 0–100 |
 
-`similarity` FPT.AI trả theo **phần trăm (0–100)**; client luôn chia 100 trước khi so với ngưỡng.
+`similarity` luôn chia 100 trước khi so với `Ekyc:FaceMatchThreshold` / `ManualReviewThreshold`.
 
 ### 3.1 Ảnh đi đường nào
 
-FE đã có sẵn luồng upload Cloudinary (dùng cho avatar, ảnh sản phẩm) nên **tái sử dụng**: FE upload ảnh lên Cloudinary rồi gửi **URL** cho BE; BE tải ảnh về và forward bytes sang FPT.AI.
+FE upload ảnh lên Cloudinary rồi gửi **URL** cho BE; BE tải ảnh về (SSRF whitelist) và gửi bytes (base64) sang Gemini.
 
-Lý do không cho FE gọi thẳng FPT.AI: api-key sẽ lộ trong bundle.
-
-> ⚠️ **Chặn SSRF:** BE chỉ tải ảnh từ host trong `FptAi:AllowedImageHosts` (mặc định `res.cloudinary.com`). Không có ràng buộc này thì endpoint trở thành proxy để quét mạng nội bộ.
+> ⚠️ **Chặn SSRF:** BE chỉ tải ảnh từ host trong `Ekyc:AllowedImageHosts` (mặc định `res.cloudinary.com`).
 
 ### 3.2 Ngưỡng quyết định
 
@@ -87,15 +89,25 @@ similarity >= FaceMatchThreshold (0.80)      → Passed
 similarity >= ManualReviewThreshold (0.60)   → ManualReview  (admin nhìn ảnh tự quyết)
 similarity <  ManualReviewThreshold          → Failed
 OCR không ra dữ liệu / thiếu số CCCD         → Failed
+ProviderUnavailable (thiếu key / 401 / 429 / 5xx / timeout) → Provider=MANUAL
 ```
 
 Vùng xám `ManualReview` là cố ý: ảnh mờ, đeo kính, ảnh CCCD cũ đều làm tụt similarity mà người thật vẫn đúng. Chặn cứng ở 0.80 sẽ loại oan seller thật.
 
 ### 3.3 Chống lạm dụng
 
-- Tối đa `MaxAttemptsPerDay` (5) lần eKYC / user / ngày - mỗi lần gọi FPT.AI đều tốn tiền.
+- Tối đa `MaxAttemptsPerDay` (5) lần eKYC / user / ngày.
 - Chỉ giữ **4 số cuối** CCCD ở dạng đọc được; số đầy đủ lưu dưới dạng **SHA-256 hash** để phát hiện trùng.
 - Một danh tính = một seller: unique index trên `DocumentNumberHash` với `Status = 'Passed'`.
+
+### 3.4 FPT.AI (provider dự phòng)
+
+| Việc | Endpoint | Ghi chú |
+|---|---|---|
+| Đọc CCCD/CMND | `POST https://api.fpt.ai/vision/idr/vnm` | header `api-key` |
+| So khớp khuôn mặt | `POST https://api.fpt.ai/dmp/checkface/v1` | header `api_key` |
+
+⚠️ Hai endpoint dùng **tên header khác nhau**: OCR là `api-key`, face match là `api_key`.
 
 ---
 
@@ -214,24 +226,36 @@ kích hoạt dịch vụ), `KycService` **không** chặn seller và cũng **kh�
 ## 9. Cấu hình
 
 ```jsonc
-"FptAi": {
-  "BaseUrl": "https://api.fpt.ai",
-  "ApiKey": "",                    // đặt qua user-secrets / biến môi trường, không commit
-  "UseMock": false,                // mặc định gọi API thật
+"Ekyc": {
+  "Provider": "Gemini",            // hoặc "FptAi"
+  "UseMock": false,
   "FaceMatchThreshold": 0.80,
   "ManualReviewThreshold": 0.60,
   "MaxAttemptsPerDay": 5,
-  "TimeoutSeconds": 30,
+  "TimeoutSeconds": 120,
   "AllowedImageHosts": [ "res.cloudinary.com" ]
+},
+"Gemini": {
+  "BaseUrl": "https://generativelanguage.googleapis.com/v1beta",
+  "ApiKey": "",                    // user-secrets / env Gemini__ApiKey
+  "Model": "gemini-3.5-flash-lite",
+  "FallbackModel": "gemini-3.6-flash"
+},
+"FptAi": {
+  "BaseUrl": "https://api.fpt.ai",
+  "ApiKey": ""                     // chỉ cần khi Provider = FptAi
 }
 ```
 
-Đặt key (không commit vào repo):
+Đặt key (không commit):
 
 ```bash
-dotnet user-secrets set "FptAi:ApiKey" "<key>" --project aidr-be/AIDR.Api
+dotnet user-secrets set "Gemini:ApiKey" "<key>" --project aidr-be/AIDR.Api
+# Production VPS (/opt/aidr/.env):
+#   Gemini__ApiKey=...
+# rồi: docker compose -f docker-compose.prod.yml --env-file /opt/aidr/.env up -d api
 ```
 
-Key lấy ở <https://console.fpt.ai> và phải **kích hoạt riêng** hai dịch vụ *ID Recognition* và *Face Match*; chỉ có key thôi thì API trả `403 {"message":"You cannot consume this service"}`.
+Key Gemini: <https://aistudio.google.com/apikey>.
 
-`UseMock=true` chỉ dùng ở Development khi chưa có key: trả kết quả `Passed` giả lập với dữ liệu cố định để chạy hết luồng UI. Bản ghi khi đó được lưu với `Provider = "MOCK"`, DTO trả `isMock = true`, và màn hình KYC hiện cảnh báo rõ đây không phải kết quả thật. Ngoài Development, bật cờ này sẽ làm ứng dụng **không khởi động được**.
+`Ekyc:UseMock=true` chỉ dùng ở Development khi chưa có key. Ngoài Development, bật cờ này sẽ làm ứng dụng **không khởi động được**.

@@ -58,7 +58,7 @@ public sealed class GeminiEkycOptions
     public string Model { get; set; } = "gemini-3.5-flash-lite";
 
     /// <summary>Used when the primary model returns 404 (deprecated / unavailable).</summary>
-    public string FallbackModel { get; set; } = "gemini-3.5-flash-lite";
+    public string FallbackModel { get; set; } = "gemini-3.6-flash";
 
     public bool IsConfigured => !string.IsNullOrWhiteSpace(ApiKey);
 }

@@ -61,9 +61,8 @@ auto-complete 7 ngày, `PayoutMode`).
 scripts/seller-kyc-schema.sql   # bảng KycVerifications + mở rộng SellerRegistrationRequests
 ```
 
-Chi tiết: `docs/solution-seller-onboarding-ekyc.md`. Cấu hình ở section `FptAi`
-trong `appsettings.json`. Để `UseMock: true` khi chưa có API key FPT.AI - luồng
-UI chạy đủ với dữ liệu giả lập.
+Chi tiết: `docs/solution-seller-onboarding-ekyc.md`. Cấu hình `Ekyc` + `Gemini`
+trong `appsettings.json` / env. Để `Ekyc:UseMock: true` chỉ khi Development chưa có API key.
 
 ### 2e. Tự động hoá vòng đời đơn hàng (GHN)
 

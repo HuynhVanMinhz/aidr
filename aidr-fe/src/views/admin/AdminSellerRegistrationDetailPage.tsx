@@ -301,6 +301,12 @@ export function AdminSellerRegistrationDetailPage() {
                     <strong>No automated check ran.</strong> The eKYC provider was unavailable, so
                     nothing below was machine-read. Read the documents yourself and confirm the
                     portrait matches the card before approving.
+                    {item.kyc.failureReason ? (
+                      <>
+                        <br />
+                        <span className="text-muted">{item.kyc.failureReason}</span>
+                      </>
+                    ) : null}
                   </p>
                 ) : item.kyc.status === 'ManualReview' ? (
                   <p className="text-warning fs-13 mb-2">

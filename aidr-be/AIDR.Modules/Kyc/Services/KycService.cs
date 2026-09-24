@@ -176,6 +176,12 @@ public sealed class KycService : IKycService
             "eKYC provider unavailable for user {UserId}; falling back to manual review",
             userId);
 
+        var detail = string.IsNullOrWhiteSpace(ex.Message)
+            ? null
+            : ex.Message.Length <= 400
+                ? ex.Message
+                : ex.Message[..400];
+
         return await _repository.SaveAsync(
             new KycVerificationRecord
             {
@@ -187,7 +193,8 @@ public sealed class KycService : IKycService
                 Status = KycConstants.StatusManualReview,
                 FailureReason =
                     "Automatic identity checking is unavailable right now, so a staff member "
-                    + "will check your documents by hand. You can carry on with your application.",
+                    + "will check your documents by hand. You can carry on with your application."
+                    + (detail is null ? string.Empty : $" ({detail})"),
                 RawOcrJson = null,
                 RawFaceJson = null,
             },

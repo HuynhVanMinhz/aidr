@@ -80,6 +80,19 @@ if (!builder.Environment.IsDevelopment()
         "Ekyc:UseMock must be false outside Development. Configure a real eKYC provider API key.");
 }
 
+var ekycProvider = builder.Configuration.GetValue("Ekyc:Provider", "Gemini") ?? "Gemini";
+var isFptProvider = string.Equals(ekycProvider, "FptAi", StringComparison.OrdinalIgnoreCase)
+    || string.Equals(ekycProvider, "FPTAI", StringComparison.OrdinalIgnoreCase);
+var ekycKeyConfigured = isFptProvider
+    ? !string.IsNullOrWhiteSpace(builder.Configuration["FptAi:ApiKey"])
+    : !string.IsNullOrWhiteSpace(builder.Configuration["Gemini:ApiKey"]);
+if (!builder.Configuration.GetValue("Ekyc:UseMock", false) && !ekycKeyConfigured)
+{
+    Log.Warning(
+        "eKYC provider {Provider} has no API key configured. Verify calls will fall back to MANUAL review.",
+        ekycProvider);
+}
+
 var app = builder.Build();
 
 app.UseMiddleware<CorrelationIdMiddleware>();
