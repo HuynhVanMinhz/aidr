@@ -209,10 +209,13 @@ Groq__ApiKey=...
 Groq__Model=llama-3.3-70b-versatile
 Groq__UseMock=false
 
-# FPT.AI eKYC
-FptAi__ApiKey=...
-FptAi__UseMock=false
-FptAi__AllowedImageHosts__0=res.cloudinary.com
+# eKYC (Gemini Vision)
+Ekyc__Provider=Gemini
+Ekyc__UseMock=false
+Ekyc__AllowedImageHosts__0=res.cloudinary.com
+Gemini__ApiKey=...
+Gemini__Model=gemini-3.5-flash-lite
+Gemini__FallbackModel=gemini-3.6-flash
 ```
 
 #### Hosting & chi phí
@@ -399,7 +402,7 @@ Upload ảnh sản phẩm, avatar, eKYC (FE unsigned upload).
    - Folder: `aidr/products`, `aidr/avatars`…
    - Allowed formats: `jpg,png,webp`.
    - Max file size: 5–10 MB.
-3. BE `FptAi:AllowedImageHosts` phải chứa `res.cloudinary.com`.
+3. BE `Ekyc:AllowedImageHosts` phải chứa `res.cloudinary.com`.
 
 #### Chi phí
 
@@ -500,33 +503,31 @@ Groq__TimeoutSeconds=60
 
 ---
 
-### 3.11 FPT.AI - eKYC seller onboarding
+### 3.11 Gemini Vision - eKYC seller onboarding
 
 #### Vai trò
 
-OCR CCCD + face match khi đăng ký bán hàng.
+OCR CCCD + face match khi đăng ký bán hàng (Google Gemini multimodal). FPT.AI vẫn là provider dự phòng qua `Ekyc__Provider=FptAi`.
 
 Chi tiết: `docs/solution-seller-onboarding-ekyc.md`.
 
 #### Cấu hình
 
 ```bash
-FptAi__BaseUrl=https://api.fpt.ai
-FptAi__ApiKey=<key từ FPT.AI dashboard>
-FptAi__UseMock=false
-FptAi__FaceMatchThreshold=0.80
-FptAi__AllowedImageHosts__0=res.cloudinary.com
+Ekyc__Provider=Gemini
+Ekyc__UseMock=false
+Ekyc__FaceMatchThreshold=0.80
+Ekyc__ManualReviewThreshold=0.60
+Ekyc__AllowedImageHosts__0=res.cloudinary.com
+Gemini__BaseUrl=https://generativelanguage.googleapis.com/v1beta
+Gemini__ApiKey=<key từ Google AI Studio>
+Gemini__Model=gemini-3.5-flash-lite
+Gemini__FallbackModel=gemini-3.6-flash
 ```
 
-#### Chi phí
+Thiếu `Gemini__ApiKey` → mỗi lần verify lưu `Provider=MANUAL` (admin phải đọc ảnh tay).
 
-| Hạng mục | Ước tính |
-|----------|----------|
-| Gói API FPT.AI | **Theo request** - liên hệ sales hoặc dashboard |
-| OCR + Face match / lượt KYC | **~2.000–10.000 VND/lượt** (tham khảo, tùy gói) |
-| MVP (50 seller/tháng) | **~100k–500k VND/tháng** |
-
-**Staging:** `FptAi__UseMock=true` - không tốn phí API.
+**Staging:** có thể để `Ekyc__UseMock=true` chỉ trên môi trường Development local - production **không** được bật mock.
 
 ---
 
@@ -988,7 +989,7 @@ Keycloak__FrontendClientId=aidr-fe
 Cors__Origins__0=https://www.aidr.example.com
 Cors__Origins__1=https://aidr.example.com
 
-# + Smtp__* PayOS__* Shipping__* Groq__* FptAi__* (xem §3.2)
+# + Smtp__* PayOS__* Shipping__* Groq__* Ekyc__* Gemini__* (xem §3.2)
 ```
 
 `chmod 600 /opt/aidr/.env`.
@@ -1082,7 +1083,7 @@ SPA: mọi path không phải file → `index.html` (đã có `try_files` ở §
 | 1 | payOS production keys + webhook URL + `confirm-webhook` |
 | 2 | GHN production gateway + webhook token |
 | 3 | SMTP thật (tắt Mailhog) |
-| 4 | Cloudinary preset + `FptAi__AllowedImageHosts` |
+| 4 | Cloudinary preset + `Ekyc__AllowedImageHosts` |
 | 5 | Groq / FPT.AI: tắt mock |
 | 6 | UptimeRobot: probe `https://api.../api/health/ready` mỗi 5 phút |
 | 7 | Smoke E2E: đăng ký/login → browse → cart → checkout → webhook |
@@ -1289,7 +1290,7 @@ Tách VPS nhỏ **hoặc** cùng VPS khác project name:
 
 - Compose file: `docker-compose.staging.yml`
 - Domain: `staging.`, `api.staging.`, `auth.staging.`
-- DB instance riêng; payOS **sandbox**; `Groq__UseMock` / `FptAi__UseMock` tùy ý
+- DB instance riêng; payOS **sandbox**; `Groq__UseMock` / thiếu `Gemini__ApiKey` → KYC MANUAL tùy ý
 - Workflow: deploy khi push `develop` / tag `staging-*`
 
 ---
