@@ -174,6 +174,14 @@ BEGIN
 
         IF @EntryCount > 0
         BEGIN
+            /* Grandfathered Paid entries (0% fee) must not inflate the last-30d
+               "GMV settled / Platform commission" KPI. Keep them for schema
+               coverage but stamp ApprovedAt outside the default report window. */
+            DECLARE @BatchApprovedAt DATETIME2(3) =
+                CASE WHEN ISNULL(@Commission, 0) = 0
+                     THEN DATEADD(DAY, -45, @Now)
+                     ELSE DATEADD(DAY, -1, @Now) END;
+
             INSERT INTO dbo.PayoutBatches (
                 PayoutBatchId, BatchCode, ShopId, ShopBankAccountId, PeriodTo,
                 EntryCount, GrossAmount, CommissionAmount, NetAmount, Currency, Status,
@@ -181,7 +189,7 @@ BEGIN
             ) VALUES (
                 @PayoutId, N'PAY-COV-SEED-001', @ShopId, @BankAcctId, @Now,
                 @EntryCount, @Gross, @Commission, @Net, N'VND', N'Paid',
-                @AdminId, DATEADD(DAY, -1, @Now), DATEADD(DAY, -1, @Now), DATEADD(DAY, -2, @Now), @Now
+                @AdminId, @BatchApprovedAt, @BatchApprovedAt, DATEADD(DAY, -2, @Now), @Now
             );
 
             UPDATE dbo.SettlementEntries
@@ -190,6 +198,20 @@ BEGIN
               AND Status = N'Paid'
               AND PayoutBatchId IS NULL;
         END;
+    END;
+
+    /* Remediate existing coverage batches that still sit inside the 30-day KPI. */
+    IF OBJECT_ID(N'dbo.PayoutBatches', N'U') IS NOT NULL
+    BEGIN
+        UPDATE dbo.PayoutBatches
+        SET
+            ApprovedAt = DATEADD(DAY, -45, SYSUTCDATETIME()),
+            PaidAt = DATEADD(DAY, -45, SYSUTCDATETIME()),
+            UpdatedAt = SYSUTCDATETIME()
+        WHERE BatchCode = N'PAY-COV-SEED-001'
+          AND CommissionAmount = 0
+          AND ApprovedAt IS NOT NULL
+          AND ApprovedAt > DATEADD(DAY, -40, SYSUTCDATETIME());
     END;
 END;
 

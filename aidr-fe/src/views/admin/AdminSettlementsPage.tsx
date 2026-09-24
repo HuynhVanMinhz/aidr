@@ -112,8 +112,16 @@ export function AdminSettlementsPage() {
         <div className="col-md-6 col-xl-3">
           <AdminStatCard
             title="Platform commission"
-            value={loading && !report ? '…' : formatVnd(report?.commission ?? 0)}
-            unit={report ? `${(report.commissionRate * 100).toFixed(1)}%` : undefined}
+            value={
+              loading && !report
+                ? '…'
+                : formatVnd((report?.commission ?? 0) + (report?.accruedCommission ?? 0))
+            }
+            unit={
+              report
+                ? `${(report.commissionRate * 100).toFixed(1)}% · held + released`
+                : undefined
+            }
             icon="solar:wallet-money-bold-duotone"
             tone="success"
           />
