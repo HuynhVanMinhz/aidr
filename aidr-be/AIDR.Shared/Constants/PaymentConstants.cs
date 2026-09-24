@@ -18,6 +18,12 @@ public static class PaymentConstants
     /// <summary>payOS payment-link state that means the money has arrived.</summary>
     public const string PayOsLinkStatusPaid = "PAID";
 
+    public const string PayOsLinkStatusPending = "PENDING";
+    public const string PayOsLinkStatusProcessing = "PROCESSING";
+    public const string PayOsLinkStatusCancelled = "CANCELLED";
+    public const string PayOsLinkStatusExpired = "EXPIRED";
+    public const string PayOsLinkStatusFailed = "FAILED";
+
     /// <summary>payOS VietQR description limit.</summary>
     public const int MaxDescriptionLength = 25;
 

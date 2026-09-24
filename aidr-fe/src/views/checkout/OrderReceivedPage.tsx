@@ -214,18 +214,14 @@ export function OrderReceivedPage() {
   }
 
   async function handlePayNow(orderId: string) {
-    const existing = paymentsByOrderId.get(orderId);
-    if (existing?.checkoutUrl && !isPaidStatus(existing.paymentStatus)) {
-      window.location.assign(existing.checkoutUrl);
-      return;
-    }
-
     const order = orders.find((o) => o.orderId === orderId);
     if (!order) {
       toast.error('Order not found.');
       return;
     }
 
+    // Always ask the API for a checkout URL. After the buyer cancels on payOS the
+    // stored link is dead; the API reuses it only when payOS still reports PENDING.
     setRetryingOrderId(orderId);
     const result = await dispatch(createPayOsLinksForOrders([order]));
     setRetryingOrderId(null);

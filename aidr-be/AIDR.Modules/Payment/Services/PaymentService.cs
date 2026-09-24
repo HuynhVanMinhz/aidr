@@ -77,10 +77,13 @@ public sealed class PaymentService : IPaymentService
         if (!string.Equals(payment.PaymentStatus, PaymentConstants.StatusPending, StringComparison.OrdinalIgnoreCase))
             throw new ConflictException("Payment is not pending.");
 
+        // Reuse a live payOS link; recreate after cancel/expire (same orderCode cannot be reused).
         if (!string.IsNullOrWhiteSpace(payment.CheckoutUrl) && !string.IsNullOrWhiteSpace(payment.ProviderPaymentId))
         {
             var existingCode = TryReadPayOsOrderCode(payment.RawResponseJson) ?? ToPayOsOrderCode(payment.PaymentId);
-            return MapResponse(payment, payment.CheckoutUrl!, existingCode);
+            var reuse = await TryReuseExistingCheckoutAsync(payment, existingCode, cancellationToken);
+            if (reuse is not null)
+                return reuse;
         }
 
         if (!_payOs.IsConfigured && !_payOs.UseMock)
@@ -90,7 +93,11 @@ public sealed class PaymentService : IPaymentService
         if (amountVnd < 1)
             throw new AppException("Order amount must be at least 1 VND.");
 
-        var payOsOrderCode = ToPayOsOrderCode(payment.PaymentId);
+        var previousAttempt = TryReadLinkAttempt(payment.RawResponseJson);
+        var linkAttempt = string.IsNullOrWhiteSpace(payment.CheckoutUrl) && previousAttempt == 0
+            ? 1
+            : previousAttempt + 1;
+        var payOsOrderCode = ToPayOsOrderCode(payment.PaymentId, linkAttempt);
         var description = TruncateDescription(payment.OrderCode);
         var returnUrl = AppendOrderId(_options.ReturnUrl, payment.OrderId);
         var cancelUrl = AppendOrderId(_options.CancelUrl, payment.OrderId);
@@ -110,6 +117,7 @@ public sealed class PaymentService : IPaymentService
             new
             {
                 payOsOrderCode,
+                linkAttempt,
                 paymentLinkId = link.PaymentLinkId,
                 checkoutUrl = link.CheckoutUrl,
                 qrCode = link.QrCode,
@@ -126,10 +134,11 @@ public sealed class PaymentService : IPaymentService
             cancellationToken);
 
         _logger.LogInformation(
-            "Created payOS checkout for order {OrderId} payment {PaymentId} link {PaymentLinkId}",
+            "Created payOS checkout for order {OrderId} payment {PaymentId} link {PaymentLinkId} attempt {Attempt}",
             payment.OrderId,
             payment.PaymentId,
-            link.PaymentLinkId);
+            link.PaymentLinkId,
+            linkAttempt);
 
         return new CreatePayOsPaymentResponse
         {
@@ -144,6 +153,62 @@ public sealed class PaymentService : IPaymentService
             Amount = payment.Amount,
             Currency = payment.Currency
         };
+    }
+
+    /// <summary>
+    /// Returns the stored checkout when payOS still accepts it; otherwise null so the
+    /// caller can mint a new link (cancelled/expired orderCodes cannot be recreated).
+    /// </summary>
+    private async Task<CreatePayOsPaymentResponse?> TryReuseExistingCheckoutAsync(
+        PendingPaymentForCheckout payment,
+        long existingCode,
+        CancellationToken cancellationToken)
+    {
+        if (_payOs.UseMock)
+            return MapResponse(payment, payment.CheckoutUrl!, existingCode);
+
+        if (!_payOs.IsConfigured)
+            return MapResponse(payment, payment.CheckoutUrl!, existingCode);
+
+        PayOsPaymentLinkInfo link;
+        try
+        {
+            link = await _payOs.GetPaymentLinkAsync(existingCode, cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(
+                ex,
+                "Unable to read payOS link {OrderCode} for order {OrderId} - will create a new checkout",
+                existingCode,
+                payment.OrderId);
+            return null;
+        }
+
+        if (string.Equals(link.Status, PaymentConstants.PayOsLinkStatusPaid, StringComparison.OrdinalIgnoreCase))
+        {
+            throw new ConflictException(
+                "This order was already paid on payOS. Refresh the page to update payment status.");
+        }
+
+        if (IsReusablePayOsLinkStatus(link.Status))
+            return MapResponse(payment, payment.CheckoutUrl!, existingCode);
+
+        _logger.LogInformation(
+            "payOS link {OrderCode} for order {OrderId} is {Status} - creating a new checkout",
+            existingCode,
+            payment.OrderId,
+            link.Status);
+        return null;
+    }
+
+    private static bool IsReusablePayOsLinkStatus(string? status)
+    {
+        if (string.IsNullOrWhiteSpace(status))
+            return false;
+
+        return status.Equals(PaymentConstants.PayOsLinkStatusPending, StringComparison.OrdinalIgnoreCase)
+            || status.Equals(PaymentConstants.PayOsLinkStatusProcessing, StringComparison.OrdinalIgnoreCase);
     }
 
     public async Task<SyncPayOsPaymentResponse> SyncPayOsPaymentAsync(
@@ -405,17 +470,26 @@ public sealed class PaymentService : IPaymentService
     /// payOS accepts orderCode as a JSON number, so it must stay within the
     /// IEEE-754 safe integer range (max 9007199254740991) or the create-link
     /// call is rejected. Fold the payment id into that range.
+    /// <paramref name="attempt"/> &gt; 1 produces a different code so a cancelled
+    /// payOS link can be replaced without colliding on the previous orderCode.
     /// </summary>
     private const long MaxPayOsOrderCode = 9_007_199_254_740_991L;
 
-    public static long ToPayOsOrderCode(Guid paymentId)
+    public static long ToPayOsOrderCode(Guid paymentId, int attempt = 1)
     {
         var bytes = paymentId.ToByteArray();
         var value = BitConverter.ToInt64(bytes, 0);
         var abs = value == long.MinValue ? long.MaxValue : Math.Abs(value);
 
-        var code = abs % MaxPayOsOrderCode;
-        return code == 0 ? 1L : code;
+        var baseCode = abs % MaxPayOsOrderCode;
+        if (baseCode == 0)
+            baseCode = 1L;
+
+        if (attempt <= 1)
+            return baseCode;
+
+        var mixed = (baseCode + (long)(attempt - 1) * 1_000_003L) % MaxPayOsOrderCode;
+        return mixed == 0 ? 1L : mixed;
     }
 
     private static int ToVndInteger(decimal amount)
@@ -464,5 +538,27 @@ public sealed class PaymentService : IPaymentService
         }
 
         return null;
+    }
+
+    private static int TryReadLinkAttempt(string? rawJson)
+    {
+        if (string.IsNullOrWhiteSpace(rawJson))
+            return 0;
+
+        try
+        {
+            using var doc = JsonDocument.Parse(rawJson);
+            if (doc.RootElement.TryGetProperty("linkAttempt", out var prop) &&
+                prop.TryGetInt32(out var attempt) &&
+                attempt > 0)
+                return attempt;
+        }
+        catch (JsonException)
+        {
+            // ignore malformed legacy payload
+        }
+
+        // Legacy rows stored a checkout without linkAttempt - treat as attempt 1.
+        return TryReadPayOsOrderCode(rawJson).HasValue ? 1 : 0;
     }
 }

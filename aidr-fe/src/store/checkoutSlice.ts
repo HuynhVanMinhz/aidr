@@ -143,8 +143,9 @@ export const createPayOsLinksForOrders = createAsyncThunk<
 /**
  * Ask the API what payOS says about these orders. The payOS webhook is the
  * primary settlement path, but it never reaches a dev machine - without this the
- * buyer returns from a completed payment to an order still marked pending, and
- * the "Pay now" button happily sends them back to the same live checkout link.
+ * buyer returns from a completed payment to an order still marked pending.
+ * "Pay now" always calls create, which reuses a live link or mints a new one
+ * after cancel/expire.
  */
 export const syncPayOsPayments = createAsyncThunk<
   SyncPayOsPaymentResponse[],

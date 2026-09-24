@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
+import { createPayOsPayment } from '../../services/paymentApi';
 import { reorderOrder, requireReorderResult } from '../../services/reorderApi';
+import { getApiErrorMessage } from '../../utils/apiError';
 import { BuyerProtectionTimelineCard } from '../../components/account/BuyerProtectionTimelineCard';
 import { VideoDropzone } from '../../components/account/VideoDropzone';
 import { OrderInvoice } from '../../components/checkout/OrderInvoice';
@@ -75,6 +77,7 @@ export function OrderDetailPage() {
   const [showCancelForm, setShowCancelForm] = useState(false);
   const [cancelReason, setCancelReason] = useState('');
   const [cancelReasonError, setCancelReasonError] = useState<string | null>(null);
+  const [continuingPayment, setContinuingPayment] = useState(false);
   const [showReturnForm, setShowReturnForm] = useState(false);
   const [returnForm, setReturnForm] = useState<BuyerReturnFormValues>(emptyReturnForm);
   const [refundBank, setRefundBank] = useState<BankOption | null>(null);
@@ -337,6 +340,24 @@ export function OrderDetailPage() {
 
   const unpaid = detail.status === 'PendingPayment';
 
+  async function handleContinuePayment() {
+    if (!detail || continuingPayment) return;
+    setContinuingPayment(true);
+    try {
+      const result = await createPayOsPayment({ orderId: detail.orderId });
+      const url = result.data?.checkoutUrl;
+      if (!result.success || !url) {
+        toast.error(result.message || 'Unable to create payment link.');
+        return;
+      }
+      window.location.assign(url);
+    } catch (err) {
+      toast.error(getApiErrorMessage(err, 'Unable to create payment link.'));
+    } finally {
+      setContinuingPayment(false);
+    }
+  }
+
   return (
     <div className="order-detail account-page">
       <header className="order-detail__head">
@@ -557,15 +578,15 @@ export function OrderDetailPage() {
               </p>
             ) : null}
 
-            {unpaid && payment?.checkoutUrl ? (
-              <a
-                href={payment.checkoutUrl}
+            {unpaid ? (
+              <button
+                type="button"
                 className="account-btn account-btn--primary order-summary__pay"
-                target="_blank"
-                rel="noreferrer"
+                disabled={continuingPayment}
+                onClick={() => void handleContinuePayment()}
               >
-                Continue payment
-              </a>
+                {continuingPayment ? 'Please wait…' : 'Continue payment'}
+              </button>
             ) : null}
 
             {detail.trackingCode ? (

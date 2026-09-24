@@ -21,6 +21,8 @@ type StockVoucherModalProps = {
   onClose: () => void;
 };
 
+const PRINT_BODY_CLASS = 'is-printing-stock-voucher';
+
 export function StockVoucherModal({
   open,
   kind,
@@ -37,14 +39,28 @@ export function StockVoucherModal({
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') onClose();
     };
+    const clearPrintClass = () => {
+      document.body.classList.remove(PRINT_BODY_CLASS);
+    };
     document.addEventListener('keydown', onKeyDown);
+    window.addEventListener('afterprint', clearPrintClass);
     const previous = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
     return () => {
       document.removeEventListener('keydown', onKeyDown);
+      window.removeEventListener('afterprint', clearPrintClass);
       document.body.style.overflow = previous;
+      clearPrintClass();
     };
   }, [open, onClose]);
+
+  function handlePrint() {
+    document.body.classList.add(PRINT_BODY_CLASS);
+    // Let the browser apply print styles before opening the dialog.
+    window.requestAnimationFrame(() => {
+      window.print();
+    });
+  }
 
   if (!open) return null;
 
@@ -52,7 +68,7 @@ export function StockVoucherModal({
     <>
       <div className="modal-backdrop fade show" onClick={onClose} />
       <div className="modal fade show d-block" tabIndex={-1} role="dialog" aria-modal="true">
-        <div className="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+        <div className="modal-dialog modal-lg modal-dialog-centered">
           <div className="modal-content stock-voucher">
             <div className="modal-header no-print">
               <h5 className="modal-title">{title}</h5>
@@ -106,7 +122,7 @@ export function StockVoucherModal({
               <button type="button" className="btn btn-light" onClick={onClose}>
                 Close
               </button>
-              <button type="button" className="btn btn-primary" onClick={() => window.print()}>
+              <button type="button" className="btn btn-primary" onClick={handlePrint}>
                 Print voucher
               </button>
             </div>
