@@ -802,24 +802,61 @@ html[data-aidr-shell='admin'] .wrapper .page-content > .container-xxl:has(.chat-
 }
 
 @media print {
-  body * {
-    visibility: hidden !important;
-  }
-
-  #stock-voucher-print,
-  #stock-voucher-print * {
-    visibility: visible !important;
-  }
-
-  #stock-voucher-print {
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 100%;
-  }
-
-  .no-print {
+  /* Hide the app shell so only the portaled voucher prints (avoids blank multi-page output). */
+  body.is-printing-stock-voucher #root,
+  body.is-printing-stock-voucher .modal-backdrop {
     display: none !important;
+  }
+
+  body.is-printing-stock-voucher .modal,
+  body.is-printing-stock-voucher .modal-dialog,
+  body.is-printing-stock-voucher .modal-content,
+  body.is-printing-stock-voucher .modal-body,
+  body.is-printing-stock-voucher .stock-voucher {
+    position: static !important;
+    inset: auto !important;
+    transform: none !important;
+    width: 100% !important;
+    max-width: none !important;
+    height: auto !important;
+    max-height: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+    border: none !important;
+    box-shadow: none !important;
+    background: #fff !important;
+  }
+
+  body.is-printing-stock-voucher .no-print {
+    display: none !important;
+  }
+
+  body.is-printing-stock-voucher #stock-voucher-print {
+    position: static !important;
+    width: 100%;
+    color: #16181d !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  body.is-printing-stock-voucher #stock-voucher-print * {
+    color: inherit;
+  }
+
+  body.is-printing-stock-voucher .stock-voucher__doc,
+  body.is-printing-stock-voucher .stock-voucher__meta span,
+  body.is-printing-stock-voucher .stock-voucher__product span,
+  body.is-printing-stock-voucher .stock-voucher__table th,
+  body.is-printing-stock-voucher .stock-voucher__note {
+    color: #6c757d !important;
+  }
+
+  body.is-printing-stock-voucher .stock-voucher__brand,
+  body.is-printing-stock-voucher .stock-voucher__meta strong,
+  body.is-printing-stock-voucher .stock-voucher__product strong,
+  body.is-printing-stock-voucher .stock-voucher__table td {
+    color: #16181d !important;
   }
 }
 
