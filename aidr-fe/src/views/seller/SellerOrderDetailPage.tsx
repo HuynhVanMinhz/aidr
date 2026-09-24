@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { FormField } from '../../components/admin/FormField';
 import { IconifyIcon } from '../../components/admin/IconifyIcon';
+import { OrderInvoice } from '../../components/checkout/OrderInvoice';
 import { OrderTrackingMap } from '../../components/shipping/OrderTrackingMap';
 import { useSellerOrderDetail } from '../../hooks/useSellerOrders';
 import { useToast } from '../../hooks/useToast';
@@ -202,6 +203,42 @@ export function SellerOrderDetailPage() {
                 );
               })}
             </div>
+          </div>
+        </div>
+
+        <div className="card">
+          <div className="card-body">
+            <OrderInvoice
+              printId={`seller-order-invoice-${detail.orderId}`}
+              brandLabel="AIDR Seller"
+              orderCode={detail.orderCode}
+              shopName="Seller shop"
+              currency={detail.currency}
+              createdAt={detail.createdAt}
+              paidAt={detail.paidAt}
+              subtotalAmount={detail.subtotalAmount}
+              discountAmount={detail.discountAmount}
+              shippingFee={detail.shippingFee}
+              totalAmount={detail.totalAmount}
+              shipping={{
+                receiverName: detail.shipping.receiverName,
+                phone: detail.shipping.phone,
+                province: detail.shipping.province,
+                district: detail.shipping.district,
+                ward: detail.shipping.ward,
+                streetAddress: detail.shipping.streetAddress,
+              }}
+              buyerNote={detail.buyerNote}
+              items={detail.items.map((item) => ({
+                key: item.orderItemId,
+                productName: item.productName,
+                variantName: item.variantName,
+                sku: item.sku,
+                quantity: item.quantity,
+                unitPrice: item.unitPrice,
+                lineTotal: item.lineTotal,
+              }))}
+            />
           </div>
         </div>
 

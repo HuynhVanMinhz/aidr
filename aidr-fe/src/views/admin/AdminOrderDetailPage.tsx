@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
+import { OrderInvoice } from '../../components/checkout/OrderInvoice';
 import { getAdminOrder } from '../../services/adminApi';
 import type { AdminOrderDetail } from '../../types/adminOps';
 import { getApiErrorMessage } from '../../utils/apiError';
@@ -91,6 +92,42 @@ export function AdminOrderDetailPage() {
                 Back to list
               </Link>
             </div>
+          </div>
+        </div>
+
+        <div className="card">
+          <div className="card-body">
+            <OrderInvoice
+              printId={`admin-order-invoice-${detail.orderId}`}
+              brandLabel="AIDR Admin"
+              orderCode={detail.orderCode}
+              shopName={detail.shopName}
+              currency={detail.currency}
+              createdAt={detail.createdAt}
+              paidAt={detail.paidAt}
+              subtotalAmount={detail.subtotalAmount}
+              discountAmount={detail.discountAmount}
+              shippingFee={detail.shippingFee}
+              totalAmount={detail.totalAmount}
+              shipping={{
+                receiverName: detail.shipping?.receiverName || detail.buyerName,
+                phone: detail.shipping?.phone || detail.buyerPhone || '',
+                province: detail.shipping?.province || '',
+                district: detail.shipping?.district || '',
+                ward: detail.shipping?.ward || '',
+                streetAddress: detail.shipping?.streetAddress || '',
+              }}
+              buyerNote={detail.buyerNote}
+              items={detail.items.map((item) => ({
+                key: item.orderItemId,
+                productName: item.productName,
+                variantName: item.variantName,
+                sku: item.sku,
+                quantity: item.quantity,
+                unitPrice: item.unitPrice,
+                lineTotal: item.lineTotal,
+              }))}
+            />
           </div>
         </div>
 

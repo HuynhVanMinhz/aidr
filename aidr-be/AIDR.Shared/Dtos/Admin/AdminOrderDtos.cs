@@ -51,9 +51,20 @@ public sealed class AdminOrderDetailDto
     public DateTime? CancelledAt { get; init; }
     public DateTime? DeliveredAt { get; init; }
     public DateTime? CompletedAt { get; init; }
+    public AdminOrderShippingDto Shipping { get; init; } = new();
     public IReadOnlyList<AdminOrderItemDto> Items { get; init; } = Array.Empty<AdminOrderItemDto>();
     public IReadOnlyList<AdminOrderStatusHistoryDto> StatusHistory { get; init; } =
         Array.Empty<AdminOrderStatusHistoryDto>();
+}
+
+public sealed class AdminOrderShippingDto
+{
+    public string ReceiverName { get; init; } = string.Empty;
+    public string Phone { get; init; } = string.Empty;
+    public string Province { get; init; } = string.Empty;
+    public string District { get; init; } = string.Empty;
+    public string Ward { get; init; } = string.Empty;
+    public string StreetAddress { get; init; } = string.Empty;
 }
 
 public sealed class AdminOrderItemDto

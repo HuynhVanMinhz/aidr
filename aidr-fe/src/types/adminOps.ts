@@ -87,8 +87,18 @@ export type AdminOrderDetail = {
   cancelledAt?: string | null;
   deliveredAt?: string | null;
   completedAt?: string | null;
+  shipping?: AdminOrderShipping | null;
   items: AdminOrderItem[];
   statusHistory: AdminOrderStatusHistory[];
+};
+
+export type AdminOrderShipping = {
+  receiverName: string;
+  phone: string;
+  province: string;
+  district: string;
+  ward: string;
+  streetAddress: string;
 };
 
 export type AdminOrderListApiResult = ApiResult<AdminOrderListResult>;

@@ -1,5 +1,6 @@
 import { useEffect, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
+import { clearPrintClass, runPrint } from '../../utils/printDocument';
 import { formatDateTime, formatVnd } from '../../utils/sellerProductUi';
 
 export type StockVoucherKind = 'in' | 'out';
@@ -39,27 +40,21 @@ export function StockVoucherModal({
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') onClose();
     };
-    const clearPrintClass = () => {
-      document.body.classList.remove(PRINT_BODY_CLASS);
-    };
+    const onAfterPrint = () => clearPrintClass(PRINT_BODY_CLASS);
     document.addEventListener('keydown', onKeyDown);
-    window.addEventListener('afterprint', clearPrintClass);
+    window.addEventListener('afterprint', onAfterPrint);
     const previous = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
     return () => {
       document.removeEventListener('keydown', onKeyDown);
-      window.removeEventListener('afterprint', clearPrintClass);
+      window.removeEventListener('afterprint', onAfterPrint);
       document.body.style.overflow = previous;
-      clearPrintClass();
+      clearPrintClass(PRINT_BODY_CLASS);
     };
   }, [open, onClose]);
 
   function handlePrint() {
-    document.body.classList.add(PRINT_BODY_CLASS);
-    // Let the browser apply print styles before opening the dialog.
-    window.requestAnimationFrame(() => {
-      window.print();
-    });
+    runPrint(PRINT_BODY_CLASS);
   }
 
   if (!open) return null;
