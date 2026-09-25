@@ -68,7 +68,7 @@ function SuggestedProducts({
         const reason = showsRating ? stripRatingFromReason(p.reason) : (p.reason ?? '');
         const ordinal = index + 1;
         return (
-          <div key={p.productId} className="aidr-assistant__product-row">
+          <div key={p.productId} className="aidr-assistant__product-item">
             <Link
               to={`/products/${p.productId}`}
               className="aidr-assistant__product-card"
