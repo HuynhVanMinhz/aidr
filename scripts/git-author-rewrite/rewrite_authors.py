@@ -273,24 +273,33 @@ if commit.author_email.lower() not in KEEP:
 
 
 def rewrite(mapping: dict[str, dict[str, str]]) -> None:
-    # Keep callback inline only so the working tree stays clean for filter-repo.
-    map_json = json.dumps(mapping)
-    callback_body = f'''# Auto-generated - do not edit
-import json
+    import tempfile
 
-_MAP = json.loads({map_json!r})
+    # Map lives outside the repo so filter-repo sees a clean working tree
+    # and Windows does not hit CreateProcess argument-length limits.
+    with tempfile.NamedTemporaryFile(
+        mode="w",
+        encoding="utf-8",
+        suffix=".json",
+        delete=False,
+        prefix="aidr-author-map-",
+    ) as tmp:
+        json.dump(mapping, tmp)
+        map_path = Path(tmp.name).resolve().as_posix()
 
-KEEP = {{b"127426449+AtuDk3@users.noreply.github.com"}}
-
-oid = commit.original_id.decode("ascii")
-if commit.author_email.lower() not in KEEP:
-    entry = _MAP.get(oid)
-    if entry:
-        commit.author_name = entry["name"].encode("utf-8")
-        commit.author_email = entry["email"].encode("utf-8")
-        commit.committer_name = commit.author_name
-        commit.committer_email = commit.author_email
-'''
+    callback_body = (
+        "import json\n"
+        f"_MAP = json.load(open({map_path!r}, encoding='utf-8'))\n"
+        "KEEP = {b'127426449+AtuDk3@users.noreply.github.com'}\n"
+        "oid = commit.original_id.decode('ascii')\n"
+        "if commit.author_email.lower() not in KEEP:\n"
+        "    entry = _MAP.get(oid)\n"
+        "    if entry:\n"
+        "        commit.author_name = entry['name'].encode('utf-8')\n"
+        "        commit.author_email = entry['email'].encode('utf-8')\n"
+        "        commit.committer_name = commit.author_name\n"
+        "        commit.committer_email = commit.author_email\n"
+    )
 
     cmd = [
         sys.executable,
@@ -301,9 +310,10 @@ if commit.author_email.lower() not in KEEP:
         callback_body,
     ]
     print("Running git filter-repo (this may take a minute)...")
-    subprocess.run(cmd, cwd=REPO_ROOT, check=True)
-    # Persist artifacts after history rewrite (new SHAs already applied).
-    write_callback(mapping)
+    try:
+        subprocess.run(cmd, cwd=REPO_ROOT, check=True)
+    finally:
+        Path(map_path).unlink(missing_ok=True)
     print("Rewrite complete.")
 
 
@@ -341,7 +351,14 @@ def main() -> int:
         if not mapping:
             print("Nothing to rewrite.")
             return 0
-        dry_run(rows, mapping)
+        # Print summary without writing report files (keeps tree clean for filter-repo).
+        final_counts = Counter(r["assignee"] for r in rows)
+        print(f"Total commits: {len(list_commits())}")
+        print(f"Assignable: {len(rows)}")
+        print(f"Will rewrite: {len(mapping)}")
+        print("Final distribution:")
+        for key in MEMBER_ORDER:
+            print(f"  {key}: {final_counts[key]}")
         rewrite(mapping)
         verify()
         return 0
