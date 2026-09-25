@@ -273,8 +273,24 @@ if commit.author_email.lower() not in KEEP:
 
 
 def rewrite(mapping: dict[str, dict[str, str]]) -> None:
-    write_callback(mapping)
-    callback_body = CALLBACK_FILE.read_text(encoding="utf-8")
+    # Keep callback inline only so the working tree stays clean for filter-repo.
+    map_json = json.dumps(mapping)
+    callback_body = f'''# Auto-generated - do not edit
+import json
+
+_MAP = json.loads({map_json!r})
+
+KEEP = {{b"127426449+AtuDk3@users.noreply.github.com"}}
+
+oid = commit.original_id.decode("ascii")
+if commit.author_email.lower() not in KEEP:
+    entry = _MAP.get(oid)
+    if entry:
+        commit.author_name = entry["name"].encode("utf-8")
+        commit.author_email = entry["email"].encode("utf-8")
+        commit.committer_name = commit.author_name
+        commit.committer_email = commit.author_email
+'''
 
     cmd = [
         sys.executable,
@@ -286,6 +302,8 @@ def rewrite(mapping: dict[str, dict[str, str]]) -> None:
     ]
     print("Running git filter-repo (this may take a minute)...")
     subprocess.run(cmd, cwd=REPO_ROOT, check=True)
+    # Persist artifacts after history rewrite (new SHAs already applied).
+    write_callback(mapping)
     print("Rewrite complete.")
 
 
@@ -323,7 +341,6 @@ def main() -> int:
         if not mapping:
             print("Nothing to rewrite.")
             return 0
-        write_callback(mapping)
         dry_run(rows, mapping)
         rewrite(mapping)
         verify()
