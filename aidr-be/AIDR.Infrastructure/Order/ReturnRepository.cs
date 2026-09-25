@@ -344,4 +344,13 @@ public sealed class ReturnRepository : IReturnRepository
                 .ToList()
         };
     }
+
+    public async Task<IReadOnlyList<Guid>> ListAdminUserIdsAsync(CancellationToken cancellationToken = default)
+    {
+        return await _db.UserRoles.AsNoTracking()
+            .Where(ur => ur.Role.RoleCode == RoleCodes.Admin)
+            .Select(ur => ur.UserId)
+            .Distinct()
+            .ToListAsync(cancellationToken);
+    }
 }

@@ -187,13 +187,17 @@ export function SellerOrderDetailPage() {
               ).map((step) => {
                 const reached = isStepReached(detail.status, step.key);
                 const active = detail.status === step.key;
+                // Terminal success stays green; only in-progress steps use warning yellow.
+                const barTone = !reached
+                  ? 'bg-primary'
+                  : active && detail.status !== 'Completed'
+                    ? 'bg-warning'
+                    : 'bg-success';
                 return (
                   <div className="col" key={step.key}>
                     <div className="progress mt-3" style={{ height: 10 }}>
                       <div
-                        className={`progress-bar progress-bar-striped${reached ? ' progress-bar-animated' : ''} ${
-                          reached ? (active ? 'bg-warning' : 'bg-success') : 'bg-primary'
-                        }`}
+                        className={`progress-bar progress-bar-striped${reached ? ' progress-bar-animated' : ''} ${barTone}`}
                         role="progressbar"
                         style={{ width: reached ? '100%' : '0%' }}
                       />

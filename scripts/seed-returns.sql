@@ -5,7 +5,7 @@
 
   Scenarios:
   - RET-ELIGIBLE  : Delivered order, no return → buyer can open request
-  - RET-PENDING   : Pending return → admin queue approve/reject
+  - RET-PENDING   : Pending return → admin queue approve/reject (+ admin Return notification)
   - RET-APPROVED  : Approved (forwarded to seller) → seller confirm
   - RET-RECV      : Receiving (after SellerConfirmed) → seller accept goods
   - RET-REJECTED  : Rejected sample (order back to Delivered)
@@ -47,6 +47,8 @@ DECLARE
     @RRecv     UNIQUEIDENTIFIER = 'B3000001-0001-4000-8000-000000000004',
     @RRejected UNIQUEIDENTIFIER = 'B3000001-0001-4000-8000-000000000005',
     @RClosed   UNIQUEIDENTIFIER = 'B3000001-0001-4000-8000-000000000006',
+    /* Admin inbox notification for pending return */
+    @NPending  UNIQUEIDENTIFIER = 'B4000001-0001-4000-8000-000000000002',
     @LineTotal DECIMAL(18,2),
     @ShipFee   DECIMAL(18,2) = 30000,
     @Total     DECIMAL(18,2);
@@ -211,6 +213,25 @@ BEGIN
 
     INSERT INTO dbo.ReturnStatusHistories (ReturnRequestId, FromStatus, ToStatus, ChangedBy, Note, CreatedAt)
     VALUES (@RPending, NULL, N'Pending', @BuyerId, N'Buyer submitted return', DATEADD(HOUR, -20, @Now));
+END;
+
+/* Admin notification: new pending return awaiting review */
+IF NOT EXISTS (SELECT 1 FROM dbo.Notifications WHERE NotificationId = @NPending)
+BEGIN
+    INSERT INTO dbo.Notifications (
+        NotificationId, UserId, Title, Body, Type, ReferenceType, ReferenceId, IsRead, CreatedAt
+    )
+    VALUES (
+        @NPending,
+        @AdminId,
+        N'New return request pending review',
+        N'Buyer submitted a return and refund for order RET-PENDING. Please review and approve or reject.',
+        N'Return',
+        N'ReturnRequest',
+        @RPending,
+        0,
+        DATEADD(HOUR, -20, @Now)
+    );
 END;
 
 /* RET-APPROVED */

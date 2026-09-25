@@ -1,15 +1,28 @@
+using AIDR.Modules.Engagement.Abstractions;
 using AIDR.Modules.Order.Abstractions;
 using AIDR.Shared.Constants;
+using AIDR.Shared.Dtos.Engagement;
 using AIDR.Shared.Dtos.Order;
 using AIDR.Shared.Exceptions;
+using Microsoft.Extensions.Logging;
 
 namespace AIDR.Modules.Order.Services;
 
 public sealed class ReturnService : IReturnService
 {
     private readonly IReturnRepository _returns;
+    private readonly INotificationService _notifications;
+    private readonly ILogger<ReturnService> _logger;
 
-    public ReturnService(IReturnRepository returns) => _returns = returns;
+    public ReturnService(
+        IReturnRepository returns,
+        INotificationService notifications,
+        ILogger<ReturnService> logger)
+    {
+        _returns = returns;
+        _notifications = notifications;
+        _logger = logger;
+    }
 
     public async Task<BuyerReturnRequestDto> CreateAsync(
         Guid buyerUserId,
@@ -67,7 +80,7 @@ public sealed class ReturnService : IReturnService
                 throw new AppException("Refund bank account name is required when requesting a refund.");
         }
 
-        return await _returns.CreateAsync(
+        var created = await _returns.CreateAsync(
             buyerUserId,
             orderId,
             reason,
@@ -80,6 +93,9 @@ public sealed class ReturnService : IReturnService
             items,
             evidences,
             cancellationToken);
+
+        await NotifyAdminsNewReturnAsync(created, cancellationToken);
+        return created;
     }
 
     public async Task<BuyerReturnRequestDto> GetByOrderAsync(
@@ -138,6 +154,60 @@ public sealed class ReturnService : IReturnService
         return await _returns.GetByIdForBuyerAsync(buyerUserId, returnRequestId, cancellationToken)
             ?? throw new NotFoundException("Return request not found.");
     }
+
+    private async Task NotifyAdminsNewReturnAsync(
+        BuyerReturnRequestDto detail,
+        CancellationToken cancellationToken)
+    {
+        IReadOnlyList<Guid> adminIds;
+        try
+        {
+            adminIds = await _returns.ListAdminUserIdsAsync(cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to load admin users for return {ReturnRequestId}", detail.ReturnRequestId);
+            return;
+        }
+
+        var resolution = FormatResolution(detail.ResolutionType);
+        var title = "New return request pending review";
+        var body =
+            $"Buyer submitted a {resolution} for order {detail.OrderCode}. Please review and approve or reject.";
+
+        foreach (var adminId in adminIds)
+        {
+            try
+            {
+                await _notifications.CreateAsync(
+                    new CreateNotificationRequest
+                    {
+                        UserId = adminId,
+                        Title = title,
+                        Body = body.Length <= NotificationConstants.MaxBodyLength
+                            ? body
+                            : body[..NotificationConstants.MaxBodyLength],
+                        Type = NotificationConstants.TypeReturn,
+                        ReferenceType = NotificationConstants.RefReturnRequest,
+                        ReferenceId = detail.ReturnRequestId
+                    },
+                    cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(
+                    ex,
+                    "Failed to notify admin {AdminId} about new return {ReturnRequestId}",
+                    adminId,
+                    detail.ReturnRequestId);
+            }
+        }
+    }
+
+    private static string FormatResolution(string resolutionType) =>
+        string.Equals(resolutionType, ReturnConstants.ResolutionExchange, StringComparison.OrdinalIgnoreCase)
+            ? "exchange"
+            : "return and refund";
 
     private static string? NormalizeStatusFilter(string? status)
     {

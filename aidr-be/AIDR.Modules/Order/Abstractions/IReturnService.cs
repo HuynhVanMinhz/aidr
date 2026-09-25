@@ -60,4 +60,6 @@ public interface IReturnRepository
         Guid buyerUserId,
         Guid returnRequestId,
         CancellationToken cancellationToken = default);
+
+    Task<IReadOnlyList<Guid>> ListAdminUserIdsAsync(CancellationToken cancellationToken = default);
 }
