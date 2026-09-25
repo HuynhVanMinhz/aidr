@@ -8,6 +8,7 @@ public sealed class NotificationDto
     public string Type { get; init; } = null!;
     public string? ReferenceType { get; init; }
     public Guid? ReferenceId { get; init; }
+    public string? ImageUrl { get; init; }
     public bool IsRead { get; init; }
     public DateTime CreatedAt { get; init; }
 }
@@ -35,4 +36,5 @@ public sealed class CreateNotificationRequest
     public string Type { get; init; } = null!;
     public string? ReferenceType { get; init; }
     public Guid? ReferenceId { get; init; }
+    public string? ImageUrl { get; init; }
 }

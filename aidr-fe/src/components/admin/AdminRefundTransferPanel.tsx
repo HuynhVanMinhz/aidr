@@ -12,6 +12,8 @@ export type AdminRefundTransferPanelProps = {
   bankName?: string | null;
   accountNumber?: string | null;
   accountName?: string | null;
+  /** Screenshot of the bank transfer (shown after refunded). */
+  proofUrl?: string | null;
 };
 
 /**
@@ -26,6 +28,7 @@ export function AdminRefundTransferPanel({
   bankName,
   accountNumber,
   accountName,
+  proofUrl,
 }: AdminRefundTransferPanelProps) {
   const [qrFailed, setQrFailed] = useState(false);
 
@@ -48,7 +51,7 @@ export function AdminRefundTransferPanel({
         <div className="card-body">
           <div className="d-flex align-items-start gap-2">
             <IconifyIcon icon="solar:check-circle-bold" className="text-success fs-24" />
-            <div>
+            <div className="flex-grow-1">
               <h5 className="mb-1 text-success">Refund completed</h5>
               <p className="mb-1">
                 {formatMoney(amount, 'VND')} was marked as refunded to the buyer
@@ -61,7 +64,20 @@ export function AdminRefundTransferPanel({
                 ) : null}
                 .
               </p>
-              <p className="text-muted mb-0 fs-12">
+              {proofUrl ? (
+                <div className="mt-3">
+                  <p className="text-muted mb-2 fs-12">Transfer proof sent to the buyer</p>
+                  <a href={proofUrl} target="_blank" rel="noreferrer">
+                    <img
+                      src={proofUrl}
+                      alt={`Refund transfer proof for order ${orderCode}`}
+                      className="img-fluid rounded border"
+                      style={{ maxWidth: 320 }}
+                    />
+                  </a>
+                </div>
+              ) : null}
+              <p className="text-muted mb-0 fs-12 mt-2">
                 You can close this request when no further follow-up is needed.
               </p>
             </div>
@@ -80,8 +96,8 @@ export function AdminRefundTransferPanel({
       </div>
       <div className="card-body">
         <p className="text-muted mb-3">
-          Scan the QR with your banking app to refund the buyer, then mark the request as{' '}
-          <strong>Refunded</strong>.
+          Scan the QR with your banking app to refund the buyer, upload a screenshot of the
+          transfer, then mark the request as <strong>Refunded</strong>.
         </p>
 
         <div className="mb-3">
@@ -138,4 +154,3 @@ export function AdminRefundTransferPanel({
     </div>
   );
 }
-

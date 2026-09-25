@@ -293,6 +293,22 @@ export function BuyerReturnDetailPage() {
                   ? 'Not refunded - request declined'
                   : 'Estimated, pending approval'}
             </p>
+            {isRefunded && item.refundTransferProofUrl ? (
+              <div className="return-refund__proof">
+                <p className="return-refund__proof-label">Transfer proof</p>
+                <a
+                  href={item.refundTransferProofUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  <img
+                    src={item.refundTransferProofUrl}
+                    alt="Refund transfer proof"
+                    className="return-refund__proof-img"
+                  />
+                </a>
+              </div>
+            ) : null}
             <div className="return-refund__actions">
               <Link
                 to={`/account/orders/${item.orderId}`}

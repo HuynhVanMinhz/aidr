@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import { AdminConfirmModal } from '../../components/admin/AdminConfirmModal';
 import { AdminRefundTransferPanel } from '../../components/admin/AdminRefundTransferPanel';
 import { FormField } from '../../components/admin/FormField';
+import { ImageDropzone } from '../../components/admin/ImageDropzone';
 import { ReturnEvidencePanel } from '../../components/returns/ReturnEvidenceMedia';
 import {
   useAdminReturnById,
@@ -24,9 +25,15 @@ import {
   nextReturnStatus,
   RETURN_MAX_ADMIN_NOTE,
   RETURN_MAX_STATUS_NOTE,
+  validateRefundTransferProof,
   validateReturnRejectNote,
   validateReturnStatusNote,
 } from '../../utils/returnValidation';
+import {
+  isCloudinaryConfigured,
+  uploadRefundProofToCloudinary,
+  validateRefundProofImageFile,
+} from '../../utils/cloudinaryUpload';
 import {
   adminMarkReturnReceiving,
   getAdminReturnShipment,
@@ -64,8 +71,10 @@ export function AdminReturnRequestDetailPage() {
   const [rejectSubmitted, setRejectSubmitted] = useState(false);
 
   const [statusNote, setStatusNote] = useState('');
-  const [statusTouched, setStatusTouched] = useState<{ note?: boolean }>({});
+  const [statusTouched, setStatusTouched] = useState<{ note?: boolean; proof?: boolean }>({});
   const [statusSubmitted, setStatusSubmitted] = useState(false);
+  const [proofUrl, setProofUrl] = useState('');
+  const [proofUploadError, setProofUploadError] = useState<string | null>(null);
 
   const [shipment, setShipment] = useState<ReturnShipment | null>(null);
   const [retryOpen, setRetryOpen] = useState(false);
@@ -156,11 +165,22 @@ export function AdminReturnRequestDetailPage() {
     () => tryValidateField(() => validateReturnStatusNote(statusNote)),
     [statusNote],
   );
+  const proofError = useMemo(() => {
+    if (nextReturnStatus(item?.status, item?.resolutionType) !== 'Refunded') return null;
+    return tryValidateField(() => validateRefundTransferProof(Boolean(proofUrl.trim())));
+  }, [item?.status, item?.resolutionType, proofUrl]);
   const visibleStatusNoteError = visibleFieldErrors(
-    { note: statusNoteError },
-    { note: statusTouched.note },
+    { note: statusNoteError, proof: proofError },
+    { note: statusTouched.note, proof: statusTouched.proof },
     statusSubmitted,
   ).note;
+  const visibleProofError =
+    proofUploadError ??
+    visibleFieldErrors(
+      { note: statusNoteError, proof: proofError },
+      { note: statusTouched.note, proof: statusTouched.proof },
+      statusSubmitted,
+    ).proof;
 
   const isPending = item?.status === 'Pending';
   const nextStatus = nextReturnStatus(item?.status, item?.resolutionType);
@@ -182,7 +202,10 @@ export function AdminReturnRequestDetailPage() {
     Boolean(item && isPending) && noteDirty && !noteError && !mutating;
 
   const canAdvanceStatus =
-    Boolean(item && nextStatus) && !statusNoteError && !mutating;
+    Boolean(item && nextStatus) &&
+    !statusNoteError &&
+    !(nextStatus === 'Refunded' && proofError) &&
+    !mutating;
 
   async function confirmApprove() {
     if (!item || !isPending) return;
@@ -228,13 +251,15 @@ export function AdminReturnRequestDetailPage() {
     e.preventDefault();
     if (!item || !nextStatus) return;
     setStatusSubmitted(true);
-    setStatusTouched({ note: true });
+    setStatusTouched({ note: true, proof: true });
     if (statusNoteError) return;
+    if (nextStatus === 'Refunded' && (proofError || proofUploadError)) return;
     setStatusOpen(true);
   }
 
   async function confirmStatusUpdate() {
     if (!item || !nextStatus || statusNoteError) return;
+    if (nextStatus === 'Refunded' && (!proofUrl.trim() || proofError)) return;
 
     setActionError(null);
     try {
@@ -245,6 +270,7 @@ export function AdminReturnRequestDetailPage() {
           ? {
               refundToBin: item.refundBankBin ?? null,
               refundToAccountNumber: item.refundAccountNumber ?? null,
+              refundTransferProofUrl: proofUrl.trim(),
             }
           : {}),
       });
@@ -253,9 +279,11 @@ export function AdminReturnRequestDetailPage() {
       setStatusNote('');
       setStatusTouched({});
       setStatusSubmitted(false);
+      setProofUrl('');
+      setProofUploadError(null);
       toast.success(
         nextStatus === 'Refunded'
-          ? 'Refund marked as completed.'
+          ? 'Refund marked as completed. Buyer notified with transfer proof.'
           : `Return status updated to ${formatReturnStatus(nextStatus)}.`,
       );
     } catch (err) {
@@ -611,6 +639,7 @@ export function AdminReturnRequestDetailPage() {
             bankName={item.refundBankName}
             accountNumber={item.refundAccountNumber}
             accountName={item.refundAccountName}
+            proofUrl={item.refundTransferProofUrl}
           />
         ) : null}
 
@@ -625,11 +654,51 @@ export function AdminReturnRequestDetailPage() {
               </p>
               {nextStatus === 'Refunded' ? (
                 <p className="text-muted fs-12">
-                  Transfer via the QR above (or the account details), then confirm below.
+                  Transfer via the QR above (or the account details), upload a screenshot of the
+                  transfer, then confirm below. The buyer will receive the image by notification and
+                  email.
                 </p>
               ) : null}
 
               <form onSubmit={handleStatusSubmit}>
+                {nextStatus === 'Refunded' ? (
+                  <FormField
+                    htmlFor="return-refund-proof"
+                    label="Transfer proof image (required)"
+                    error={visibleProofError}
+                  >
+                    <ImageDropzone
+                      id="return-refund-proof"
+                      value={proofUrl}
+                      onChange={(url) => {
+                        setProofUrl(url);
+                        setProofUploadError(null);
+                        setStatusTouched((prev) => ({ ...prev, proof: true }));
+                      }}
+                      upload={uploadRefundProofToCloudinary}
+                      validate={validateRefundProofImageFile}
+                      disabled={mutating || !isCloudinaryConfigured()}
+                      emptyLabel={
+                        isCloudinaryConfigured()
+                          ? 'Drop transfer proof here'
+                          : 'Uploads unavailable'
+                      }
+                      hint={
+                        isCloudinaryConfigured()
+                          ? 'PNG or JPG · up to 5MB · bank transfer screenshot'
+                          : 'Image hosting is not configured.'
+                      }
+                      previewAlt="Transfer proof preview"
+                      onError={(message) => {
+                        setProofUploadError(message);
+                        setProofUrl('');
+                        setStatusTouched((prev) => ({ ...prev, proof: true }));
+                        toast.error(message);
+                      }}
+                    />
+                  </FormField>
+                ) : null}
+
                 <FormField
                   htmlFor="return-status-note"
                   label="Note (optional)"
@@ -711,7 +780,7 @@ export function AdminReturnRequestDetailPage() {
       >
         <p className="mb-0">
           {nextStatus === 'Refunded'
-            ? 'Confirm you have transferred the refund to the buyer\'s bank account and mark this request as Refunded.'
+            ? 'Confirm you have transferred the refund and uploaded the transfer proof. The buyer will be notified by inbox and email with this image.'
             : `Confirm moving this return request to ${formatReturnStatus(nextStatus ?? '')}?`}
         </p>
       </AdminConfirmModal>

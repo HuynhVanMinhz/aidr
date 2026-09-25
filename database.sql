@@ -707,6 +707,13 @@ CREATE TABLE dbo.ReturnRequests (
     AdminNote       NVARCHAR(500)    NULL,
     ReviewedBy      UNIQUEIDENTIFIER NULL,
     ReviewedAt      DATETIME2(3)     NULL,
+    -- Buyer bank for manual VietQR refund (also applied via scripts/add-return-refund-bank-columns.sql)
+    RefundBankBin            NVARCHAR(20)  NULL,
+    RefundBankName           NVARCHAR(100) NULL,
+    RefundAccountNumber      NVARCHAR(50)  NULL,
+    RefundAccountName        NVARCHAR(200) NULL,
+    -- Screenshot of admin bank transfer; required when marking Refunded
+    RefundTransferProofUrl   NVARCHAR(512) NULL,
     CreatedAt       DATETIME2(3)     NOT NULL CONSTRAINT DF_ReturnRequests_CreatedAt DEFAULT (SYSUTCDATETIME()),
     UpdatedAt       DATETIME2(3)     NOT NULL CONSTRAINT DF_ReturnRequests_UpdatedAt DEFAULT (SYSUTCDATETIME()),
     CONSTRAINT FK_ReturnRequests_Order FOREIGN KEY (OrderId) REFERENCES dbo.Orders (OrderId),
@@ -842,9 +849,10 @@ CREATE TABLE dbo.Notifications (
     UserId          UNIQUEIDENTIFIER NOT NULL,
     Title           NVARCHAR(200)    NOT NULL,
     Body            NVARCHAR(1000)   NOT NULL,
-    Type            NVARCHAR(40)     NOT NULL,          -- Order | Payment | Moderation | Chat | System | Promo
+    Type            NVARCHAR(40)     NOT NULL,          -- Order | Payment | Moderation | Chat | System | Promo | Return
     ReferenceType   NVARCHAR(40)     NULL,
     ReferenceId     UNIQUEIDENTIFIER NULL,
+    ImageUrl        NVARCHAR(512)    NULL,             -- optional attachment (e.g. refund transfer proof)
     IsRead          BIT              NOT NULL CONSTRAINT DF_Notifications_IsRead DEFAULT (0),
     CreatedAt       DATETIME2(3)     NOT NULL CONSTRAINT DF_Notifications_CreatedAt DEFAULT (SYSUTCDATETIME()),
     CONSTRAINT FK_Notifications_User FOREIGN KEY (UserId) REFERENCES dbo.Users (UserId)

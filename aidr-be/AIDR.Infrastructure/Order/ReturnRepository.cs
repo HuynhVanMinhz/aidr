@@ -295,6 +295,7 @@ public sealed class ReturnRepository : IReturnRepository
             Status = entity.Status,
             RefundAmount = entity.RefundAmount,
             AdminNote = entity.AdminNote,
+            RefundTransferProofUrl = entity.RefundTransferProofUrl,
             CreatedAt = entity.CreatedAt,
             UpdatedAt = entity.UpdatedAt,
             Items = entity.Items

@@ -54,6 +54,8 @@ public sealed class BuyerReturnRequestDto
     public string Status { get; init; } = null!;
     public decimal? RefundAmount { get; init; }
     public string? AdminNote { get; init; }
+    /// <summary>Screenshot of the admin bank transfer after refund is completed.</summary>
+    public string? RefundTransferProofUrl { get; init; }
     public DateTime CreatedAt { get; init; }
     public DateTime UpdatedAt { get; init; }
     public IReadOnlyList<BuyerReturnItemDto> Items { get; init; } = Array.Empty<BuyerReturnItemDto>();

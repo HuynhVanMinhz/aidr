@@ -109,6 +109,8 @@ public sealed class NotificationService : INotificationService
         if (request.ReferenceId is { } refId && refId == Guid.Empty)
             throw new AppException("Reference id is invalid.");
 
+        var imageUrl = NormalizeOptionalImageUrl(request.ImageUrl);
+
         var created = await _notifications.CreateAsync(
             new CreateNotificationRequest
             {
@@ -117,7 +119,8 @@ public sealed class NotificationService : INotificationService
                 Body = body,
                 Type = type,
                 ReferenceType = referenceType,
-                ReferenceId = request.ReferenceId
+                ReferenceId = request.ReferenceId,
+                ImageUrl = imageUrl
             },
             cancellationToken);
 
@@ -199,7 +202,8 @@ public sealed class NotificationService : INotificationService
                 Body = body,
                 Type = type,
                 ReferenceType = referenceType,
-                ReferenceId = referenceId
+                ReferenceId = referenceId,
+                ImageUrl = NormalizeOptionalImageUrl(request.ImageUrl)
             },
             cancellationToken);
     }
@@ -214,6 +218,27 @@ public sealed class NotificationService : INotificationService
     {
         if (notificationId == Guid.Empty)
             throw new AppException("Notification id is required.");
+    }
+
+    private static string? NormalizeOptionalImageUrl(string? imageUrl)
+    {
+        if (string.IsNullOrWhiteSpace(imageUrl))
+            return null;
+
+        var trimmed = imageUrl.Trim();
+        if (trimmed.Length > NotificationConstants.MaxImageUrlLength)
+        {
+            throw new AppException(
+                $"Image URL must not exceed {NotificationConstants.MaxImageUrlLength} characters.");
+        }
+
+        if (!Uri.TryCreate(trimmed, UriKind.Absolute, out var uri)
+            || (uri.Scheme != Uri.UriSchemeHttp && uri.Scheme != Uri.UriSchemeHttps))
+        {
+            throw new AppException("Image URL must be a valid http(s) link.");
+        }
+
+        return trimmed;
     }
 
     private static string RequireText(string? value, string fieldName, int maxLength)

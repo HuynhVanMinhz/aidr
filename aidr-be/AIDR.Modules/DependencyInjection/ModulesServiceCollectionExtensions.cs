@@ -48,6 +48,7 @@ public static class ModulesServiceCollectionExtensions
         services.AddScoped<IAdminProductModerationService, AdminProductModerationService>();
         services.AddScoped<IAdminSystemVoucherService, AdminSystemVoucherService>();
         services.AddScoped<IAdminReturnService, AdminReturnService>();
+        services.AddScoped<ReturnRefundMailer>();
         services.AddScoped<IAdminAccountService, AdminAccountService>();
         services.AddScoped<IAdminCustomerInsightService, AdminCustomerInsightService>();
         services.AddScoped<IAdminDashboardService, AdminDashboardService>();

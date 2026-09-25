@@ -97,6 +97,7 @@ export type BuyerReturnRequest = {
   status: ReturnStatus;
   refundAmount?: number | null;
   adminNote?: string | null;
+  refundTransferProofUrl?: string | null;
   createdAt: string;
   updatedAt: string;
   items: BuyerReturnItem[];
@@ -215,6 +216,7 @@ export type AdminReturnDetail = {
   refundAccountNumber?: string | null;
   refundAccountNumberMasked?: string | null;
   refundAccountName?: string | null;
+  refundTransferProofUrl?: string | null;
   createdAt: string;
   updatedAt: string;
   items: AdminReturnItem[];
@@ -231,6 +233,7 @@ export type UpdateReturnStatusPayload = {
   note?: string | null;
   refundToBin?: string | null;
   refundToAccountNumber?: string | null;
+  refundTransferProofUrl?: string | null;
 };
 
 export type SellerReturnListItem = {

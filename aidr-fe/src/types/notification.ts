@@ -8,6 +8,7 @@ export type NotificationItem = {
   type: string;
   referenceType?: string | null;
   referenceId?: string | null;
+  imageUrl?: string | null;
   isRead: boolean;
   createdAt: string;
 };

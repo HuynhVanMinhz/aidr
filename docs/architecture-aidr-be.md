@@ -161,7 +161,7 @@ aidr-be/
 | UC-48 | `GET /api/admin/return-requests?status=&q=&page=&pageSize=` (default `status=Pending`; `status=all`; paged + status summary) | Admin |
 | UC-49 | `GET /api/admin/return-requests/{id}` - reason, Unboxing/Testing evidences, order lines, status history | Admin |
 | UC-50 | `POST /api/admin/return-requests/{id}/approve` (forward to Seller → `Approved` + notify Seller); `POST .../reject` + `adminNote` (required, BR-R03) | Admin |
-| UC-52 | `POST /api/admin/return-requests/{id}/status` - after Seller `Accepted`: `Accepted`→`Refunded`\|`Exchanged`→`Closed`; on `Refunded`: admin transfers via VietQR (buyer bank on return) then marks refunded + `RefundDebit` (BR-R04); on `Exchanged`: no payout | Admin |
+| UC-52 | `POST /api/admin/return-requests/{id}/status` - after Seller `Accepted`: `Accepted`→`Refunded`\|`Exchanged`→`Closed`; on `Refunded`: admin transfers via VietQR (buyer bank on return), uploads transfer proof (`refundTransferProofUrl`), marks refunded + `RefundDebit` (BR-R04), notifies buyer (inbox image + email); on `Exchanged`: no payout | Admin |
 | UC-71 | `GET /api/admin/insights/customers?from=&to=&granularity=` - KPIs, registration/order series, top products, simple new/returning buyer cohort (default last 30 days, granularity=day) | Admin |
 | UC-72 | `GET /api/admin/accounts?status=&role=&q=&page=&pageSize=` (default status/role=`all`; paged + Active/Locked/role summary); `GET .../{id}` | Admin |
 | UC-73 | `POST /api/admin/accounts/{id}/lock` → Status=Locked (cannot lock self or Admin accounts) | Admin |

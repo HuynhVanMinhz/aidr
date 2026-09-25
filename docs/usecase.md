@@ -65,7 +65,7 @@
 | UC-48 | View Return Requests | **Actor:** Admin. Queue return/refund/exchange toàn hệ thống. **Business:** Điều phối hoàn/đổi hàng. | Done | P1 |
 | UC-49 | View Return Request Details | **Actor:** Admin. Chi tiết lý do, video Unboxing/Testing, order lines, status history. **Business:** Ra quyết định Approve/Reject dựa bằng chứng. | Done | P1 |
 | UC-50 | Approve / Reject Return Request | **Actor:** Admin. Duyệt → forward Seller (`Approved` + notify Seller) hoặc từ chối + note bắt buộc (BR-R03). **Business:** Kiểm soát gian lận / policy. | Done | P1 |
-| UC-52 | Complete Return (Refund / Exchange) | **Actor:** Admin. Sau Seller `Accepted`: hiện VietQR CK về TK buyer → admin xác nhận `Refunded`\|`Exchanged`→`Closed`; hoàn tiền (manual VietQR + `RefundDebit`) hoặc đánh dấu đã đổi hàng; ghi history. **Business:** Hoàn tất & giám sát pipeline. | Done | P1 |
+| UC-52 | Complete Return (Refund / Exchange) | **Actor:** Admin. Sau Seller `Accepted`: hiện VietQR CK về TK buyer → admin upload ảnh chứng từ CK + xác nhận `Refunded`\|`Exchanged`→`Closed`; hoàn tiền (manual VietQR + `RefundDebit`) hoặc đánh dấu đã đổi hàng; gửi proof qua notification + email buyer; ghi history. **Business:** Hoàn tất & giám sát pipeline. | Done | P1 |
 | UC-53 | View Recommended Products | **Actor:** Buyer. SP gợi ý từ hành vi / hybrid strategy. **Business:** Tăng AOV & discovery. | Done | P2 |
 | UC-54 | View Similar Products | **Actor:** Buyer. SP tương tự theo category/specs/content. **Business:** Cross-sell trên trang detail. | Done | P2 |
 | UC-56 | Use AI Shopping Assistant | **Actor:** Buyer. Chatbot Groq tư vấn SP / FAQ mua sắm (intent + slot memory + NL filter retrieve). **Business:** Hỗ trợ 24/7, giảm tải CSKH. | Done | P2 |

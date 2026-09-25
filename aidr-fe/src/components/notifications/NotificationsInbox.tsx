@@ -170,6 +170,21 @@ export function NotificationsInbox({ audience, variant = 'store' }: Notification
                             <td>
                               <div className="fw-semibold">{item.title}</div>
                               <div className="text-muted text-wrap">{item.body}</div>
+                              {item.imageUrl ? (
+                                <a
+                                  href={item.imageUrl}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="d-inline-block mt-2"
+                                >
+                                  <img
+                                    src={item.imageUrl}
+                                    alt=""
+                                    className="rounded border"
+                                    style={{ maxWidth: 160, maxHeight: 120, objectFit: 'cover' }}
+                                  />
+                                </a>
+                              ) : null}
                               {href ? (
                                 <Link
                                   to={href}
@@ -311,6 +326,16 @@ export function NotificationsInbox({ audience, variant = 'store' }: Notification
                     </time>
                   </div>
                   <p className="notifications-list__body">{item.body}</p>
+                  {item.imageUrl ? (
+                    <a
+                      href={item.imageUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="notifications-list__image"
+                    >
+                      <img src={item.imageUrl} alt="Attachment" loading="lazy" />
+                    </a>
+                  ) : null}
                   <div className="notifications-list__actions">
                     {href ? (
                       <Link

@@ -9,6 +9,7 @@ public static class NotificationConstants
     public const int MaxBodyLength = 1000;
     public const int MaxTypeLength = 40;
     public const int MaxReferenceTypeLength = 40;
+    public const int MaxImageUrlLength = 512;
 
     public const string TypeOrder = "Order";
     public const string TypePayment = "Payment";

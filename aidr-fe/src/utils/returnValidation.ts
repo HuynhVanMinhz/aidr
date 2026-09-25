@@ -134,6 +134,12 @@ export function validateReturnStatusNote(value: string): string | null {
   return validateMaxLength(trimmed, RETURN_MAX_STATUS_NOTE, 'Note');
 }
 
+export function validateRefundTransferProof(hasFile: boolean): void {
+  if (!hasFile) {
+    throw new Error('Transfer proof image is required.');
+  }
+}
+
 export function validateOptionalBankBin(value: string): string | null {
   const trimmed = value.trim();
   if (!trimmed) return null;

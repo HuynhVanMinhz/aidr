@@ -9,6 +9,7 @@ export const CloudinaryFolders = {
   chat: 'chat',
   kyc: 'kyc',
   returns: 'returns',
+  refundProof: 'returns/refund-proof',
 } as const;
 
 export type CloudinaryFolder = (typeof CloudinaryFolders)[keyof typeof CloudinaryFolders];
@@ -231,4 +232,22 @@ async function uploadVideoToCloudinary(
 export async function uploadReturnVideoToCloudinary(file: File): Promise<CloudinaryUploadResult> {
   validateReturnVideoFile(file);
   return uploadVideoToCloudinary(file, CloudinaryFolders.returns);
+}
+
+const MAX_REFUND_PROOF_BYTES = 5 * 1024 * 1024;
+
+/** Admin screenshot of the bank transfer sent to the buyer after refund. */
+export function validateRefundProofImageFile(file: File): void {
+  if (!file.type.startsWith('image/')) {
+    throw new Error('Please choose a valid image file (JPG or PNG).');
+  }
+  if (file.size > MAX_REFUND_PROOF_BYTES) {
+    throw new Error('Transfer proof image must be 5MB or smaller.');
+  }
+}
+
+/** Upload refund transfer proof to folder `returns/refund-proof`. */
+export async function uploadRefundProofToCloudinary(file: File): Promise<CloudinaryUploadResult> {
+  validateRefundProofImageFile(file);
+  return uploadImageToCloudinary(file, CloudinaryFolders.refundProof);
 }

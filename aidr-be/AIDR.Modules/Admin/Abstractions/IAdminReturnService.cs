@@ -98,5 +98,6 @@ public interface IAdminReturnRepository
         string? note,
         string? refundToBin,
         string? refundToAccountNumber,
+        string? refundTransferProofUrl,
         CancellationToken cancellationToken = default);
 }

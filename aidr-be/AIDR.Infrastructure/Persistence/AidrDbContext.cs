@@ -659,6 +659,7 @@ public class AidrDbContext : DbContext
             e.Property(x => x.Body).HasMaxLength(1000).IsRequired();
             e.Property(x => x.Type).HasMaxLength(40).IsRequired();
             e.Property(x => x.ReferenceType).HasMaxLength(40);
+            e.Property(x => x.ImageUrl).HasMaxLength(512);
             e.HasOne(x => x.User)
                 .WithMany()
                 .HasForeignKey(x => x.UserId)
@@ -866,6 +867,11 @@ public class AidrDbContext : DbContext
             e.Property(x => x.Status).HasMaxLength(30).IsRequired();
             e.Property(x => x.RefundAmount).HasPrecision(18, 2);
             e.Property(x => x.AdminNote).HasMaxLength(500);
+            e.Property(x => x.RefundBankBin).HasMaxLength(20);
+            e.Property(x => x.RefundBankName).HasMaxLength(100);
+            e.Property(x => x.RefundAccountNumber).HasMaxLength(50);
+            e.Property(x => x.RefundAccountName).HasMaxLength(200);
+            e.Property(x => x.RefundTransferProofUrl).HasMaxLength(512);
             e.HasOne(x => x.Order)
                 .WithMany()
                 .HasForeignKey(x => x.OrderId)

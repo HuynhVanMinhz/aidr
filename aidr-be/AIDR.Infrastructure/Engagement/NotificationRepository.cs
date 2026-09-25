@@ -41,6 +41,7 @@ public sealed class NotificationRepository : INotificationRepository
                 Type = n.Type,
                 ReferenceType = n.ReferenceType,
                 ReferenceId = n.ReferenceId,
+                ImageUrl = n.ImageUrl,
                 IsRead = n.IsRead,
                 CreatedAt = n.CreatedAt
             })
@@ -75,6 +76,7 @@ public sealed class NotificationRepository : INotificationRepository
                 Type = n.Type,
                 ReferenceType = n.ReferenceType,
                 ReferenceId = n.ReferenceId,
+                ImageUrl = n.ImageUrl,
                 IsRead = n.IsRead,
                 CreatedAt = n.CreatedAt
             })
@@ -93,6 +95,7 @@ public sealed class NotificationRepository : INotificationRepository
             Type = request.Type,
             ReferenceType = request.ReferenceType,
             ReferenceId = request.ReferenceId,
+            ImageUrl = request.ImageUrl,
             IsRead = false,
             CreatedAt = DateTime.UtcNow
         };
@@ -213,6 +216,7 @@ public sealed class NotificationRepository : INotificationRepository
         Type = n.Type,
         ReferenceType = n.ReferenceType,
         ReferenceId = n.ReferenceId,
+        ImageUrl = n.ImageUrl,
         IsRead = n.IsRead,
         CreatedAt = n.CreatedAt
     };

@@ -12,15 +12,18 @@ public sealed class AdminReturnService : IAdminReturnService
 {
     private readonly IAdminReturnRepository _repository;
     private readonly INotificationService _notifications;
+    private readonly ReturnRefundMailer _refundMailer;
     private readonly ILogger<AdminReturnService> _logger;
 
     public AdminReturnService(
         IAdminReturnRepository repository,
         INotificationService notifications,
+        ReturnRefundMailer refundMailer,
         ILogger<AdminReturnService> logger)
     {
         _repository = repository;
         _notifications = notifications;
+        _refundMailer = refundMailer;
         _logger = logger;
     }
 
@@ -91,6 +94,7 @@ public sealed class AdminReturnService : IAdminReturnService
             result.ReturnRequestId,
             "Return request approved",
             $"Your return request for order {result.OrderCode} was approved and sent to the seller.",
+            imageUrl: null,
             cancellationToken);
 
         if (result.ShopOwnerUserId != Guid.Empty)
@@ -100,6 +104,7 @@ public sealed class AdminReturnService : IAdminReturnService
                 result.ReturnRequestId,
                 "New return request for your shop",
                 $"Admin forwarded a {FormatResolution(result.ResolutionType)} request for order {result.OrderCode}. Please review and confirm handling.",
+                imageUrl: null,
                 cancellationToken);
         }
 
@@ -132,6 +137,7 @@ public sealed class AdminReturnService : IAdminReturnService
             result.ReturnRequestId,
             "Return request rejected",
             $"Your return request for order {result.OrderCode} was rejected. Note: {adminNote}",
+            imageUrl: null,
             cancellationToken);
         return result;
     }
@@ -183,6 +189,7 @@ public sealed class AdminReturnService : IAdminReturnService
 
         string? refundToBin = null;
         string? refundToAccountNumber = null;
+        string? refundProofUrl = null;
         if (string.Equals(canonical, ReturnConstants.StatusRefunded, StringComparison.OrdinalIgnoreCase))
         {
             refundToBin = string.IsNullOrWhiteSpace(request.RefundToBin)
@@ -191,6 +198,7 @@ public sealed class AdminReturnService : IAdminReturnService
             refundToAccountNumber = string.IsNullOrWhiteSpace(request.RefundToAccountNumber)
                 ? null
                 : request.RefundToAccountNumber.Trim();
+            refundProofUrl = RequireRefundProofUrl(request.RefundTransferProofUrl);
 
             if (refundToBin is { Length: > 20 })
                 throw new AppException("Refund bank BIN must not exceed 20 characters.");
@@ -205,15 +213,26 @@ public sealed class AdminReturnService : IAdminReturnService
             note,
             refundToBin,
             refundToAccountNumber,
+            refundProofUrl,
             cancellationToken);
 
         if (string.Equals(canonical, ReturnConstants.StatusRefunded, StringComparison.OrdinalIgnoreCase))
         {
+            var amount = result.RefundAmount ?? result.OrderTotalAmount;
             await NotifyUserAsync(
                 result.BuyerUserId,
                 result.ReturnRequestId,
                 "Refund completed",
-                $"Your refund for order {result.OrderCode} has been completed.",
+                $"Your refund for order {result.OrderCode} ({amount:N0} VND) has been completed. See the transfer proof attached.",
+                imageUrl: refundProofUrl,
+                cancellationToken);
+
+            await _refundMailer.TrySendAfterRefundedAsync(
+                result.BuyerEmail,
+                result.BuyerFullName,
+                result.OrderCode,
+                amount,
+                refundProofUrl!,
                 cancellationToken);
         }
         else if (string.Equals(canonical, ReturnConstants.StatusExchanged, StringComparison.OrdinalIgnoreCase))
@@ -223,6 +242,7 @@ public sealed class AdminReturnService : IAdminReturnService
                 result.ReturnRequestId,
                 "Exchange completed",
                 $"Your exchange for order {result.OrderCode} has been marked complete.",
+                imageUrl: null,
                 cancellationToken);
         }
 
@@ -234,6 +254,7 @@ public sealed class AdminReturnService : IAdminReturnService
         Guid returnRequestId,
         string title,
         string body,
+        string? imageUrl,
         CancellationToken cancellationToken)
     {
         if (userId == Guid.Empty)
@@ -251,7 +272,8 @@ public sealed class AdminReturnService : IAdminReturnService
                         : body[..NotificationConstants.MaxBodyLength],
                     Type = NotificationConstants.TypeReturn,
                     ReferenceType = NotificationConstants.RefReturnRequest,
-                    ReferenceId = returnRequestId
+                    ReferenceId = returnRequestId,
+                    ImageUrl = imageUrl
                 },
                 cancellationToken);
         }
@@ -288,38 +310,36 @@ public sealed class AdminReturnService : IAdminReturnService
 
     private static string? NormalizeStatusFilter(string? status)
     {
-        if (string.IsNullOrWhiteSpace(status)
-            || string.Equals(status.Trim(), "all", StringComparison.OrdinalIgnoreCase))
-        {
-            return null;
-        }
+        if (string.IsNullOrWhiteSpace(status))
+            return ReturnConstants.StatusPending;
 
         var trimmed = status.Trim();
-        var match = ReturnConstants.AllStatuses.FirstOrDefault(s =>
+        if (string.Equals(trimmed, "all", StringComparison.OrdinalIgnoreCase))
+            return null;
+
+        var canonical = ReturnConstants.AllStatuses.FirstOrDefault(s =>
             string.Equals(s, trimmed, StringComparison.OrdinalIgnoreCase));
-
-        if (match is null)
-        {
-            throw new AppException(
-                "Status filter must be a known return status or all.");
-        }
-
-        return match;
+        return canonical ?? throw new AppException("Invalid return status filter.");
     }
 
     private static string? NormalizeSearch(string? q)
     {
         if (string.IsNullOrWhiteSpace(q))
             return null;
-
         var trimmed = q.Trim();
-        if (trimmed.Length > ReturnConstants.MaxListSearchLength)
-        {
-            throw new AppException(
-                $"Search keyword must not exceed {ReturnConstants.MaxListSearchLength} characters.");
-        }
+        return trimmed.Length == 0 ? null : trimmed;
+    }
 
-        return trimmed;
+    private static void EnsureReturnId(Guid returnRequestId)
+    {
+        if (returnRequestId == Guid.Empty)
+            throw new AppException("Return request id is required.");
+    }
+
+    private static void EnsureUserId(Guid userId)
+    {
+        if (userId == Guid.Empty)
+            throw new AppException("User id is required.");
     }
 
     private static string RequireAdminNote(string? adminNote)
@@ -327,7 +347,6 @@ public sealed class AdminReturnService : IAdminReturnService
         var trimmed = adminNote?.Trim() ?? string.Empty;
         if (string.IsNullOrWhiteSpace(trimmed))
             throw new AppException("Admin note is required when rejecting a return request.");
-
         if (trimmed.Length > ReturnConstants.MaxAdminNoteLength)
         {
             throw new AppException(
@@ -337,20 +356,28 @@ public sealed class AdminReturnService : IAdminReturnService
         return trimmed;
     }
 
+    private static string RequireRefundProofUrl(string? url)
+    {
+        var trimmed = url?.Trim() ?? string.Empty;
+        if (string.IsNullOrWhiteSpace(trimmed))
+            throw new AppException("Refund transfer proof image is required.");
+        if (trimmed.Length > ReturnConstants.MaxMediaUrlLength)
+        {
+            throw new AppException(
+                $"Refund transfer proof URL must not exceed {ReturnConstants.MaxMediaUrlLength} characters.");
+        }
+
+        if (!Uri.TryCreate(trimmed, UriKind.Absolute, out var uri)
+            || (uri.Scheme != Uri.UriSchemeHttp && uri.Scheme != Uri.UriSchemeHttps))
+        {
+            throw new AppException("Refund transfer proof URL must be a valid http(s) link.");
+        }
+
+        return trimmed;
+    }
+
     private static string FormatResolution(string resolutionType) =>
         string.Equals(resolutionType, ReturnConstants.ResolutionExchange, StringComparison.OrdinalIgnoreCase)
             ? "exchange"
-            : "return and refund";
-
-    private static void EnsureReturnId(Guid returnRequestId)
-    {
-        if (returnRequestId == Guid.Empty)
-            throw new AppException("Return request id is required.");
-    }
-
-    private static void EnsureUserId(Guid adminUserId)
-    {
-        if (adminUserId == Guid.Empty)
-            throw new AppException("Admin user id is required.");
-    }
+            : "return/refund";
 }

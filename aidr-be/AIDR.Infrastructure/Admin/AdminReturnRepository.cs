@@ -206,6 +206,7 @@ public sealed class AdminReturnRepository : IAdminReturnRepository
         string? note,
         string? refundToBin,
         string? refundToAccountNumber,
+        string? refundTransferProofUrl,
         CancellationToken cancellationToken = default)
     {
         await using var transaction = await _db.Database.BeginTransactionAsync(cancellationToken);
@@ -241,6 +242,7 @@ public sealed class AdminReturnRepository : IAdminReturnRepository
                 now,
                 refundToBin,
                 refundToAccountNumber,
+                refundTransferProofUrl,
                 cancellationToken);
         }
 
@@ -274,11 +276,13 @@ public sealed class AdminReturnRepository : IAdminReturnRepository
         DateTime now,
         string? refundToBin,
         string? refundToAccountNumber,
+        string? refundTransferProofUrl,
         CancellationToken cancellationToken)
     {
         var order = entity.Order;
         var refundAmount = decimal.Round(order.TotalAmount, 2, MidpointRounding.AwayFromZero);
         entity.RefundAmount = refundAmount;
+        entity.RefundTransferProofUrl = refundTransferProofUrl;
 
         var payment = order.Payments
             .Where(p => string.Equals(p.Status, PaymentConstants.StatusSucceeded, StringComparison.OrdinalIgnoreCase)
@@ -307,6 +311,7 @@ public sealed class AdminReturnRepository : IAdminReturnRepository
                 refundAmount,
                 toBin,
                 toAccount,
+                refundTransferProofUrl,
                 now);
         }
 
@@ -319,6 +324,7 @@ public sealed class AdminReturnRepository : IAdminReturnRepository
         decimal refundAmount,
         string? toBin,
         string? toAccountNumber,
+        string? proofUrl,
         DateTime now)
     {
         object? previous = null;
@@ -344,6 +350,7 @@ public sealed class AdminReturnRepository : IAdminReturnRepository
                 amount = refundAmount,
                 toBin,
                 toAccountNumber,
+                proofUrl,
                 refundedAt = now
             }
         });
@@ -619,6 +626,7 @@ public sealed class AdminReturnRepository : IAdminReturnRepository
                 ? $"{new string('*', acct.Length - 4)}{acct[^4..]}"
                 : entity.RefundAccountNumber,
             RefundAccountName = entity.RefundAccountName,
+            RefundTransferProofUrl = entity.RefundTransferProofUrl,
             CreatedAt = entity.CreatedAt,
             UpdatedAt = entity.UpdatedAt,
             Items = entity.Items
@@ -673,7 +681,7 @@ public sealed class AdminReturnRepository : IAdminReturnRepository
     private static string BuildDefaultStatusNote(string toStatus) =>
         toStatus switch
         {
-            ReturnConstants.StatusRefunded => "Buyer refunded via payOS payout; seller wallet debit recorded",
+            ReturnConstants.StatusRefunded => "Buyer refunded via manual bank transfer; seller wallet debit recorded",
             ReturnConstants.StatusExchanged => "Exchange completed - replacement handled by seller",
             ReturnConstants.StatusClosed => "Return request closed",
             _ => $"Status updated to {toStatus}"

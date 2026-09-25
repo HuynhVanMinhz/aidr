@@ -646,6 +646,8 @@ public class Notification
     public string Type { get; set; } = null!;
     public string? ReferenceType { get; set; }
     public Guid? ReferenceId { get; set; }
+    /// <summary>Optional image attachment (e.g. refund transfer proof).</summary>
+    public string? ImageUrl { get; set; }
     public bool IsRead { get; set; }
     public DateTime CreatedAt { get; set; }
 
@@ -821,11 +823,13 @@ public class ReturnRequest
     public string? AdminNote { get; set; }
     public Guid? ReviewedBy { get; set; }
     public DateTime? ReviewedAt { get; set; }
-    /// <summary>Buyer-provided bank for PayOS payout refund (Napas BIN).</summary>
+    /// <summary>Buyer-provided bank for manual VietQR refund (Napas BIN).</summary>
     public string? RefundBankBin { get; set; }
     public string? RefundBankName { get; set; }
     public string? RefundAccountNumber { get; set; }
     public string? RefundAccountName { get; set; }
+    /// <summary>Cloudinary URL of the admin bank-transfer screenshot (required when Refunded).</summary>
+    public string? RefundTransferProofUrl { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
 

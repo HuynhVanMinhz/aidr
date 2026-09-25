@@ -68,6 +68,8 @@ public sealed class AdminReturnRequestDetailDto
     public string? RefundAccountNumber { get; init; }
     public string? RefundAccountNumberMasked { get; init; }
     public string? RefundAccountName { get; init; }
+    /// <summary>Screenshot of the admin bank transfer (set when status becomes Refunded).</summary>
+    public string? RefundTransferProofUrl { get; init; }
     public DateTime CreatedAt { get; init; }
     public DateTime UpdatedAt { get; init; }
     public IReadOnlyList<AdminReturnItemDto> Items { get; init; } = Array.Empty<AdminReturnItemDto>();
@@ -133,4 +135,9 @@ public sealed class UpdateReturnStatusRequest
     /// Optional bank account number recorded on the manual refund audit trail.
     /// </summary>
     public string? RefundToAccountNumber { get; set; }
+
+    /// <summary>
+    /// Required when Status is Refunded. Cloudinary URL of the bank-transfer screenshot sent to the buyer.
+    /// </summary>
+    public string? RefundTransferProofUrl { get; set; }
 }

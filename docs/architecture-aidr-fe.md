@@ -264,11 +264,11 @@ VITE_SIGNALR_HUB_URL=https://api.aidr.local/hubs
 | My returns | UC-43 (`/account/returns`, `/account/returns/:returnId`, `GET /api/returns`; ReturnRefund\|Exchange) |
 | Wishlist | UC-36..38 (`/wishlist` → `/account/wishlist`, `wishlistApi`, `wishlistSlice`, add/remove on catalog + detail) |
 | Following | UC-65..67 (`/following` → `/account/following`, `followApi`, `followSlice`, follow/unfollow on shop page + list) |
-| Notifications | UC-44/45 (`/account/notifications`, `/seller/notifications`, `notificationApi`, `notificationSlice`, SignalR `NotificationHub` → unread badge + prepend inbox) |
+| Notifications | UC-44/45 (`/account/notifications`, `/seller/notifications`, `notificationApi`, `notificationSlice`, SignalR `NotificationHub` → unread badge + prepend inbox; optional `imageUrl` e.g. refund transfer proof) |
 | Seller orders | UC-46/47 (`/seller/orders`, `/seller/orders/:orderId`, `sellerOrdersSlice`, update status + tracking) |
 | Seller returns | UC-93..95 (`/seller/returns`, `/seller/returns/:id`, confirm → receiving → accept; notify Admin on Accepted) |
 | Seller shop settings / alerts | `/seller/shop-settings`, `/seller/alerts` (`sellerApi` shop GET/PUT; inventory low-stock) |
-| Admin returns | UC-48..52 (`/admin/return-requests`, approve→forward Seller; after Accepted: VietQR refund panel → Confirm Refunded\|Exchanged→Closed; `AdminRefundTransferPanel` + `vietQr.ts`) |
+| Admin returns | UC-48..52 (`/admin/return-requests`, approve→forward Seller; after Accepted: VietQR refund panel → upload transfer proof → Confirm Refunded\|Exchanged→Closed; `AdminRefundTransferPanel` + `vietQr.ts` + Cloudinary `returns/refund-proof`) |
 | Admin orders / dashboard | `/admin/orders`, `/admin/dashboard` KPI (`adminApi`) |
 | Recommend / Similar blocks | UC-53/54 (`RecommendedProductsSection` on home; `SimilarProductsSection` on product detail; `aiApi` + `recommendationSlice`) |
 | NL filter + Compare | UC-90 (`NlSearchBar` on `/products` → `POST /ai/nl-filter` → bind catalog filters); UC-28 (compare icon on card/detail → tray → `/compare` + `POST /ai/compare`, Buyer) |
