@@ -166,7 +166,7 @@ export function AdminReturnRequestDetailPage() {
     [statusNote],
   );
   const proofError = useMemo(() => {
-    if (nextReturnStatus(item?.status, item?.resolutionType) !== 'Refunded') return null;
+    if (nextReturnStatus(item?.status, item?.resolutionType) !== 'Refunded') return undefined;
     return tryValidateField(() => validateRefundTransferProof(Boolean(proofUrl.trim())));
   }, [item?.status, item?.resolutionType, proofUrl]);
   const visibleStatusNoteError = visibleFieldErrors(
